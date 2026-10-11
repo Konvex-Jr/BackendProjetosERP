@@ -22,7 +22,7 @@ describe("Casos de uso de capacitações e check-ins", () => {
     factory = new MemoryRepositoryFactory();
     const senioridade = new SenioridadeUsuario("pleno", "Pleno", 75);
     membro = new Usuario("Ana", "ana@konvex.com.br", PerfilUsuario.MEMBRO, true, "hash", senioridade, "usr-ana");
-    instrutor = new Usuario("João", "joao@konvex.com.br", PerfilUsuario.GERENTE, true, "hash", null, "usr-joao");
+    instrutor = new Usuario("João", "joao@konvex.com.br", PerfilUsuario.GERENTE, true, "hash", senioridade, "usr-joao");
     await factory.criarUsuarioRepository().criar(membro);
     await factory.criarUsuarioRepository().criar(instrutor);
     capacitacao = new Capacitacao("DDD", new Date("2026-11-20T00:00:00.000Z"), "18:30", instrutor, 5, TipoCapacitacao.COMPUTACAO, "I-304", [], "cap-ddd");

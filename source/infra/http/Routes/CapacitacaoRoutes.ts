@@ -6,6 +6,9 @@ import InscreverCapacitacao from "../../../useCases/InscreverCapacitacao/Inscrev
 import CancelarInscricaoCapacitacao from "../../../useCases/CancelarInscricaoCapacitacao/CancelarInscricaoCapacitacao";
 import EnviarFeedbackCapacitacao from "../../../useCases/EnviarFeedbackCapacitacao/EnviarFeedbackCapacitacao";
 import ListarFeedbacks from "../../../useCases/ListarFeedbacks/ListarFeedbacks";
+import CriarCapacitacao from "../../../useCases/CriarCapacitacao/CriarCapacitacao";
+import PerfilUsuario from "../../../domain/Enum/PerfilUsuario";
+import { ErroNaoAutorizado } from "../../../shared/erros/ErroNaoAutorizado";
 
 export default class CapacitacaoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -13,6 +16,21 @@ export default class CapacitacaoRoutes implements ModelRoutes {
     init(): void {
         this.http.route("get", "/capacitacoes", true, async () =>
             new ListarCapacitacoes(this.factory).execute());
+
+        this.http.route("post", "/capacitacoes", true, async (_params: any, body: any) => {
+            if (body.user?.perfil !== PerfilUsuario.DIRETOR) {
+                throw new ErroNaoAutorizado("Somente diretores podem criar capacitações.");
+            }
+            return new CriarCapacitacao(this.factory).execute({
+                titulo: body.titulo,
+                data: new Date(body.data),
+                hora: body.hora,
+                codigoInstrutor: body.codigoInstrutor ?? body.instrutor?.codigo,
+                vagas: Number(body.vagas),
+                tipo: body.tipo,
+                sala: body.sala,
+            });
+        });
 
         this.http.route("post", "/capacitacoes/:codigo/inscricoes", true, async (params: any, body: any) =>
             new InscreverCapacitacao(this.factory).execute(params.codigo, body.codigoUsuario ?? body.user?.codigo));

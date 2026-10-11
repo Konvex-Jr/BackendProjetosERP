@@ -5,8 +5,8 @@ export const MENSAGENS_DE_ERRO = {
         CAMPO_OBRIGATORIO: "O campo é obrigatório.",
         NOME_OBRIGATORIO: "O nome do usuário é obrigatório.",
         EMAIL_OBRIGATORIO: "O e-mail do usuário é obrigatório.",
-        SENIORIDADE_OBRIGATORIA: "A senioridade é obrigatória para membros.",
-        SENIORIDADE_INCOMPATIVEL: "Diretores e gerentes não devem possuir senioridade.",
+        SENIORIDADE_OBRIGATORIA: "A senioridade é obrigatória para todos os perfis.",
+        SENIORIDADE_INCOMPATIVEL: "A senioridade informada não é compatível com o usuário.",
     },
 
     AUTENTICACAO: {

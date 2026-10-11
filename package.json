@@ -27,7 +27,10 @@
         "clean": "rm -rf dist/*/",
         "main": "if [ ! -f private.key ] || [ ! -f public.key ]; then node source/scripts/gerarChaves.js; fi && tsc && node ./dist/source/main",
         "keys": "node source/scripts/gerarChaves.js",
-        "seed:admin": "tsc && node ./dist/source/scripts/seedAdmin.js"
+        "seed:admin": "tsc && node ./dist/source/scripts/seedAdmin.js",
+        "start": "npm run main",
+        "dev": "npm run main",
+        "build": "tsc"
     },
     "devDependencies": {
         "@types/jest": "^30.0.0",

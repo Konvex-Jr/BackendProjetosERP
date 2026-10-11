@@ -59,23 +59,10 @@ export default class Usuario {
             );
         }
 
-        if (
-            this.perfil === PerfilUsuario.MEMBRO &&
-            !this.senioridade
-        ) {
+        if (this.perfil === PerfilUsuario.MEMBRO && !this.senioridade) {
             throw new ErroValidacao(
                 MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA,
                 "SENIORIDADE_OBRIGATORIA",
-            );
-        }
-
-        if (
-            this.perfil !== PerfilUsuario.MEMBRO &&
-            this.senioridade !== null
-        ) {
-            throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_INCOMPATIVEL,
-                "SENIORIDADE_INCOMPATIVEL",
             );
         }
     }

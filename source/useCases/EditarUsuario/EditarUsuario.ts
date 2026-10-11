@@ -2,6 +2,7 @@ import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactor
 import Usuario from "../../domain/Entity/Usuario";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
+import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
@@ -20,7 +21,10 @@ export default class EditarUsuario {
         const porEmail = await this.usuarios.buscarPorEmail(email);
         if (porEmail && porEmail.codigo !== atual.codigo)
             throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
-        let senioridade = input.perfil === "membro" ? (input.senioridade ?? atual.senioridade) : null;
+        let senioridade = input.senioridade ?? atual.senioridade;
+        if (!senioridade) {
+            throw new ErroValidacao("Selecione uma senioridade cadastrada para o usuário.", "SENIORIDADE_OBRIGATORIA");
+        }
         if (senioridade) {
             const cadastrada = await this.senioridades.buscarPorCodigo(senioridade.codigo);
             if (!cadastrada)

@@ -28,6 +28,12 @@ export default class CriarUsuario {
             throw new ErroValidacao("Já existe um usuário cadastrado com este e-mail.", "EMAIL_JA_CADASTRADO");
         }
         let senioridade = input.senioridade ?? null;
+        if (!senioridade) {
+            throw new ErroValidacao(
+                MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA,
+                "SENIORIDADE_OBRIGATORIA",
+            );
+        }
         if (senioridade) {
             const cadastrada = await this.senioridadeRepository.buscarPorCodigo(senioridade.codigo);
             if (!cadastrada) {

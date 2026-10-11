@@ -34,7 +34,7 @@ export async function criarContexto() {
     PerfilUsuario.GERENTE,
     true,
     "senha-hash",
-    null,
+    senioridade,
     "usr-joao",
   );
 

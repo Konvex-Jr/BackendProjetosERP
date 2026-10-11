@@ -39,7 +39,7 @@ const swaggerSpecification = {
         version: "1.0.0",
         description: "API de usuários, projetos, tarefas, capacitações, check-ins e documentos.",
     },
-    servers: [{ url: "http://localhost:5001", description: "Ambiente local" }],
+    servers: [{ url: process.env.SWAGGER_SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5001}`, description: "Servidor da API" }],
     components: {
         securitySchemes: {
             AccessToken: {
@@ -218,6 +218,12 @@ const swaggerSpecification = {
         },
         "/capacitacoes": {
             get: operation(["Capacitações"], "Listar capacitações"),
+            post: operation(["Capacitações"], "Criar capacitação (somente diretor)", {
+                requestBody: jsonBody({ type: "object", required: ["titulo", "data", "hora", "codigoInstrutor", "vagas", "tipo", "sala"], properties: {
+                    titulo: { type: "string" }, data: { type: "string", format: "date" }, hora: { type: "string", example: "14:00" },
+                    codigoInstrutor: { type: "string" }, vagas: { type: "integer", minimum: 1 }, tipo: { type: "string", enum: ["mecanica", "computacao", "eletrica"] }, sala: { type: "string" }
+                } })
+            }),
         },
         "/capacitacoes/{codigo}/inscricoes": {
             post: operation(["Capacitações"], "Inscrever usuário em capacitação", {
@@ -329,6 +335,23 @@ const swaggerSpecification = {
                         codigoAutor: { type: "string" },
                     },
                 }),
+            }),
+        },
+        "/uploads/{filename}": {
+            get: operation(["Documentos"], "Baixar documento enviado (autenticado)", {
+                parameters: [{ name: "filename", in: "path", required: true, schema: { type: "string" } }],
+                responses: { "200": { description: "Conteúdo binário do documento", content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } } }, "404": { description: "Arquivo não encontrado." } },
+            }),
+        },
+        "/pastas/{codigoPasta}/documentos/upload": {
+            post: operation(["Documentos"], "Enviar arquivo para uma pasta (máximo 20 MB)", {
+                parameters: [{ $ref: "#/components/parameters/codigoPasta" }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/octet-stream": { schema: { type: "string", format: "binary" } },
+                    },
+                },
             }),
         },
         "/documentos/{codigo}": {

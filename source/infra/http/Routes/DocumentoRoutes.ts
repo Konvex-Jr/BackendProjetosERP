@@ -10,6 +10,8 @@ export default class DocumentoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
 
     init(): void {
+        this.http.downloadRoute("/uploads/:filename", true);
+
         this.http.route("get", "/pastas/:codigoPasta/documentos", true, async (params: any) =>
             new ListarDocumentos(this.factory).execute(params.codigoPasta));
 
@@ -22,6 +24,16 @@ export default class DocumentoRoutes implements ModelRoutes {
                 codigoAutor: body.codigoAutor ?? body.user?.codigo,
                 arquivoUrl: body.arquivoUrl,
                 extensao: body.extensao ?? null,
+            }));
+
+        this.http.uploadRoute("/pastas/:codigoPasta/documentos/upload", true, async (params: any, body: any, file: any) =>
+            new EnviarDocumento(this.factory).execute({
+                codigoPasta: params.codigoPasta,
+                nome: String(body.nome || file.originalName),
+                tamanhoBytes: file.size,
+                codigoAutor: body.user?.codigo,
+                arquivoUrl: file.url,
+                extensao: file.originalName.includes(".") ? file.originalName.split(".").pop() : null,
             }));
 
         this.http.route("put", "/documentos/:codigo", true, async (params: any, body: any) =>

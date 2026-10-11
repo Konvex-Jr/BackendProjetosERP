@@ -29,11 +29,11 @@ test("Deve criar um usuário membro", async () => {
   expect(output.token).toBeTruthy();
 });
 
-test("Deve criar um usuário gerente sem senioridade", async () => {
+test("Deve criar um usuário gerente com senioridade", async () => {
   const output = await criarUsuario.execute({
     ...inputValido,
     perfil: PerfilUsuario.GERENTE,
-    senioridade: null,
+    senioridade: senioridadePleno,
   });
   expect(output.token).toBeTruthy();
 });
@@ -54,13 +54,15 @@ test("Não deve criar um membro sem senioridade", async () => {
   );
 });
 
-test("Não deve criar um gerente com senioridade", async () => {
+test("Não deve criar um diretor ou gerente sem senioridade", async () => {
   const promessa = criarUsuario.execute({
     ...inputValido,
     perfil: PerfilUsuario.GERENTE,
+    senioridade: null,
   });
+  await expect(promessa).rejects.toBeInstanceOf(ErroValidacao);
   await expect(promessa).rejects.toThrow(
-    MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_INCOMPATIVEL,
+    MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA,
   );
 });
 
