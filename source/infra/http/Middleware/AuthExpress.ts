@@ -9,7 +9,7 @@ export default class ExpressAuth implements Auth {
     protected userRepository: UserRepositoryInterface;
 
     constructor(repositoryFactory: RepositoryFactoryInterface) {
-        this.userRepository = repositoryFactory.createUserRepository();
+        this.userRepository = repositoryFactory.criarUsuarioRepository();
     }
 
     async execute(request: any, response: any, next: any): Promise<any> {
@@ -21,8 +21,14 @@ export default class ExpressAuth implements Auth {
         const token = request.headers['access-token'];
         try {
             const publicKey = readFileSync('./public.key', 'utf8');
-            const data = verify(token, publicKey, { algorithms: ["RS256"] }); // @ts-ignore
-            const user = await this.userRepository.findById(data.userId);
+            const data = verify(token, publicKey, { algorithms: ["RS256"] }) as { codigo: string };
+            const user = await this.userRepository.buscarPorCodigo(data.codigo);
+
+            if (!user || !user.ativo) {
+                return response.status(401).json({ message: "Invalid token" });
+            }
+
+            request.body = request.body ?? {};
             request.body.user = user;
             return next();
         } catch (e) {

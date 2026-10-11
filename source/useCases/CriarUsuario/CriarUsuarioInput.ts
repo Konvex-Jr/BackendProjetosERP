@@ -1,6 +1,5 @@
 import PerfilUsuario from "../../domain/Enum/PerfilUsuario";
 import SenioridadeUsuario from "../../domain/Entity/SenioridadeUsuario";
-
 export default interface CriarUsuarioInput {
     nome: string;
     email: string;
