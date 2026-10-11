@@ -12,6 +12,12 @@ CREATE TABLE senioridades (
     valor_hora NUMERIC(10,2) NOT NULL DEFAULT 0
 );
 
+INSERT INTO senioridades (codigo, nome, valor_hora) VALUES
+    ('junior', 'Júnior', 25.00),
+    ('pleno', 'Pleno', 35.00),
+    ('senior', 'Sênior', 50.00)
+ON CONFLICT (codigo) DO NOTHING;
+
 CREATE TABLE usuarios (
     codigo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(120) NOT NULL,

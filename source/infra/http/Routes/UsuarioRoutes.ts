@@ -5,7 +5,6 @@ import ModelRoutes from "./ModelRoutes";
 import ListarUsuarios from "../../../useCases/ListarUsuarios/ListarUsuarios";
 import EditarUsuario from "../../../useCases/EditarUsuario/EditarUsuario";
 import InativarUsuario from "../../../useCases/InativarUsuario/InativarUsuario";
-import SenioridadeUsuario from "../../../domain/Entity/SenioridadeUsuario";
 
 export default class UsuarioRoutes implements ModelRoutes {
     protected readonly usuarioController: UsuarioController;
@@ -18,15 +17,16 @@ export default class UsuarioRoutes implements ModelRoutes {
     }
 
     init(): void {
-        this.http.route("post", "/auth/register", false, async (_params: any, body: any) => {
-            const senioridade = body.senioridade
-                ? new SenioridadeUsuario(
-                    body.senioridade.codigo,
-                    body.senioridade.nome,
-                    Number(body.senioridade.valorHora),
-                )
-                : null;
+        this.http.route("get", "/senioridades", false, async () =>
+            this.repositoryFactory.criarSenioridadeRepository().listar());
 
+        this.http.route("post", "/auth/register", false, async (_params: any, body: any) => {
+            const senioridade = body.senioridade?.codigo
+                ? await this.repositoryFactory.criarSenioridadeRepository().buscarPorCodigo(body.senioridade.codigo)
+                : null;
+            if (body.perfil === "membro" && body.senioridade?.codigo && !senioridade) {
+                throw new Error("Código de senioridade inválido. Consulte GET /senioridades.");
+            }
             return this.usuarioController.criarUsuario({ ...body, senioridade });
         });
 
@@ -37,13 +37,12 @@ export default class UsuarioRoutes implements ModelRoutes {
             new ListarUsuarios(this.repositoryFactory).execute());
 
         this.http.route("put", "/usuarios/:codigo", true, async (params: any, body: any) => {
-            const senioridade = body.senioridade
-                ? new SenioridadeUsuario(
-                    body.senioridade.codigo,
-                    body.senioridade.nome,
-                    Number(body.senioridade.valorHora),
-                )
+            const senioridade = body.senioridade?.codigo
+                ? await this.repositoryFactory.criarSenioridadeRepository().buscarPorCodigo(body.senioridade.codigo)
                 : null;
+            if (body.perfil === "membro" && body.senioridade?.codigo && !senioridade) {
+                throw new Error("Código de senioridade inválido. Consulte GET /senioridades.");
+            }
 
             return new EditarUsuario(this.repositoryFactory).execute({
                 codigo: params.codigo,
