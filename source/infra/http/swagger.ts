@@ -25,9 +25,22 @@ const operation = (
     tags,
     summary,
     responses: {
-        "200": { description: "Operação realizada com sucesso." },
-        "401": { description: "Token inválido ou expirado." },
-        "422": { description: "Erro de validação ou regra de negócio." },
+        "200": {
+            description: "Operação realizada com sucesso.",
+            content: { "application/json": { schema: { type: "object", additionalProperties: true } } },
+        },
+        "401": {
+            description: "Token inválido, expirado ou usuário inativo.",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Erro" } } },
+        },
+        "403": {
+            description: "Token de acesso não informado.",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Erro" } } },
+        },
+        "422": {
+            description: "Erro de validação ou regra de negócio.",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Erro" } } },
+        },
     },
     ...options,
 });
@@ -37,7 +50,11 @@ const swaggerSpecification = {
     info: {
         title: "Konvex Gestão de Projetos API",
         version: "1.0.0",
-        description: "API de usuários, projetos, tarefas, capacitações, check-ins e documentos.",
+        description: [
+            "API REST do Konvex para usuários, projetos, tarefas, capacitações, check-ins e documentos.",
+            "As rotas protegidas recebem o JWT no cabeçalho `access-token` (sem o prefixo Bearer).",
+            "A documentação reflete os caminhos registrados pelo backend.",
+        ].join(" "),
     },
     servers: [{ url: "http://localhost:5001", description: "Ambiente local" }],
     components: {
@@ -59,7 +76,7 @@ const swaggerSpecification = {
                     descricao: { type: "string" },
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
-                    codigosMembros: { type: "array", items: { type: "string" } },
+                    codigosMembros: { type: "array", items: { type: "string" }, default: [] },
                 },
             },
             TarefaInput: {
@@ -72,7 +89,21 @@ const swaggerSpecification = {
                     dataFim: { type: "string", format: "date-time" },
                     prioridade: { type: "string", enum: ["P1", "P2", "P3", "P4"] },
                     descricao: { type: "string", nullable: true },
-                    codigosResponsaveis: { type: "array", items: { type: "string" } },
+                    codigosResponsaveis: { type: "array", items: { type: "string" }, default: [] },
+                    codigoDependencia: { type: "string", nullable: true },
+                    status: { type: "string", enum: ["pendente", "andamento", "concluida"] },
+                },
+            },
+            CheckinInput: {
+                type: "object",
+                required: ["semana", "resumo", "aprendizados"],
+                properties: {
+                    codigoUsuario: { type: "string", description: "Opcional quando a identidade vem do token." },
+                    semana: { type: "string", format: "date" },
+                    resumo: { type: "string" },
+                    aprendizados: { type: "string" },
+                    humor: { type: "integer", minimum: 1, maximum: 5 },
+                    sentimento: { type: "string", nullable: true },
                 },
             },
         },
