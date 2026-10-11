@@ -86,8 +86,7 @@ export default class CapacitacaoRepositoryDatabase implements CapacitacaoReposit
         await conexao.consultar(
             `INSERT INTO capacitacao_inscricoes (capacitacao_codigo, usuario_codigo)
              SELECT $1::uuid, t.usuario
-             FROM unnest($2::uuid[]) WITH ORDINALITY AS t(usuario, ordem)
-             ORDER BY t.ordem`,
+             FROM unnest($2::uuid[]) WITH ORDINALITY AS t(usuario)`,
             [capacitacao.codigo, capacitacao.inscritos.map((i) => i.codigo)],
         );
     }
