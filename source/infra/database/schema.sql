@@ -13,9 +13,9 @@ CREATE TABLE senioridades (
 );
 
 INSERT INTO senioridades (codigo, nome, valor_hora) VALUES
-    ('junior', 'Júnior', 25.00),
-    ('pleno', 'Pleno', 35.00),
-    ('senior', 'Sênior', 50.00)
+    ('junior', 'Júnior', 45),
+    ('pleno', 'Pleno', 75),
+    ('senior', 'Sênior', 120)
 ON CONFLICT (codigo) DO NOTHING;
 
 CREATE TABLE usuarios (

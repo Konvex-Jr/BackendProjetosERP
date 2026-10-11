@@ -73,6 +73,19 @@ const swaggerSpecification = {
                     prioridade: { type: "string", enum: ["P1", "P2", "P3", "P4"] },
                     descricao: { type: "string", nullable: true },
                     codigosResponsaveis: { type: "array", items: { type: "string" } },
+                    codigoDependencia: { type: "string", nullable: true },
+                    checklist: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            required: ["texto", "feito"],
+                            properties: {
+                                codigo: { type: "string", format: "uuid" },
+                                texto: { type: "string", maxLength: 300 },
+                                feito: { type: "boolean" },
+                            },
+                        },
+                    },
                 },
             },
         },
@@ -83,14 +96,6 @@ const swaggerSpecification = {
         "/": {
             get: operation(["Sistema"], "Verificar se a API está ativa", {
                 security: [],
-            }),
-        },
-        "/senioridades": {
-            get: operation(["Usuários"], "Listar senioridades disponíveis", {
-                security: [],
-                responses: {
-                    "200": { description: "Lista de senioridades", content: { "application/json": { schema: { type: "array", items: { type: "object", properties: { codigo: { type: "string" }, nome: { type: "string" }, valorHora: { type: "number" } } } } } } },
-                },
             }),
         },
         "/auth/register": {
@@ -124,6 +129,22 @@ const swaggerSpecification = {
         },
         "/usuarios": {
             get: operation(["Usuários"], "Listar usuários"),
+            post: operation(["Usuários"], "Cadastrar usuário (somente diretor/gerente)", {
+                requestBody: jsonBody({
+                    type: "object",
+                    required: ["nome", "email", "senha", "perfil"],
+                    properties: {
+                        nome: { type: "string" },
+                        email: { type: "string", format: "email" },
+                        senha: { type: "string", minLength: 6 },
+                        perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
+                        senioridade: { type: "object", nullable: true },
+                    },
+                }),
+            }),
+        },
+        "/senioridades": {
+            get: operation(["Usuários"], "Listar senioridades e valores-hora"),
         },
         "/usuarios/{codigo}": {
             put: operation(["Usuários"], "Editar usuário", {

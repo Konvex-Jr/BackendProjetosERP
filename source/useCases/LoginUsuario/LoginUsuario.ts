@@ -1,10 +1,10 @@
 import { compare } from "bcrypt";
-import { readFileSync } from "fs";
 import { sign } from "jsonwebtoken";
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/Interfaces/UsuarioRepositoryInterface";
 import LoginUsuarioInput from "./LoginUsuarioInput";
 import LoginUsuarioOutput from "./LoginUsuarioOutput";
+import { obterChavePrivada } from "../../shared/seguranca/chavesJwt";
 export const MENSAGEM_CREDENCIAIS_INVALIDAS = "Credenciais inválidas";
 
 export default class LoginUsuario {
@@ -22,7 +22,7 @@ export default class LoginUsuario {
         if (!senhaConfere) {
             throw new Error(MENSAGEM_CREDENCIAIS_INVALIDAS);
         }
-        const chavePrivada = readFileSync("./private.key");
+        const chavePrivada = obterChavePrivada();
         const payload = {
             codigo: usuario.codigo,
             email: usuario.email,

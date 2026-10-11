@@ -1,8 +1,8 @@
 import { verify } from "jsonwebtoken";
 import Auth from "./Auth";
-import { readFileSync } from "fs";
 import RepositoryFactoryInterface from "../../../domain/Interfaces/RepositoryFactoryInterface";
 import UserRepositoryInterface from "../../../domain/Interfaces/UsuarioRepositoryInterface";
+import { obterChavePublica } from "../../../shared/seguranca/chavesJwt";
 
 export default class ExpressAuth implements Auth {
 
@@ -20,7 +20,7 @@ export default class ExpressAuth implements Auth {
         }
         const token = request.headers['access-token'];
         try {
-            const publicKey = readFileSync('./public.key', 'utf8');
+            const publicKey = obterChavePublica();
             const data = verify(token, publicKey, { algorithms: ["RS256"] }) as { codigo: string };
             const user = await this.userRepository.buscarPorCodigo(data.codigo);
 

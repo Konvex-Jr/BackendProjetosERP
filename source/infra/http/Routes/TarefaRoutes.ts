@@ -41,6 +41,13 @@ export default class TarefaRoutes implements ModelRoutes {
                 descricao: body.descricao ?? null,
                 codigosResponsaveis: body.codigosResponsaveis ?? [],
                 codigoDependencia: body.codigoDependencia ?? null,
+                checklist: Array.isArray(body.checklist)
+                    ? body.checklist.map((item: any) => ({
+                        codigo: item.codigo ?? item.id,
+                        texto: item.texto,
+                        feito: Boolean(item.feito),
+                    }))
+                    : undefined,
             }));
 
         this.http.route("patch", "/tarefas/:codigo/status", true, async (params: any, body: any) =>

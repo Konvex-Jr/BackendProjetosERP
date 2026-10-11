@@ -10,4 +10,11 @@ export default interface EditarTarefaInput {
     descricao?: string | null;
     codigosResponsaveis: string[];
     codigoDependencia?: string | null;
+    checklist?: EditarTarefaChecklistInput[];
+}
+
+export interface EditarTarefaChecklistInput {
+    codigo?: string;
+    texto: string;
+    feito: boolean;
 }

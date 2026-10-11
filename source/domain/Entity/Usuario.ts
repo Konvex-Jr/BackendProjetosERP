@@ -33,6 +33,17 @@ export default class Usuario {
         this.validar();
     }
 
+    toJSON(): Omit<Usuario, "senha" | "validar"> {
+        return {
+            codigo: this.codigo,
+            nome: this.nome,
+            email: this.email,
+            perfil: this.perfil,
+            senioridade: this.senioridade,
+            ativo: this.ativo,
+        } as Omit<Usuario, "senha" | "validar">;
+    }
+
     private validar(): void {
         if (!this.nome.trim()) {
             throw new ErroValidacao(

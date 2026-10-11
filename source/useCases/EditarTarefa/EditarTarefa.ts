@@ -1,5 +1,6 @@
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/Entity/Tarefa";
+import ItemChecklistTarefa from "../../domain/Entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
@@ -33,7 +34,24 @@ export default class EditarTarefa {
                 throw new ErroValidacao("A dependência criaria um ciclo.", "DEPENDENCIA_CIRCULAR");
         }
         const concluida = input.status === "concluida";
-        return this.tarefas.editar(new Tarefa(atual.projeto, input.titulo, input.dataInicio, input.dataFim, input.status, input.prioridade, input.descricao ?? null, concluida ? (atual.dataConclusao ?? new Date()) : null, dependencia, responsaveis, atual.checklist, atual.codigo));
+        const checklist = input.checklist === undefined
+            ? atual.checklist
+            : input.checklist.map((item) => new ItemChecklistTarefa(item.texto, item.feito, item.codigo));
+
+        return this.tarefas.editar(new Tarefa(
+            atual.projeto,
+            input.titulo,
+            input.dataInicio,
+            input.dataFim,
+            input.status,
+            input.prioridade,
+            input.descricao ?? null,
+            concluida ? (atual.dataConclusao ?? new Date()) : null,
+            dependencia,
+            responsaveis,
+            checklist,
+            atual.codigo,
+        ));
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {
         let atual = await this.tarefas.buscarPorCodigo(codigoPredecessora);

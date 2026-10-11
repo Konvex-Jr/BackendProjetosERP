@@ -5,6 +5,9 @@ import ModelRoutes from "./ModelRoutes";
 import ListarUsuarios from "../../../useCases/ListarUsuarios/ListarUsuarios";
 import EditarUsuario from "../../../useCases/EditarUsuario/EditarUsuario";
 import InativarUsuario from "../../../useCases/InativarUsuario/InativarUsuario";
+import SenioridadeUsuario from "../../../domain/Entity/SenioridadeUsuario";
+import PerfilUsuario from "../../../domain/Enum/PerfilUsuario";
+import { ErroNaoAutorizado } from "../../../shared/erros/ErroNaoAutorizado";
 
 export default class UsuarioRoutes implements ModelRoutes {
     protected readonly usuarioController: UsuarioController;
@@ -17,17 +20,17 @@ export default class UsuarioRoutes implements ModelRoutes {
     }
 
     init(): void {
-        this.http.route("get", "/senioridades", false, async () =>
-            this.repositoryFactory.criarSenioridadeRepository().listar());
-
         this.http.route("post", "/auth/register", false, async (_params: any, body: any) => {
-            const senioridade = body.senioridade?.codigo
-                ? await this.repositoryFactory.criarSenioridadeRepository().buscarPorCodigo(body.senioridade.codigo)
+            const senioridade = body.senioridade
+                ? new SenioridadeUsuario(
+                    body.senioridade.codigo,
+                    body.senioridade.nome,
+                    Number(body.senioridade.valorHora),
+                )
                 : null;
-            if (body.perfil === "membro" && body.senioridade?.codigo && !senioridade) {
-                throw new Error("Código de senioridade inválido. Consulte GET /senioridades.");
-            }
-            return this.usuarioController.criarUsuario({ ...body, senioridade });
+
+            // Self-registration must never allow users to assign themselves a privileged role.
+            return this.usuarioController.criarUsuario({ ...body, perfil: PerfilUsuario.MEMBRO, senioridade });
         });
 
         this.http.route("post", "/auth/login", false, async (_params: any, body: any) =>
@@ -36,13 +39,31 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("get", "/usuarios", true, async () =>
             new ListarUsuarios(this.repositoryFactory).execute());
 
-        this.http.route("put", "/usuarios/:codigo", true, async (params: any, body: any) => {
-            const senioridade = body.senioridade?.codigo
-                ? await this.repositoryFactory.criarSenioridadeRepository().buscarPorCodigo(body.senioridade.codigo)
+        this.http.route("get", "/senioridades", true, async () =>
+            this.repositoryFactory.criarSenioridadeRepository().listar());
+
+        this.http.route("post", "/usuarios", true, async (_params: any, body: any) => {
+            this.assertCanManageUsers(body.user);
+            const senioridade = body.senioridade
+                ? new SenioridadeUsuario(
+                    body.senioridade.codigo,
+                    body.senioridade.nome,
+                    Number(body.senioridade.valorHora),
+                )
                 : null;
-            if (body.perfil === "membro" && body.senioridade?.codigo && !senioridade) {
-                throw new Error("Código de senioridade inválido. Consulte GET /senioridades.");
-            }
+
+            return this.usuarioController.criarUsuario({ ...body, senioridade });
+        });
+
+        this.http.route("put", "/usuarios/:codigo", true, async (params: any, body: any) => {
+            this.assertCanManageUsers(body.user);
+            const senioridade = body.senioridade
+                ? new SenioridadeUsuario(
+                    body.senioridade.codigo,
+                    body.senioridade.nome,
+                    Number(body.senioridade.valorHora),
+                )
+                : null;
 
             return new EditarUsuario(this.repositoryFactory).execute({
                 codigo: params.codigo,
@@ -53,7 +74,16 @@ export default class UsuarioRoutes implements ModelRoutes {
             });
         });
 
-        this.http.route("delete", "/usuarios/:codigo", true, async (params: any) =>
-            new InativarUsuario(this.repositoryFactory).execute(params.codigo));
+        this.http.route("delete", "/usuarios/:codigo", true, async (params: any, body: any) => {
+            this.assertCanManageUsers(body.user);
+            return new InativarUsuario(this.repositoryFactory).execute(params.codigo);
+        });
+    }
+
+    private assertCanManageUsers(user: any): void {
+        const allowedProfiles = [PerfilUsuario.DIRETOR, PerfilUsuario.GERENTE];
+        if (!user || !allowedProfiles.includes(user.perfil)) {
+            throw new ErroNaoAutorizado("Somente diretores e gerentes podem gerenciar usuários.");
+        }
     }
 }

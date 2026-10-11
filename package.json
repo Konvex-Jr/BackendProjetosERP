@@ -25,7 +25,8 @@
     "scripts": {
         "test": "jest --runInBand test/",
         "clean": "rm -rf dist/*/",
-        "main": "tsc && node ./dist/source/main",
+        "main": "if [ ! -f private.key ] || [ ! -f public.key ]; then node source/scripts/gerarChaves.js; fi && tsc && node ./dist/source/main",
+        "keys": "node source/scripts/gerarChaves.js",
         "seed:admin": "tsc && node ./dist/source/scripts/seedAdmin.js"
     },
     "devDependencies": {
