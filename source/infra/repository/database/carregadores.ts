@@ -23,10 +23,10 @@ function unicos(codigos: string[]): string[] {
 export function usuarioDeLinha(linha: any): Usuario {
     const senioridade = linha.senioridade_codigo
         ? new SenioridadeUsuario(
-              linha.senioridade_codigo,
-              linha.senioridade_nome,
-              Number(linha.senioridade_valor_hora),
-          )
+            linha.senioridade_codigo,
+            linha.senioridade_nome,
+            Number(linha.senioridade_valor_hora),
+        )
         : null;
 
     return new Usuario(
@@ -134,8 +134,7 @@ export async function carregarCapacitacoes(
     const inscricoes = await conexao.consultar(
         `SELECT capacitacao_codigo, usuario_codigo
          FROM capacitacao_inscricoes
-         WHERE capacitacao_codigo = ANY($1::uuid[])
-         ORDER BY inscrito_em`,
+         WHERE capacitacao_codigo = ANY($1::uuid[])`,
         [lista],
     );
 
