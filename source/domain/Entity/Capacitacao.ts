@@ -39,9 +39,11 @@ export default class Capacitacao {
         this.validar();
     }
 
-    /** Realizada quando a data é anterior a "hoje". */
     foiRealizada(hoje: Date): boolean {
-        return this.data.getTime() < hoje.getTime();
+        const dataCapacitacao = new Date(this.data);
+        const [horas, minutos] = this.hora.split(":").map(Number);
+        dataCapacitacao.setHours(horas, minutos, 0, 0);
+        return dataCapacitacao.getTime() <= hoje.getTime();
     }
 
     temVaga(): boolean {
