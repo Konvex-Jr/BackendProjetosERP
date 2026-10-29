@@ -356,3 +356,43 @@ const swaggerSpecification = {
 };
 
 export default swaggerSpecification;
+
+// Rotas da fase 1 (sessão, pessoas, configurações e equipe de projeto).
+const json = { requestBody: jsonBody({ type: "object" }) };
+const comCodigo = (extra: object = {}) => ({ parameters: [codigo], ...extra });
+const participacao = {
+    parameters: [codigo, { name: "codigoParticipacao", in: "path", required: true, schema: { type: "string" } }],
+};
+const rotasFase1: Record<string, Record<string, object>> = {
+    "/auth/refresh": { post: operation(["Autenticação"], "Renovar a sessão com o refresh token", { security: [], ...json }) },
+    "/auth/logout": { post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token)", { security: [], ...json }) },
+    "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
+    "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
+    "/usuarios/{codigo}": {
+        get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
+    },
+    "/usuarios/{codigo}/perfil": { get: operation(["Usuários"], "Perfil: projetos, histórico e capacitações (RF-013)", comCodigo()) },
+    "/usuarios/{codigo}/status": { patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)) },
+    "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
+    "/areas": {
+        get: operation(["Configurações"], "Listar áreas"),
+        post: operation(["Configurações"], "Criar área (diretores)", json),
+    },
+    "/areas/{codigo}": { put: operation(["Configurações"], "Editar área (diretores)", comCodigo(json)) },
+    "/cargos": {
+        get: operation(["Configurações"], "Listar cargos"),
+        post: operation(["Configurações"], "Criar cargo (diretores)", json),
+    },
+    "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
+    "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
+    "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas") },
+    "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
+    "/projetos/{codigo}/membros/{codigoParticipacao}": { put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }) },
+    "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": { post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }) },
+};
+const caminhos = (swaggerSpecification as any).paths;
+for (const [caminho, metodos] of Object.entries(rotasFase1)) {
+    caminhos[caminho] = { ...(caminhos[caminho] ?? {}), ...metodos };
+}
+caminhos["/senioridades"].post = operation(["Configurações"], "Criar senioridade (diretores)", json);
+caminhos["/projetos/{codigo}"] = { ...(caminhos["/projetos/{codigo}"] ?? {}), get: operation(["Projetos"], "Consultar projeto", comCodigo()) };
