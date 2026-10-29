@@ -27,6 +27,7 @@ const operation = (
     responses: {
         "200": { description: "Operação realizada com sucesso." },
         "401": { description: "Token inválido ou expirado." },
+        "403": { description: "Sem permissão para esta ação." },
         "422": { description: "Erro de validação ou regra de negócio." },
     },
     ...options,
@@ -96,22 +97,6 @@ const swaggerSpecification = {
         "/": {
             get: operation(["Sistema"], "Verificar se a API está ativa", {
                 security: [],
-            }),
-        },
-        "/auth/register": {
-            post: operation(["Autenticação"], "Cadastrar usuário", {
-                security: [],
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["nome", "email", "senha", "perfil"],
-                    properties: {
-                        nome: { type: "string" },
-                        email: { type: "string", format: "email" },
-                        senha: { type: "string", minLength: 6 },
-                        perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
-                        senioridade: { type: "object", nullable: true },
-                    },
-                }),
             }),
         },
         "/auth/login": {

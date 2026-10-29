@@ -6,6 +6,7 @@ import CriarProjeto from "../../../useCases/CriarProjeto/CriarProjeto";
 import EditarProjeto from "../../../useCases/EditarProjeto/EditarProjeto";
 import ExcluirProjeto from "../../../useCases/ExcluirProjeto/ExcluirProjeto";
 import AlternarStatusProjeto from "../../../useCases/AlternarStatusProjeto/AlternarStatusProjeto";
+import { exigirGestor } from "../../../shared/seguranca/permissoes";
 
 export default class ProjetoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -15,7 +16,7 @@ export default class ProjetoRoutes implements ModelRoutes {
             new ListarProjetos(this.factory).execute(query?.codigoUsuario));
 
         this.http.route("post", "/projetos", true, async (_params: any, body: any) =>
-            new CriarProjeto(this.factory).execute({
+            exigirGestor(body.user) && new CriarProjeto(this.factory).execute({
                 nome: body.nome,
                 descricao: body.descricao,
                 dataInicio: new Date(body.dataInicio),
@@ -24,7 +25,7 @@ export default class ProjetoRoutes implements ModelRoutes {
             }));
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) =>
-            new EditarProjeto(this.factory).execute({
+            exigirGestor(body.user) && new EditarProjeto(this.factory).execute({
                 codigo: params.codigo,
                 nome: body.nome,
                 descricao: body.descricao,
@@ -33,10 +34,10 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigosMembros: body.codigosMembros ?? [],
             }));
 
-        this.http.route("patch", "/projetos/:codigo/status", true, async (params: any) =>
-            new AlternarStatusProjeto(this.factory).execute(params.codigo));
+        this.http.route("patch", "/projetos/:codigo/status", true, async (params: any, body: any) =>
+            exigirGestor(body.user) && new AlternarStatusProjeto(this.factory).execute(params.codigo));
 
-        this.http.route("delete", "/projetos/:codigo", true, async (params: any) =>
-            new ExcluirProjeto(this.factory).execute(params.codigo));
+        this.http.route("delete", "/projetos/:codigo", true, async (params: any, body: any) =>
+            exigirGestor(body.user) && new ExcluirProjeto(this.factory).execute(params.codigo));
     }
 }
