@@ -14,14 +14,16 @@
     "main": "dist/source/main.js",
     "author": "perozin.arthur@gmail.com",
     "scripts": {
-        "test": "jest --runInBand test/",
-        "clean": "rm -rf dist/*/",
-        "main": "if [ ! -f private.key ] || [ ! -f public.key ]; then node source/scripts/gerarChaves.js; fi && tsc && node ./dist/source/main",
+        "build": "tsc",
+        "migrate": "tsc && node ./dist/source/scripts/migrar.js",
         "keys": "node source/scripts/gerarChaves.js",
         "seed:admin": "tsc && node ./dist/source/scripts/seedAdmin.js",
+        "main": "if [ ! -f private.key ] || [ ! -f public.key ]; then node source/scripts/gerarChaves.js; fi && tsc && node ./dist/source/main",
         "start": "npm run main",
         "dev": "npm run main",
-        "build": "tsc"
+        "test": "jest --runInBand test/",
+        "test:integracao": "jest --runInBand --testMatch '**/test/integracao/**/*.int.ts'",
+        "clean": "rm -rf dist/*/"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",

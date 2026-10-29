@@ -28,14 +28,6 @@ async function seedAdmin(): Promise<void> {
     });
 
     try {
-        await pool.query(
-            `INSERT INTO senioridades (codigo, nome, valor_hora) VALUES
-                ('junior', 'Júnior', 45),
-                ('pleno', 'Pleno', 75),
-                ('senior', 'Sênior', 120)
-             ON CONFLICT (codigo) DO NOTHING`,
-        );
-
         const existente = await pool.query(
             `SELECT codigo FROM usuarios
              WHERE LOWER(email) = LOWER($1)
