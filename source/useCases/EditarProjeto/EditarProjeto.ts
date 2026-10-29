@@ -27,7 +27,7 @@ export default class EditarProjeto {
             for (const codigo of desejados) {
                 if (atual.participacaoAtivaDe(codigo)) continue;
                 const usuario = await usuarios.buscarPorCodigo(codigo);
-                if (!usuario || !usuario.ativo) throw new ErroNaoEncontrado(`Usuário ativo não encontrado: ${codigo}`);
+                if (!usuario || !usuario.naEj) throw new ErroNaoEncontrado(`Pessoa da EJ não encontrada: ${codigo}`);
                 participacoes = [...participacoes, new Participacao(usuario, { dataEntrada: data })];
             }
         }

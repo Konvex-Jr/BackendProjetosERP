@@ -2,7 +2,7 @@ import { hash } from "bcrypt";
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/Interfaces/UsuarioRepositoryInterface";
 import Usuario from "../../domain/Entity/Usuario";
-import StatusPessoa, { STATUS_COM_ACESSO } from "../../domain/Enum/StatusPessoa";
+import StatusPessoa, { STATUS_NA_EJ } from "../../domain/Enum/StatusPessoa";
 import { hoje } from "../../domain/Entity/Participacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
@@ -37,7 +37,7 @@ export default class CriarUsuario {
         }
 
         const status = input.status ?? (input.ativo === false ? StatusPessoa.INATIVO : StatusPessoa.ATIVO);
-        if (input.status && !STATUS_COM_ACESSO.includes(input.status)) {
+        if (input.status && !STATUS_NA_EJ.includes(input.status)) {
             throw new ErroValidacao("Uma pessoa nova entra como Ativa ou Trainee.", "STATUS_INICIAL_INVALIDO");
         }
 

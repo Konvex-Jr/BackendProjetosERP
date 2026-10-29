@@ -40,7 +40,7 @@ export class AdicionarParticipante {
         const projeto = await carregar(this.factory, input.codigoProjeto);
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(input.codigoUsuario);
         if (!usuario) throw new ErroNaoEncontrado("Pessoa não encontrada.");
-        if (!usuario.ativo) throw new ErroValidacao("Só pessoas Ativas ou Trainees entram em projetos.", "PESSOA_SEM_ACESSO");
+        if (!usuario.naEj) throw new ErroValidacao("Só pessoas Ativas ou Trainees entram em projetos.", "PESSOA_FORA_DA_EJ");
         if (projeto.participacaoAtivaDe(usuario.codigo)) {
             throw new ErroConflito("A pessoa já participa deste projeto.", "PARTICIPACAO_DUPLICADA");
         }

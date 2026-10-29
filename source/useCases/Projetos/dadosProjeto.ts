@@ -34,7 +34,7 @@ export async function resolverDetalhesProjeto(
         if (entrada.codigoResponsavel) {
             const responsavel = await factory.criarUsuarioRepository().buscarPorCodigo(entrada.codigoResponsavel);
             if (!responsavel) throw new ErroNaoEncontrado("Responsável não encontrado.");
-            if (!responsavel.ativo) {
+            if (!responsavel.naEj) {
                 throw new ErroValidacao("O responsável precisa estar Ativo ou Trainee.", "RESPONSAVEL_INATIVO");
             }
             detalhes.responsavel = responsavel;

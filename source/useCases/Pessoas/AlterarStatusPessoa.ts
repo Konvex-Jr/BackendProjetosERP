@@ -43,9 +43,11 @@ export default class AlterarStatusPessoa {
         await usuarios.editar(usuario);
 
         let participacoesEncerradas = 0;
-        if (saindo) {
-            // Quem sai perde o acesso imediatamente.
+        // Quem fica sem acesso (saída ou trainee) tem as sessões encerradas na hora.
+        if (!usuario.ativo) {
             await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
+        }
+        if (saindo) {
 
             if (input.encerrarParticipacoes !== false) {
                 const projetos = this.factory.criarProjetoRepository();

@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import PerfilUsuario from "../Enum/PerfilUsuario";
-import StatusPessoa, { STATUS_COM_ACESSO } from "../Enum/StatusPessoa";
+import StatusPessoa, { STATUS_COM_ACESSO, STATUS_NA_EJ } from "../Enum/StatusPessoa";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import SenioridadeUsuario from "./SenioridadeUsuario";
@@ -38,8 +38,10 @@ export default class Usuario {
     readonly email: string;
     readonly perfil: PerfilUsuario;
     readonly senioridade: SenioridadeUsuario | null;
-    /** Derivado do status: só Ativo e Trainee entram no sistema. */
+    /** Derivado do status: pode entrar no sistema (ver STATUS_COM_ACESSO). */
     readonly ativo: boolean;
+    /** Derivado do status: está na EJ (Ativo ou Trainee), com ou sem acesso. */
+    readonly naEj: boolean;
     readonly senha: string;
     readonly status: StatusPessoa;
     readonly nomeExibicao: string | null;
@@ -73,6 +75,7 @@ export default class Usuario {
         this.senioridade = senioridade;
         this.status = detalhes.status ?? (ativo ? StatusPessoa.ATIVO : StatusPessoa.INATIVO);
         this.ativo = STATUS_COM_ACESSO.includes(this.status);
+        this.naEj = STATUS_NA_EJ.includes(this.status);
         this.nomeExibicao = textoOuNulo(detalhes.nomeExibicao);
         this.avatarUrl = textoOuNulo(detalhes.avatarUrl);
         this.telefone = textoOuNulo(detalhes.telefone);
@@ -136,6 +139,7 @@ export default class Usuario {
             perfil: this.perfil,
             senioridade: this.senioridade,
             ativo: this.ativo,
+            naEj: this.naEj,
             status: this.status,
             nomeExibicao: this.nomeExibicao,
             avatarUrl: this.avatarUrl,

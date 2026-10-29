@@ -14,7 +14,7 @@ export default class CriarProjeto {
         const participacoes: Participacao[] = [];
         for (const codigo of [...new Set(input.codigosMembros ?? [])]) {
             const usuario = await usuarios.buscarPorCodigo(codigo);
-            if (!usuario || !usuario.ativo) throw new ErroNaoEncontrado(`Usuário ativo não encontrado: ${codigo}`);
+            if (!usuario || !usuario.naEj) throw new ErroNaoEncontrado(`Pessoa da EJ não encontrada: ${codigo}`);
             participacoes.push(new Participacao(usuario, { dataEntrada: input.dataInicio }));
         }
         const detalhes = await resolverDetalhesProjeto(this.factory, input);
