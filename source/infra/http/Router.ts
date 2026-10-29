@@ -7,6 +7,7 @@ import CapacitacaoRoutes from "./Routes/CapacitacaoRoutes";
 import CheckinRoutes from "./Routes/CheckinRoutes";
 import PastaRoutes from "./Routes/PastaRoutes";
 import DocumentoRoutes from "./Routes/DocumentoRoutes";
+import ConfiguracaoRoutes from "./Routes/ConfiguracaoRoutes";
 import swaggerSpecification from "./swagger";
 
 export default class Router {
@@ -21,6 +22,7 @@ export default class Router {
             new CheckinRoutes(http, repositoryFactory),
             new PastaRoutes(http, repositoryFactory),
             new DocumentoRoutes(http, repositoryFactory),
+            new ConfiguracaoRoutes(http, repositoryFactory),
         ];
     }
 

@@ -5,6 +5,7 @@ import ListarDocumentos from "../../../useCases/ListarDocumentos/ListarDocumento
 import EnviarDocumento from "../../../useCases/EnviarDocumento/EnviarDocumento";
 import RenomearDocumento from "../../../useCases/RenomearDocumento/RenomearDocumento";
 import ExcluirDocumento from "../../../useCases/ExcluirDocumento/ExcluirDocumento";
+import { exigirGestor } from "../../../shared/seguranca/permissoes";
 
 export default class DocumentoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -21,7 +22,7 @@ export default class DocumentoRoutes implements ModelRoutes {
                 nome: body.nome,
                 tamanhoBytes: Number(body.tamanhoBytes),
                 dataEnvio: body.dataEnvio ? new Date(body.dataEnvio) : undefined,
-                codigoAutor: body.codigoAutor ?? body.user?.codigo,
+                codigoAutor: exigirGestor(body.user).codigo,
                 arquivoUrl: body.arquivoUrl,
                 extensao: body.extensao ?? null,
             }));
@@ -31,15 +32,19 @@ export default class DocumentoRoutes implements ModelRoutes {
                 codigoPasta: params.codigoPasta,
                 nome: String(body.nome || file.originalName),
                 tamanhoBytes: file.size,
-                codigoAutor: body.user?.codigo,
+                codigoAutor: exigirGestor(body.user).codigo,
                 arquivoUrl: file.url,
                 extensao: file.originalName.includes(".") ? file.originalName.split(".").pop() : null,
-            }));
+            }), (usuario: any) => exigirGestor(usuario));
 
-        this.http.route("put", "/documentos/:codigo", true, async (params: any, body: any) =>
-            new RenomearDocumento(this.factory).execute(params.codigo, body.nome));
+        this.http.route("put", "/documentos/:codigo", true, async (params: any, body: any) => {
+            exigirGestor(body.user);
+            return new RenomearDocumento(this.factory).execute(params.codigo, body.nome);
+        });
 
-        this.http.route("delete", "/documentos/:codigo", true, async (params: any) =>
-            new ExcluirDocumento(this.factory).execute(params.codigo));
+        this.http.route("delete", "/documentos/:codigo", true, async (params: any, body: any) => {
+            exigirGestor(body.user);
+            return new ExcluirDocumento(this.factory).execute(params.codigo);
+        });
     }
 }
