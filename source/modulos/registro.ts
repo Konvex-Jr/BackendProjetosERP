@@ -71,7 +71,7 @@ export const MODULOS: Modulo[] = [
         chave: "projetos",
         nome: "Projetos",
         rotas: [ProjetoRoutes],
-        permissoes: [Permissao.PROJETOS_EDITAR, Permissao.PROJETOS_EXCLUIR],
+        permissoes: [Permissao.PROJETOS_VER_TODOS, Permissao.PROJETOS_EDITAR, Permissao.PROJETOS_EXCLUIR],
         menu: [{ chave: "projetos", rotulo: "Projetos", caminho: "/projetos", ordem: 20 }],
     },
     {
