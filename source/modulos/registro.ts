@@ -61,7 +61,11 @@ export const MODULOS: Modulo[] = [
         nome: "Pessoas",
         rotas: [UsuarioRoutes],
         permissoes: [Permissao.PESSOAS_GERIR, Permissao.PESSOAS_GERIR_DIRETORES],
-        menu: [{ chave: "usuarios", rotulo: "Usuários", caminho: "/usuarios", ordem: 80, permissao: Permissao.PESSOAS_GERIR }],
+        menu: [
+            { chave: "usuarios", rotulo: "Pessoas", caminho: "/usuarios", ordem: 80, permissao: Permissao.PESSOAS_GERIR },
+            // O próprio perfil (dados, projetos, senha) é de todos; o de outra pessoa abre em /perfil/:codigo.
+            { chave: "perfil", rotulo: "Meu perfil", caminho: "/perfil", ordem: 95 },
+        ],
     },
     {
         chave: "projetos",
@@ -104,8 +108,7 @@ export const MODULOS: Modulo[] = [
         nome: "Configurações",
         rotas: [ConfiguracaoRoutes],
         permissoes: [Permissao.CONFIGURACOES_EDITAR],
-        // A tela de Configurações chega na sessão 3.
-        menu: [],
+        menu: [{ chave: "configuracoes", rotulo: "Configurações", caminho: "/configuracoes", ordem: 90, permissao: Permissao.CONFIGURACOES_EDITAR }],
     },
 ];
 

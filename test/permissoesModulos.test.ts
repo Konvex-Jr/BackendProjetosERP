@@ -11,6 +11,7 @@ import {
 } from "../source/shared/seguranca/permissoes";
 import { ErroProibido } from "../source/shared/erros/ErroProibido";
 import { ErroNaoAutorizado } from "../source/shared/erros/ErroNaoAutorizado";
+import { criarContexto } from "./fixtures";
 
 const diretor = { codigo: "d", perfil: PerfilUsuario.DIRETOR };
 const gerente = { codigo: "g", perfil: PerfilUsuario.GERENTE };
@@ -57,10 +58,12 @@ describe("Registro de módulos", () => {
     test("menu esconde itens sem permissão", () => {
         const chaves = (u: any) => menuDoUsuario(u).map((m) => m.chave);
         const telas = (u: any) => menuOrdenado(u).map((i) => i.chave);
-        expect(telas(diretor)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "estrategia", "gestao", "precificacao", "usuarios"]);
-        expect(telas(gerente)).toEqual(telas(diretor));
-        expect(telas(membro)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "gestao"]);
-        expect(chaves(membro)).not.toContain("pessoas");
+        expect(telas(diretor)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
+        expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
+        expect(telas(membro)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "gestao", "perfil"]);
+        // Do módulo Pessoas, o membro só vê o próprio perfil.
+        expect(menuDoUsuario(membro).find((m) => m.chave === "pessoas")?.itens.map((i) => i.chave)).toEqual(["perfil"]);
+        expect(chaves(membro)).not.toContain("config");
         expect(new Set(MODULOS.flatMap((m) => m.menu.map((i) => i.chave))).size).toBe(MODULOS.flatMap((m) => m.menu).length);
     });
 
@@ -83,5 +86,30 @@ describe("Registro de módulos", () => {
         const deMembro = await rotas["get /auth/permissoes"]({}, { user: membro });
         expect(deMembro.menu.map((i: any) => i.chave)).not.toContain("usuarios");
         await expect(rotas["get /auth/permissoes"]({}, {})).rejects.toThrow(ErroNaoAutorizado);
+    });
+});
+
+describe("PUT /auth/perfil", () => {
+    test("a pessoa edita só os próprios dados de contato", async () => {
+        const { factory, membro: ana } = await criarContexto();
+        const rotas: Record<string, any> = {};
+        const http: any = {
+            route: (metodo: string, url: string, _auth: boolean, cb: any) => { rotas[`${metodo} ${url}`] = cb; },
+            uploadRoute: () => undefined, downloadRoute: () => undefined, swagger: () => undefined,
+        };
+        new Router(http, factory).init();
+        const eu = { codigo: ana.codigo, perfil: ana.perfil };
+
+        const editado = await rotas["put /auth/perfil"]({}, {
+            user: eu, telefone: "47 99999-0000", bio: "Oi", curso: "Eng. de Software",
+            // Ignorados: só a gestão muda nome, e-mail, perfil e área.
+            nome: "Outro", email: "x@y.com", perfil: PerfilUsuario.DIRETOR, codigoArea: "qualquer",
+        });
+        expect(editado.telefone).toBe("47 99999-0000");
+        expect(editado.bio).toBe("Oi");
+        expect(editado.nome).toBe(ana.nome);
+        expect(editado.email).toBe(ana.email);
+        expect(editado.perfil).toBe(ana.perfil);
+        await expect(rotas["put /auth/perfil"]({}, { telefone: "1" })).rejects.toThrow(ErroNaoAutorizado);
     });
 });
