@@ -10,7 +10,7 @@ import ExcluirProjeto from "../../../useCases/ExcluirProjeto/ExcluirProjeto";
 import AlternarStatusProjeto from "../../../useCases/AlternarStatusProjeto/AlternarStatusProjeto";
 import { AdicionarParticipante, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/Projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/Projetos/dadosProjeto";
-import { exigirDiretor, exigirGestor } from "../../../shared/seguranca/permissoes";
+import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
@@ -50,7 +50,7 @@ export default class ProjetoRoutes implements ModelRoutes {
         });
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new CriarProjeto(f).execute({
                 nome: body.nome,
                 descricao: body.descricao,
@@ -63,7 +63,7 @@ export default class ProjetoRoutes implements ModelRoutes {
         });
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new EditarProjeto(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,
@@ -77,19 +77,19 @@ export default class ProjetoRoutes implements ModelRoutes {
         });
 
         this.http.route("patch", "/projetos/:codigo/status", true, async (params: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new AlternarStatusProjeto(f).execute(params.codigo, lerEnum(body.status, StatusProjeto, "status"));
         });
 
         // Excluir apaga também as tarefas; prefira o status Arquivado. Só diretores.
         this.http.route("delete", "/projetos/:codigo", true, async (params: any, body: any) => {
-            exigirDiretor(body.user, "Somente diretores excluem projetos. Use o status Arquivado.");
+            exigirPermissao(body.user, Permissao.PROJETOS_EXCLUIR, "Somente diretores excluem projetos. Use o status Arquivado.");
             return new ExcluirProjeto(f).execute(params.codigo);
         });
 
         // Equipe (PR-06)
         this.http.route("post", "/projetos/:codigo/membros", true, async (params: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new AdicionarParticipante(f).execute({
                 codigoProjeto: params.codigo,
                 codigoUsuario: body.codigoUsuario,
@@ -101,7 +101,7 @@ export default class ProjetoRoutes implements ModelRoutes {
         });
 
         this.http.route("put", "/projetos/:codigo/membros/:codigoParticipacao", true, async (params: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new EditarParticipacao(f).execute({
                 codigoProjeto: params.codigo,
                 codigoParticipacao: params.codigoParticipacao,
@@ -112,7 +112,7 @@ export default class ProjetoRoutes implements ModelRoutes {
         });
 
         this.http.route("post", "/projetos/:codigo/membros/:codigoParticipacao/encerrar", true, async (params: any, body: any) => {
-            exigirGestor(body.user);
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             return new EncerrarParticipacao(f).execute({
                 codigoProjeto: params.codigo,
                 codigoParticipacao: params.codigoParticipacao,

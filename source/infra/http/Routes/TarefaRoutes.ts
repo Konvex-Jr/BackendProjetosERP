@@ -8,7 +8,7 @@ import CriarTarefa from "../../../useCases/CriarTarefa/CriarTarefa";
 import EditarTarefa from "../../../useCases/EditarTarefa/EditarTarefa";
 import AlterarStatusTarefa from "../../../useCases/AlterarStatusTarefa/AlterarStatusTarefa";
 import ExcluirTarefa from "../../../useCases/ExcluirTarefa/ExcluirTarefa";
-import { ehGestor, exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, temPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
@@ -23,7 +23,7 @@ export default class TarefaRoutes implements ModelRoutes {
         const tarefa = await this.factory.criarTarefaRepository().buscarPorCodigo(codigo);
         if (!tarefa) throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const responsaveis = tarefa.responsaveis.map((r) => r.codigo);
-        if (!ehGestor(usuario) && !responsaveis.includes(usuario.codigo)) {
+        if (!temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS) && !responsaveis.includes(usuario.codigo)) {
             throw new ErroProibido("Membros só podem alterar as próprias tarefas.");
         }
         return responsaveis;
@@ -39,7 +39,7 @@ export default class TarefaRoutes implements ModelRoutes {
         this.http.route("post", "/tarefas", true, async (_params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             let codigosResponsaveis: string[] = body.codigosResponsaveis ?? [];
-            if (!ehGestor(usuario)) {
+            if (!temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS)) {
                 const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto);
                 if (!projeto || !projeto.membros.some((m) => m.codigo === usuario.codigo)) {
                     throw new ErroProibido("Membros só podem criar tarefas em projetos dos quais participam.");
@@ -68,7 +68,7 @@ export default class TarefaRoutes implements ModelRoutes {
                 status: body.status as StatusTarefa,
                 prioridade: body.prioridade as PrioridadeTarefa,
                 descricao: body.descricao ?? null,
-                codigosResponsaveis: ehGestor(usuario) ? (body.codigosResponsaveis ?? []) : responsaveisAtuais,
+                codigosResponsaveis: temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS) ? (body.codigosResponsaveis ?? []) : responsaveisAtuais,
                 codigoDependencia: body.codigoDependencia ?? null,
                 checklist: Array.isArray(body.checklist)
                     ? body.checklist.map((item: any) => ({
