@@ -16,6 +16,8 @@ export const Permissao = {
     CHECKINS_VER_TODOS: "checkins.verTodos",
     DOCUMENTOS_GERIR: "documentos.gerir",
     CONFIGURACOES_EDITAR: "configuracoes.editar",
+    ESTRATEGIA_VER: "estrategia.ver",
+    PRECIFICACAO_SIMULAR: "precificacao.simular",
 } as const;
 
 export type Permissao = (typeof Permissao)[keyof typeof Permissao];
@@ -29,6 +31,8 @@ const DO_GESTOR: Permissao[] = [
     Permissao.CAPACITACOES_GERIR,
     Permissao.CHECKINS_VER_TODOS,
     Permissao.DOCUMENTOS_GERIR,
+    Permissao.ESTRATEGIA_VER,
+    Permissao.PRECIFICACAO_SIMULAR,
 ];
 
 export const PERMISSOES_POR_PAPEL: Record<PerfilUsuario, readonly Permissao[]> = {

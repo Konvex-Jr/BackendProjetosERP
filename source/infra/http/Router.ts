@@ -2,7 +2,7 @@ import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactor
 import Http from "./Http";
 import ModelRoutes from "./Routes/ModelRoutes";
 import swaggerSpecification from "./swagger";
-import { MODULOS, Modulo, menuDoUsuario } from "../../modulos/registro";
+import { MODULOS, Modulo, menuDoUsuario, menuOrdenado } from "../../modulos/registro";
 import { exigirAutenticado } from "../../shared/seguranca/permissoes";
 import { permissoesDoPapel } from "../../shared/seguranca/catalogoPermissoes";
 
@@ -28,6 +28,7 @@ export default class Router {
                 perfil: usuario.perfil,
                 permissoes: permissoesDoPapel(usuario.perfil),
                 modulos: menuDoUsuario(usuario, this.modulos),
+                menu: menuOrdenado(usuario, this.modulos),
             };
         });
 

@@ -1,7 +1,7 @@
 import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Router from "../source/infra/http/Router";
-import { MODULOS, menuDoUsuario } from "../source/modulos/registro";
+import { MODULOS, menuDoUsuario, menuOrdenado } from "../source/modulos/registro";
 import { Permissao, TODAS_AS_PERMISSOES, permissoesDoPapel } from "../source/shared/seguranca/catalogoPermissoes";
 import {
     exigirPermissao,
@@ -56,9 +56,12 @@ describe("Registro de módulos", () => {
 
     test("menu esconde itens sem permissão", () => {
         const chaves = (u: any) => menuDoUsuario(u).map((m) => m.chave);
-        expect(chaves(diretor)).toContain("config");
-        expect(chaves(gerente)).not.toContain("config");
-        expect(chaves(membro)).toEqual(expect.arrayContaining(["pessoas", "projetos", "tarefas"]));
+        const telas = (u: any) => menuOrdenado(u).map((i) => i.chave);
+        expect(telas(diretor)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "estrategia", "gestao", "precificacao", "usuarios"]);
+        expect(telas(gerente)).toEqual(telas(diretor));
+        expect(telas(membro)).toEqual(["dashboard", "projetos", "capacitacoes", "checkins", "gestao"]);
+        expect(chaves(membro)).not.toContain("pessoas");
+        expect(new Set(MODULOS.flatMap((m) => m.menu.map((i) => i.chave))).size).toBe(MODULOS.flatMap((m) => m.menu).length);
     });
 
     test("Router registra as rotas de todos os módulos e expõe /auth/permissoes", async () => {
@@ -76,7 +79,9 @@ describe("Registro de módulos", () => {
         }
         const resposta = await rotas["get /auth/permissoes"]({}, { user: gerente });
         expect(resposta.permissoes).toContain(Permissao.PROJETOS_EDITAR);
-        expect(resposta.modulos.map((m: any) => m.chave)).not.toContain("config");
+        expect(resposta.menu.map((i: any) => i.chave)).toContain("usuarios");
+        const deMembro = await rotas["get /auth/permissoes"]({}, { user: membro });
+        expect(deMembro.menu.map((i: any) => i.chave)).not.toContain("usuarios");
         await expect(rotas["get /auth/permissoes"]({}, {})).rejects.toThrow(ErroNaoAutorizado);
     });
 });
