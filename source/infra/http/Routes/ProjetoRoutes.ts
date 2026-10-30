@@ -11,6 +11,7 @@ import AlternarStatusProjeto from "../../../useCases/AlternarStatusProjeto/Alter
 import { AdicionarParticipante, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/Projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/Projetos/dadosProjeto";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
+import { exigirVerProjeto, projetosVisiveisPara } from "../../../shared/seguranca/visibilidadeProjetos";
 import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
@@ -27,25 +28,26 @@ function lerDetalhes(body: any): EntradaDetalhesProjeto {
     };
 }
 
-/** Projetos e equipe (RF-020 a RF-024). Leitura para todos; escrita para gestores. */
+/** Projetos e equipe (RF-020 a RF-024). Gestores veem todos; membro vê os de que participa ou participou. Escrita para gestores. */
 export default class ProjetoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
 
     init(): void {
         const f = this.factory;
 
-        this.http.route("get", "/projetos", true, async (_p: any, _b: any, query: any) =>
+        this.http.route("get", "/projetos", true, async (_p: any, body: any, query: any) =>
             new ListarProjetos(f).execute({
-                codigoUsuario: query?.codigoUsuario || undefined,
+                codigoUsuario: projetosVisiveisPara(body?.user, query?.codigoUsuario || undefined),
                 status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
                 codigoArea: query?.codigoArea || undefined,
                 codigoResponsavel: query?.codigoResponsavel || undefined,
                 busca: query?.busca || undefined,
             }));
 
-        this.http.route("get", "/projetos/:codigo", true, async (params: any) => {
+        this.http.route("get", "/projetos/:codigo", true, async (params: any, body: any) => {
             const projeto = await f.criarProjetoRepository().buscarPorCodigo(params.codigo);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
+            exigirVerProjeto(body?.user, projeto);
             return projeto;
         });
 

@@ -11,6 +11,8 @@ import ExcluirTarefa from "../../../useCases/ExcluirTarefa/ExcluirTarefa";
 import { exigirAutenticado, temPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import ListarProjetos from "../../../useCases/ListarProjetos/ListarProjetos";
+import { podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
 
 export default class TarefaRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -30,11 +32,20 @@ export default class TarefaRoutes implements ModelRoutes {
     }
 
     init(): void {
-        this.http.route("get", "/tarefas", true, async (_params: any, _body: any, query: any) =>
-            new ListarTarefas(this.factory).execute({
+        this.http.route("get", "/tarefas", true, async (_params: any, body: any, query: any) => {
+            const usuario = exigirAutenticado(body?.user);
+            const tarefas = await new ListarTarefas(this.factory).execute({
                 codigoProjeto: query?.codigoProjeto,
                 codigoResponsavel: query?.codigoResponsavel,
-            }));
+            });
+            if (podeVerTodosProjetos(usuario)) return tarefas;
+            // Membro: só tarefas dos projetos de que participa ou participou, ou em que é responsável.
+            const visiveis = new Set(
+                (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
+            );
+            return tarefas.filter((t) =>
+                visiveis.has(t.projeto.codigo) || t.responsaveis.some((r) => r.codigo === usuario.codigo));
+        });
 
         this.http.route("post", "/tarefas", true, async (_params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);

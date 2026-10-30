@@ -9,6 +9,7 @@ import PerfilUsuario from "../../domain/Enum/PerfilUsuario";
 export const Permissao = {
     PESSOAS_GERIR: "pessoas.gerir",
     PESSOAS_GERIR_DIRETORES: "pessoas.gerirDiretores",
+    PROJETOS_VER_TODOS: "projetos.verTodos",
     PROJETOS_EDITAR: "projetos.editar",
     PROJETOS_EXCLUIR: "projetos.excluir",
     TAREFAS_GERIR_TODAS: "tarefas.gerirTodas",
@@ -26,6 +27,7 @@ export const TODAS_AS_PERMISSOES: Permissao[] = Object.values(Permissao);
 
 const DO_GESTOR: Permissao[] = [
     Permissao.PESSOAS_GERIR,
+    Permissao.PROJETOS_VER_TODOS,
     Permissao.PROJETOS_EDITAR,
     Permissao.TAREFAS_GERIR_TODAS,
     Permissao.CAPACITACOES_GERIR,
