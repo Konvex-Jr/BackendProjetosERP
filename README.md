@@ -26,3 +26,4 @@ Diretor = ADMIN, gerente = MANAGER, membro = MEMBER (doc 02, seção 6). As regr
 ## Testes
 - `npm test`: testes unitários e HTTP (repositórios em memória, não precisam de banco).
 - `npm run build`: compilação TypeScript.
+- `npm run test:integracao`: fluxo da fase 1 contra PostgreSQL real. Defina `DATABASE_URL_TESTE` com um banco **descartável** (o teste apaga e recria o schema `public`). Sem a variável, o teste é pulado.
