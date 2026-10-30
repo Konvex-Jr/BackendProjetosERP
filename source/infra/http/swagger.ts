@@ -369,6 +369,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
+    "/auth/perfil": { put: operation(["Autenticação"], "Editar os próprios dados de contato (telefone, LinkedIn, curso, semestre, bio)", json) },
     "/usuarios/{codigo}": {
         get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
     },

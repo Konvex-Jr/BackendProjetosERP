@@ -84,6 +84,17 @@ export default class UsuarioRoutes implements ModelRoutes {
             return { message: "Senha alterada. Entre novamente nos outros dispositivos." };
         });
 
+        // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
+        this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
+            const eu = exigirAutenticado(body.user);
+            const { nomeExibicao, telefone, linkedinUrl, curso, semestre, bio } = lerPerfil(body);
+            return new EditarUsuario(f).execute({
+                codigo: eu.codigo,
+                nomeExibicao, telefone, linkedinUrl, curso, semestre, bio,
+                codigoAutor: eu.codigo,
+            });
+        });
+
         // Pessoas: todos os autenticados consultam; só gestores alteram (matriz de permissões).
         this.http.route("get", "/usuarios", true, async (_p: any, _b: any, query: any) =>
             new ListarUsuarios(f).execute({
