@@ -4,7 +4,7 @@ import ModelRoutes from "./ModelRoutes";
 import ListarCheckins from "../../../useCases/ListarCheckins/ListarCheckins";
 import RegistrarCheckin from "../../../useCases/RegistrarCheckin/RegistrarCheckin";
 import EditarCheckin from "../../../useCases/EditarCheckin/EditarCheckin";
-import { ehGestor, exigirAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, temPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 
 export default class CheckinRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -13,7 +13,7 @@ export default class CheckinRoutes implements ModelRoutes {
         // Check-ins têm humor e sentimento: membros veem só os próprios; gestores veem todos.
         this.http.route("get", "/checkins", true, async (_params: any, body: any, query: any) => {
             const usuario = exigirAutenticado(body.user);
-            const codigoUsuario = ehGestor(usuario) ? query?.codigoUsuario : usuario.codigo;
+            const codigoUsuario = temPermissao(usuario, Permissao.CHECKINS_VER_TODOS) ? query?.codigoUsuario : usuario.codigo;
             return new ListarCheckins(this.factory).execute(codigoUsuario);
         });
 

@@ -7,7 +7,7 @@ import CancelarInscricaoCapacitacao from "../../../useCases/CancelarInscricaoCap
 import EnviarFeedbackCapacitacao from "../../../useCases/EnviarFeedbackCapacitacao/EnviarFeedbackCapacitacao";
 import ListarFeedbacks from "../../../useCases/ListarFeedbacks/ListarFeedbacks";
 import CriarCapacitacao from "../../../useCases/CriarCapacitacao/CriarCapacitacao";
-import { ehGestor, exigirAutenticado, exigirGestor, resolverUsuarioAlvo } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirPermissao, temPermissao, resolverUsuarioAlvo, Permissao } from "../../../shared/seguranca/permissoes";
 
 export default class CapacitacaoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
@@ -18,7 +18,7 @@ export default class CapacitacaoRoutes implements ModelRoutes {
 
         this.http.route("post", "/capacitacoes", true, async (_params: any, body: any) => {
             // RN-10: capacitações são agendadas por gestores (MANAGER ou ADMIN).
-            exigirGestor(body.user, "Somente diretores e gerentes podem agendar capacitações.");
+            exigirPermissao(body.user, Permissao.CAPACITACOES_GERIR, "Somente diretores e gerentes podem agendar capacitações.");
             return new CriarCapacitacao(this.factory).execute({
                 titulo: body.titulo,
                 data: new Date(body.data),
@@ -31,12 +31,12 @@ export default class CapacitacaoRoutes implements ModelRoutes {
         });
 
         this.http.route("post", "/capacitacoes/:codigo/inscricoes", true, async (params: any, body: any) =>
-            new InscreverCapacitacao(this.factory).execute(params.codigo, resolverUsuarioAlvo(body.user, body.codigoUsuario)));
+            new InscreverCapacitacao(this.factory).execute(params.codigo, resolverUsuarioAlvo(body.user, body.codigoUsuario, Permissao.CAPACITACOES_GERIR)));
 
         this.http.route("delete", "/capacitacoes/:codigo/inscricoes/:codigoUsuario", true, async (params: any, body: any) =>
             new CancelarInscricaoCapacitacao(this.factory).execute(
                 params.codigo,
-                resolverUsuarioAlvo(body.user, params.codigoUsuario),
+                resolverUsuarioAlvo(body.user, params.codigoUsuario, Permissao.CAPACITACOES_GERIR),
             ));
 
         this.http.route("post", "/capacitacoes/:codigo/feedbacks", true, async (params: any, body: any) =>
@@ -52,7 +52,7 @@ export default class CapacitacaoRoutes implements ModelRoutes {
 
         this.http.route("get", "/feedbacks", true, async (_params: any, body: any, query: any) => {
             const usuario = exigirAutenticado(body.user);
-            const codigoUsuario = ehGestor(usuario) ? query?.codigoUsuario : usuario.codigo;
+            const codigoUsuario = temPermissao(usuario, Permissao.CAPACITACOES_GERIR) ? query?.codigoUsuario : usuario.codigo;
             return new ListarFeedbacks(this.factory).execute(codigoUsuario);
         });
     }

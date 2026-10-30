@@ -367,7 +367,9 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/refresh": { post: operation(["Autenticação"], "Renovar a sessão com o refresh token", { security: [], ...json }) },
     "/auth/logout": { post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token)", { security: [], ...json }) },
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
+    "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
+    "/auth/perfil": { put: operation(["Autenticação"], "Editar os próprios dados de contato (telefone, LinkedIn, curso, semestre, bio)", json) },
     "/usuarios/{codigo}": {
         get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
     },

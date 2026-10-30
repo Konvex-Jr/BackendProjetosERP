@@ -1,17 +1,20 @@
 import PerfilUsuario from "../../domain/Enum/PerfilUsuario";
 import { ErroNaoAutorizado } from "../erros/ErroNaoAutorizado";
 import { ErroProibido } from "../erros/ErroProibido";
+import { Permissao, permissoesDoPapel } from "./catalogoPermissoes";
+
+export { Permissao } from "./catalogoPermissoes";
 
 /**
- * Permissões fixas por papel, checadas no backend (RF-002).
- * Correspondência com a documentação: diretor = ADMIN, gerente = MANAGER, membro = MEMBER.
+ * Checagem de permissões no backend (RF-002), sempre por ação do catálogo
+ * (ver catalogoPermissoes.ts), nunca por papel.
  */
 export interface UsuarioAutenticado {
     codigo: string;
     perfil: PerfilUsuario | string;
 }
 
-export const GESTORES: PerfilUsuario[] = [PerfilUsuario.DIRETOR, PerfilUsuario.GERENTE];
+const MENSAGEM_PADRAO = "Você não tem permissão para fazer esta alteração.";
 
 export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null): UsuarioAutenticado {
     if (!usuario || !usuario.codigo) {
@@ -20,65 +23,53 @@ export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null
     return usuario;
 }
 
-export function ehGestor(usuario: UsuarioAutenticado | undefined | null): boolean {
-    return !!usuario && GESTORES.includes(usuario.perfil as PerfilUsuario);
+export function temPermissao(usuario: UsuarioAutenticado | undefined | null, permissao: Permissao): boolean {
+    return !!usuario && permissoesDoPapel(usuario.perfil).includes(permissao);
 }
 
-export function ehDiretor(usuario: UsuarioAutenticado | undefined | null): boolean {
-    return !!usuario && usuario.perfil === PerfilUsuario.DIRETOR;
-}
-
-export function exigirPerfil(
+export function exigirPermissao(
     usuario: UsuarioAutenticado | undefined | null,
-    perfis: PerfilUsuario[],
-    mensagem?: string,
+    permissao: Permissao,
+    mensagem: string = MENSAGEM_PADRAO,
 ): UsuarioAutenticado {
     const autenticado = exigirAutenticado(usuario);
-    if (!perfis.includes(autenticado.perfil as PerfilUsuario)) {
+    if (!temPermissao(autenticado, permissao)) {
         throw new ErroProibido(mensagem);
     }
     return autenticado;
 }
 
-export function exigirGestor(usuario: UsuarioAutenticado | undefined | null, mensagem?: string): UsuarioAutenticado {
-    return exigirPerfil(usuario, GESTORES, mensagem ?? "Somente diretores e gerentes podem fazer esta alteração.");
-}
-
-export function exigirDiretor(usuario: UsuarioAutenticado | undefined | null, mensagem?: string): UsuarioAutenticado {
-    return exigirPerfil(usuario, [PerfilUsuario.DIRETOR], mensagem ?? "Somente diretores podem fazer esta alteração.");
-}
-
 /**
- * Resolve em nome de quem a ação é feita. Membros só agem por si mesmos;
- * gestores podem indicar outra pessoa (por exemplo, inscrever alguém numa capacitação).
+ * Resolve em nome de quem a ação é feita. Sem a permissão indicada, a pessoa só age por si;
+ * com ela, pode indicar outra pessoa (por exemplo, inscrever alguém numa capacitação).
  */
 export function resolverUsuarioAlvo(
     usuario: UsuarioAutenticado | undefined | null,
-    codigoInformado?: string | null,
+    codigoInformado: string | null | undefined,
+    permissao: Permissao,
 ): string {
     const autenticado = exigirAutenticado(usuario);
     if (!codigoInformado || codigoInformado === autenticado.codigo) {
         return autenticado.codigo;
     }
-    if (!ehGestor(autenticado)) {
+    if (!temPermissao(autenticado, permissao)) {
         throw new ErroProibido("Você só pode realizar esta ação em seu próprio nome.");
     }
     return codigoInformado;
 }
 
 /**
- * Um gerente não pode criar, promover nem alterar um diretor; só um diretor pode.
+ * Gerir pessoas exige pessoas.gerir; criar, alterar ou promover diretores
+ * exige também pessoas.gerirDiretores.
  */
 export function exigirPodeGerirPerfil(
     usuario: UsuarioAutenticado | undefined | null,
     perfilDoAlvoAtual: PerfilUsuario | string | null,
     perfilDesejado: PerfilUsuario | string | null,
 ): UsuarioAutenticado {
-    const gestor = exigirGestor(usuario, "Somente diretores e gerentes podem gerenciar pessoas.");
-    if (ehDiretor(gestor)) {
-        return gestor;
-    }
-    if (perfilDoAlvoAtual === PerfilUsuario.DIRETOR || perfilDesejado === PerfilUsuario.DIRETOR) {
+    const gestor = exigirPermissao(usuario, Permissao.PESSOAS_GERIR, "Somente diretores e gerentes podem gerenciar pessoas.");
+    const envolveDiretor = perfilDoAlvoAtual === PerfilUsuario.DIRETOR || perfilDesejado === PerfilUsuario.DIRETOR;
+    if (envolveDiretor && !temPermissao(gestor, Permissao.PESSOAS_GERIR_DIRETORES)) {
         throw new ErroProibido("Somente diretores podem criar, alterar ou promover diretores.");
     }
     return gestor;
