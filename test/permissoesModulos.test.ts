@@ -58,9 +58,9 @@ describe("Registro de módulos", () => {
     test("menu esconde itens sem permissão", () => {
         const chaves = (u: any) => menuDoUsuario(u).map((m) => m.chave);
         const telas = (u: any) => menuOrdenado(u).map((i) => i.chave);
-        expect(telas(diretor)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "checkins", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
+        expect(telas(diretor)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
         expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
-        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "checkins", "gestao", "perfil"]);
+        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "gestao", "perfil"]);
         // Do módulo Pessoas, o membro só vê o próprio perfil.
         expect(menuDoUsuario(membro).find((m) => m.chave === "pessoas")?.itens.map((i) => i.chave)).toEqual(["perfil"]);
         expect(chaves(membro)).not.toContain("config");
@@ -77,7 +77,7 @@ describe("Registro de módulos", () => {
         };
         new Router(http, new MemoryRepositoryFactory()).init();
 
-        for (const rota of ["get /usuarios", "get /projetos", "get /tarefas", "get /capacitacoes", "get /checkins", "get /pastas", "get /areas"]) {
+        for (const rota of ["get /usuarios", "get /projetos", "get /tarefas", "get /capacitacoes", "get /pastas", "get /areas"]) {
             expect(rotas[rota]).toBeDefined();
         }
         const resposta = await rotas["get /auth/permissoes"]({}, { user: gerente });

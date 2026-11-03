@@ -9,11 +9,8 @@ import CancelarInscricaoCapacitacao from "../source/useCases/CancelarInscricaoCa
 import ListarCapacitacoes from "../source/useCases/ListarCapacitacoes/ListarCapacitacoes";
 import EnviarFeedbackCapacitacao from "../source/useCases/EnviarFeedbackCapacitacao/EnviarFeedbackCapacitacao";
 import ListarFeedbacks from "../source/useCases/ListarFeedbacks/ListarFeedbacks";
-import RegistrarCheckin from "../source/useCases/RegistrarCheckin/RegistrarCheckin";
-import EditarCheckin from "../source/useCases/EditarCheckin/EditarCheckin";
-import ListarCheckins from "../source/useCases/ListarCheckins/ListarCheckins";
 
-describe("Casos de uso de capacitações e check-ins", () => {
+describe("Casos de uso de capacitações", () => {
   let factory: MemoryRepositoryFactory;
   let membro: Usuario;
   let instrutor: Usuario;
@@ -48,20 +45,4 @@ describe("Casos de uso de capacitações e check-ins", () => {
     expect(await new ListarFeedbacks(factory).execute(membro.codigo)).toHaveLength(1);
   });
 
-  test("registra, lista e edita check-in semanal", async () => {
-    const semana = new Date("2026-10-12T00:00:00.000Z"); // segunda-feira
-    const checkin = await new RegistrarCheckin(factory).execute({ codigoUsuario: membro.codigo, semana, resumo: "Concluí tarefas", aprendizados: "DDD", humor: 4 });
-    expect(checkin.humor).toBe(4);
-    expect(await new ListarCheckins(factory).execute()).toHaveLength(1);
-    expect(await new ListarCheckins(factory).execute(membro.codigo)).toHaveLength(1);
-    const editado = await new EditarCheckin(factory).execute({ codigoUsuario: membro.codigo, semana, resumo: "Resumo atualizado", aprendizados: "TDD", humor: 5 });
-    expect(editado.resumo).toBe("Resumo atualizado");
-    expect(editado.codigo).toBe(checkin.codigo);
-  });
-
-  test("impede dois check-ins do mesmo usuário na mesma semana", async () => {
-    const input = { codigoUsuario: membro.codigo, semana: new Date("2026-10-12T00:00:00.000Z"), resumo: "Resumo", aprendizados: "Aprendizados" };
-    await new RegistrarCheckin(factory).execute(input);
-    await expect(new RegistrarCheckin(factory).execute(input)).rejects.toThrow("Já existe check-in para esta semana.");
-  });
 });

@@ -5,7 +5,6 @@ import ProjetoRepositoryInterface from "../../domain/Interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/Interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/Interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
-import CheckinRepositoryInterface from "../../domain/Interfaces/CheckinRepositoryInterface";
 import PastaRepositoryInterface from "../../domain/Interfaces/PastaRepositoryInterface";
 import DocumentoRepositoryInterface from "../../domain/Interfaces/DocumentoRepositoryInterface";
 import UsuarioRepositoryMemory from "./memory/UsuarioRepositoryMemory";
@@ -14,7 +13,6 @@ import ProjetoRepositoryMemory from "./memory/ProjetoRepositoryMemory";
 import TarefaRepositoryMemory from "./memory/TarefaRepositoryMemory";
 import CapacitacaoRepositoryMemory from "./memory/CapacitacaoRepositoryMemory";
 import CapacitacaoFeedbackRepositoryMemory from "./memory/CapacitacaoFeedbackRepositoryMemory";
-import CheckinRepositoryMemory from "./memory/CheckinRepositoryMemory";
 import PastaRepositoryMemory from "./memory/PastaRepositoryMemory";
 import DocumentoRepositoryMemory from "./memory/DocumentoRepositoryMemory";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
@@ -31,7 +29,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly tarefaRepository: TarefaRepositoryInterface;
     private readonly capacitacaoRepository: CapacitacaoRepositoryInterface;
     private readonly capacitacaoFeedbackRepository: CapacitacaoFeedbackRepositoryInterface;
-    private readonly checkinRepository: CheckinRepositoryInterface;
     private readonly pastaRepository: PastaRepositoryInterface;
     private readonly documentoRepository: DocumentoRepositoryInterface;
 
@@ -42,7 +39,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         this.tarefaRepository = new TarefaRepositoryMemory();
         this.capacitacaoRepository = new CapacitacaoRepositoryMemory();
         this.capacitacaoFeedbackRepository = new CapacitacaoFeedbackRepositoryMemory();
-        this.checkinRepository = new CheckinRepositoryMemory();
         this.pastaRepository = new PastaRepositoryMemory();
         this.documentoRepository = new DocumentoRepositoryMemory();
     }
@@ -71,9 +67,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         return this.capacitacaoFeedbackRepository;
     }
 
-    criarCheckinRepository(): CheckinRepositoryInterface {
-        return this.checkinRepository;
-    }
 
     criarPastaRepository(): PastaRepositoryInterface {
         return this.pastaRepository;

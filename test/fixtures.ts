@@ -10,7 +10,6 @@ import StatusTarefa from "../source/domain/Enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/Enum/PrioridadeTarefa";
 import Pasta from "../source/domain/Entity/Pasta";
 import Documento from "../source/domain/Entity/Documento";
-import Checkin from "../source/domain/Entity/Checkin";
 
 export const dataInicio = new Date("2026-10-12T00:00:00.000Z");
 export const dataFim = new Date("2026-10-30T00:00:00.000Z");
@@ -113,20 +112,4 @@ export async function criarDocumento(
     "documento-teste",
   );
   return factory.criarDocumentoRepository().criar(documento);
-}
-
-export async function criarCheckin(
-  factory: MemoryRepositoryFactory,
-  membro: Usuario,
-) {
-  const checkin = new Checkin(
-    membro,
-    semana,
-    "Concluí as tarefas da semana",
-    "Aprendi sobre DDD",
-    4,
-    null,
-    "checkin-teste",
-  );
-  return factory.criarCheckinRepository().criar(checkin);
 }

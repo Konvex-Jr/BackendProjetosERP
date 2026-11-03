@@ -38,7 +38,7 @@ const swaggerSpecification = {
     info: {
         title: "Konvex Gestão de Projetos API",
         version: "1.0.0",
-        description: "API de usuários, projetos, tarefas, capacitações, check-ins e documentos.",
+        description: "API de usuários, projetos, tarefas, capacitações e documentos.",
     },
     servers: [{ url: process.env.SWAGGER_SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5001}`, description: "Servidor da API" }],
     components: {
@@ -252,56 +252,31 @@ const swaggerSpecification = {
                 parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
             }),
         },
-        "/checkins": {
-            get: operation(["Check-ins"], "Listar check-ins", {
-                parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
-            }),
-            post: operation(["Check-ins"], "Registrar check-in", {
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["semana", "resumo", "aprendizados"],
-                    properties: {
-                        codigoUsuario: { type: "string" },
-                        semana: { type: "string", format: "date" },
-                        resumo: { type: "string" },
-                        aprendizados: { type: "string" },
-                        humor: { type: "integer", minimum: 1, maximum: 5 },
-                        sentimento: { type: "string" },
-                    },
-                }),
-            }),
-            put: operation(["Check-ins"], "Editar check-in", {
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["semana", "resumo", "aprendizados", "humor"],
-                    properties: {
-                        codigoUsuario: { type: "string" },
-                        semana: { type: "string", format: "date" },
-                        resumo: { type: "string" },
-                        aprendizados: { type: "string" },
-                        humor: { type: "integer", minimum: 1, maximum: 5 },
-                        sentimento: { type: "string" },
-                    },
-                }),
-            }),
-        },
         "/pastas": {
-            get: operation(["Documentos"], "Listar pastas"),
-            post: operation(["Documentos"], "Criar pasta", {
+            get: operation(["Documentos"], "Listar as pastas que a pessoa pode ler (sigilo)"),
+            post: operation(["Documentos"], "Criar pasta (gestão)", {
                 requestBody: jsonBody({
                     type: "object",
                     required: ["nome"],
-                    properties: { nome: { type: "string" } },
+                    properties: {
+                        nome: { type: "string" },
+                        sigilo: { type: "string", enum: ["todos", "gestao", "projeto"], description: "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão." },
+                        codigoProjeto: { type: "string", description: "Obrigatório quando sigilo = projeto." },
+                    },
                 }),
             }),
         },
         "/pastas/{codigo}": {
-            put: operation(["Documentos"], "Renomear pasta", {
+            put: operation(["Documentos"], "Renomear pasta e trocar o sigilo (gestão)", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
                 requestBody: jsonBody({
                     type: "object",
                     required: ["nome"],
-                    properties: { nome: { type: "string" } },
+                    properties: {
+                        nome: { type: "string" },
+                        sigilo: { type: "string", enum: ["todos", "gestao", "projeto"], description: "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão." },
+                        codigoProjeto: { type: "string", description: "Obrigatório quando sigilo = projeto." },
+                    },
                 }),
             }),
             delete: operation(["Documentos"], "Excluir pasta", {
@@ -309,17 +284,17 @@ const swaggerSpecification = {
             }),
         },
         "/pastas/{codigoPasta}/documentos": {
-            get: operation(["Documentos"], "Listar documentos de uma pasta", {
+            get: operation(["Documentos"], "Listar documentos de uma pasta (404 se a pessoa não pode ler a pasta)", {
                 parameters: [{ $ref: "#/components/parameters/codigoPasta" }],
             }),
-            post: operation(["Documentos"], "Cadastrar documento por URL", {
+            post: operation(["Documentos"], "Cadastrar documento como link (gestão)", {
                 parameters: [{ $ref: "#/components/parameters/codigoPasta" }],
                 requestBody: jsonBody({
                     type: "object",
-                    required: ["nome", "tamanhoBytes", "arquivoUrl"],
+                    required: ["nome", "arquivoUrl"],
                     properties: {
                         nome: { type: "string" },
-                        tamanhoBytes: { type: "integer" },
+                        tamanhoBytes: { type: "integer", description: "Opcional (0 para links)." },
                         arquivoUrl: { type: "string", format: "uri" },
                         extensao: { type: "string" },
                         codigoAutor: { type: "string" },
@@ -327,30 +302,13 @@ const swaggerSpecification = {
                 }),
             }),
         },
-        "/uploads/{filename}": {
-            get: operation(["Documentos"], "Baixar documento enviado (autenticado)", {
-                parameters: [{ name: "filename", in: "path", required: true, schema: { type: "string" } }],
-                responses: { "200": { description: "Conteúdo binário do documento", content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } } }, "404": { description: "Arquivo não encontrado." } },
-            }),
-        },
-        "/pastas/{codigoPasta}/documentos/upload": {
-            post: operation(["Documentos"], "Enviar arquivo para uma pasta (máximo 20 MB)", {
-                parameters: [{ $ref: "#/components/parameters/codigoPasta" }],
-                requestBody: {
-                    required: true,
-                    content: {
-                        "application/octet-stream": { schema: { type: "string", format: "binary" } },
-                    },
-                },
-            }),
-        },
         "/documentos/{codigo}": {
-            put: operation(["Documentos"], "Renomear documento", {
+            put: operation(["Documentos"], "Renomear documento e trocar o link (gestão)", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
                 requestBody: jsonBody({
                     type: "object",
                     required: ["nome"],
-                    properties: { nome: { type: "string" } },
+                    properties: { nome: { type: "string" }, arquivoUrl: { type: "string", format: "uri" } },
                 }),
             }),
             delete: operation(["Documentos"], "Excluir documento", {

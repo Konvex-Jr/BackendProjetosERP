@@ -4,7 +4,6 @@ import ProjetoRepositoryInterface from "./ProjetoRepositoryInterface";
 import TarefaRepositoryInterface from "./TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "./CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "./CapacitacaoFeedbackRepositoryInterface";
-import CheckinRepositoryInterface from "./CheckinRepositoryInterface";
 import PastaRepositoryInterface from "./PastaRepositoryInterface";
 import DocumentoRepositoryInterface from "./DocumentoRepositoryInterface";
 import AreaRepositoryInterface from "./AreaRepositoryInterface";
@@ -21,7 +20,6 @@ export default interface RepositoryFactoryInterface {
     criarTarefaRepository(): TarefaRepositoryInterface;
     criarCapacitacaoRepository(): CapacitacaoRepositoryInterface;
     criarCapacitacaoFeedbackRepository(): CapacitacaoFeedbackRepositoryInterface;
-    criarCheckinRepository(): CheckinRepositoryInterface;
     criarPastaRepository(): PastaRepositoryInterface;
     criarDocumentoRepository(): DocumentoRepositoryInterface;
     criarAreaRepository(): AreaRepositoryInterface;
