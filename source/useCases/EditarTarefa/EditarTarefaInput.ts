@@ -17,6 +17,8 @@ export default interface EditarTarefaInput {
     quem?: Usuario | null;
     /** Só para tarefa avulsa: nova categoria (ignorada em tarefa de projeto). */
     categoria?: CategoriaTarefa | null;
+    /** Iniciativa ligada (sessão 12b): ausente mantém a atual; vazio ou null desliga. */
+    codigoIniciativa?: string | null;
 }
 
 export interface EditarTarefaChecklistInput {

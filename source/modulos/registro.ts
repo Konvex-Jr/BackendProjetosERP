@@ -9,6 +9,7 @@ import PastaRoutes from "../infra/http/Routes/PastaRoutes";
 import DocumentoRoutes from "../infra/http/Routes/DocumentoRoutes";
 import ConfiguracaoRoutes from "../infra/http/Routes/ConfiguracaoRoutes";
 import ConhecimentoRoutes from "../infra/http/Routes/ConhecimentoRoutes";
+import IniciativaRoutes from "../infra/http/Routes/IniciativaRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
@@ -103,6 +104,14 @@ export const MODULOS: Modulo[] = [
         permissoes: [Permissao.CONHECIMENTO_GERIR],
         // Leitura e cadastro para todos (RF-083); depois de Capacitações, fora da barra do celular (decisão 03/11).
         menu: [{ chave: "conhecimento", rotulo: "Base de Inteligência", caminho: "/conhecimento", ordem: 35 }],
+    },
+    {
+        chave: "iniciativas",
+        nome: "Iniciativas",
+        rotas: [IniciativaRoutes],
+        permissoes: [Permissao.INICIATIVAS_GERIR],
+        // Todos veem; criam a gestão e a área de Inovação (decisão 03/11, sessão 12b). Logo depois da Base.
+        menu: [{ chave: "iniciativas", rotulo: "Iniciativas", caminho: "/iniciativas", ordem: 37 }],
     },
     {
         chave: "config",
