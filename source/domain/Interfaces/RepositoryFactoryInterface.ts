@@ -12,6 +12,7 @@ import HabilidadeRepositoryInterface from "./HabilidadeRepositoryInterface";
 import HistoricoPessoaRepositoryInterface from "./HistoricoPessoaRepositoryInterface";
 import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
 import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
+import ConhecimentoRepositoryInterface from "./ConhecimentoRepositoryInterface";
 
 export default interface RepositoryFactoryInterface {
     criarUsuarioRepository(): UsuarioRepositoryInterface;
@@ -28,4 +29,5 @@ export default interface RepositoryFactoryInterface {
     criarHistoricoPessoaRepository(): HistoricoPessoaRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
+    criarConhecimentoRepository(): ConhecimentoRepositoryInterface;
 }

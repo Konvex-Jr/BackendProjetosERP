@@ -21,6 +21,13 @@ No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitaçõe
 
 **Capacitações**: veja as próximas e inscreva-se.
 
+**Base de Inteligência** (no celular, fica no **Mais**): o conhecimento da Konvex num lugar só (pesquisas, benchmarks, cases, aprendizados, decisões…). Todos leem tudo.
+- Procure por texto (título, resumo, conteúdo e tags) e filtre por categoria, tag, autor, projeto e período.
+- **Novo item**: título, categoria, resumo curto e, se quiser, conteúdo completo, fonte, links, tags e projetos relacionados. Você fica como autor.
+- O conteúdo aceita Markdown simples: `## Título`, `- item de lista`, `**negrito**`, `*itálico*` e links `[texto](https://...)`.
+- Você edita e exclui só os itens que cadastrou.
+- Na ficha de cada projeto, a aba **Base** mostra os itens ligados a ele.
+
 **Gestão**: pastas de documentos que você pode ler (as abertas a todos e as dos seus projetos). Documentos são links (Drive, Docs, Notion).
 
 **Meu perfil**: nome de exibição, telefone, LinkedIn, curso, semestre, bio e senha.
@@ -41,6 +48,8 @@ Tudo o que o membro faz, mais:
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa.
 
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Trainee, Saiu…) e redefine senhas. Quando alguém sai, as participações são encerradas, mas o histórico fica.
+
+**Base de Inteligência**: edita e exclui qualquer item (por exemplo, para corrigir a categoria ou tirar algo repetido).
 
 **Gestão**: cria pastas com sigilo (**Todos**, **Só gestão** ou **Equipe de um projeto**) e adiciona, renomeia e remove links.
 

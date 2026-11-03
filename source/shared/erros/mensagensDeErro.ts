@@ -31,6 +31,19 @@ export const MENSAGENS_DE_ERRO = {
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
     },
 
+    CONHECIMENTO: {
+        TITULO_OBRIGATORIO: "O título do item é obrigatório.",
+        TITULO_LONGO: "O título do item deve ter no máximo 160 caracteres.",
+        RESUMO_OBRIGATORIO: "O resumo do item é obrigatório.",
+        RESUMO_LONGO: "O resumo do item deve ter no máximo 500 caracteres.",
+        CONTEUDO_LONGO: "O conteúdo do item deve ter no máximo 50.000 caracteres.",
+        FONTE_LONGA: "A fonte do item deve ter no máximo 300 caracteres.",
+        MUITAS_TAGS: "Use no máximo 10 tags, com até 40 caracteres cada.",
+        MUITOS_LINKS: "Use no máximo 10 links.",
+        NAO_ENCONTRADO: "Item da Base de Inteligência não encontrado.",
+        SEM_PERMISSAO: "Só quem cadastrou o item ou a gestão pode alterá-lo ou excluí-lo.",
+    },
+
     GERAL: {
         ERRO_INTERNO: "Ocorreu um erro interno.",
         RECURSO_NAO_ENCONTRADO: "Recurso não encontrado.",
