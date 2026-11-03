@@ -8,6 +8,7 @@ import CapacitacaoRoutes from "../infra/http/Routes/CapacitacaoRoutes";
 import PastaRoutes from "../infra/http/Routes/PastaRoutes";
 import DocumentoRoutes from "../infra/http/Routes/DocumentoRoutes";
 import ConfiguracaoRoutes from "../infra/http/Routes/ConfiguracaoRoutes";
+import ConhecimentoRoutes from "../infra/http/Routes/ConhecimentoRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
@@ -94,6 +95,14 @@ export const MODULOS: Modulo[] = [
         rotas: [PastaRoutes, DocumentoRoutes],
         permissoes: [Permissao.DOCUMENTOS_VER_TODAS, Permissao.DOCUMENTOS_GERIR],
         menu: [{ chave: "gestao", rotulo: "Gestão", caminho: "/gestao", ordem: 60 }],
+    },
+    {
+        chave: "conhecimento",
+        nome: "Base de Inteligência",
+        rotas: [ConhecimentoRoutes],
+        permissoes: [Permissao.CONHECIMENTO_GERIR],
+        // Leitura e cadastro para todos (RF-083); depois de Capacitações, fora da barra do celular (decisão 03/11).
+        menu: [{ chave: "conhecimento", rotulo: "Base de Inteligência", caminho: "/conhecimento", ordem: 35 }],
     },
     {
         chave: "config",

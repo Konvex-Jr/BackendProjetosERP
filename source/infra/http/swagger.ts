@@ -33,6 +33,22 @@ const operation = (
     ...options,
 });
 
+const CORPO_CONHECIMENTO = {
+    type: "object",
+    required: ["titulo", "categoria", "resumo"],
+    properties: {
+        titulo: { type: "string", maxLength: 160 },
+        categoria: { type: "string", description: "Valor de GET /conhecimento/categorias." },
+        resumo: { type: "string", maxLength: 500 },
+        conteudo: { type: "string", description: "Markdown simples." },
+        fonte: { type: "string" },
+        links: { type: "array", items: { type: "string", format: "uri" }, maxItems: 10 },
+        tags: { type: "array", items: { type: "string" }, maxItems: 10 },
+        data: { type: "string", format: "date", description: "Data do item; padrão hoje." },
+        codigosProjetos: { type: "array", items: { type: "string" } },
+    },
+};
+
 const swaggerSpecification = {
     openapi: "3.0.3",
     info: {
@@ -250,6 +266,37 @@ const swaggerSpecification = {
         "/feedbacks": {
             get: operation(["Capacitações"], "Listar feedbacks", {
                 parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
+            }),
+        },
+        "/conhecimento/categorias": {
+            get: operation(["Base de Inteligência"], "Categorias válidas (RF-081) com rótulos"),
+        },
+        "/conhecimento": {
+            get: operation(["Base de Inteligência"], "Listar itens com busca e filtros (todos leem)", {
+                parameters: [
+                    { name: "busca", in: "query", schema: { type: "string" }, description: "Procura no título, resumo, conteúdo e tags." },
+                    { name: "categoria", in: "query", schema: { type: "string" } },
+                    { name: "tag", in: "query", schema: { type: "string" } },
+                    { name: "codigoAutor", in: "query", schema: { type: "string" } },
+                    { name: "codigoProjeto", in: "query", schema: { type: "string" } },
+                    { name: "de", in: "query", schema: { type: "string", format: "date" } },
+                    { name: "ate", in: "query", schema: { type: "string", format: "date" } },
+                ],
+            }),
+            post: operation(["Base de Inteligência"], "Cadastrar item (qualquer pessoa logada; vira o autor)", {
+                requestBody: jsonBody(CORPO_CONHECIMENTO),
+            }),
+        },
+        "/conhecimento/{codigo}": {
+            get: operation(["Base de Inteligência"], "Abrir item (404 se não existe)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+            put: operation(["Base de Inteligência"], "Editar item (autor ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+                requestBody: jsonBody(CORPO_CONHECIMENTO),
+            }),
+            delete: operation(["Base de Inteligência"], "Excluir item (autor ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
             }),
         },
         "/pastas": {

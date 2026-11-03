@@ -245,4 +245,48 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("DELETE", `/projetos/${proj.corpo.codigo}`, dir)).status).toBeLessThan(300);
         expect((await chamar("GET", "/pastas", dir)).corpo.map((p: any) => p.codigo)).not.toContain(doProjeto.corpo.codigo);
     }, 60000);
+
+    test("sessão 12a: Base de Inteligência com busca, filtros e projetos no banco", async () => {
+        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+        const pessoa = await chamar("POST", "/usuarios", dir, {
+            nome: "Autora", email: "autora@teste.com", senha: "SenhaAutora1", perfil: "membro", codigoSenioridade: "junior",
+        });
+        expect(pessoa.status).toBe(200);
+        const autora = (await entrar("autora@teste.com", "SenhaAutora1")).corpo.token as string;
+        const proj = await chamar("POST", "/projetos", dir, { nome: "Projeto Base", descricao: "d", dataInicio: "2026-11-01", dataFim: "2026-12-01" });
+
+        const item = await chamar("POST", "/conhecimento", autora, {
+            titulo: "Pesquisa 100% de mercado", categoria: "pesquisa", resumo: "Concorrentes",
+            conteudo: "**iFood** domina", tags: ["Delivery"], links: ["https://exemplo.com"],
+            codigosProjetos: [proj.corpo.codigo], data: "2026-10-20",
+        });
+        expect(item.status).toBe(200);
+        expect(item.corpo.autor.nome).toBe("Autora");
+        expect(item.corpo.projetos).toEqual([{ codigo: proj.corpo.codigo, nome: "Projeto Base" }]);
+        await chamar("POST", "/conhecimento", dir, { titulo: "Decisão de stack", categoria: "decisao", resumo: "React", data: "2026-01-05" });
+
+        const titulos = async (q: string) => (await chamar("GET", `/conhecimento${q}`, dir)).corpo.map((i: any) => i.titulo);
+        expect(await titulos("")).toEqual(["Pesquisa 100% de mercado", "Decisão de stack"]);
+        expect(await titulos("?busca=IFOOD")).toEqual(["Pesquisa 100% de mercado"]);
+        expect(await titulos("?busca=100%25")).toEqual(["Pesquisa 100% de mercado"]);
+        expect(await titulos("?busca=_")).toEqual([]);
+        expect(await titulos("?tag=delivery")).toEqual(["Pesquisa 100% de mercado"]);
+        expect(await titulos(`?codigoProjeto=${proj.corpo.codigo}`)).toEqual(["Pesquisa 100% de mercado"]);
+        expect(await titulos(`?codigoAutor=${pessoa.corpo.codigo}`)).toEqual(["Pesquisa 100% de mercado"]);
+        expect(await titulos("?categoria=decisao&de=2026-01-01&ate=2026-01-31")).toEqual(["Decisão de stack"]);
+        expect(await titulos("?codigoProjeto=nao-e-uuid")).toEqual([]);
+        expect((await chamar("GET", "/conhecimento/nao-e-uuid", dir)).status).toBe(404);
+
+        // Autor edita (troca os projetos); a diretora exclui; excluir o projeto não apaga o item.
+        const editado = await chamar("PUT", `/conhecimento/${item.corpo.codigo}`, autora, { ...item.corpo, codigosProjetos: [] });
+        expect(editado.status).toBe(200);
+        expect(editado.corpo.projetos).toEqual([]);
+        expect(new Date(editado.corpo.atualizadoEm).getTime()).toBeGreaterThanOrEqual(new Date(item.corpo.criadoEm).getTime());
+        await chamar("PUT", `/conhecimento/${item.corpo.codigo}`, autora, { ...item.corpo, codigosProjetos: [proj.corpo.codigo] });
+        expect((await chamar("DELETE", `/projetos/${proj.corpo.codigo}`, dir)).status).toBeLessThan(300);
+        const depois = await chamar("GET", `/conhecimento/${item.corpo.codigo}`, autora);
+        expect(depois.corpo.projetos).toEqual([]);
+        expect((await chamar("DELETE", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(200);
+        expect((await chamar("GET", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(404);
+    }, 60000);
 });

@@ -19,6 +19,8 @@ export const Permissao = {
     /** Ler pastas de qualquer sigilo (gestão). Sessão 9. */
     DOCUMENTOS_VER_TODAS: "documentos.verTodas",
     DOCUMENTOS_GERIR: "documentos.gerir",
+    /** Editar e excluir qualquer item da Base de Inteligência (o autor altera o próprio). Sessão 12a. */
+    CONHECIMENTO_GERIR: "conhecimento.gerir",
     CONFIGURACOES_EDITAR: "configuracoes.editar",
     ESTRATEGIA_VER: "estrategia.ver",
     PRECIFICACAO_SIMULAR: "precificacao.simular",
@@ -37,6 +39,7 @@ const DO_GESTOR: Permissao[] = [
     Permissao.CAPACITACOES_GERIR,
     Permissao.DOCUMENTOS_VER_TODAS,
     Permissao.DOCUMENTOS_GERIR,
+    Permissao.CONHECIMENTO_GERIR,
     Permissao.ESTRATEGIA_VER,
     Permissao.PRECIFICACAO_SIMULAR,
 ];
