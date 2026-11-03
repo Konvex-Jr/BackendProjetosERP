@@ -1,5 +1,6 @@
 import Documento from "../../../domain/Entity/Documento";
 import Pasta from "../../../domain/Entity/Pasta";
+import { pastaDaLinha, SELECT_PASTA } from "./PastaRepositoryDatabase";
 import DocumentoRepositoryInterface from "../../../domain/Interfaces/DocumentoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
@@ -65,10 +66,10 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
     async editar(documento: Documento): Promise<Documento> {
         const linhas = await this.conexao.consultar(
             `UPDATE documentos
-             SET nome = $2, extensao = $3, pasta_codigo = $4
+             SET nome = $2, extensao = $3, pasta_codigo = $4, arquivo_url = $5
              WHERE codigo = $1
              RETURNING codigo`,
-            [documento.codigo, documento.nome, documento.extensao, documento.pasta.codigo],
+            [documento.codigo, documento.nome, documento.extensao, documento.pasta.codigo, documento.arquivoUrl],
         );
 
         if (linhas.length === 0) {
@@ -103,11 +104,11 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
 
         const codigosPastas = [...new Set<string>(linhas.map((l) => l.pasta_codigo))];
         const pastasLinhas = await this.conexao.consultar(
-            "SELECT codigo, nome FROM pastas WHERE codigo = ANY($1::uuid[])",
+            `${SELECT_PASTA} WHERE pa.codigo = ANY($1::uuid[])`,
             [codigosPastas],
         );
         const pastas = new Map<string, Pasta>(
-            pastasLinhas.map((p) => [p.codigo, new Pasta(p.nome, p.codigo)]),
+            pastasLinhas.map((p) => [p.codigo, pastaDaLinha(p)]),
         );
 
         const autores = await carregarUsuarios(

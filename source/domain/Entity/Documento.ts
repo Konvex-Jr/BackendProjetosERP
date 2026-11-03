@@ -4,6 +4,21 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import Pasta from "./Pasta";
 import Usuario from "./Usuario";
 
+/** Documento é um link (Drive etc.), decisão de 03/11/2026: só http(s). */
+export function exigirLinkValido(url: unknown): string {
+    const texto = String(url ?? "").trim();
+    let valido = false;
+    try {
+        valido = ["http:", "https:"].includes(new URL(texto).protocol);
+    } catch {
+        valido = false;
+    }
+    if (!valido) {
+        throw new ErroValidacao("Informe um link válido (começando com https://).", "LINK_DOCUMENTO_INVALIDO");
+    }
+    return texto;
+}
+
 export default class Documento {
     readonly codigo: string;
     readonly pasta: Pasta;

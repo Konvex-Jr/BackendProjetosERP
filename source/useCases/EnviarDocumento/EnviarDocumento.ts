@@ -1,5 +1,5 @@
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
-import Documento from "../../domain/Entity/Documento";
+import Documento, { exigirLinkValido } from "../../domain/Entity/Documento";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import EnviarDocumentoInput from "./EnviarDocumentoInput";
 
@@ -19,6 +19,6 @@ export default class EnviarDocumento {
         const autor = await this.usuarios.buscarPorCodigo(input.codigoAutor);
         if (!autor || !autor.ativo)
             throw new ErroNaoEncontrado("Usuário ativo não encontrado.");
-        return this.documentos.criar(new Documento(pasta, input.nome, input.tamanhoBytes, input.dataEnvio ?? new Date(), autor, input.arquivoUrl, input.extensao ?? null));
+        return this.documentos.criar(new Documento(pasta, input.nome, input.tamanhoBytes, input.dataEnvio ?? new Date(), autor, exigirLinkValido(input.arquivoUrl), input.extensao ?? null));
     }
 }

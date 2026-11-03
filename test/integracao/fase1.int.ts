@@ -210,4 +210,39 @@ descrever("fase 1 contra PostgreSQL", () => {
         )).rejects.toThrow(/tarefas_projeto_ou_categoria/);
         expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}`, dir)).status).toBeLessThan(300);
     }, 60000);
+    test("sessão 9: pastas com sigilo e documentos como link no banco", async () => {
+        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+        const pessoa = await chamar("POST", "/usuarios", dir, {
+            nome: "Leitora", email: "leitora@teste.com", senha: "SenhaLeitora1", perfil: "membro", codigoSenioridade: "junior",
+        });
+        expect(pessoa.status).toBe(200);
+        const proj = await chamar("POST", "/projetos", dir, { nome: "Projeto Docs", descricao: "d", dataInicio: "2026-11-01", dataFim: "2026-12-01" });
+        expect(proj.status).toBe(200);
+        const publica = await chamar("POST", "/pastas", dir, { nome: "Modelos" });
+        const restrita = await chamar("POST", "/pastas", dir, { nome: "Financeiro", sigilo: "gestao" });
+        const doProjeto = await chamar("POST", "/pastas", dir, { nome: "Entregas", sigilo: "projeto", codigoProjeto: proj.corpo.codigo });
+        expect(doProjeto.status).toBe(200);
+        expect(doProjeto.corpo.projeto.nome).toBe("Projeto Docs");
+        const doc = await chamar("POST", `/pastas/${restrita.corpo.codigo}/documentos`, dir, { nome: "Balanço", arquivoUrl: "https://drive.google.com/b" });
+        expect(doc.status).toBe(200);
+        expect(doc.corpo.pasta.sigilo).toBe("gestao");
+
+        const leitora = (await entrar("leitora@teste.com", "SenhaLeitora1")).corpo.token as string;
+        const visiveis = (await chamar("GET", "/pastas", leitora)).corpo.map((p: any) => p.codigo);
+        expect(visiveis).toContain(publica.corpo.codigo);
+        expect(visiveis).not.toContain(restrita.corpo.codigo);
+        expect(visiveis).not.toContain(doProjeto.corpo.codigo);
+        expect((await chamar("GET", `/pastas/${restrita.corpo.codigo}/documentos`, leitora)).status).toBe(404);
+
+        await chamar("POST", `/projetos/${proj.corpo.codigo}/membros`, dir, { codigoUsuario: pessoa.corpo.codigo, funcao: "Dev", alocacao: 10, dataEntrada: "2026-11-01" });
+        expect((await chamar("GET", "/pastas", leitora)).corpo.map((p: any) => p.codigo)).toContain(doProjeto.corpo.codigo);
+
+        // O banco também barra pasta de projeto sem projeto.
+        await expect(pool.query(
+            "INSERT INTO pastas (codigo, nome, sigilo) VALUES (gen_random_uuid(), 'x', 'projeto')",
+        )).rejects.toThrow(/pastas_projeto_conforme_sigilo/);
+        // Excluir o projeto leva a pasta dele junto.
+        expect((await chamar("DELETE", `/projetos/${proj.corpo.codigo}`, dir)).status).toBeLessThan(300);
+        expect((await chamar("GET", "/pastas", dir)).corpo.map((p: any) => p.codigo)).not.toContain(doProjeto.corpo.codigo);
+    }, 60000);
 });

@@ -92,7 +92,7 @@ export const MODULOS: Modulo[] = [
         chave: "documentos",
         nome: "Documentos",
         rotas: [PastaRoutes, DocumentoRoutes],
-        permissoes: [Permissao.DOCUMENTOS_GERIR],
+        permissoes: [Permissao.DOCUMENTOS_VER_TODAS, Permissao.DOCUMENTOS_GERIR],
         menu: [{ chave: "gestao", rotulo: "Gestão", caminho: "/gestao", ordem: 60 }],
     },
     {

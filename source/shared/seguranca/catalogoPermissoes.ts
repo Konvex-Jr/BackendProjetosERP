@@ -16,6 +16,8 @@ export const Permissao = {
     /** Criar e organizar tarefas avulsas (sem projeto). Sessão 8c. */
     TAREFAS_ATRIBUIR: "tarefas.atribuir",
     CAPACITACOES_GERIR: "capacitacoes.gerir",
+    /** Ler pastas de qualquer sigilo (gestão). Sessão 9. */
+    DOCUMENTOS_VER_TODAS: "documentos.verTodas",
     DOCUMENTOS_GERIR: "documentos.gerir",
     CONFIGURACOES_EDITAR: "configuracoes.editar",
     ESTRATEGIA_VER: "estrategia.ver",
@@ -33,6 +35,7 @@ const DO_GESTOR: Permissao[] = [
     Permissao.TAREFAS_GERIR_TODAS,
     Permissao.TAREFAS_ATRIBUIR,
     Permissao.CAPACITACOES_GERIR,
+    Permissao.DOCUMENTOS_VER_TODAS,
     Permissao.DOCUMENTOS_GERIR,
     Permissao.ESTRATEGIA_VER,
     Permissao.PRECIFICACAO_SIMULAR,
