@@ -6,10 +6,12 @@ import Usuario from "./Usuario";
 import ItemChecklistTarefa from "./ItemChecklistTarefa";
 import StatusTarefa from "../Enum/StatusTarefa";
 import PrioridadeTarefa from "../Enum/PrioridadeTarefa";
+import CategoriaTarefa, { ehCategoriaTarefa } from "../Enum/CategoriaTarefa";
 
 export default class Tarefa {
     readonly codigo: string;
-    readonly projeto: Projeto;
+    /** Projeto da tarefa; nulo na tarefa avulsa (sessão 8c), que tem `categoria`. */
+    readonly projeto: Projeto | null;
     readonly titulo: string;
     readonly dataInicio: Date;
     readonly dataFim: Date;
@@ -22,9 +24,13 @@ export default class Tarefa {
     readonly checklist: ItemChecklistTarefa[];
     /** Quem concluiu (sessão 8b). Nulo se não concluída ou concluída antes do registro existir. */
     readonly concluidaPor: Usuario | null;
+    /** Só em tarefa avulsa: Inovação, Capacitação ou Execução (sessão 8c). */
+    readonly categoria: CategoriaTarefa | null;
+    /** Quem criou (sessão 8c). Nulo nas tarefas criadas antes. */
+    readonly criadaPor: Usuario | null;
 
     constructor(
-        projeto: Projeto,
+        projeto: Projeto | null,
         titulo: string,
         dataInicio: Date,
         dataFim: Date,
@@ -37,6 +43,8 @@ export default class Tarefa {
         checklist: ItemChecklistTarefa[] = [],
         codigo?: string,
         concluidaPor: Usuario | null = null,
+        categoria: CategoriaTarefa | null = null,
+        criadaPor: Usuario | null = null,
     ) {
         this.codigo = codigo ?? uuid();
         this.projeto = projeto;
@@ -51,8 +59,32 @@ export default class Tarefa {
         this.responsaveis = responsaveis;
         this.checklist = checklist;
         this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
+        this.categoria = categoria ?? null;
+        this.criadaPor = criadaPor;
 
         this.validar();
+    }
+
+    get avulsa(): boolean {
+        return this.projeto === null;
+    }
+
+    /** Cópia com outro status/conclusão, mantendo o resto. */
+    comStatus(status: StatusTarefa, dataConclusao: Date | null, concluidaPor: Usuario | null): Tarefa {
+        return new Tarefa(this.projeto, this.titulo, this.dataInicio, this.dataFim, status, this.prioridade,
+            this.descricao, dataConclusao, this.dependeDe, this.responsaveis, this.checklist, this.codigo,
+            concluidaPor, this.categoria, this.criadaPor);
+    }
+
+    /** Cópia sem a predecessora (quando ela é excluída). */
+    semDependencia(): Tarefa {
+        return new Tarefa(this.projeto, this.titulo, this.dataInicio, this.dataFim, this.status, this.prioridade,
+            this.descricao, this.dataConclusao, null, this.responsaveis, this.checklist, this.codigo,
+            this.concluidaPor, this.categoria, this.criadaPor);
+    }
+
+    toJSON() {
+        return { ...this, avulsa: this.avulsa };
     }
 
     /** Atrasada = não concluída e com prazo anterior a "hoje". */
@@ -108,6 +140,20 @@ export default class Tarefa {
             );
         }
 
+        if ((this.projeto === null) === (this.categoria === null)) {
+            throw new ErroValidacao(
+                "A tarefa precisa ter um projeto ou uma categoria (e não os dois).",
+                "TAREFA_PROJETO_OU_CATEGORIA",
+            );
+        }
+
+        if (this.categoria !== null && !ehCategoriaTarefa(this.categoria)) {
+            throw new ErroValidacao(
+                "Categoria inválida. Use inovacao, capacitacao ou execucao.",
+                "CATEGORIA_TAREFA_INVALIDA",
+            );
+        }
+
         if (this.dependeDe) {
             if (this.dependeDe.codigo === this.codigo) {
                 throw new ErroValidacao(
@@ -116,7 +162,7 @@ export default class Tarefa {
                 );
             }
 
-            if (this.dependeDe.projeto.codigo !== this.projeto.codigo) {
+            if (!this.projeto || this.dependeDe.projeto?.codigo !== this.projeto.codigo) {
                 throw new ErroValidacao(
                     "A tarefa predecessora deve pertencer ao mesmo projeto.",
                     "DEPENDENCIA_OUTRO_PROJETO",
@@ -132,6 +178,8 @@ export default class Tarefa {
             );
         }
 
+        // Em tarefa avulsa, qualquer pessoa ativa pode ser responsável (o caso de uso confere).
+        if (!this.projeto) return;
         const codigosMembros = new Set(
             this.projeto.membros.map((membro) => membro.codigo),
         );

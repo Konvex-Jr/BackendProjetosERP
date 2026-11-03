@@ -78,9 +78,9 @@ export const MODULOS: Modulo[] = [
         chave: "tarefas",
         nome: "Tarefas",
         rotas: [TarefaRoutes],
-        permissoes: [Permissao.TAREFAS_GERIR_TODAS],
-        // Tarefas aparecem dentro de cada projeto; sem item próprio no menu.
-        menu: [],
+        permissoes: [Permissao.TAREFAS_GERIR_TODAS, Permissao.TAREFAS_ATRIBUIR],
+        // Painel global (sessão 8c): minhas tarefas de projetos e avulsas; a gestão filtra por pessoa.
+        menu: [{ chave: "tarefas", rotulo: "Tarefas", caminho: "/tarefas", ordem: 15 }],
     },
     {
         chave: "capacitacoes",
