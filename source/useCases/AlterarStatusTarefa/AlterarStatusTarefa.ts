@@ -1,6 +1,7 @@
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/Entity/Tarefa";
 import StatusTarefa from "../../domain/Enum/StatusTarefa";
+import Usuario from "../../domain/Entity/Usuario";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 
 export default class AlterarStatusTarefa {
@@ -8,12 +9,16 @@ export default class AlterarStatusTarefa {
     constructor(factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
     }
-    async execute(codigo: string, status: StatusTarefa, hoje = new Date()): Promise<Tarefa> {
+    async execute(codigo: string, status: StatusTarefa, hoje = new Date(), quem: Usuario | null = null): Promise<Tarefa> {
         const t = await this.tarefas.buscarPorCodigo(codigo);
         if (!t)
             throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const concluida = status === StatusTarefa.CONCLUIDA;
-        const editada = new Tarefa(t.projeto, t.titulo, t.dataInicio, t.dataFim, status, t.prioridade, t.descricao, concluida ? hoje : null, t.dependeDe, t.responsaveis, t.checklist, t.codigo);
+        const jaConcluida = t.status === StatusTarefa.CONCLUIDA;
+        // Se já estava concluída, mantém data e autor originais.
+        const editada = new Tarefa(t.projeto, t.titulo, t.dataInicio, t.dataFim, status, t.prioridade, t.descricao,
+            concluida ? (jaConcluida ? t.dataConclusao : hoje) : null, t.dependeDe, t.responsaveis, t.checklist, t.codigo,
+            concluida ? (jaConcluida ? t.concluidaPor : quem) : null);
         return this.tarefas.editar(editada);
     }
 }

@@ -9,7 +9,7 @@ import { carregarProjetos, carregarUsuarios } from "./carregadores";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
-           status, prioridade, data_conclusao, depende_de_codigo
+           status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo
     FROM tarefas
 `;
 
@@ -24,8 +24,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         await this.conexao.transacao(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
-                                      data_fim, status, prioridade, data_conclusao, depende_de_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                                      data_fim, status, prioridade, data_conclusao, depende_de_codigo,
+                                      concluida_por_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                 [
                     tarefa.codigo,
                     tarefa.projeto.codigo,
@@ -37,6 +38,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.prioridade,
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
+                    tarefa.concluidaPor?.codigo ?? null,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -82,7 +84,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             const linhas = await conexao.consultar(
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
-                     status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9
+                     status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
+                     concluida_por_codigo = $10
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -95,6 +98,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.prioridade,
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
+                    tarefa.concluidaPor?.codigo ?? null,
                 ],
             );
 
@@ -201,7 +205,10 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
         const usuarios = await carregarUsuarios(
             this.conexao,
-            vinculos.map((v) => v.usuario_codigo),
+            [
+                ...vinculos.map((v) => v.usuario_codigo),
+                ...[...linhas.values()].map((l) => l.concluida_por_codigo).filter(Boolean),
+            ],
         );
 
         const construidas = new Map<string, Tarefa>();
@@ -238,6 +245,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 responsaveis,
                 checklist,
                 linha.codigo,
+                linha.concluida_por_codigo ? usuarios.get(linha.concluida_por_codigo) ?? null : null,
             );
 
             construidas.set(codigo, tarefa);

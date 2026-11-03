@@ -20,6 +20,8 @@ export default class Tarefa {
     readonly dependeDe: Tarefa | null;
     readonly responsaveis: Usuario[];
     readonly checklist: ItemChecklistTarefa[];
+    /** Quem concluiu (sessão 8b). Nulo se não concluída ou concluída antes do registro existir. */
+    readonly concluidaPor: Usuario | null;
 
     constructor(
         projeto: Projeto,
@@ -34,6 +36,7 @@ export default class Tarefa {
         responsaveis: Usuario[] = [],
         checklist: ItemChecklistTarefa[] = [],
         codigo?: string,
+        concluidaPor: Usuario | null = null,
     ) {
         this.codigo = codigo ?? uuid();
         this.projeto = projeto;
@@ -47,6 +50,7 @@ export default class Tarefa {
         this.dependeDe = dependeDe;
         this.responsaveis = responsaveis;
         this.checklist = checklist;
+        this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
 
         this.validar();
     }

@@ -8,7 +8,7 @@ import CriarProjeto from "../../../useCases/CriarProjeto/CriarProjeto";
 import EditarProjeto from "../../../useCases/EditarProjeto/EditarProjeto";
 import ExcluirProjeto from "../../../useCases/ExcluirProjeto/ExcluirProjeto";
 import AlternarStatusProjeto from "../../../useCases/AlternarStatusProjeto/AlternarStatusProjeto";
-import { AdicionarParticipante, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/Projetos/Equipe";
+import { AdicionarParticipante, DefinirLider, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/Projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/Projetos/dadosProjeto";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import { exigirVerProjeto, projetosVisiveisPara } from "../../../shared/seguranca/visibilidadeProjetos";
@@ -120,6 +120,12 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoParticipacao: params.codigoParticipacao,
                 dataSaida: lerData(body.dataSaida, "dataSaida"),
             });
+        });
+
+        // Líder do projeto (sessão 8b): { codigoUsuario } da equipe atual, ou null para tirar.
+        this.http.route("put", "/projetos/:codigo/lider", true, async (params: any, body: any) => {
+            exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
+            return new DefinirLider(f).execute({ codigoProjeto: params.codigo, codigoUsuario: body.codigoUsuario ?? null });
         });
     }
 }

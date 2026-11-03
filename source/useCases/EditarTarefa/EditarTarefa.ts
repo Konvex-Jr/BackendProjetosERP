@@ -58,6 +58,7 @@ export default class EditarTarefa {
             responsaveis,
             checklist,
             atual.codigo,
+            concluida ? (atual.dataConclusao ? atual.concluidaPor : input.quem ?? null) : null,
         ));
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {

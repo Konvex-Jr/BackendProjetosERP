@@ -391,6 +391,19 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": { put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }) },
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": { post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }) },
+    "/projetos/{codigo}/lider": { put: operation(["Projetos"], "Definir o líder ({ codigoUsuario } da equipe atual, ou null)", comCodigo(json)) },
+    "/tarefas/{codigo}/comentarios": {
+        get: operation(["Tarefas"], "Listar comentários da tarefa", comCodigo()),
+        post: operation(["Tarefas"], "Comentar (equipe atual, líder ou gestão)", comCodigo(json)),
+    },
+    "/tarefas/{codigo}/comentarios/{codigoComentario}": {
+        delete: operation(["Tarefas"], "Apagar comentário (autor, líder ou gestão)", {
+            parameters: [
+                { $ref: "#/components/parameters/codigo" },
+                { name: "codigoComentario", in: "path", required: true, schema: { type: "string" } },
+            ],
+        }),
+    },
 };
 const caminhos = (swaggerSpecification as any).paths;
 for (const [caminho, metodos] of Object.entries(rotasFase1)) {

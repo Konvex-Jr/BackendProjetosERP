@@ -1,5 +1,6 @@
 import StatusTarefa from "../../domain/Enum/StatusTarefa";
 import PrioridadeTarefa from "../../domain/Enum/PrioridadeTarefa";
+import Usuario from "../../domain/Entity/Usuario";
 export default interface EditarTarefaInput {
     codigo: string;
     titulo: string;
@@ -11,6 +12,8 @@ export default interface EditarTarefaInput {
     codigosResponsaveis: string[];
     codigoDependencia?: string | null;
     checklist?: EditarTarefaChecklistInput[];
+    /** Quem está editando; vira `concluidaPor` se a edição concluir a tarefa. */
+    quem?: Usuario | null;
 }
 
 export interface EditarTarefaChecklistInput {
