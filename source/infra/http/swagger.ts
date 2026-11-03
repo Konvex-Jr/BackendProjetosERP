@@ -373,4 +373,11 @@ for (const [caminho, metodos] of Object.entries(rotasFase1)) {
     caminhos[caminho] = { ...(caminhos[caminho] ?? {}), ...metodos };
 }
 caminhos["/senioridades"].post = operation(["Configurações"], "Criar senioridade (diretores)", json);
-caminhos["/projetos/{codigo}"] = { ...(caminhos["/projetos/{codigo}"] ?? {}), get: operation(["Projetos"], "Consultar projeto", comCodigo()) };
+caminhos["/projetos/{codigo}"] = { ...(caminhos["/projetos/{codigo}"] ?? {}), get: operation(["Projetos"], "Consultar projeto", {
+    ...comCodigo(),
+    responses: {
+        ...operation([], "").responses,
+        "403": { description: "Membro fora da equipe atual ou passada do projeto." },
+        "404": { description: "Projeto não encontrado." },
+    },
+}) };
