@@ -8,7 +8,7 @@ import { normalizarBusca } from "../../../shared/texto";
 import { carregarProjetos } from "./carregadores";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
-    prioridade, progresso, responsavel_codigo, area_codigo, tags`;
+    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo`;
 
 function valores(projeto: Projeto): unknown[] {
     return [
@@ -25,6 +25,7 @@ function valores(projeto: Projeto): unknown[] {
         projeto.responsavel?.codigo ?? null,
         projeto.area?.codigo ?? null,
         projeto.tags,
+        projeto.lider?.codigo ?? null,
     ];
 }
 
@@ -35,7 +36,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
@@ -95,7 +96,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],

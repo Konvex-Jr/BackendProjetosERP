@@ -17,6 +17,8 @@ export interface DetalhesProjeto {
     responsavel?: Usuario | null;
     area?: Area | null;
     tags?: string[];
+    /** Líder do projeto (sessão 8b). Só vale se estiver na equipe atual; senão o projeto fica sem líder. */
+    lider?: Usuario | null;
 }
 
 export default class Projeto {
@@ -38,6 +40,7 @@ export default class Projeto {
     readonly responsavel: Usuario | null;
     readonly area: Area | null;
     readonly tags: string[];
+    readonly lider: Usuario | null;
 
     /**
      * `membros` aceita pessoas (viram participações novas, sem alocação) ou participações completas.
@@ -69,6 +72,8 @@ export default class Projeto {
         this.responsavel = detalhes.responsavel ?? null;
         this.area = detalhes.area ?? null;
         this.tags = [...new Set((detalhes.tags ?? []).map((t) => String(t).trim()).filter(Boolean))];
+        const codigoLider = detalhes.lider?.codigo;
+        this.lider = codigoLider ? this.membros.find((m) => m.codigo === codigoLider) ?? null : null;
 
         this.validar();
     }
@@ -113,6 +118,7 @@ export default class Projeto {
                 responsavel: pick("responsavel"),
                 area: pick("area"),
                 tags: pick("tags"),
+                lider: pick("lider"),
             },
         );
     }
@@ -135,6 +141,7 @@ export default class Projeto {
             responsavel: this.responsavel,
             area: this.area,
             tags: this.tags,
+            lider: this.lider,
         };
     }
 

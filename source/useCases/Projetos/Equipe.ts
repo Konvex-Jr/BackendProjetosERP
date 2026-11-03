@@ -103,3 +103,20 @@ export class EncerrarParticipacao {
         );
     }
 }
+
+/** Sessão 8b: a gestão escolhe o líder entre a equipe atual (ou deixa o projeto sem líder). */
+export class DefinirLider {
+    constructor(private readonly factory: RepositoryFactoryInterface) {}
+
+    async execute(input: { codigoProjeto: string; codigoUsuario: string | null }): Promise<Projeto> {
+        const projeto = await carregar(this.factory, input.codigoProjeto);
+        let lider = null;
+        if (input.codigoUsuario) {
+            lider = projeto.membros.find((m) => m.codigo === input.codigoUsuario) ?? null;
+            if (!lider) throw new ErroValidacao("O líder precisa estar na equipe atual do projeto.", "LIDER_FORA_DO_PROJETO");
+        }
+        const editado = projeto.copiar({ lider });
+        await this.factory.criarProjetoRepository().editar(editado);
+        return editado;
+    }
+}

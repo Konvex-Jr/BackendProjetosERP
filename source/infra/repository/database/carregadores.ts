@@ -117,7 +117,7 @@ export async function carregarProjetos(
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
-                p.responsavel_codigo, p.tags,
+                p.responsavel_codigo, p.tags, p.lider_codigo,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa
          FROM projetos p
          LEFT JOIN areas a ON a.codigo = p.area_codigo
@@ -136,6 +136,7 @@ export async function carregarProjetos(
     const usuarios = await carregarUsuarios(conexao, [
         ...vinculos.map((v) => v.usuario_codigo),
         ...linhas.map((l) => l.responsavel_codigo).filter(Boolean),
+        ...linhas.map((l) => l.lider_codigo).filter(Boolean),
     ]);
 
     for (const linha of linhas) {
@@ -172,6 +173,7 @@ export async function carregarProjetos(
                     responsavel: linha.responsavel_codigo ? usuarios.get(linha.responsavel_codigo) ?? null : null,
                     area: areaDeLinha(linha),
                     tags: linha.tags ?? [],
+                    lider: linha.lider_codigo ? usuarios.get(linha.lider_codigo) ?? null : null,
                 },
             ),
         );
