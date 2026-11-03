@@ -151,4 +151,34 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("POST", "/auth/logout", novo.corpo.token, { refreshToken: novo.corpo.refreshToken })).status).toBe(200);
         expect((await chamar("POST", "/auth/refresh", undefined, { refreshToken: novo.corpo.refreshToken })).status).toBe(401);
     }, 60000);
+
+    test("sessão 8b: líder, concluída por e comentários gravados no banco", async () => {
+        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+        const lider = await chamar("POST", "/usuarios", dir, {
+            nome: "Lider", email: "lider@teste.com", senha: "SenhaLider1", perfil: "membro", codigoSenioridade: "junior",
+        });
+        const p = await chamar("POST", "/projetos", dir, { nome: "Projeto C", descricao: "Teste", dataInicio: "2026-10-01", dataFim: "2026-12-31", status: "em_execucao" });
+        const cod = p.corpo.codigo;
+        await chamar("POST", `/projetos/${cod}/membros`, dir, { codigoUsuario: lider.corpo.codigo, funcao: "Dev", alocacao: 10 });
+        const definido = await chamar("PUT", `/projetos/${cod}/lider`, dir, { codigoUsuario: lider.corpo.codigo });
+        expect(definido.status).toBe(200);
+        expect((await chamar("GET", `/projetos/${cod}`, dir)).corpo.lider.codigo).toBe(lider.corpo.codigo);
+
+        const lid = (await entrar("lider@teste.com", "SenhaLider1")).corpo.token as string;
+        const t = await chamar("POST", "/tarefas", lid, { codigoProjeto: cod, titulo: "T1", dataInicio: "2026-10-02", dataFim: "2026-10-05", prioridade: "P2", codigosResponsaveis: [lider.corpo.codigo] });
+        expect(t.status).toBe(200);
+        const concluida = await chamar("PATCH", `/tarefas/${t.corpo.codigo}/status`, lid, { status: "concluida" });
+        expect(concluida.status).toBe(200);
+        const lida = (await chamar("GET", `/tarefas?codigoProjeto=${cod}`, dir)).corpo[0];
+        expect(lida.concluidaPor.codigo).toBe(lider.corpo.codigo);
+
+        const c = await chamar("POST", `/tarefas/${t.corpo.codigo}/comentarios`, lid, { texto: "Feito" });
+        expect(c.status).toBe(200);
+        const lista = await chamar("GET", `/tarefas/${t.corpo.codigo}/comentarios`, dir);
+        expect(lista.corpo.map((x: any) => x.texto)).toEqual(["Feito"]);
+        expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}/comentarios/${c.corpo.codigo}`, dir)).status).toBe(200);
+        // Excluir a tarefa leva os comentários junto
+        await chamar("POST", `/tarefas/${t.corpo.codigo}/comentarios`, lid, { texto: "Outro" });
+        expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}`, lid)).status).toBeLessThan(300);
+    }, 60000);
 });

@@ -12,6 +12,7 @@ import CargoRepositoryInterface from "./CargoRepositoryInterface";
 import HabilidadeRepositoryInterface from "./HabilidadeRepositoryInterface";
 import HistoricoPessoaRepositoryInterface from "./HistoricoPessoaRepositoryInterface";
 import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
+import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
 
 export default interface RepositoryFactoryInterface {
     criarUsuarioRepository(): UsuarioRepositoryInterface;
@@ -28,4 +29,5 @@ export default interface RepositoryFactoryInterface {
     criarHabilidadeRepository(): HabilidadeRepositoryInterface;
     criarHistoricoPessoaRepository(): HistoricoPessoaRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
+    criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
 }

@@ -23,6 +23,7 @@ import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
 import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabase";
 import HistoricoPessoaRepositoryDatabase from "./database/HistoricoPessoaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
+import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 
 export default class DatabaseRepositoryFactory implements RepositoryFactoryInterface {
     private readonly conexao: ConexaoBanco;
@@ -81,6 +82,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarHistoricoPessoaRepository() {
         return new HistoricoPessoaRepositoryDatabase(this.conexao);
+    }
+
+    criarComentarioTarefaRepository() {
+        return new ComentarioTarefaRepositoryDatabase(this.conexao);
     }
 
     criarRefreshTokenRepository() {
