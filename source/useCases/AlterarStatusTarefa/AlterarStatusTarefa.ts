@@ -16,8 +16,7 @@ export default class AlterarStatusTarefa {
         const concluida = status === StatusTarefa.CONCLUIDA;
         const jaConcluida = t.status === StatusTarefa.CONCLUIDA;
         // Se já estava concluída, mantém data e autor originais.
-        const editada = new Tarefa(t.projeto, t.titulo, t.dataInicio, t.dataFim, status, t.prioridade, t.descricao,
-            concluida ? (jaConcluida ? t.dataConclusao : hoje) : null, t.dependeDe, t.responsaveis, t.checklist, t.codigo,
+        const editada = t.comStatus(status, concluida ? (jaConcluida ? t.dataConclusao : hoje) : null,
             concluida ? (jaConcluida ? t.concluidaPor : quem) : null);
         return this.tarefas.editar(editada);
     }

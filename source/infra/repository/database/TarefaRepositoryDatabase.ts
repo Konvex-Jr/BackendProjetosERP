@@ -9,7 +9,8 @@ import { carregarProjetos, carregarUsuarios } from "./carregadores";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
-           status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo
+           status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo,
+           categoria, criada_por_codigo
     FROM tarefas
 `;
 
@@ -25,11 +26,11 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
-                                      concluida_por_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                                      concluida_por_codigo, categoria, criada_por_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     tarefa.codigo,
-                    tarefa.projeto.codigo,
+                    tarefa.projeto?.codigo ?? null,
                     tarefa.titulo,
                     tarefa.descricao,
                     dataParaSql(tarefa.dataInicio),
@@ -39,6 +40,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
+                    tarefa.categoria,
+                    tarefa.criadaPor?.codigo ?? null,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -85,7 +88,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
                      status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
-                     concluida_por_codigo = $10
+                     concluida_por_codigo = $10, categoria = $11
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -99,6 +102,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
+                    tarefa.categoria,
                 ],
             );
 
@@ -200,7 +204,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
         const projetos = await carregarProjetos(
             this.conexao,
-            [...linhas.values()].map((l) => l.projeto_codigo),
+            [...linhas.values()].map((l) => l.projeto_codigo).filter(Boolean),
         );
 
         const usuarios = await carregarUsuarios(
@@ -208,6 +212,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             [
                 ...vinculos.map((v) => v.usuario_codigo),
                 ...[...linhas.values()].map((l) => l.concluida_por_codigo).filter(Boolean),
+                ...[...linhas.values()].map((l) => l.criada_por_codigo).filter(Boolean),
             ],
         );
 
@@ -233,7 +238,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 .map((i) => new ItemChecklistTarefa(i.texto, i.feito, i.codigo));
 
             const tarefa = new Tarefa(
-                projetos.get(linha.projeto_codigo)!,
+                linha.projeto_codigo ? projetos.get(linha.projeto_codigo)! : null,
                 linha.titulo,
                 linha.data_inicio,
                 linha.data_fim,
@@ -246,6 +251,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 checklist,
                 linha.codigo,
                 linha.concluida_por_codigo ? usuarios.get(linha.concluida_por_codigo) ?? null : null,
+                linha.categoria ?? null,
+                linha.criada_por_codigo ? usuarios.get(linha.criada_por_codigo) ?? null : null,
             );
 
             construidas.set(codigo, tarefa);

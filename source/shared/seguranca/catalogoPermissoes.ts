@@ -13,6 +13,8 @@ export const Permissao = {
     PROJETOS_EDITAR: "projetos.editar",
     PROJETOS_EXCLUIR: "projetos.excluir",
     TAREFAS_GERIR_TODAS: "tarefas.gerirTodas",
+    /** Criar e organizar tarefas avulsas (sem projeto). Sessão 8c. */
+    TAREFAS_ATRIBUIR: "tarefas.atribuir",
     CAPACITACOES_GERIR: "capacitacoes.gerir",
     CHECKINS_VER_TODOS: "checkins.verTodos",
     DOCUMENTOS_GERIR: "documentos.gerir",
@@ -30,6 +32,7 @@ const DO_GESTOR: Permissao[] = [
     Permissao.PROJETOS_VER_TODOS,
     Permissao.PROJETOS_EDITAR,
     Permissao.TAREFAS_GERIR_TODAS,
+    Permissao.TAREFAS_ATRIBUIR,
     Permissao.CAPACITACOES_GERIR,
     Permissao.CHECKINS_VER_TODOS,
     Permissao.DOCUMENTOS_GERIR,

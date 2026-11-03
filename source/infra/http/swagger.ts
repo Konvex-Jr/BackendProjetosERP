@@ -65,9 +65,11 @@ const swaggerSpecification = {
             },
             TarefaInput: {
                 type: "object",
-                required: ["codigoProjeto", "titulo", "dataInicio", "dataFim"],
+                description: "Informe codigoProjeto (tarefa de projeto) OU categoria (tarefa avulsa, só a gestão cria).",
+                required: ["titulo", "dataInicio", "dataFim"],
                 properties: {
-                    codigoProjeto: { type: "string" },
+                    codigoProjeto: { type: "string", nullable: true },
+                    categoria: { type: "string", nullable: true, enum: ["inovacao", "capacitacao", "execucao"] },
                     titulo: { type: "string" },
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
@@ -172,10 +174,13 @@ const swaggerSpecification = {
             }),
         },
         "/tarefas": {
-            get: operation(["Tarefas"], "Listar tarefas", {
+            get: operation(["Tarefas"], "Listar tarefas (membro: dos seus projetos e as avulsas em que é responsável)", {
                 parameters: [
                     { name: "codigoProjeto", in: "query", schema: { type: "string" } },
                     { name: "codigoResponsavel", in: "query", schema: { type: "string" } },
+                    { name: "minhas", in: "query", schema: { type: "boolean" }, description: "Só as tarefas em que eu sou responsável." },
+                    { name: "categoria", in: "query", schema: { type: "string", enum: ["inovacao", "capacitacao", "execucao", "avulsas"] } },
+                    { name: "status", in: "query", schema: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
                 ],
             }),
             post: operation(["Tarefas"], "Criar tarefa", {

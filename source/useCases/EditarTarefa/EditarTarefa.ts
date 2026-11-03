@@ -19,7 +19,7 @@ export default class EditarTarefa {
         if (!atual)
             throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const todas = await this.usuarios.listar();
-        const projeto = await this.projetos.buscarPorCodigo(atual.projeto.codigo);
+        const projeto = atual.projeto ? await this.projetos.buscarPorCodigo(atual.projeto.codigo) : null;
         const jaEram = new Set(atual.responsaveis.map(r => r.codigo));
         const responsaveis = [...new Set(input.codigosResponsaveis)].map(c => {
             const u = todas.find(x => x.codigo === c && x.ativo);
@@ -35,7 +35,7 @@ export default class EditarTarefa {
             dependencia = await this.tarefas.buscarPorCodigo(input.codigoDependencia);
             if (!dependencia)
                 throw new ErroNaoEncontrado("Tarefa predecessora não encontrada.");
-            if (dependencia.projeto.codigo !== atual.projeto.codigo)
+            if (!atual.projeto || dependencia.projeto?.codigo !== atual.projeto.codigo)
                 throw new ErroValidacao("A tarefa predecessora deve pertencer ao mesmo projeto.", "DEPENDENCIA_OUTRO_PROJETO");
             if (await this.criaCiclo(input.codigo, dependencia.codigo))
                 throw new ErroValidacao("A dependência criaria um ciclo.", "DEPENDENCIA_CIRCULAR");
@@ -59,6 +59,9 @@ export default class EditarTarefa {
             checklist,
             atual.codigo,
             concluida ? (atual.dataConclusao ? atual.concluidaPor : input.quem ?? null) : null,
+            // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
+            atual.projeto ? null : (input.categoria ?? atual.categoria),
+            atual.criadaPor,
         ));
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {

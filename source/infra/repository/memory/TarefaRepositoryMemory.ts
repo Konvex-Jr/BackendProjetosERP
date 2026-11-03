@@ -18,7 +18,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
     }
 
     async listarPorProjeto(codigoProjeto: string): Promise<Tarefa[]> {
-        return this.tarefas.filter((t) => t.projeto.codigo === codigoProjeto);
+        return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto);
     }
 
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {
@@ -51,28 +51,11 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
 
         this.tarefas.splice(indice, 1);
         this.tarefas = this.tarefas.map((t) =>
-            t.dependeDe?.codigo === codigo ? this.semDependencia(t) : t,
+            t.dependeDe?.codigo === codigo ? t.semDependencia() : t,
         );
     }
 
     async excluirPorProjeto(codigoProjeto: string): Promise<void> {
-        this.tarefas = this.tarefas.filter((t) => t.projeto.codigo !== codigoProjeto);
-    }
-
-    private semDependencia(tarefa: Tarefa): Tarefa {
-        return new Tarefa(
-            tarefa.projeto,
-            tarefa.titulo,
-            tarefa.dataInicio,
-            tarefa.dataFim,
-            tarefa.status,
-            tarefa.prioridade,
-            tarefa.descricao,
-            tarefa.dataConclusao,
-            null,
-            tarefa.responsaveis,
-            tarefa.checklist,
-            tarefa.codigo,
-        );
+        this.tarefas = this.tarefas.filter((t) => t.projeto?.codigo !== codigoProjeto);
     }
 }
