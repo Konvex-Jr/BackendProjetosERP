@@ -27,6 +27,13 @@ No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitaçõe
 - O conteúdo aceita Markdown simples: `## Título`, `- item de lista`, `**negrito**`, `*itálico*` e links `[texto](https://...)`.
 - Você edita e exclui só os itens que cadastrou.
 - Na ficha de cada projeto, a aba **Base** mostra os itens ligados a ele.
+- Na ficha do item aparecem também as **iniciativas de inovação** que o usam.
+
+**Iniciativas** (no celular, fica no **Mais**): as iniciativas de inovação da Konvex (produtos, processos, serviços, experiências, oportunidades…). Todos veem todas.
+- Filtre por texto, status (Ideia, Em andamento, Pausada, Concluída, Descartada), frente (Radar de Mercado, Konvex Lab, Esteira de Produtos), tipo e responsável.
+- A ficha mostra a descrição, o resultado, os aprendizados, os projetos e itens da Base ligados e as tarefas de Inovação da iniciativa (você vê as tarefas em que é responsável; a contagem mostra todas).
+- **Nova iniciativa** aparece para quem é da área de **Inovação** (e para a gestão). Quem cria fica como responsável, se não escolher outra pessoa.
+- O responsável e quem criou editam e excluem a iniciativa. Excluir não apaga as tarefas nem os itens da Base, só a ligação.
 
 **Gestão**: pastas de documentos que você pode ler (as abertas a todos e as dos seus projetos). Documentos são links (Drive, Docs, Notion).
 
@@ -50,6 +57,8 @@ Tudo o que o membro faz, mais:
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Trainee, Saiu…) e redefine senhas. Quando alguém sai, as participações são encerradas, mas o histórico fica.
 
 **Base de Inteligência**: edita e exclui qualquer item (por exemplo, para corrigir a categoria ou tirar algo repetido).
+
+**Iniciativas**: cria, edita e exclui qualquer iniciativa. Para ligar uma tarefa a uma iniciativa, crie a tarefa avulsa na categoria **Inovação** e escolha a iniciativa (ou use **Nova tarefa** na ficha da iniciativa). Para que um membro possa criar iniciativas, coloque-o na área **Inovação** (ou numa subárea dela) em Pessoas.
 
 **Gestão**: cria pastas com sigilo (**Todos**, **Só gestão** ou **Equipe de um projeto**) e adiciona, renomeia e remove links.
 
