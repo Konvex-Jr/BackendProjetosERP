@@ -71,8 +71,6 @@ describe("Registro de módulos", () => {
         const rotas: Record<string, any> = {};
         const http: any = {
             route: (metodo: string, url: string, _auth: boolean, cb: any) => { rotas[`${metodo} ${url}`] = cb; },
-            uploadRoute: () => undefined,
-            downloadRoute: () => undefined,
             swagger: () => undefined,
         };
         new Router(http, new MemoryRepositoryFactory()).init();
@@ -95,7 +93,7 @@ describe("PUT /auth/perfil", () => {
         const rotas: Record<string, any> = {};
         const http: any = {
             route: (metodo: string, url: string, _auth: boolean, cb: any) => { rotas[`${metodo} ${url}`] = cb; },
-            uploadRoute: () => undefined, downloadRoute: () => undefined, swagger: () => undefined,
+            swagger: () => undefined,
         };
         new Router(http, factory).init();
         const eu = { codigo: ana.codigo, perfil: ana.perfil };
