@@ -147,11 +147,11 @@ export default class Projeto {
 
     private validar(): void {
         if (!this.nome || !this.nome.trim()) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.NOME_OBRIGATORIO, "NOME_PROJETO_OBRIGATORIO");
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.NOME_OBRIGATORIO, "NOME_PROJETO_OBRIGATORIO");
         }
 
         if (!this.descricao || !this.descricao.trim()) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO, "DESCRICAO_PROJETO_OBRIGATORIA");
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.DESCRICAO_OBRIGATORIA, "DESCRICAO_PROJETO_OBRIGATORIA");
         }
 
         if (

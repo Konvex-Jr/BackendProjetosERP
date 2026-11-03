@@ -1,5 +1,4 @@
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
 export default class SenioridadeUsuario {
     readonly codigo: string;
@@ -25,14 +24,14 @@ export default class SenioridadeUsuario {
     private validar(): void {
         if (!this.codigo.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "O código da senioridade é obrigatório.",
                 "CODIGO_SENIORIDADE_OBRIGATORIO",
             );
         }
 
         if (!this.nome.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "O nome da senioridade é obrigatório.",
                 "NOME_SENIORIDADE_OBRIGATORIO",
             );
         }

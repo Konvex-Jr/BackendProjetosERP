@@ -82,7 +82,7 @@ export default class Documento {
 
         if (!this.arquivoUrl.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "O link do documento é obrigatório.",
                 "ARQUIVO_URL_OBRIGATORIA",
             );
         }

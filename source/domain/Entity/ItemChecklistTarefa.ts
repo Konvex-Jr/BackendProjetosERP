@@ -1,6 +1,5 @@
 import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
 export default class ItemChecklistTarefa {
     readonly codigo: string;
@@ -22,7 +21,7 @@ export default class ItemChecklistTarefa {
     private validar(): void {
         if (!this.texto.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "O texto do item do checklist é obrigatório.",
                 "TEXTO_CHECKLIST_OBRIGATORIO",
             );
         }
