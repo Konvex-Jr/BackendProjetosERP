@@ -262,6 +262,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         });
         expect(item.status).toBe(200);
         expect(item.corpo.autor.nome).toBe("Autora");
+        expect(item.corpo.data).toBe("2026-10-20T00:00:00.000Z"); // DATE sem deslocar pelo fuso
         expect(item.corpo.projetos).toEqual([{ codigo: proj.corpo.codigo, nome: "Projeto Base" }]);
         await chamar("POST", "/conhecimento", dir, { titulo: "Decisão de stack", categoria: "decisao", resumo: "React", data: "2026-01-05" });
 

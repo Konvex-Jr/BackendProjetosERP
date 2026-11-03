@@ -1,6 +1,7 @@
 import Conhecimento from "../../../domain/Entity/Conhecimento";
 import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/Interfaces/ConhecimentoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
+import { dataParaSql } from "../../database/conversoes";
 
 const SELECT = `
     SELECT c.codigo, c.titulo, c.categoria, c.resumo, c.conteudo, c.fonte, c.links, c.tags, c.data,
@@ -57,7 +58,7 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
                 `INSERT INTO conhecimentos (codigo, titulo, categoria, resumo, conteudo, autor_codigo, fonte, links, tags, data, criado_em, atualizado_em)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
                 [item.codigo, item.titulo, item.categoria, item.resumo, item.conteudo, item.autor?.codigo ?? null,
-                    item.fonte, item.links, item.tags, item.data, item.criadoEm, item.atualizadoEm],
+                    item.fonte, item.links, item.tags, dataParaSql(item.data), item.criadoEm, item.atualizadoEm],
             );
             await this.gravarProjetos(conexao, item);
         });
@@ -83,8 +84,8 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
             condicoes.push(`EXISTS (SELECT 1 FROM conhecimento_projetos x
                 WHERE x.conhecimento_codigo = c.codigo AND x.projeto_codigo::text = ${param(f.codigoProjeto)})`);
         }
-        if (f.de) condicoes.push(`c.data >= ${param(f.de)}`);
-        if (f.ate) condicoes.push(`c.data <= ${param(f.ate)}`);
+        if (f.de) condicoes.push(`c.data >= ${param(dataParaSql(f.de))}`);
+        if (f.ate) condicoes.push(`c.data <= ${param(dataParaSql(f.ate))}`);
 
         const onde = condicoes.length ? ` WHERE ${condicoes.join(" AND ")}` : "";
         const linhas = await this.conexao.consultar(`${SELECT}${onde}${AGRUPAR} ORDER BY c.data DESC, c.criado_em DESC`, valores);
@@ -103,7 +104,7 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
                         links = $7, tags = $8, data = $9, atualizado_em = $10
                  WHERE codigo = $1 RETURNING codigo`,
                 [item.codigo, item.titulo, item.categoria, item.resumo, item.conteudo, item.fonte,
-                    item.links, item.tags, item.data, item.atualizadoEm],
+                    item.links, item.tags, dataParaSql(item.data), item.atualizadoEm],
             );
             if (linhas.length === 0) throw new Error("Item não encontrado");
             await this.gravarProjetos(conexao, item);
