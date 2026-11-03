@@ -98,9 +98,17 @@ export default class Tarefa {
     private validar(): void {
         if (!this.titulo.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                MENSAGENS_DE_ERRO.TAREFA.TITULO_OBRIGATORIO,
                 "TITULO_TAREFA_OBRIGATORIO",
             );
+        }
+
+        if (!Object.values(PrioridadeTarefa).includes(this.prioridade)) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PRIORIDADE_INVALIDA, "PRIORIDADE_TAREFA_INVALIDA");
+        }
+
+        if (!Object.values(StatusTarefa).includes(this.status)) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.STATUS_INVALIDO, "STATUS_TAREFA_INVALIDO");
         }
 
         if (
