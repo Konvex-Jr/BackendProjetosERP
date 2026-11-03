@@ -1,6 +1,5 @@
 import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import Usuario from "./Usuario";
 import TipoCapacitacao from "../Enum/TipoCapacitacao";
 
@@ -57,7 +56,7 @@ export default class Capacitacao {
     private validar(): void {
         if (!this.titulo.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "O título da capacitação é obrigatório.",
                 "TITULO_CAPACITACAO_OBRIGATORIO",
             );
         }
@@ -78,7 +77,7 @@ export default class Capacitacao {
 
         if (!this.sala.trim()) {
             throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.CAMPO_OBRIGATORIO,
+                "A sala da capacitação é obrigatória.",
                 "SALA_CAPACITACAO_OBRIGATORIA",
             );
         }

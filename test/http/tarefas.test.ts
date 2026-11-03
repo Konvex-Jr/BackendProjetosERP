@@ -53,6 +53,17 @@ describe("Tarefas pela API", () => {
         expect((await servidor.chamar("get", "/tarefas", { usuario: ctx.gerente })).corpo).toEqual([]);
     });
 
+    it("prioridade e situação inválidas dão 400 com mensagem clara (não 500)", async () => {
+        const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpo({ prioridade: "alta" }) });
+        expect(r.status).toBe(400);
+        expect(r.corpo.message).toContain("P1, P2, P3 ou P4");
+
+        const criada = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpo() });
+        const s = await servidor.chamar("patch", `/tarefas/${criada.corpo.codigo}/status`, { usuario: ctx.gerente, corpo: { status: "feita" } });
+        expect(s.status).toBe(400);
+        expect(s.corpo.message).toContain("Situação inválida");
+    });
+
     it("responsável precisa estar na equipe do projeto", async () => {
         const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpo({ codigosResponsaveis: [deFora.codigo] }) });
         expect(r.status).toBe(400);

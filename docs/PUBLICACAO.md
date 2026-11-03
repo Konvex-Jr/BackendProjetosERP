@@ -55,6 +55,15 @@ docker logs konvex-backend 2>&1 | tail -20
 - [ ] `curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes` devolve `401` (API no ar, pedindo login).
 - [ ] Se `generate-keys` falhar com `network ... not found`, rode `docker rm -f konvex-generate-keys` e suba de novo.
 
+### Quando só o frontend mudou
+Sem migração, o backup é opcional e basta:
+```bash
+cd /docker/erp-konvex
+git -C frontend pull --ff-only
+docker compose build frontend && docker compose up -d frontend
+```
+Logo depois do `up`, o `curl` acima pode dar 404 por alguns segundos enquanto o backend inicia. Espere aparecer `API disponível na porta 5001` no log e repita.
+
 ## 5. Conferir no navegador
 Recarregue sem cache (Ctrl+Shift+R) ou use uma janela anônima.
 - [ ] Login como diretor: o menu aparece e recarregar a página mantém a sessão.
@@ -62,6 +71,9 @@ Recarregue sem cache (Ctrl+Shift+R) ou use uma janela anônima.
 - [ ] Tarefas: criar uma, editar no modal, arrastar para Concluído e recarregar. A mudança continua lá.
 - [ ] Login como membro (`teste.membro@`): vê só os próprios projetos, cria tarefa e fica como responsável.
 - [ ] Console do navegador sem erro de CORS e sem 401 em loop.
+- [ ] No celular (ou no modo celular do navegador, 375 px): barra de baixo com 4 ícones + "Mais", listas em cartões, modal de tarefa em tela cheia.
+
+O que mudou em cada sessão está em `claude/acompanhamento.md` (projeto da gestão) e na descrição de cada PR.
 
 ## 6. Voltar atrás, se algo grave falhar
 ```bash
@@ -73,6 +85,20 @@ docker compose build backend frontend && docker compose up -d backend frontend
 docker exec -i konvex-db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /root/backup-konvex/<arquivo>.dump
 ```
 Depois, volte para a `main` com `git checkout main` quando a correção estiver pronta.
+
+## 7. Limpeza de imagens antigas (de vez em quando)
+Cada `docker compose build` deixa a imagem anterior no disco. Depois de conferir que a publicação está boa:
+```bash
+docker image ls | grep -E "erp-konvex|<none>"   # ver o que existe
+docker image prune -f                            # apaga só imagens sem nome/tag (as antigas)
+df -h /                                          # conferir o espaço
+```
+Não use `docker system prune -a` sem pensar: ele apaga também imagens guardadas de propósito, como `erp-konvex-backend:antes-fase1`.
+
+## Scripts que existem só na VPS
+- `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
+- `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
+- `backend/generate-keys.js`: usado pelo container `konvex-generate-keys`; fora do git.
 
 ## Segurança: porta do banco
 O banco não deve ficar aberto para a internet. No `docker-compose.yml`, o serviço do banco deve publicar só para a própria VPS:
@@ -90,4 +116,21 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 - Chaves JWT persistentes: os arquivos montados (ver acima) ou `JWT_PRIVATE_KEY`/`JWT_PUBLIC_KEY`.
 - `NODE_ENV=production` desliga o Swagger (`SWAGGER_ENABLED=true` liga).
 - Opcionais: `JWT_ACCESS_TTL` (padrão 15m), `REFRESH_TOKEN_DIAS` (padrão 7), `PORT` (padrão 5001).
-- `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` só servem para `npm run seed:admin`. O compose não os repassa ao container; para rodar lá, use `docker exec -e ADMIN_...`.
+- `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` só servem para `npm run seed:admin` (criar o primeiro diretor num banco vazio). Estão no `.env` da VPS, mas o compose não os repassa ao container. Duas formas de rodar:
+  - Na hora, sem mexer no compose:
+    ```bash
+    cd /docker/erp-konvex && set -a && . ./.env && set +a
+    docker exec -e ADMIN_NAME="$ADMIN_NAME" -e ADMIN_EMAIL="$ADMIN_EMAIL" -e ADMIN_PASSWORD="$ADMIN_PASSWORD" konvex-backend npm run seed:admin
+    ```
+  - Ou, se for usar sempre, acrescentar no serviço `backend` do `docker-compose.yml` (faça uma cópia antes):
+    ```yaml
+    environment:
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ```
+  Com o banco atual (que já tem diretores), não é preciso rodar.
+
+## O que não existe mais
+- Upload de arquivos (`/pastas/:codigo/documentos/upload` e `/uploads/:arquivo`): desde a sessão 9 documentos são links. O backend não cria mais a pasta `uploads/`.
+- Check-ins (`/checkins`): retirados na sessão 9. A tabela `checkins` continua no banco até a limpeza da fase 4.

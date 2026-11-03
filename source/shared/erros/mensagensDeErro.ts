@@ -20,6 +20,17 @@ export const MENSAGENS_DE_ERRO = {
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
     },
 
+    PROJETO: {
+        NOME_OBRIGATORIO: "O nome do projeto é obrigatório.",
+        DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
+    },
+
+    TAREFA: {
+        TITULO_OBRIGATORIO: "O título da tarefa é obrigatório.",
+        PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",
+        STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
+    },
+
     GERAL: {
         ERRO_INTERNO: "Ocorreu um erro interno.",
         RECURSO_NAO_ENCONTRADO: "Recurso não encontrado.",
