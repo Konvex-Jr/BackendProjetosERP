@@ -8,19 +8,26 @@ import EditarTarefaInput from "./EditarTarefaInput";
 export default class EditarTarefa {
     private readonly tarefas;
     private readonly usuarios;
+    private readonly projetos;
     constructor(factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
         this.usuarios = factory.criarUsuarioRepository();
+        this.projetos = factory.criarProjetoRepository();
     }
     async execute(input: EditarTarefaInput): Promise<Tarefa> {
         const atual = await this.tarefas.buscarPorCodigo(input.codigo);
         if (!atual)
             throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const todas = await this.usuarios.listar();
+        const projeto = await this.projetos.buscarPorCodigo(atual.projeto.codigo);
+        const jaEram = new Set(atual.responsaveis.map(r => r.codigo));
         const responsaveis = [...new Set(input.codigosResponsaveis)].map(c => {
             const u = todas.find(x => x.codigo === c && x.ativo);
             if (!u)
                 throw new ErroNaoEncontrado(`Responsável ativo não encontrado: ${c}`);
+            // Quem já era responsável continua, mesmo que tenha saído da equipe; quem entra precisa estar nela.
+            if (!jaEram.has(c) && projeto && !projeto.membros.some(m => m.codigo === c))
+                throw new ErroValidacao(`${u.nome} não está na equipe do projeto.`, "RESPONSAVEL_FORA_DO_PROJETO");
             return u;
         });
         let dependencia = null;
