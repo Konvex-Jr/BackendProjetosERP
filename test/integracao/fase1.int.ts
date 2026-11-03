@@ -290,4 +290,71 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("DELETE", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(200);
         expect((await chamar("GET", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(404);
     }, 60000);
+    test("sessão 12b: iniciativas com projetos, itens da Base e tarefas de Inovação no banco", async () => {
+        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+        // A área "Inovação" foi criada no teste da fase 1, acima.
+        const area = { corpo: (await chamar("GET", "/areas", dir)).corpo.find((a: any) => a.nome === "Inovação") };
+        expect(area.corpo).toBeTruthy();
+        const inov = await chamar("POST", "/usuarios", dir, {
+            nome: "Inovadora", email: "inov@teste.com", senha: "SenhaInov1", perfil: "membro", codigoSenioridade: "junior", codigoArea: area.corpo.codigo,
+        });
+        expect(inov.status).toBe(200);
+        await chamar("POST", "/usuarios", dir, { nome: "Comum", email: "comum@teste.com", senha: "SenhaComum1", perfil: "membro", codigoSenioridade: "junior" });
+        const tokenInov = (await entrar("inov@teste.com", "SenhaInov1")).corpo.token as string;
+        const tokenComum = (await entrar("comum@teste.com", "SenhaComum1")).corpo.token as string;
+
+        expect((await chamar("GET", "/iniciativas/opcoes", tokenInov)).corpo.podeCriar).toBe(true);
+        expect((await chamar("GET", "/iniciativas/opcoes", tokenComum)).corpo.podeCriar).toBe(false);
+        expect((await chamar("POST", "/iniciativas", tokenComum, { titulo: "X", tipo: "produto", frente: "lab" })).status).toBe(403);
+
+        const proj = await chamar("POST", "/projetos", dir, { nome: "Projeto Inov", descricao: "d", dataInicio: "2026-11-01", dataFim: "2026-12-01" });
+        const k1 = await chamar("POST", "/conhecimento", tokenComum, { titulo: "Pesquisa A", categoria: "pesquisa", resumo: "r" });
+        const k2 = await chamar("POST", "/conhecimento", tokenComum, { titulo: "Pesquisa B", categoria: "pesquisa", resumo: "r" });
+
+        const ini = await chamar("POST", "/iniciativas", tokenInov, {
+            titulo: "Chatbot 100%", tipo: "servico", frente: "radar", status: "andamento",
+            dataInicio: "2026-11-03", dataFim: "2026-12-20", descricao: "**IA** no atendimento",
+            codigosProjetos: [proj.corpo.codigo], codigosConhecimentos: [k1.corpo.codigo, k2.corpo.codigo],
+        });
+        expect(ini.status).toBe(200);
+        expect(ini.corpo.dataInicio).toBe("2026-11-03T00:00:00.000Z"); // DATE sem deslocar pelo fuso
+        expect(ini.corpo.dataFim).toBe("2026-12-20T00:00:00.000Z");
+        expect(ini.corpo.responsavel.nome).toBe("Inovadora");
+        expect(ini.corpo.criadoPor.nome).toBe("Inovadora");
+        expect(ini.corpo.projetos).toEqual([{ codigo: proj.corpo.codigo, nome: "Projeto Inov" }]);
+        expect(ini.corpo.conhecimentos.map((c: any) => c.nome)).toEqual(["Pesquisa A", "Pesquisa B"]);
+        expect((await chamar("GET", `/conhecimento/${k1.corpo.codigo}`, tokenComum)).corpo.iniciativas)
+            .toEqual([{ codigo: ini.corpo.codigo, nome: "Chatbot 100%" }]);
+
+        const tarefa = await chamar("POST", "/tarefas", dir, {
+            categoria: "inovacao", titulo: "Protótipo", dataInicio: "2026-11-03", dataFim: "2026-11-10", prioridade: "P2",
+            codigosResponsaveis: [inov.corpo.codigo], codigoIniciativa: ini.corpo.codigo,
+        });
+        expect(tarefa.status).toBe(200);
+        expect(tarefa.corpo.iniciativa).toEqual({ codigo: ini.corpo.codigo, nome: "Chatbot 100%" });
+        const ficha = await chamar("GET", `/iniciativas/${ini.corpo.codigo}`, tokenInov);
+        expect(ficha.corpo.tarefas.map((t: any) => t.titulo)).toEqual(["Protótipo"]);
+        expect((await chamar("GET", `/iniciativas/${ini.corpo.codigo}`, tokenComum)).corpo.tarefas).toEqual([]);
+
+        const titulos = async (q: string) => (await chamar("GET", `/iniciativas${q}`, dir)).corpo.map((i: any) => i.titulo);
+        expect(await titulos("?busca=100%25")).toEqual(["Chatbot 100%"]);
+        expect(await titulos("?busca=_")).toEqual([]);
+        expect(await titulos(`?codigoProjeto=${proj.corpo.codigo}&status=andamento&frente=radar`)).toEqual(["Chatbot 100%"]);
+        expect(await titulos(`?codigoConhecimento=${k2.corpo.codigo}`)).toEqual(["Chatbot 100%"]);
+        expect(await titulos("?codigoResponsavel=nao-e-uuid")).toEqual([]);
+        expect((await chamar("GET", "/iniciativas/nao-e-uuid", dir)).status).toBe(404);
+
+        // Renomear aparece na tarefa; outro membro não edita; excluir deixa a tarefa e o item sem a ligação.
+        const corpo = { ...ini.corpo, titulo: "Chatbot", codigosProjetos: [], codigosConhecimentos: [k1.corpo.codigo] };
+        expect((await chamar("PUT", `/iniciativas/${ini.corpo.codigo}`, tokenComum, corpo)).status).toBe(403);
+        const editada = await chamar("PUT", `/iniciativas/${ini.corpo.codigo}`, tokenInov, corpo);
+        expect(editada.status).toBe(200);
+        expect(editada.corpo.projetos).toEqual([]);
+        expect(editada.corpo.conhecimentos).toHaveLength(1);
+        const daTarefa = async () => (await chamar("GET", "/tarefas?categoria=inovacao", dir)).corpo.find((t: any) => t.codigo === tarefa.corpo.codigo);
+        expect((await daTarefa()).iniciativa.nome).toBe("Chatbot");
+        expect((await chamar("DELETE", `/iniciativas/${ini.corpo.codigo}`, dir)).status).toBe(200);
+        expect((await daTarefa()).iniciativa).toBeNull();
+        expect((await chamar("GET", `/conhecimento/${k1.corpo.codigo}`, dir)).corpo.iniciativas).toEqual([]);
+    }, 60000);
 });

@@ -44,6 +44,19 @@ export const MENSAGENS_DE_ERRO = {
         SEM_PERMISSAO: "Só quem cadastrou o item ou a gestão pode alterá-lo ou excluí-lo.",
     },
 
+    INICIATIVA: {
+        TITULO_OBRIGATORIO: "O título da iniciativa é obrigatório.",
+        TITULO_LONGO: "O título da iniciativa deve ter no máximo 160 caracteres.",
+        DESCRICAO_LONGA: "A descrição da iniciativa deve ter no máximo 20.000 caracteres.",
+        RESULTADO_LONGO: "O resultado da iniciativa deve ter no máximo 10.000 caracteres.",
+        APRENDIZADOS_LONGOS: "Os aprendizados da iniciativa devem ter no máximo 10.000 caracteres.",
+        PERIODO_INVALIDO: "A data de fim da iniciativa não pode ser anterior à de início.",
+        NAO_ENCONTRADA: "Iniciativa não encontrada.",
+        SEM_PERMISSAO_CRIAR: "Só a gestão e quem é da área de Inovação podem criar iniciativas.",
+        SEM_PERMISSAO: "Só o responsável, quem criou a iniciativa ou a gestão podem alterá-la ou excluí-la.",
+        SO_EM_INOVACAO: "Só tarefas avulsas da categoria Inovação podem ser ligadas a uma iniciativa.",
+    },
+
     GERAL: {
         ERRO_INTERNO: "Ocorreu um erro interno.",
         RECURSO_NAO_ENCONTRADO: "Recurso não encontrado.",

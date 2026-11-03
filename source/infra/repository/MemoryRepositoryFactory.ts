@@ -15,6 +15,7 @@ import CapacitacaoRepositoryMemory from "./memory/CapacitacaoRepositoryMemory";
 import CapacitacaoFeedbackRepositoryMemory from "./memory/CapacitacaoFeedbackRepositoryMemory";
 import PastaRepositoryMemory from "./memory/PastaRepositoryMemory";
 import ConhecimentoRepositoryMemory from "./memory/ConhecimentoRepositoryMemory";
+import IniciativaRepositoryMemory from "./memory/IniciativaRepositoryMemory";
 import DocumentoRepositoryMemory from "./memory/DocumentoRepositoryMemory";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
@@ -84,6 +85,11 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly conhecimentoRepository = new ConhecimentoRepositoryMemory();
+    private readonly iniciativaRepository = new IniciativaRepositoryMemory();
+
+    criarIniciativaRepository() {
+        return this.iniciativaRepository;
+    }
 
     criarConhecimentoRepository() {
         return this.conhecimentoRepository;

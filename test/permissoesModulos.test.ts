@@ -58,9 +58,9 @@ describe("Registro de módulos", () => {
     test("menu esconde itens sem permissão", () => {
         const chaves = (u: any) => menuDoUsuario(u).map((m) => m.chave);
         const telas = (u: any) => menuOrdenado(u).map((i) => i.chave);
-        expect(telas(diretor)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
+        expect(telas(diretor)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "iniciativas", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
         expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
-        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "gestao", "perfil"]);
+        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "iniciativas", "gestao", "perfil"]);
         // Do módulo Pessoas, o membro só vê o próprio perfil.
         expect(menuDoUsuario(membro).find((m) => m.chave === "pessoas")?.itens.map((i) => i.chave)).toEqual(["perfil"]);
         expect(chaves(membro)).not.toContain("config");

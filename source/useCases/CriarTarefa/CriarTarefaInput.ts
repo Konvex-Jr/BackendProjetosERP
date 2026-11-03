@@ -13,4 +13,6 @@ export default interface CriarTarefaInput {
     descricao?: string | null;
     codigosResponsaveis?: string[];
     criadaPor?: Usuario | null;
+    /** Só em tarefa de Inovação (sessão 12b). */
+    codigoIniciativa?: string | null;
 }

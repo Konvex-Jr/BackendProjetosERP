@@ -18,7 +18,21 @@ export default class ConhecimentoRoutes implements ModelRoutes {
     init(): void {
         const f = this.factory;
         // Cada item diz se quem pediu pode editar/excluir, para o frontend não repetir a regra.
-        const comAcoes = (usuario: any) => (item: Conhecimento) => ({ ...item, podeAlterar: podeAlterarConhecimento(usuario, item) });
+        // Também traz as iniciativas que citam o item (a ligação é feita na iniciativa, sessão 12b).
+        const iniciativasPorItem = async () => {
+            const mapa = new Map<string, { codigo: string; nome: string }[]>();
+            for (const i of await f.criarIniciativaRepository().listar()) {
+                for (const c of i.conhecimentos) {
+                    mapa.set(c.codigo, [...(mapa.get(c.codigo) ?? []), { codigo: i.codigo, nome: i.titulo }]);
+                }
+            }
+            return mapa;
+        };
+        const comAcoes = (usuario: any, mapa: Map<string, { codigo: string; nome: string }[]>) => (item: Conhecimento) => ({
+            ...item,
+            podeAlterar: podeAlterarConhecimento(usuario, item),
+            iniciativas: (mapa.get(item.codigo) ?? []).sort((a, b) => a.nome.localeCompare(b.nome)),
+        });
 
         this.http.route("get", "/conhecimento/categorias", true, async (_p: any, body: any) => {
             exigirAutenticado(body?.user);
@@ -41,21 +55,21 @@ export default class ConhecimentoRoutes implements ModelRoutes {
                 de,
                 ate,
             });
-            return itens.map(comAcoes(usuario));
+            return itens.map(comAcoes(usuario, await iniciativasPorItem()));
         });
 
         this.http.route("get", "/conhecimento/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body?.user);
             const item = await f.criarConhecimentoRepository().buscarPorCodigo(params.codigo);
             if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
-            return comAcoes(usuario)(item);
+            return comAcoes(usuario, await iniciativasPorItem())(item);
         });
 
         this.http.route("post", "/conhecimento", true, async (_p: any, body: any) =>
-            comAcoes(body?.user)(await new SalvarConhecimento(f).criar(body?.user, body ?? {})));
+            comAcoes(body?.user, new Map())(await new SalvarConhecimento(f).criar(body?.user, body ?? {})));
 
         this.http.route("put", "/conhecimento/:codigo", true, async (params: any, body: any) =>
-            comAcoes(body?.user)(await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})));
+            comAcoes(body?.user, await iniciativasPorItem())(await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})));
 
         this.http.route("delete", "/conhecimento/:codigo", true, async (params: any, body: any) =>
             new SalvarConhecimento(f).excluir(body?.user, params.codigo));

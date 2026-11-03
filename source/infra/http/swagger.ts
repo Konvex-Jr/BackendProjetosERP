@@ -49,12 +49,31 @@ const CORPO_CONHECIMENTO = {
     },
 };
 
+const CORPO_INICIATIVA = {
+    type: "object",
+    required: ["titulo", "tipo", "frente"],
+    properties: {
+        titulo: { type: "string", maxLength: 160 },
+        tipo: { type: "string", description: "Valor de GET /iniciativas/opcoes (tipos)." },
+        frente: { type: "string", description: "Valor de GET /iniciativas/opcoes (frentes)." },
+        status: { type: "string", description: "Valor de GET /iniciativas/opcoes (status); padrão ideia." },
+        descricao: { type: "string", description: "Markdown simples." },
+        codigoResponsavel: { type: "string", description: "Pessoa ativa. Ao criar, padrão = quem cria; ao editar, ausente mantém." },
+        dataInicio: { type: "string", format: "date" },
+        dataFim: { type: "string", format: "date" },
+        resultado: { type: "string", description: "Markdown simples." },
+        aprendizados: { type: "string", description: "Markdown simples." },
+        codigosProjetos: { type: "array", items: { type: "string" }, description: "PUT substitui a lista." },
+        codigosConhecimentos: { type: "array", items: { type: "string" }, description: "Itens da Base. PUT substitui a lista." },
+    },
+};
+
 const swaggerSpecification = {
     openapi: "3.0.3",
     info: {
         title: "Konvex Gestão de Projetos API",
         version: "1.0.0",
-        description: "API de usuários, projetos, tarefas, capacitações e documentos.",
+        description: "API de usuários, projetos, tarefas, capacitações, documentos, Base de Inteligência e iniciativas.",
     },
     servers: [{ url: process.env.SWAGGER_SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5001}`, description: "Servidor da API" }],
     components: {
@@ -86,6 +105,7 @@ const swaggerSpecification = {
                 properties: {
                     codigoProjeto: { type: "string", nullable: true },
                     categoria: { type: "string", nullable: true, enum: ["inovacao", "capacitacao", "execucao"] },
+                    codigoIniciativa: { type: "string", nullable: true, description: "Só em tarefa de Inovação (400 INICIATIVA_SO_EM_INOVACAO). No PUT, ausente mantém; vazio desliga." },
                     titulo: { type: "string" },
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
@@ -296,6 +316,30 @@ const swaggerSpecification = {
                 requestBody: jsonBody(CORPO_CONHECIMENTO),
             }),
             delete: operation(["Base de Inteligência"], "Excluir item (autor ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+        },
+        "/iniciativas/opcoes": {
+            get: operation(["Iniciativas"], "Status, tipos e frentes com rótulos, e se a pessoa pode criar"),
+        },
+        "/iniciativas": {
+            get: operation(["Iniciativas"], "Listar iniciativas com busca e filtros (todos leem)", {
+                parameters: ["busca", "status", "tipo", "frente", "codigoResponsavel", "codigoProjeto", "codigoConhecimento"]
+                    .map((name) => ({ name, in: "query", schema: { type: "string" } })),
+            }),
+            post: operation(["Iniciativas"], "Criar iniciativa (gestão ou área de Inovação; 403 para os demais)", {
+                requestBody: jsonBody(CORPO_INICIATIVA),
+            }),
+        },
+        "/iniciativas/{codigo}": {
+            get: operation(["Iniciativas"], "Ficha com projetos, itens da Base e tarefas ligadas (as que a pessoa pode ver) e contagem", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+            put: operation(["Iniciativas"], "Editar (responsável, quem criou ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+                requestBody: jsonBody(CORPO_INICIATIVA),
+            }),
+            delete: operation(["Iniciativas"], "Excluir (responsável, quem criou ou gestão); tarefas ficam sem a ligação", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
             }),
         },

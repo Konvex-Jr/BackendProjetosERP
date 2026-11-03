@@ -4,12 +4,14 @@ import ItemChecklistTarefa from "../../domain/Entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
+import CategoriaTarefa from "../../domain/Enum/CategoriaTarefa";
+import { referenciaDaIniciativa } from "../SalvarIniciativa/SalvarIniciativa";
 
 export default class EditarTarefa {
     private readonly tarefas;
     private readonly usuarios;
     private readonly projetos;
-    constructor(factory: RepositoryFactoryInterface) {
+    constructor(private readonly factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
         this.usuarios = factory.criarUsuarioRepository();
         this.projetos = factory.criarProjetoRepository();
@@ -45,6 +47,12 @@ export default class EditarTarefa {
             ? atual.checklist
             : input.checklist.map((item) => new ItemChecklistTarefa(item.texto, item.feito, item.codigo));
 
+        const categoria = atual.projeto ? null : (input.categoria ?? atual.categoria);
+        // Sem codigoIniciativa no corpo, a ligação continua (e cai sozinha se a tarefa deixar de ser de Inovação).
+        const iniciativa = input.codigoIniciativa === undefined
+            ? (categoria === CategoriaTarefa.INOVACAO ? atual.iniciativa : null)
+            : await referenciaDaIniciativa(this.factory, input.codigoIniciativa);
+
         return this.tarefas.editar(new Tarefa(
             atual.projeto,
             input.titulo,
@@ -60,8 +68,9 @@ export default class EditarTarefa {
             atual.codigo,
             concluida ? (atual.dataConclusao ? atual.concluidaPor : input.quem ?? null) : null,
             // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
-            atual.projeto ? null : (input.categoria ?? atual.categoria),
+            categoria,
             atual.criadaPor,
+            iniciativa,
         ));
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {
