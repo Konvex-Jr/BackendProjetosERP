@@ -38,7 +38,7 @@ const swaggerSpecification = {
     info: {
         title: "Konvex Gestão de Projetos API",
         version: "1.0.0",
-        description: "API de usuários, projetos, tarefas, capacitações, check-ins e documentos.",
+        description: "API de usuários, projetos, tarefas, capacitações e documentos.",
     },
     servers: [{ url: process.env.SWAGGER_SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5001}`, description: "Servidor da API" }],
     components: {
@@ -250,39 +250,6 @@ const swaggerSpecification = {
         "/feedbacks": {
             get: operation(["Capacitações"], "Listar feedbacks", {
                 parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
-            }),
-        },
-        "/checkins": {
-            get: operation(["Check-ins"], "Listar check-ins", {
-                parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
-            }),
-            post: operation(["Check-ins"], "Registrar check-in", {
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["semana", "resumo", "aprendizados"],
-                    properties: {
-                        codigoUsuario: { type: "string" },
-                        semana: { type: "string", format: "date" },
-                        resumo: { type: "string" },
-                        aprendizados: { type: "string" },
-                        humor: { type: "integer", minimum: 1, maximum: 5 },
-                        sentimento: { type: "string" },
-                    },
-                }),
-            }),
-            put: operation(["Check-ins"], "Editar check-in", {
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["semana", "resumo", "aprendizados", "humor"],
-                    properties: {
-                        codigoUsuario: { type: "string" },
-                        semana: { type: "string", format: "date" },
-                        resumo: { type: "string" },
-                        aprendizados: { type: "string" },
-                        humor: { type: "integer", minimum: 1, maximum: 5 },
-                        sentimento: { type: "string" },
-                    },
-                }),
             }),
         },
         "/pastas": {

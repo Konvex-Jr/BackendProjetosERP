@@ -5,7 +5,6 @@ import ProjetoRepositoryInterface from "../../domain/Interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/Interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/Interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
-import CheckinRepositoryInterface from "../../domain/Interfaces/CheckinRepositoryInterface";
 import PastaRepositoryInterface from "../../domain/Interfaces/PastaRepositoryInterface";
 import DocumentoRepositoryInterface from "../../domain/Interfaces/DocumentoRepositoryInterface";
 import ConexaoBanco from "../database/ConexaoBanco";
@@ -15,7 +14,6 @@ import ProjetoRepositoryDatabase from "./database/ProjetoRepositoryDatabase";
 import TarefaRepositoryDatabase from "./database/TarefaRepositoryDatabase";
 import CapacitacaoRepositoryDatabase from "./database/CapacitacaoRepositoryDatabase";
 import CapacitacaoFeedbackRepositoryDatabase from "./database/CapacitacaoFeedbackRepositoryDatabase";
-import CheckinRepositoryDatabase from "./database/CheckinRepositoryDatabase";
 import PastaRepositoryDatabase from "./database/PastaRepositoryDatabase";
 import DocumentoRepositoryDatabase from "./database/DocumentoRepositoryDatabase";
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
@@ -56,9 +54,6 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new CapacitacaoFeedbackRepositoryDatabase(this.conexao);
     }
 
-    criarCheckinRepository(): CheckinRepositoryInterface {
-        return new CheckinRepositoryDatabase(this.conexao);
-    }
 
     criarPastaRepository(): PastaRepositoryInterface {
         return new PastaRepositoryDatabase(this.conexao);

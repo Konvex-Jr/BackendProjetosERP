@@ -5,7 +5,6 @@ import UsuarioRoutes from "../infra/http/Routes/UsuarioRoutes";
 import ProjetoRoutes from "../infra/http/Routes/ProjetoRoutes";
 import TarefaRoutes from "../infra/http/Routes/TarefaRoutes";
 import CapacitacaoRoutes from "../infra/http/Routes/CapacitacaoRoutes";
-import CheckinRoutes from "../infra/http/Routes/CheckinRoutes";
 import PastaRoutes from "../infra/http/Routes/PastaRoutes";
 import DocumentoRoutes from "../infra/http/Routes/DocumentoRoutes";
 import ConfiguracaoRoutes from "../infra/http/Routes/ConfiguracaoRoutes";
@@ -88,13 +87,6 @@ export const MODULOS: Modulo[] = [
         rotas: [CapacitacaoRoutes],
         permissoes: [Permissao.CAPACITACOES_GERIR],
         menu: [{ chave: "capacitacoes", rotulo: "Capacitações", caminho: "/capacitacoes", ordem: 30 }],
-    },
-    {
-        chave: "checkins",
-        nome: "Check-ins",
-        rotas: [CheckinRoutes],
-        permissoes: [Permissao.CHECKINS_VER_TODOS],
-        menu: [{ chave: "checkins", rotulo: "Check-in semanal", caminho: "/checkins", ordem: 40 }],
     },
     {
         chave: "documentos",

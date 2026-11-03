@@ -1,6 +1,6 @@
 import Usuario from "../../source/domain/Entity/Usuario";
 import PerfilUsuario from "../../source/domain/Enum/PerfilUsuario";
-import { criarCheckin, criarContexto, criarProjeto, criarTarefa } from "../fixtures";
+import { criarContexto, criarProjeto, criarTarefa } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
 /**
@@ -23,6 +23,11 @@ describe("Segurança da API", () => {
 
     afterEach(async () => servidor.fechar());
 
+    it("S2: rotas de check-in foram retiradas (03/11)", async () => {
+        const r = await servidor.chamar("get", "/checkins", { usuario: ctx.gerente });
+        expect(r.status).toBe(404);
+    });
+
     it("S1: não existe cadastro público de contas", async () => {
         const r = await servidor.chamar("post", "/auth/register", {
             corpo: { nome: "Intruso", email: "x@x.com", senha: "123456", senioridade: { codigo: "pleno" } },
@@ -31,29 +36,7 @@ describe("Segurança da API", () => {
         expect(await ctx.factory.criarUsuarioRepository().buscarPorEmail("x@x.com")).toBeNull();
     });
 
-    it("S2: membro só vê os próprios check-ins; gestor vê todos", async () => {
-        await criarCheckin(ctx.factory, outroMembro);
-        await criarCheckin(ctx.factory, ctx.membro);
-
-        const doMembro = await servidor.chamar("get", "/checkins", { usuario: ctx.membro });
-        expect(doMembro.status).toBe(200);
-        expect(doMembro.corpo.every((c: any) => c.usuario.codigo === ctx.membro.codigo)).toBe(true);
-
-        const tentandoOutro = await servidor.chamar("get", `/checkins?codigoUsuario=${outroMembro.codigo}`, { usuario: ctx.membro });
-        expect(tentandoOutro.corpo.every((c: any) => c.usuario.codigo === ctx.membro.codigo)).toBe(true);
-
-        const doGestor = await servidor.chamar("get", "/checkins", { usuario: ctx.gerente });
-        expect(doGestor.corpo).toHaveLength(2);
-    });
-
-    it("S3: membro não registra check-in nem inscrição em nome de outra pessoa", async () => {
-        const checkin = await servidor.chamar("post", "/checkins", {
-            usuario: ctx.membro,
-            corpo: { codigoUsuario: outroMembro.codigo, semana: "2026-10-19", resumo: "x", aprendizados: "y", humor: 1 },
-        });
-        expect(checkin.status).toBe(200);
-        expect(checkin.corpo.usuario.codigo).toBe(ctx.membro.codigo);
-
+    it("S3: membro não faz inscrição em nome de outra pessoa", async () => {
         const inscricao = await servidor.chamar("post", `/capacitacoes/${ctx.capacitacao.codigo}/inscricoes`, {
             usuario: ctx.membro,
             corpo: { codigoUsuario: outroMembro.codigo },
