@@ -1,3 +1,5 @@
+import GerirAnexos from "../GerirAnexos/GerirAnexos";
+import { DonoAnexo } from "../../domain/Enum/Anexo";
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Iniciativa from "../../domain/Entity/Iniciativa";
 import { Referencia } from "../../domain/Entity/Conhecimento";
@@ -144,6 +146,7 @@ export default class SalvarIniciativa {
         for (const tarefa of await tarefasDaIniciativa(this.factory, codigo)) {
             await this.factory.criarTarefaRepository().editar(tarefa.comIniciativa(null));
         }
+        await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.INICIATIVA, [codigo]);
         await repo.excluir(codigo);
         return { codigo };
     }

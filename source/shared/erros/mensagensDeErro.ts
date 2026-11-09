@@ -57,6 +57,19 @@ export const MENSAGENS_DE_ERRO = {
         SO_EM_INOVACAO: "Só tarefas avulsas da categoria Inovação podem ser ligadas a uma iniciativa.",
     },
 
+    ANEXO: {
+        DONO_INVALIDO: "Anexo só pode ser de um documento, de um item da Base ou de uma iniciativa.",
+        NOME_OBRIGATORIO: "Informe o nome do arquivo.",
+        NOME_LONGO: "O nome do arquivo deve ter no máximo 255 caracteres.",
+        TIPO_NAO_ACEITO: "Tipo de arquivo não aceito. Envie PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, MD, imagem (PNG, JPG, WEBP, GIF) ou ZIP.",
+        VAZIO: "O arquivo está vazio.",
+        GRANDE_DEMAIS: "O arquivo passa de 20 MB, o tamanho máximo.",
+        NAO_ENCONTRADO: "Anexo não encontrado.",
+        ARQUIVO_SUMIU: "O arquivo deste anexo não foi encontrado no servidor. Avise a gestão.",
+        SEM_PERMISSAO_DOCUMENTO: "Só a gestão pode anexar ou excluir arquivos nas pastas.",
+        DOCUMENTO_E_ARQUIVO: "Este documento é um arquivo, não um link. Para trocar, exclua e envie outro.",
+    },
+
     GERAL: {
         ERRO_INTERNO: "Ocorreu um erro interno.",
         RECURSO_NAO_ENCONTRADO: "Recurso não encontrado.",

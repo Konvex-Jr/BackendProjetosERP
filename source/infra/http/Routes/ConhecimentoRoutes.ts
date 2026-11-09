@@ -7,6 +7,8 @@ import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { lerData } from "../../../shared/entradas";
 import { exigirAutenticado } from "../../../shared/seguranca/permissoes";
+import GerirAnexos from "../../../useCases/GerirAnexos/GerirAnexos";
+import { DonoAnexo } from "../../../domain/Enum/Anexo";
 import { podeAlterarConhecimento } from "../../../shared/seguranca/regrasConhecimento";
 import Conhecimento from "../../../domain/Entity/Conhecimento";
 import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
@@ -28,11 +30,18 @@ export default class ConhecimentoRoutes implements ModelRoutes {
             }
             return mapa;
         };
-        const comAcoes = (usuario: any, mapa: Map<string, { codigo: string; nome: string }[]>) => (item: Conhecimento) => ({
-            ...item,
-            podeAlterar: podeAlterarConhecimento(usuario, item),
-            iniciativas: (mapa.get(item.codigo) ?? []).sort((a, b) => a.nome.localeCompare(b.nome)),
-        });
+        // E os arquivos anexados (sessão 12c).
+        const responder = async (usuario: any, itens: Conhecimento[]) => {
+            const mapa = await iniciativasPorItem();
+            const anexos = await new GerirAnexos(f).porDono(DonoAnexo.CONHECIMENTO, itens.map((i) => i.codigo));
+            return itens.map((item) => ({
+                ...item,
+                podeAlterar: podeAlterarConhecimento(usuario, item),
+                iniciativas: (mapa.get(item.codigo) ?? []).sort((a, b) => a.nome.localeCompare(b.nome)),
+                anexos: anexos.get(item.codigo) ?? [],
+            }));
+        };
+        const responderUm = async (usuario: any, item: Conhecimento) => (await responder(usuario, [item]))[0];
 
         this.http.route("get", "/conhecimento/categorias", true, async (_p: any, body: any) => {
             exigirAutenticado(body?.user);
@@ -55,21 +64,21 @@ export default class ConhecimentoRoutes implements ModelRoutes {
                 de,
                 ate,
             });
-            return itens.map(comAcoes(usuario, await iniciativasPorItem()));
+            return responder(usuario, itens);
         });
 
         this.http.route("get", "/conhecimento/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body?.user);
             const item = await f.criarConhecimentoRepository().buscarPorCodigo(params.codigo);
             if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
-            return comAcoes(usuario, await iniciativasPorItem())(item);
+            return responderUm(usuario, item);
         });
 
         this.http.route("post", "/conhecimento", true, async (_p: any, body: any) =>
-            comAcoes(body?.user, new Map())(await new SalvarConhecimento(f).criar(body?.user, body ?? {})));
+            responderUm(body?.user, await new SalvarConhecimento(f).criar(body?.user, body ?? {})));
 
         this.http.route("put", "/conhecimento/:codigo", true, async (params: any, body: any) =>
-            comAcoes(body?.user, await iniciativasPorItem())(await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})));
+            responderUm(body?.user, await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})));
 
         this.http.route("delete", "/conhecimento/:codigo", true, async (params: any, body: any) =>
             new SalvarConhecimento(f).excluir(body?.user, params.codigo));

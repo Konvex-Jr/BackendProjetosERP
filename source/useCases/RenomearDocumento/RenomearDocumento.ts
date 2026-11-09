@@ -1,5 +1,7 @@
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Documento, { exigirLinkValido } from "../../domain/Entity/Documento";
+import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 
 export default class RenomearDocumento {
@@ -12,6 +14,8 @@ export default class RenomearDocumento {
         const d = await this.documentos.buscarPorCodigo(codigo);
         if (!d)
             throw new ErroNaoEncontrado("Documento não encontrado.");
+        if (arquivoUrl !== undefined && d.arquivoUrl === null)
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.ANEXO.DOCUMENTO_E_ARQUIVO, "DOCUMENTO_E_ARQUIVO");
         return this.documentos.editar(new Documento(d.pasta, nome.trim(), d.tamanhoBytes, d.dataEnvio, d.autor, arquivoUrl === undefined ? d.arquivoUrl : exigirLinkValido(arquivoUrl), d.extensao, d.codigo));
     }
 }

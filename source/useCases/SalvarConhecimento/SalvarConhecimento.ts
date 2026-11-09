@@ -1,3 +1,5 @@
+import GerirAnexos from "../GerirAnexos/GerirAnexos";
+import { DonoAnexo } from "../../domain/Enum/Anexo";
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Conhecimento, { Referencia } from "../../domain/Entity/Conhecimento";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
@@ -85,6 +87,7 @@ export default class SalvarConhecimento {
         const atual = await repo.buscarPorCodigo(codigo);
         if (!atual) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
         exigirAlterarConhecimento(usuario, atual);
+        await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.CONHECIMENTO, [codigo]);
         await repo.excluir(codigo);
         return { codigo };
     }

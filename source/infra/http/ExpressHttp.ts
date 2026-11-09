@@ -1,7 +1,8 @@
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import Auth from "./Middleware/Auth";
-import Http from "./Http";
+import Http, { OpcoesRota } from "./Http";
+import RespostaArquivo from "./RespostaArquivo";
 import HttpMethods from "./HttpMethods";
 import { ErroAplicacao } from "../../shared/erros/ErroAplicacao";
 
@@ -43,18 +44,56 @@ export default class ExpressHttp implements Http {
                 res.header("Access-Control-Allow-Origin", origem);
                 res.header("Vary", "Origin");
                 res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-                res.header("Access-Control-Allow-Headers", "Content-Type, access-token");
+                res.header("Access-Control-Allow-Headers", "Content-Type, access-token, X-Nome-Arquivo");
             }
             next();
         });
         this.app.options("*", (_req: any, res: any) => res.end());
     }
 
-    private registerRoute(method: HttpMethods, url: string, callback: any, authRequired: boolean): void {
+    /** Lê o corpo como bytes (depois da autenticação, para não aceitar arquivo de quem não está logado). */
+    private receberArquivo(opcoes: NonNullable<OpcoesRota["arquivo"]>) {
+        const ler = express.raw({ type: () => true, limit: opcoes.limiteBytes });
+        return (req: any, res: any, next: any) => {
+            const user = req.body?.user;
+            req._body = false;
+            ler(req, res, (erro: any) => {
+                if (erro) {
+                    const grande = erro.type === "entity.too.large";
+                    res.status(grande ? 413 : 400).json({
+                        message: grande ? opcoes.mensagemLimite : "Não foi possível receber o arquivo.",
+                        codigo: grande ? "ANEXO_GRANDE_DEMAIS" : "ANEXO_INVALIDO",
+                    });
+                    return;
+                }
+                let nome = "";
+                try {
+                    nome = decodeURIComponent(String(req.headers["x-nome-arquivo"] ?? ""));
+                } catch {
+                    nome = "";
+                }
+                const conteudo = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+                req.body = { user, arquivo: { nome, conteudo } };
+                next();
+            });
+        };
+    }
+
+    private registerRoute(method: HttpMethods, url: string, callback: any, authRequired: boolean, opcoes?: OpcoesRota): void {
         const handlers = authRequired ? [this.auth.execute.bind(this.auth)] : [];
+        if (opcoes?.arquivo) handlers.push(this.receberArquivo(opcoes.arquivo));
         handlers.push(async (req: any, res: any) => {
             try {
                 const result = await callback(req.params, req.body, req.query);
+                if (result instanceof RespostaArquivo) {
+                    res.setHeader("Content-Type", result.tipoMime);
+                    res.setHeader("Content-Length", String(result.conteudo.length));
+                    res.setHeader("X-Content-Type-Options", "nosniff");
+                    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
+                    res.setHeader("Cache-Control", "private, no-store");
+                    res.end(result.conteudo);
+                    return;
+                }
                 res.json(result === undefined ? { message: "Operação realizada com sucesso." } : result);
             } catch (exception: any) {
                 responderErro(res, exception);
@@ -63,8 +102,8 @@ export default class ExpressHttp implements Http {
         this.app[method](url, ...handlers);
     }
 
-    async route(method: HttpMethods, url: string, auth: boolean, callback: any): Promise<any> {
-        this.registerRoute(method, url, callback, auth);
+    async route(method: HttpMethods, url: string, auth: boolean, callback: any, opcoes?: OpcoesRota): Promise<any> {
+        this.registerRoute(method, url, callback, auth, opcoes);
     }
 
     swagger(specification: object): void {

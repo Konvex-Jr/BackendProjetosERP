@@ -28,14 +28,16 @@ No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitaçõe
 - Você edita e exclui só os itens que cadastrou.
 - Na ficha de cada projeto, a aba **Base** mostra os itens ligados a ele.
 - Na ficha do item aparecem também as **iniciativas de inovação** que o usam.
+- **Anexos**: na ficha dos seus itens, use **Anexar arquivo** (até 20 MB; PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, imagens ou ZIP). Todos baixam; quem cadastrou o item (e a gestão) exclui.
 
 **Iniciativas** (no celular, fica no **Mais**): as iniciativas de inovação da Konvex (produtos, processos, serviços, experiências, oportunidades…). Todos veem todas.
 - Filtre por texto, status (Ideia, Em andamento, Pausada, Concluída, Descartada), frente (Radar de Mercado, Konvex Lab, Esteira de Produtos), tipo e responsável.
 - A ficha mostra a descrição, o resultado, os aprendizados, os projetos e itens da Base ligados e as tarefas de Inovação da iniciativa (você vê as tarefas em que é responsável; a contagem mostra todas).
 - **Nova iniciativa** aparece para quem é da área de **Inovação** (e para a gestão). Quem cria fica como responsável, se não escolher outra pessoa.
 - O responsável e quem criou editam e excluem a iniciativa. Excluir não apaga as tarefas nem os itens da Base, só a ligação.
+- **Anexos**: o responsável e quem criou anexam arquivos na ficha (protótipos, apresentações, relatórios). Todos baixam. Excluir a iniciativa apaga os anexos dela.
 
-**Gestão**: pastas de documentos que você pode ler (as abertas a todos e as dos seus projetos). Documentos são links (Drive, Docs, Notion).
+**Gestão**: pastas de documentos que você pode ler (as abertas a todos e as dos seus projetos). Cada documento é um **link** (Drive, Docs, Notion) ou um **arquivo** guardado no sistema; clique para abrir o link ou baixar o arquivo.
 
 **Meu perfil**: nome de exibição, telefone, LinkedIn, curso, semestre, bio e senha.
 
@@ -56,11 +58,11 @@ Tudo o que o membro faz, mais:
 
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Trainee, Saiu…) e redefine senhas. Quando alguém sai, as participações são encerradas, mas o histórico fica.
 
-**Base de Inteligência**: edita e exclui qualquer item (por exemplo, para corrigir a categoria ou tirar algo repetido).
+**Base de Inteligência**: edita e exclui qualquer item (por exemplo, para corrigir a categoria ou tirar algo repetido) e os anexos dele.
 
 **Iniciativas**: cria, edita e exclui qualquer iniciativa. Para ligar uma tarefa a uma iniciativa, crie a tarefa avulsa na categoria **Inovação** e escolha a iniciativa (ou use **Nova tarefa** na ficha da iniciativa). Para que um membro possa criar iniciativas, coloque-o na área **Inovação** (ou numa subárea dela) em Pessoas.
 
-**Gestão**: cria pastas com sigilo (**Todos**, **Só gestão** ou **Equipe de um projeto**) e adiciona, renomeia e remove links.
+**Gestão**: cria pastas com sigilo (**Todos**, **Só gestão** ou **Equipe de um projeto**) e adiciona, renomeia e remove documentos: **link** ou **arquivo** (até 20 MB). O arquivo de uma pasta segue o sigilo dela: quem não lê a pasta não baixa.
 
 **Capacitações**, **Visão Estratégica** e **Simular precificação**: disponíveis no menu.
 
