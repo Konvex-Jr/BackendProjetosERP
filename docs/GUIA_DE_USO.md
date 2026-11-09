@@ -19,7 +19,7 @@ No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitaçõe
 
 **Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban, lista e cronograma), Visão geral e Equipe.
 
-**Capacitações**: veja as próximas e inscreva-se.
+**Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar o material e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
 
 **Base de Inteligência** (no celular, fica no **Mais**): o conhecimento da Konvex num lugar só (pesquisas, benchmarks, cases, aprendizados, decisões…). Todos leem tudo.
 - Procure por texto (título, resumo, conteúdo e tags) e filtre por categoria, tag, autor, projeto e período.
@@ -39,7 +39,7 @@ No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitaçõe
 
 **Gestão**: pastas de documentos que você pode ler (as abertas a todos e as dos seus projetos). Cada documento é um **link** (Drive, Docs, Notion) ou um **arquivo** guardado no sistema; clique para abrir o link ou baixar o arquivo.
 
-**Meu perfil**: nome de exibição, telefone, LinkedIn, curso, semestre, bio e senha.
+**Meu perfil**: nome de exibição, telefone, LinkedIn, **GitHub**, **link do seu calendário** (Google Agenda, Calendly…), curso, semestre, bio e senha. Em **Tecnologias que domina**, use “Editar”: digite e escolha uma da lista ou crie uma nova. Links e tecnologias ficam visíveis para todos os membros; em **Pessoas**, a busca também acha quem domina uma tecnologia.
 
 ### Se você é líder de um projeto
 O líder é escolhido pela gestão entre a equipe. No projeto que lidera, você cria, edita, exclui e atribui qualquer tarefa, conclui ou reabre qualquer uma e apaga qualquer comentário.
@@ -64,7 +64,9 @@ Tudo o que o membro faz, mais:
 
 **Gestão**: cria pastas com sigilo (**Todos**, **Só gestão** ou **Equipe de um projeto**) e adiciona, renomeia e remove documentos: **link** ou **arquivo** (até 20 MB). O arquivo de uma pasta segue o sigilo dela: quem não lê a pasta não baixa.
 
-**Capacitações**, **Visão Estratégica** e **Simular precificação**: disponíveis no menu.
+**Capacitações**: use **Nova capacitação** (título, quem ministra, data, início, duração em horas, tipo, sala ou local, vagas e descrição). Na ficha: editar, excluir, anexar **material** (slides, apostila), ver e tirar inscritos e **inscrever pessoa** (inclusive depois do início, para quem apareceu sem inscrição). Depois que a capacitação começa, marque quem compareceu e clique em **Salvar presença**: isso libera a avaliação e conta as horas no perfil de cada um. Em **Avaliações individuais** você lê cada avaliação com o nome.
+
+**Visão Estratégica** e **Simular precificação**: disponíveis no menu.
 
 ---
 
