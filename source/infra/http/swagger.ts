@@ -62,6 +62,22 @@ const CORPO_CONHECIMENTO = {
     },
 };
 
+const CORPO_CAPACITACAO = {
+    type: "object",
+    required: ["titulo", "data", "hora", "codigoInstrutor", "vagas", "tipo", "sala"],
+    properties: {
+        titulo: { type: "string", maxLength: 200 },
+        descricao: { type: "string", description: "Markdown simples, até 10 mil caracteres." },
+        data: { type: "string", format: "date" },
+        hora: { type: "string", example: "18:30", description: "Hora de São Paulo." },
+        duracaoHoras: { type: "number", minimum: 0.5, maximum: 24, example: 1.5 },
+        codigoInstrutor: { type: "string" },
+        vagas: { type: "integer", minimum: 1, maximum: 500 },
+        tipo: { type: "string", enum: ["computacao", "eletrica", "mecanica"] },
+        sala: { type: "string", maxLength: 60 },
+    },
+};
+
 const CORPO_INICIATIVA = {
     type: "object",
     required: ["titulo", "tipo", "frente"],
@@ -255,50 +271,50 @@ const swaggerSpecification = {
                 }),
             }),
         },
+        "/capacitacoes/opcoes": {
+            get: operation(["Capacitações"], "Tipos com rótulo e se a pessoa pode gerir (gestão)"),
+        },
         "/capacitacoes": {
-            get: operation(["Capacitações"], "Listar capacitações"),
-            post: operation(["Capacitações"], "Criar capacitação (somente diretor)", {
-                requestBody: jsonBody({ type: "object", required: ["titulo", "data", "hora", "codigoInstrutor", "vagas", "tipo", "sala"], properties: {
-                    titulo: { type: "string" }, data: { type: "string", format: "date" }, hora: { type: "string", example: "14:00" },
-                    codigoInstrutor: { type: "string" }, vagas: { type: "integer", minimum: 1 }, tipo: { type: "string", enum: ["mecanica", "computacao", "eletrica"] }, sala: { type: "string" }
-                } })
-            }),
+            get: operation(["Capacitações"], "Listar capacitações (todos; inscritos só para gestão e instrutor; média e total de avaliações)"),
+            post: operation(["Capacitações"], "Criar capacitação (gestão)", { requestBody: jsonBody(CORPO_CAPACITACAO) }),
+        },
+        "/capacitacoes/{codigo}": {
+            get: operation(["Capacitações"], "Ficha da capacitação, com a avaliação da própria pessoa", { parameters: [codigo] }),
+            put: operation(["Capacitações"], "Editar capacitação (gestão; vagas não podem ficar abaixo dos inscritos)", { parameters: [codigo], requestBody: jsonBody(CORPO_CAPACITACAO) }),
+            delete: operation(["Capacitações"], "Excluir capacitação, inscrições, avaliações e material (gestão)", { parameters: [codigo] }),
         },
         "/capacitacoes/{codigo}/inscricoes": {
-            post: operation(["Capacitações"], "Inscrever usuário em capacitação", {
-                parameters: [{ $ref: "#/components/parameters/codigo" }],
-                requestBody: jsonBody({
-                    type: "object",
-                    properties: { codigoUsuario: { type: "string" } },
-                }),
+            post: operation(["Capacitações"], "Inscrever-se até o início (gestão pode inscrever outra pessoa com codigoUsuario)", {
+                parameters: [codigo],
+                requestBody: jsonBody({ type: "object", properties: { codigoUsuario: { type: "string" } } }),
             }),
         },
         "/capacitacoes/{codigo}/inscricoes/{codigoUsuario}": {
-            delete: operation(["Capacitações"], "Cancelar inscrição", {
-                parameters: [
-                    { $ref: "#/components/parameters/codigo" },
-                    { name: "codigoUsuario", in: "path", required: true, schema: { type: "string" } },
-                ],
+            delete: operation(["Capacitações"], "Cancelar inscrição (a própria até o início; a gestão a qualquer momento)", {
+                parameters: [codigo, { name: "codigoUsuario", in: "path", required: true, schema: { type: "string" } }],
             }),
         },
-        "/capacitacoes/{codigo}/feedbacks": {
-            post: operation(["Capacitações"], "Enviar feedback da capacitação", {
-                parameters: [{ $ref: "#/components/parameters/codigo" }],
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["nota"],
-                    properties: {
-                        codigoUsuario: { type: "string" },
-                        nota: { type: "number" },
-                        bom: { type: "string" },
-                        melhorar: { type: "string" },
-                    },
-                }),
+        "/capacitacoes/{codigo}/presencas": {
+            put: operation(["Capacitações"], "Marcar presença depois do início (gestão); os inscritos fora da lista ficam ausentes", {
+                parameters: [codigo],
+                requestBody: jsonBody({ type: "object", required: ["presentes"], properties: { presentes: { type: "array", items: { type: "string" } } } }),
             }),
         },
-        "/feedbacks": {
-            get: operation(["Capacitações"], "Listar feedbacks", {
-                parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
+        "/capacitacoes/{codigo}/avaliacao": {
+            put: operation(["Capacitações"], "Avaliar (só quem compareceu, depois do início); avaliar de novo substitui", {
+                parameters: [codigo],
+                requestBody: jsonBody({ type: "object", required: ["nota"], properties: {
+                    nota: { type: "integer", minimum: 1, maximum: 5 }, bom: { type: "string" }, melhorar: { type: "string" },
+                } }),
+            }),
+        },
+        "/capacitacoes/{codigo}/avaliacoes": {
+            get: operation(["Capacitações"], "Avaliações individuais (gestão com nome; instrutor sem nome; demais 403)", { parameters: [codigo] }),
+        },
+        "/capacitacoes/{codigo}/anexos": {
+            post: operation(["Anexos"], "Anexar material a uma capacitação (gestão)", {
+                parameters: [codigo, nomeArquivo],
+                requestBody: corpoArquivo,
             }),
         },
         "/conhecimento/categorias": {
@@ -469,7 +485,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
-    "/auth/perfil": { put: operation(["Autenticação"], "Editar os próprios dados de contato (telefone, LinkedIn, curso, semestre, bio)", json) },
+    "/auth/perfil": { put: operation(["Autenticação"], "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, tecnologias[], curso, semestre, bio)", json) },
     "/usuarios/{codigo}": {
         get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
     },
@@ -487,7 +503,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     },
     "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
-    "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas") },
+    "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas (?tipo=tecnologia filtra)") },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": { put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }) },
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": { post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }) },

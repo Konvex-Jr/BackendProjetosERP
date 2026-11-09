@@ -35,7 +35,7 @@ export default class EditarUsuario {
             throw new ErroValidacao("Selecione uma senioridade cadastrada para o usuário.", "SENIORIDADE_OBRIGATORIA");
         }
 
-        const detalhes = await resolverPerfilPessoa(this.factory, input);
+        const detalhes = await resolverPerfilPessoa(this.factory, input, atual);
         const editado = atual.copiar({
             nome: input.nome !== undefined ? String(input.nome).trim() : undefined,
             email,

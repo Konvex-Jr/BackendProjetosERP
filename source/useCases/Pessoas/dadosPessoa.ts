@@ -1,4 +1,4 @@
-import { DetalhesPessoa } from "../../domain/Entity/Usuario";
+import Usuario, { DetalhesPessoa } from "../../domain/Entity/Usuario";
 import Habilidade from "../../domain/Entity/Habilidade";
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import StatusPessoa from "../../domain/Enum/StatusPessoa";
@@ -12,6 +12,8 @@ export interface EntradaPerfilPessoa {
     avatarUrl?: string | null;
     telefone?: string | null;
     linkedinUrl?: string | null;
+    calendarioUrl?: string | null;
+    githubUrl?: string | null;
     curso?: string | null;
     semestre?: number | null;
     codigoArea?: string | null;
@@ -20,15 +22,21 @@ export interface EntradaPerfilPessoa {
     bio?: string | null;
     /** Nomes de habilidades e tecnologias. Nomes novos são cadastrados automaticamente. */
     habilidades?: Array<string | { nome: string; tipo?: TipoHabilidade }>;
+    /**
+     * Tecnologias que a pessoa domina (sessão 13): substitui só as do tipo "tecnologia",
+     * mantendo as habilidades. Nome novo entra na lista; repetido (sem diferenciar maiúsculas) reaproveita.
+     */
+    tecnologias?: string[];
 }
 
 /** Converte a entrada da API em DetalhesPessoa, conferindo se área e cargo existem. */
 export async function resolverPerfilPessoa(
     factory: RepositoryFactoryInterface,
     entrada: EntradaPerfilPessoa,
+    atual?: Usuario | null,
 ): Promise<DetalhesPessoa> {
     const detalhes: DetalhesPessoa = {};
-    const copiar = ["nomeExibicao", "avatarUrl", "telefone", "linkedinUrl", "curso", "semestre", "dataEntrada", "bio"] as const;
+    const copiar = ["nomeExibicao", "avatarUrl", "telefone", "linkedinUrl", "calendarioUrl", "githubUrl", "curso", "semestre", "dataEntrada", "bio"] as const;
     for (const campo of copiar) {
         if (entrada[campo] !== undefined) (detalhes as any)[campo] = entrada[campo];
     }
@@ -70,6 +78,24 @@ export async function resolverPerfilPessoa(
             if (!habilidades.some((h) => h.codigo === habilidade.codigo)) habilidades.push(habilidade);
         }
         detalhes.habilidades = habilidades;
+    }
+
+    if (entrada.tecnologias !== undefined) {
+        if (!Array.isArray(entrada.tecnologias)) {
+            throw new ErroValidacao("Envie as tecnologias como uma lista de nomes.", "TECNOLOGIAS_INVALIDAS");
+        }
+        if (entrada.tecnologias.length > 30) {
+            throw new ErroValidacao("Informe no máximo 30 tecnologias.", "TECNOLOGIAS_DEMAIS");
+        }
+        const repositorio = factory.criarHabilidadeRepository();
+        const base = (detalhes.habilidades ?? atual?.habilidades ?? []).filter((h) => h.tipo !== TipoHabilidade.TECNOLOGIA);
+        const tecnologias: Habilidade[] = [];
+        for (const nome of entrada.tecnologias) {
+            if (typeof nome !== "string" || !nome.trim()) continue;
+            const tecnologia = await repositorio.garantir(nome, TipoHabilidade.TECNOLOGIA);
+            if (!tecnologias.some((h) => h.codigo === tecnologia.codigo)) tecnologias.push(tecnologia);
+        }
+        detalhes.habilidades = [...base, ...tecnologias];
     }
 
     return detalhes;

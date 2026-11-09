@@ -1,59 +1,81 @@
 import RepositoryFactoryInterface from "../../../domain/Interfaces/RepositoryFactoryInterface";
+import { TIPOS_CAPACITACAO } from "../../../domain/Enum/TipoCapacitacao";
+import GerirCapacitacoes, { EntradaCapacitacao } from "../../../useCases/GerirCapacitacoes/GerirCapacitacoes";
+import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
+import { exigirAutenticado } from "../../../shared/seguranca/permissoes";
+import { podeGerirCapacitacoes } from "../../../shared/seguranca/regrasCapacitacao";
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
-import ListarCapacitacoes from "../../../useCases/ListarCapacitacoes/ListarCapacitacoes";
-import InscreverCapacitacao from "../../../useCases/InscreverCapacitacao/InscreverCapacitacao";
-import CancelarInscricaoCapacitacao from "../../../useCases/CancelarInscricaoCapacitacao/CancelarInscricaoCapacitacao";
-import EnviarFeedbackCapacitacao from "../../../useCases/EnviarFeedbackCapacitacao/EnviarFeedbackCapacitacao";
-import ListarFeedbacks from "../../../useCases/ListarFeedbacks/ListarFeedbacks";
-import CriarCapacitacao from "../../../useCases/CriarCapacitacao/CriarCapacitacao";
-import { exigirAutenticado, exigirPermissao, temPermissao, resolverUsuarioAlvo, Permissao } from "../../../shared/seguranca/permissoes";
 
+const M = MENSAGENS_DE_ERRO.CAPACITACAO;
+
+/** Data AAAA-MM-DD como meia-noite UTC (mesmo formato do banco); ausente = não alterar. */
+function lerData(valor: unknown): Date | undefined {
+    if (valor === undefined) return undefined;
+    const texto = String(valor ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(texto) || Number.isNaN(new Date(`${texto}T00:00:00Z`).getTime())) {
+        throw new ErroValidacao(M.DATA_INVALIDA, "DATA_CAPACITACAO_INVALIDA");
+    }
+    return new Date(`${texto}T00:00:00Z`);
+}
+
+const numero = (v: unknown) => (v === undefined ? undefined : v === null || v === "" ? NaN : Number(String(v).replace(",", ".")));
+
+function lerEntrada(body: any): EntradaCapacitacao {
+    return {
+        titulo: body.titulo,
+        descricao: body.descricao ?? undefined,
+        data: lerData(body.data),
+        hora: body.hora,
+        duracaoHoras: numero(body.duracaoHoras),
+        codigoInstrutor: body.codigoInstrutor ?? body.instrutor?.codigo,
+        vagas: numero(body.vagas),
+        tipo: body.tipo,
+        sala: body.sala,
+    };
+}
+
+/** Capacitações (RF-070 a RF-073, sessão 13). Regras em shared/seguranca/regrasCapacitacao.ts. */
 export default class CapacitacaoRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
 
     init(): void {
-        this.http.route("get", "/capacitacoes", true, async () =>
-            new ListarCapacitacoes(this.factory).execute());
+        const gerir = () => new GerirCapacitacoes(this.factory);
 
-        this.http.route("post", "/capacitacoes", true, async (_params: any, body: any) => {
-            // RN-10: capacitações são agendadas por gestores (MANAGER ou ADMIN).
-            exigirPermissao(body.user, Permissao.CAPACITACOES_GERIR, "Somente diretores e gerentes podem agendar capacitações.");
-            return new CriarCapacitacao(this.factory).execute({
-                titulo: body.titulo,
-                data: new Date(body.data),
-                hora: body.hora,
-                codigoInstrutor: body.codigoInstrutor ?? body.instrutor?.codigo,
-                vagas: Number(body.vagas),
-                tipo: body.tipo,
-                sala: body.sala,
-            });
+        this.http.route("get", "/capacitacoes/opcoes", true, async (_p: any, body: any) => {
+            const usuario = exigirAutenticado(body?.user);
+            return { tipos: TIPOS_CAPACITACAO, podeGerir: podeGerirCapacitacoes(usuario) };
         });
 
+        this.http.route("get", "/capacitacoes", true, async (_p: any, body: any) => gerir().listar(body?.user));
+
+        this.http.route("get", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
+            gerir().ficha(body?.user, params.codigo));
+
+        this.http.route("post", "/capacitacoes", true, async (_p: any, body: any) =>
+            gerir().salvar(body?.user, lerEntrada(body)));
+
+        this.http.route("put", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
+            gerir().salvar(body?.user, lerEntrada(body), params.codigo));
+
+        this.http.route("delete", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
+            gerir().excluir(body?.user, params.codigo));
+
+        // Sem `codigoUsuario`, inscreve quem está logado; com outro código, só a gestão.
         this.http.route("post", "/capacitacoes/:codigo/inscricoes", true, async (params: any, body: any) =>
-            new InscreverCapacitacao(this.factory).execute(params.codigo, resolverUsuarioAlvo(body.user, body.codigoUsuario, Permissao.CAPACITACOES_GERIR)));
+            gerir().inscrever(body?.user, params.codigo, body?.codigoUsuario || undefined));
 
         this.http.route("delete", "/capacitacoes/:codigo/inscricoes/:codigoUsuario", true, async (params: any, body: any) =>
-            new CancelarInscricaoCapacitacao(this.factory).execute(
-                params.codigo,
-                resolverUsuarioAlvo(body.user, params.codigoUsuario, Permissao.CAPACITACOES_GERIR),
-            ));
+            gerir().cancelar(body?.user, params.codigo, params.codigoUsuario));
 
-        this.http.route("post", "/capacitacoes/:codigo/feedbacks", true, async (params: any, body: any) =>
-            new EnviarFeedbackCapacitacao(this.factory).execute({
-                codigoCapacitacao: params.codigo,
-                // O feedback é sempre de quem está logado.
-                codigoUsuario: exigirAutenticado(body.user).codigo,
-                nota: Number(body.nota),
-                bom: body.bom ?? null,
-                melhorar: body.melhorar ?? null,
-                data: body.data ? new Date(body.data) : undefined,
-            }));
+        this.http.route("put", "/capacitacoes/:codigo/presencas", true, async (params: any, body: any) =>
+            gerir().marcarPresencas(body?.user, params.codigo, body?.presentes));
 
-        this.http.route("get", "/feedbacks", true, async (_params: any, body: any, query: any) => {
-            const usuario = exigirAutenticado(body.user);
-            const codigoUsuario = temPermissao(usuario, Permissao.CAPACITACOES_GERIR) ? query?.codigoUsuario : usuario.codigo;
-            return new ListarFeedbacks(this.factory).execute(codigoUsuario);
-        });
+        this.http.route("put", "/capacitacoes/:codigo/avaliacao", true, async (params: any, body: any) =>
+            gerir().avaliar(body?.user, params.codigo, { nota: Number(body?.nota), bom: body?.bom, melhorar: body?.melhorar }));
+
+        this.http.route("get", "/capacitacoes/:codigo/avaliacoes", true, async (params: any, body: any) =>
+            gerir().avaliacoes(body?.user, params.codigo));
     }
 }

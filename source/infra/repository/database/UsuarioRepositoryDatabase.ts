@@ -10,7 +10,7 @@ import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
     nome_exibicao, avatar_url, telefone, linkedin_url, curso, semestre,
-    area_codigo, cargo_codigo, data_entrada, data_saida, bio`;
+    area_codigo, cargo_codigo, data_entrada, data_saida, bio, calendario_url, github_url`;
 
 function valores(usuario: Usuario): unknown[] {
     return [
@@ -32,6 +32,8 @@ function valores(usuario: Usuario): unknown[] {
         dataParaSqlOuNulo(usuario.dataEntrada),
         dataParaSqlOuNulo(usuario.dataSaida),
         usuario.bio,
+        usuario.calendarioUrl,
+        usuario.githubUrl,
     ];
 }
 
@@ -42,7 +44,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         return this.conexao.transacao(async (conexao) => {
             const linhas = await conexao.consultar(
                 `INSERT INTO usuarios (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                  ON CONFLICT DO NOTHING
                  RETURNING codigo`,
                 [usuario.codigo, ...valores(usuario)],
@@ -95,7 +97,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
             await this.conexao.transacao(async (conexao) => {
                 const linhas = await conexao.consultar(
                     `UPDATE usuarios SET (${COLUNAS}) =
-                        ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                        ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                      WHERE codigo = $1
                      RETURNING codigo`,
                     [usuario.codigo, ...valores(usuario)],

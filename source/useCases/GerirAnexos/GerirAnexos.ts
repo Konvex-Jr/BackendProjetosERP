@@ -9,6 +9,7 @@ import { Permissao } from "../../shared/seguranca/catalogoPermissoes";
 import { exigirAutenticado, temPermissao, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { podeAlterarConhecimento } from "../../shared/seguranca/regrasConhecimento";
 import { podeAlterarIniciativa } from "../../shared/seguranca/regrasIniciativa";
+import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerPasta } from "../../shared/seguranca/sigiloPastas";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
@@ -27,7 +28,8 @@ interface AcessoAoDono {
  * Anexos (sessão 12c, decisões de 09/11/2026). Cada anexo segue as regras do dono:
  * - documento de pasta: baixa quem pode ler a pasta (sigilo da sessão 9); envia e exclui a gestão;
  * - item da Base: todos baixam; envia e exclui quem pode alterar o item (autor ou gestão);
- * - iniciativa: todos baixam; envia e exclui quem pode alterá-la (responsável, quem criou ou gestão).
+ * - iniciativa: todos baixam; envia e exclui quem pode alterá-la (responsável, quem criou ou gestão);
+ * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão.
  * Quem não pode ler o dono recebe 404, como se o anexo não existisse.
  */
 export default class GerirAnexos {
@@ -53,6 +55,11 @@ export default class GerirAnexos {
             const item = await this.factory.criarConhecimentoRepository().buscarPorCodigo(codigo);
             if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
             return { podeAlterar: podeAlterarConhecimento(usuario, item), semPermissao: MENSAGENS_DE_ERRO.CONHECIMENTO.SEM_PERMISSAO };
+        }
+        if (tipo === DonoAnexo.CAPACITACAO) {
+            const capacitacao = await this.factory.criarCapacitacaoRepository().buscarPorCodigo(codigo);
+            if (!capacitacao) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CAPACITACAO.NAO_ENCONTRADA);
+            return { podeAlterar: podeGerirCapacitacoes(usuario), semPermissao: M.SEM_PERMISSAO_CAPACITACAO };
         }
         const item = await this.factory.criarIniciativaRepository().buscarPorCodigo(codigo);
         if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.INICIATIVA.NAO_ENCONTRADA);
@@ -80,7 +87,7 @@ export default class GerirAnexos {
         });
     }
 
-    /** Anexa um arquivo a um item da Base ou a uma iniciativa. */
+    /** Anexa um arquivo a um item da Base, a uma iniciativa ou a uma capacitação. */
     async enviar(usuario: UsuarioAutenticado | null | undefined, tipo: DonoAnexo, codigoDono: string, arquivo: ArquivoRecebido): Promise<Anexo> {
         const autenticado = exigirAutenticado(usuario);
         const acesso = await this.acesso(autenticado, tipo, codigoDono);
@@ -131,7 +138,7 @@ export default class GerirAnexos {
         return { anexo, conteudo };
     }
 
-    /** Exclui um anexo da Base ou de uma iniciativa (o de documento sai junto com o documento). */
+    /** Exclui um anexo da Base, de uma iniciativa ou de uma capacitação (o de documento sai junto com o documento). */
     async excluir(usuario: UsuarioAutenticado | null | undefined, codigo: string): Promise<{ codigo: string }> {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);

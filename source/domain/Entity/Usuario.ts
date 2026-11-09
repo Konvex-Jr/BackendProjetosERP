@@ -15,6 +15,9 @@ export interface DetalhesPessoa {
     avatarUrl?: string | null;
     telefone?: string | null;
     linkedinUrl?: string | null;
+    /** Link do calendário (Google Agenda, Calendly…) e do GitHub (sessão 13). */
+    calendarioUrl?: string | null;
+    githubUrl?: string | null;
     curso?: string | null;
     semestre?: number | null;
     area?: Area | null;
@@ -48,6 +51,8 @@ export default class Usuario {
     readonly avatarUrl: string | null;
     readonly telefone: string | null;
     readonly linkedinUrl: string | null;
+    readonly calendarioUrl: string | null;
+    readonly githubUrl: string | null;
     readonly curso: string | null;
     readonly semestre: number | null;
     readonly area: Area | null;
@@ -80,6 +85,8 @@ export default class Usuario {
         this.avatarUrl = textoOuNulo(detalhes.avatarUrl);
         this.telefone = textoOuNulo(detalhes.telefone);
         this.linkedinUrl = textoOuNulo(detalhes.linkedinUrl);
+        this.calendarioUrl = textoOuNulo(detalhes.calendarioUrl);
+        this.githubUrl = textoOuNulo(detalhes.githubUrl);
         this.curso = textoOuNulo(detalhes.curso);
         this.semestre = detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
             ? null
@@ -119,6 +126,8 @@ export default class Usuario {
                 avatarUrl: pick("avatarUrl"),
                 telefone: pick("telefone"),
                 linkedinUrl: pick("linkedinUrl"),
+                calendarioUrl: pick("calendarioUrl"),
+                githubUrl: pick("githubUrl"),
                 curso: pick("curso"),
                 semestre: pick("semestre"),
                 area: pick("area"),
@@ -145,6 +154,8 @@ export default class Usuario {
             avatarUrl: this.avatarUrl,
             telefone: this.telefone,
             linkedinUrl: this.linkedinUrl,
+            calendarioUrl: this.calendarioUrl,
+            githubUrl: this.githubUrl,
             curso: this.curso,
             semestre: this.semestre,
             area: this.area,
@@ -185,9 +196,9 @@ export default class Usuario {
             throw new ErroValidacao("O semestre deve ser um número entre 1 e 20.", "SEMESTRE_INVALIDO");
         }
 
-        for (const [campo, valor] of [["avatar", this.avatarUrl], ["LinkedIn", this.linkedinUrl]] as const) {
+        for (const [campo, valor] of [["do avatar", this.avatarUrl], ["do LinkedIn", this.linkedinUrl], ["do calendário", this.calendarioUrl], ["do GitHub", this.githubUrl]] as const) {
             if (valor && !URL_VALIDA.test(valor)) {
-                throw new ErroValidacao(`O endereço do ${campo} deve começar com http:// ou https://.`, "URL_INVALIDA");
+                throw new ErroValidacao(`O link ${campo} deve começar com http:// ou https://.`, "URL_INVALIDA");
             }
         }
 

@@ -1,6 +1,5 @@
 import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
 import Usuario from "../../domain/Entity/Usuario";
-import { hoje } from "../../domain/Entity/Participacao";
 import { calcularAlocacao, ResumoAlocacao } from "../../domain/Service/alocacao";
 import { MudancaArea, MudancaCargo } from "../../domain/Interfaces/HistoricoPessoaRepositoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
@@ -21,7 +20,10 @@ export interface CapacitacaoNoPerfil {
     titulo: string;
     data: Date;
     hora: string;
+    duracaoHoras: number;
     papel: "instrutor" | "participante";
+    /** Participante: presença marcada pela gestão (nulo = ainda não marcada). */
+    presente: boolean | null;
 }
 
 export interface PerfilPessoa {
@@ -29,7 +31,7 @@ export interface PerfilPessoa {
     projetosAtuais: ProjetoNoPerfil[];
     projetosAnteriores: ProjetoNoPerfil[];
     historico: { cargos: MudancaCargo[]; areas: MudancaArea[] };
-    capacitacoes: { proximas: CapacitacaoNoPerfil[]; realizadas: CapacitacaoNoPerfil[] };
+    capacitacoes: { proximas: CapacitacaoNoPerfil[]; realizadas: CapacitacaoNoPerfil[]; horasCumpridas: number };
     alocacao: ResumoAlocacao;
 }
 
@@ -67,18 +69,21 @@ export default class ObterPerfilPessoa {
             areas: await historicoRepo.listarAreas(codigo),
         };
 
-        const hojeMs = hoje().getTime();
+        const agora = Date.now();
+        let horasCumpridas = 0;
         const proximas: CapacitacaoNoPerfil[] = [];
         const realizadas: CapacitacaoNoPerfil[] = [];
         for (const c of await this.factory.criarCapacitacaoRepository().listar()) {
             const instrutor = c.instrutor?.codigo === codigo;
-            const participante = c.inscritos.some((i) => i.codigo === codigo);
-            if (!instrutor && !participante) continue;
+            const inscricao = c.inscricaoDe(codigo);
+            if (!instrutor && !inscricao) continue;
             const item: CapacitacaoNoPerfil = {
-                codigo: c.codigo, titulo: c.titulo, data: c.data, hora: c.hora,
+                codigo: c.codigo, titulo: c.titulo, data: c.data, hora: c.hora, duracaoHoras: c.duracaoHoras,
                 papel: instrutor ? "instrutor" : "participante",
+                presente: instrutor ? null : inscricao!.presente,
             };
-            (c.data.getTime() >= hojeMs ? proximas : realizadas).push(item);
+            if (!instrutor && inscricao!.presente === true) horasCumpridas += c.duracaoHoras;
+            (c.inicio.getTime() > agora ? proximas : realizadas).push(item);
         }
         proximas.sort((a, b) => a.data.getTime() - b.data.getTime());
         realizadas.sort((a, b) => b.data.getTime() - a.data.getTime());
@@ -88,7 +93,7 @@ export default class ObterPerfilPessoa {
             projetosAtuais,
             projetosAnteriores,
             historico,
-            capacitacoes: { proximas, realizadas },
+            capacitacoes: { proximas, realizadas, horasCumpridas },
             alocacao: calcularAlocacao(projetos, codigo),
         };
     }

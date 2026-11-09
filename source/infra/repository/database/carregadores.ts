@@ -2,10 +2,8 @@ import ConexaoBanco from "../../database/ConexaoBanco";
 import Usuario from "../../../domain/Entity/Usuario";
 import SenioridadeUsuario from "../../../domain/Entity/SenioridadeUsuario";
 import Projeto from "../../../domain/Entity/Projeto";
-import Capacitacao from "../../../domain/Entity/Capacitacao";
 import PerfilUsuario from "../../../domain/Enum/PerfilUsuario";
 import StatusProjeto from "../../../domain/Enum/StatusProjeto";
-import TipoCapacitacao from "../../../domain/Enum/TipoCapacitacao";
 import StatusPessoa from "../../../domain/Enum/StatusPessoa";
 import PrioridadeProjeto from "../../../domain/Enum/PrioridadeProjeto";
 import TipoHabilidade from "../../../domain/Enum/TipoHabilidade";
@@ -16,7 +14,7 @@ import Participacao from "../../../domain/Entity/Participacao";
 
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
-           u.nome_exibicao, u.avatar_url, u.telefone, u.linkedin_url, u.curso, u.semestre,
+           u.nome_exibicao, u.avatar_url, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.semestre,
            u.data_entrada, u.data_saida, u.bio,
            s.codigo AS senioridade_codigo,
            s.nome AS senioridade_nome,
@@ -69,6 +67,8 @@ export function usuarioDeLinha(linha: any): Usuario {
             avatarUrl: linha.avatar_url,
             telefone: linha.telefone,
             linkedinUrl: linha.linkedin_url,
+            calendarioUrl: linha.calendario_url,
+            githubUrl: linha.github_url,
             curso: linha.curso,
             semestre: linha.semestre,
             area: areaDeLinha(linha),
@@ -180,59 +180,4 @@ export async function carregarProjetos(
     }
 
     return projetos;
-}
-
-export async function carregarCapacitacoes(
-    conexao: ConexaoBanco,
-    codigos: string[],
-): Promise<Map<string, Capacitacao>> {
-    const capacitacoes = new Map<string, Capacitacao>();
-    const lista = unicos(codigos);
-
-    if (lista.length === 0) {
-        return capacitacoes;
-    }
-
-    const linhas = await conexao.consultar(
-        `SELECT codigo, titulo, data, to_char(hora, 'HH24:MI') AS hora,
-                instrutor_codigo, vagas, tipo, sala
-         FROM capacitacoes
-         WHERE codigo = ANY($1::uuid[])`,
-        [lista],
-    );
-
-    const inscricoes = await conexao.consultar(
-        `SELECT capacitacao_codigo, usuario_codigo
-         FROM capacitacao_inscricoes
-         WHERE capacitacao_codigo = ANY($1::uuid[])`,
-        [lista],
-    );
-
-    const usuarios = await carregarUsuarios(conexao, [
-        ...linhas.map((l) => l.instrutor_codigo),
-        ...inscricoes.map((i) => i.usuario_codigo),
-    ]);
-
-    for (const linha of linhas) {
-        const inscritos = inscricoes
-            .filter((i) => i.capacitacao_codigo === linha.codigo)
-            .map((i) => usuarios.get(i.usuario_codigo)!);
-
-        capacitacoes.set(
-            linha.codigo,
-            new Capacitacao(
-                linha.titulo,
-                linha.data,
-                linha.hora,
-                usuarios.get(linha.instrutor_codigo)!,
-                linha.vagas,
-                linha.tipo as TipoCapacitacao,
-                linha.sala,
-                inscritos,
-                linha.codigo,
-            ),
-        );
-    }
-
-    return capacitacoes;
 }

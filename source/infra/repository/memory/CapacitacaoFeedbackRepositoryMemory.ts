@@ -1,57 +1,30 @@
 import CapacitacaoFeedback from "../../../domain/Entity/CapacitacaoFeedback";
-import CapacitacaoFeedbackRepositoryInterface from "../../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
+import CapacitacaoFeedbackRepositoryInterface, { ResumoAvaliacao } from "../../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
 
 export default class CapacitacaoFeedbackRepositoryMemory implements CapacitacaoFeedbackRepositoryInterface {
-    private feedbacks: CapacitacaoFeedback[];
+    private itens: CapacitacaoFeedback[] = [];
 
-    constructor() {
-        this.feedbacks = [];
-    }
-
-    async criar(feedback: CapacitacaoFeedback): Promise<CapacitacaoFeedback> {
-        const jaExiste = this.feedbacks.some(
-            (f) =>
-                f.capacitacao.codigo === feedback.capacitacao.codigo &&
-                f.usuario.codigo === feedback.usuario.codigo,
-        );
-
-        if (jaExiste) {
-            throw new Error("Já existe feedback deste usuário para a capacitação");
-        }
-
-        this.feedbacks.push(feedback);
+    async salvar(feedback: CapacitacaoFeedback): Promise<CapacitacaoFeedback> {
+        this.itens = this.itens.filter((f) => !(f.codigoCapacitacao === feedback.codigoCapacitacao && f.usuario.codigo === feedback.usuario.codigo));
+        this.itens.push(feedback);
         return feedback;
     }
 
-    async editar(feedback: CapacitacaoFeedback): Promise<CapacitacaoFeedback> {
-        const indice = this.feedbacks.findIndex((f) => f.codigo === feedback.codigo);
+    async listarPorCapacitacao(codigoCapacitacao: string): Promise<CapacitacaoFeedback[]> {
+        return this.itens.filter((f) => f.codigoCapacitacao === codigoCapacitacao).sort((a, b) => b.data.getTime() - a.data.getTime());
+    }
 
-        if (indice === -1) {
-            throw new Error("Feedback não encontrado");
+    async buscarPorCapacitacaoEUsuario(codigoCapacitacao: string, codigoUsuario: string): Promise<CapacitacaoFeedback | null> {
+        return this.itens.find((f) => f.codigoCapacitacao === codigoCapacitacao && f.usuario.codigo === codigoUsuario) ?? null;
+    }
+
+    async resumos(codigos: string[]): Promise<Map<string, ResumoAvaliacao>> {
+        const mapa = new Map<string, ResumoAvaliacao>();
+        for (const codigo of codigos) {
+            const notas = this.itens.filter((f) => f.codigoCapacitacao === codigo).map((f) => f.nota);
+            mapa.set(codigo, { total: notas.length, media: notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null });
         }
-
-        this.feedbacks[indice] = feedback;
-        return feedback;
+        return mapa;
     }
 
-    async listar(): Promise<CapacitacaoFeedback[]> {
-        return [...this.feedbacks];
-    }
-
-    async listarPorUsuario(codigoUsuario: string): Promise<CapacitacaoFeedback[]> {
-        return this.feedbacks.filter((f) => f.usuario.codigo === codigoUsuario);
-    }
-
-    async buscarPorCapacitacaoEUsuario(
-        codigoCapacitacao: string,
-        codigoUsuario: string,
-    ): Promise<CapacitacaoFeedback | null> {
-        return (
-            this.feedbacks.find(
-                (f) =>
-                    f.capacitacao.codigo === codigoCapacitacao &&
-                    f.usuario.codigo === codigoUsuario,
-            ) ?? null
-        );
-    }
 }
