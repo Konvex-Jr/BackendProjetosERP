@@ -1,0 +1,50 @@
+# Ambiente de desenvolvimento: PostgreSQL + API, com um comando.
+#   docker compose -f docker-compose.dev.yml up -d --build
+#   npm run dados:ficticios          # pessoas, projeto, tarefas e capacitações de exemplo
+# API em http://localhost:5001 (Swagger em /api-docs). Login: dev@konvexjr.com.br / konvex-dev
+# Integração: DATABASE_URL_TESTE=postgresql://postgres:postgres@localhost:5432/konvex_teste npm run test:integracao
+# Zerar tudo: docker compose -f docker-compose.dev.yml down -v
+name: konvex-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: konvex_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dados_dev:/var/lib/postgresql/data
+      - ./deploy/dev/criar-banco-teste.sql:/docker-entrypoint-initdb.d/criar-banco-teste.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d konvex_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/konvex_dev
+      CORS_ORIGINS: http://localhost:5173,http://localhost:4173
+      ANEXOS_DIR: /app/anexos
+      ADMIN_NAME: Diretora Dev
+      ADMIN_EMAIL: dev@konvexjr.com.br
+      ADMIN_PASSWORD: konvex-dev
+    # Chaves JWT geradas no próprio container (sessões caem a cada rebuild; ok em dev).
+    command: ["sh", "-c", "node source/scripts/gerarChaves.js && node dist/source/scripts/migrar.js && node dist/source/scripts/seedAdmin.js && node dist/source/main.js"]
+    ports:
+      - "127.0.0.1:5001:5001"
+    volumes:
+      - anexos_dev:/app/anexos
+
+volumes:
+  dados_dev:
+  anexos_dev:
