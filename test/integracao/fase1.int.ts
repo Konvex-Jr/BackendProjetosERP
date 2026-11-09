@@ -409,4 +409,51 @@ descrever("fase 1 contra PostgreSQL", () => {
             rmSync(pasta, { recursive: true, force: true });
         }
     }, 60000);
+    test("sessão 13: capacitações com presença, avaliações e perfil completo no banco", async () => {
+        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+        const pessoa = async (nome: string, email: string) => {
+            const r = await chamar("POST", "/usuarios", dir, { nome, email, senha: "SenhaCap123", perfil: "membro", codigoSenioridade: "junior" });
+            return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap123")).corpo.token as string };
+        };
+        const ines = await pessoa("Inês Instrutora", "ines@teste.com");
+        const bia = await pessoa("Bia Cap", "bia.cap@teste.com");
+        const caio = await pessoa("Caio Cap", "caio.cap@teste.com");
+        const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+        const amanha = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+        const corpo = { titulo: "Git", data: amanha, hora: "18:30", duracaoHoras: 2.5, codigoInstrutor: ines.codigo, vagas: 1, tipo: "computacao", sala: "Lab" };
+
+        const futura = await chamar("POST", "/capacitacoes", dir, corpo);
+        expect(futura.status).toBe(200);
+        expect(futura.corpo).toMatchObject({ data: amanha, hora: "18:30", duracaoHoras: 2.5, instrutor: { nome: "Inês Instrutora" } });
+        expect((await chamar("POST", `/capacitacoes/${futura.corpo.codigo}/inscricoes`, bia.token, {})).status).toBe(200);
+        const lotada = await chamar("POST", `/capacitacoes/${futura.corpo.codigo}/inscricoes`, caio.token, {});
+        expect(lotada.corpo.codigo).toBe("CAPACITACAO_LOTADA");
+        expect((await chamar("DELETE", `/capacitacoes/${futura.corpo.codigo}/inscricoes/${bia.codigo}`, bia.token)).corpo.totalInscritos).toBe(0);
+
+        const passada = await chamar("POST", "/capacitacoes", dir, { ...corpo, data: ontem, vagas: 5 });
+        const cod = passada.corpo.codigo;
+        for (const p of [bia, caio]) await chamar("POST", `/capacitacoes/${cod}/inscricoes`, dir, { codigoUsuario: p.codigo });
+        const presenca = await chamar("PUT", `/capacitacoes/${cod}/presencas`, dir, { presentes: [bia.codigo] });
+        expect(presenca.corpo.inscritos.map((i: any) => [i.nome, i.presente])).toEqual([["Bia Cap", true], ["Caio Cap", false]]);
+        await chamar("PUT", `/capacitacoes/${cod}/avaliacao`, bia.token, { nota: 3 });
+        const avaliou = await chamar("PUT", `/capacitacoes/${cod}/avaliacao`, bia.token, { nota: 5, bom: "Prático" });
+        expect(avaliou.corpo.avaliacao).toEqual({ media: 5, total: 1 });
+        expect((await chamar("GET", `/capacitacoes/${cod}/avaliacoes`, ines.token)).corpo).toEqual([{ nota: 5, bom: "Prático", melhorar: null }]);
+        expect((await chamar("GET", `/capacitacoes/${cod}/avaliacoes`, dir)).corpo[0].usuario.nome).toBe("Bia Cap");
+        expect((await chamar("GET", `/usuarios/${bia.codigo}/perfil`, caio.token)).corpo.capacitacoes.horasCumpridas).toBe(2.5);
+
+        // Perfil completo.
+        const perfil = await chamar("PUT", "/auth/perfil", bia.token, {
+            calendarioUrl: "https://cal.com/bia", githubUrl: "https://github.com/bia", tecnologias: ["React", "react", "Docker"],
+        });
+        expect(perfil.status).toBe(200);
+        await chamar("PUT", "/auth/perfil", caio.token, { tecnologias: ["DOCKER"] });
+        const visto = (await chamar("GET", `/usuarios/${bia.codigo}/perfil`, caio.token)).corpo.usuario;
+        expect(visto).toMatchObject({ calendarioUrl: "https://cal.com/bia", githubUrl: "https://github.com/bia" });
+        expect(visto.habilidades.map((h: any) => h.nome)).toEqual(["Docker", "React"]);
+        expect((await chamar("GET", "/habilidades?tipo=tecnologia", caio.token)).corpo.map((h: any) => h.nome)).toEqual(["Docker", "React"]);
+
+        expect((await chamar("DELETE", `/capacitacoes/${cod}`, dir)).status).toBe(200);
+        expect((await pool.query("SELECT count(*)::int AS n FROM capacitacao_feedbacks")).rows[0].n).toBe(0);
+    }, 60000);
 });

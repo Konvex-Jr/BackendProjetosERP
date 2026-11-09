@@ -33,6 +33,9 @@ export default class AnexoRoutes implements ModelRoutes {
         this.http.route("post", "/iniciativas/:codigo/anexos", true, async (params: any, body: any) =>
             gerir().enviar(body?.user, DonoAnexo.INICIATIVA, params.codigo, body.arquivo), RECEBE_ARQUIVO);
 
+        this.http.route("post", "/capacitacoes/:codigo/anexos", true, async (params: any, body: any) =>
+            gerir().enviar(body?.user, DonoAnexo.CAPACITACAO, params.codigo, body.arquivo), RECEBE_ARQUIVO);
+
         // Documento do tipo arquivo numa pasta; `?nome=` opcional (padrão: nome do arquivo sem extensão).
         this.http.route("post", "/pastas/:codigoPasta/documentos/arquivo", true, async (params: any, body: any, query: any) =>
             gerir().enviarDocumento(body?.user, params.codigoPasta, body.arquivo, query?.nome ? String(query.nome) : undefined), RECEBE_ARQUIVO);

@@ -40,17 +40,16 @@ export async function criarContexto() {
   await factory.criarUsuarioRepository().criar(membro);
   await factory.criarUsuarioRepository().criar(gerente);
 
-  const capacitacao = new Capacitacao(
-    "DDD e Clean Architecture",
-    new Date("2026-11-20T00:00:00.000Z"),
-    "18:30",
-    gerente,
-    5,
-    TipoCapacitacao.COMPUTACAO,
-    "I-304",
-    [],
-    "cap-ddd",
-  );
+  const capacitacao = new Capacitacao({
+    titulo: "DDD e Clean Architecture",
+    data: new Date("2026-11-20T00:00:00.000Z"),
+    hora: "18:30",
+    instrutor: { codigo: gerente.codigo, nome: gerente.nome },
+    vagas: 5,
+    tipo: TipoCapacitacao.COMPUTACAO,
+    sala: "I-304",
+    codigo: "cap-ddd",
+  });
   await factory.criarCapacitacaoRepository().criar(capacitacao);
 
   return { factory, membro, gerente, senioridade, capacitacao };
