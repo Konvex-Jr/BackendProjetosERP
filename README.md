@@ -12,6 +12,19 @@ API do sistema interno da Konvex Jr (Express + TypeScript + PostgreSQL).
 
 Swagger: `http://localhost:5001/api-docs` (desligado com `NODE_ENV=production`, salvo `SWAGGER_ENABLED=true`).
 
+## Ambiente de desenvolvimento com Docker (um comando)
+```bash
+npm run dev:docker          # PostgreSQL + API em http://localhost:5001 (diretora dev@konvexjr.com.br / konvex-dev)
+npm run dados:ficticios     # pessoas (ines@, bia@, caio@dev.konvex / Konvex123), projeto, tarefas e capacitações
+```
+Integração contra o banco do compose: `DATABASE_URL_TESTE=postgresql://postgres:postgres@localhost:5432/konvex_teste npm run test:integracao`. Zerar: `docker compose -f docker-compose.dev.yml down -v`. O frontend roda à parte (`VITE_API_URL=http://localhost:5001 npx vite`) e tem o levantamento no navegador em `npm run e2e`.
+
+## CI
+Todo PR roda compilação, testes, integração com PostgreSQL (também no fuso de São Paulo) e valida os compose (`.github/workflows/ci.yml`). A `main` só recebe mudanças por PR com o CI verde.
+
+## Produção
+Compose versionado em `deploy/docker-compose.prod.yml`; passo a passo em `docs/PUBLICACAO.md`.
+
 ## Variáveis importantes
 - `CORS_ORIGINS`: origens do frontend, separadas por vírgula (padrão: `http://localhost:5173,http://localhost:4173`).
 - `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` (ou os arquivos `private.key` e `public.key`). Em container, guarde as chaves fora da imagem para as sessões sobreviverem a um novo deploy.
