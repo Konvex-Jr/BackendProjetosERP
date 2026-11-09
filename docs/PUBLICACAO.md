@@ -12,6 +12,27 @@ Processo usado hoje em `erp.konvexjr.com.br`. Siga na ordem. O deploy automatiza
   - `konvex-generate-keys`: roda `backend/generate-keys.js` (arquivo só da VPS, fora do git) e mantém as chaves JWT.
 - As chaves `backend/private.key` e `backend/public.key` ficam montadas no container. Não apague: sem elas, todo mundo é deslogado.
 - O backend aplica as migrações (`migrations/`) sozinho ao iniciar.
+- **Anexos (desde a sessão 12c):** os arquivos enviados ficam em `/docker/erp-konvex/anexos`, montada no container como `/app/anexos` (variável `ANEXOS_DIR`). O banco guarda só os dados de cada arquivo. **Banco e pasta andam juntos no backup.**
+
+## 0. Volume dos anexos (uma vez, na publicação da 12c)
+Faça uma cópia do compose e acrescente no serviço `backend` do `docker-compose.yml`:
+
+```yaml
+    environment:
+      ANEXOS_DIR: /app/anexos
+    volumes:
+      - ./anexos:/app/anexos
+```
+(Se o serviço já tiver `environment:` ou `volumes:`, só acrescente as linhas dentro deles; as chaves JWT continuam montadas como antes.)
+
+```bash
+cd /docker/erp-konvex
+cp docker-compose.yml docker-compose.yml.bak-$(date +%F)
+mkdir -p anexos
+# editar o docker-compose.yml como acima
+docker compose config >/dev/null && echo "compose ok"
+```
+Depois de subir, confira: `docker exec konvex-backend sh -c 'echo $ANEXOS_DIR; ls -ld /app/anexos'` mostra `/app/anexos`. Sem o volume, os arquivos ficariam dentro do container e **sumiriam no próximo build**.
 
 ## 1. Antes de publicar
 - [ ] PRs do backend e do frontend mergeados na `main`.
@@ -34,14 +55,17 @@ git -C frontend fetch origin && git -C frontend status -sb
 
 Se aparecer `diverged`, pare: a VPS tem commits que a `main` não tem. Veja com `git log origin/main..main` antes de seguir.
 
-## 3. Backup do banco (obrigatório)
+## 3. Backup do banco e dos anexos (obrigatório)
 ```bash
 cd /docker/erp-konvex
 mkdir -p /root/backup-konvex
-ARQ=/root/backup-konvex/konvex_$(date +%F_%H%M).dump
+DATA=$(date +%F_%H%M)
+ARQ=/root/backup-konvex/konvex_$DATA.dump
 docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+[ -d anexos ] && tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos && ls -lh /root/backup-konvex/anexos_$DATA.tar.gz
 ```
-- [ ] Conferir que o arquivo não está vazio. Guardar uma cópia fora da VPS de vez em quando.
+- [ ] Conferir que os arquivos não estão vazios. Guardar uma cópia fora da VPS de vez em quando (o `.dump` e o `anexos_*.tar.gz` do mesmo horário).
+- O banco diz quais anexos existem; a pasta guarda os arquivos. Restaurar um sem o outro deixa anexos que não baixam ("arquivo não encontrado no servidor").
 
 ## 4. Atualizar e subir
 ```bash
@@ -83,6 +107,9 @@ git -C backend checkout <commit>          # idem no frontend, se preciso
 docker compose build backend frontend && docker compose up -d backend frontend
 # Só se o banco ficou ruim (migração com problema):
 docker exec -i konvex-db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /root/backup-konvex/<arquivo>.dump
+# E os anexos do mesmo horário:
+mv anexos anexos.antes-restauracao && tar -xzf /root/backup-konvex/anexos_<mesmo horário>.tar.gz
+docker compose restart backend
 ```
 Depois, volte para a `main` com `git checkout main` quando a correção estiver pronta.
 
@@ -114,6 +141,7 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 - `DATABASE_URL` (ou `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DATABASE`).
 - `CORS_ORIGINS=https://erp.konvexjr.com.br`: a URL exata do frontend, sem barra no fim.
 - Chaves JWT persistentes: os arquivos montados (ver acima) ou `JWT_PRIVATE_KEY`/`JWT_PUBLIC_KEY`.
+- `ANEXOS_DIR=/app/anexos`: pasta dos arquivos anexados (montada como volume; ver seção 0). Sem ela, o backend usa `./anexos` dentro do container.
 - `NODE_ENV=production` desliga o Swagger (`SWAGGER_ENABLED=true` liga).
 - Opcionais: `JWT_ACCESS_TTL` (padrão 15m), `REFRESH_TOKEN_DIAS` (padrão 7), `PORT` (padrão 5001).
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` só servem para `npm run seed:admin` (criar o primeiro diretor num banco vazio). Estão no `.env` da VPS, mas o compose não os repassa ao container. Duas formas de rodar:
@@ -132,5 +160,5 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
   Com o banco atual (que já tem diretores), não é preciso rodar.
 
 ## O que não existe mais
-- Upload de arquivos (`/pastas/:codigo/documentos/upload` e `/uploads/:arquivo`): desde a sessão 9 documentos são links. O backend não cria mais a pasta `uploads/`.
+- Upload antigo (`/pastas/:codigo/documentos/upload` e `/uploads/:arquivo`, que gravava dentro do container e sem sigilo): saiu na sessão 9. Desde a 12c, os anexos usam `/anexos` e a pasta `anexos/` (volume).
 - Check-ins (`/checkins`): retirados na sessão 9. A tabela `checkins` continua no banco até a limpeza da fase 4.
