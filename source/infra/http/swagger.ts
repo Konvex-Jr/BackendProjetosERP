@@ -17,6 +17,19 @@ const jsonBody = (schema: object) => ({
     content: { "application/json": { schema } },
 });
 
+/** Upload de anexo (sessão 12c): bytes no corpo, nome em X-Nome-Arquivo (encodeURIComponent). */
+const corpoArquivo = {
+    required: true,
+    content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } },
+};
+const nomeArquivo = {
+    name: "X-Nome-Arquivo",
+    in: "header",
+    required: true,
+    description: "Nome do arquivo com extensão, codificado com encodeURIComponent. Até 20 MB; tipos em GET /anexos/regras.",
+    schema: { type: "string" },
+};
+
 const operation = (
     tags: string[],
     summary: string,
@@ -341,6 +354,39 @@ const swaggerSpecification = {
             }),
             delete: operation(["Iniciativas"], "Excluir (responsável, quem criou ou gestão); tarefas ficam sem a ligação", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+        },
+        "/anexos/regras": {
+            get: operation(["Anexos"], "Tamanho máximo (bytes) e extensões aceitas"),
+        },
+        "/anexos/{codigo}": {
+            get: operation(["Anexos"], "Baixar o arquivo (mesmas regras de leitura do dono; 404 se não pode ler)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+            delete: operation(["Anexos"], "Excluir anexo (quem pode alterar o dono); o de documento leva o documento junto", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+        },
+        "/conhecimento/{codigo}/anexos": {
+            post: operation(["Anexos"], "Anexar arquivo a um item da Base (autor ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
+                requestBody: corpoArquivo,
+            }),
+        },
+        "/iniciativas/{codigo}/anexos": {
+            post: operation(["Anexos"], "Anexar arquivo a uma iniciativa (responsável, quem criou ou gestão)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
+                requestBody: corpoArquivo,
+            }),
+        },
+        "/pastas/{codigoPasta}/documentos/arquivo": {
+            post: operation(["Anexos"], "Criar documento do tipo arquivo numa pasta (gestão)", {
+                parameters: [
+                    { $ref: "#/components/parameters/codigoPasta" },
+                    nomeArquivo,
+                    { name: "nome", in: "query", required: false, description: "Nome do documento (padrão: nome do arquivo sem extensão).", schema: { type: "string" } },
+                ],
+                requestBody: corpoArquivo,
             }),
         },
         "/pastas": {

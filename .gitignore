@@ -3,4 +3,5 @@ dist/
 *.key
 .env
 uploads/
+anexos/
 coverage/

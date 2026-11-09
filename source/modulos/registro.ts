@@ -10,6 +10,7 @@ import DocumentoRoutes from "../infra/http/Routes/DocumentoRoutes";
 import ConfiguracaoRoutes from "../infra/http/Routes/ConfiguracaoRoutes";
 import ConhecimentoRoutes from "../infra/http/Routes/ConhecimentoRoutes";
 import IniciativaRoutes from "../infra/http/Routes/IniciativaRoutes";
+import AnexoRoutes from "../infra/http/Routes/AnexoRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
@@ -112,6 +113,14 @@ export const MODULOS: Modulo[] = [
         permissoes: [Permissao.INICIATIVAS_GERIR],
         // Todos veem; criam a gestão e a área de Inovação (decisão 03/11, sessão 12b). Logo depois da Base.
         menu: [{ chave: "iniciativas", rotulo: "Iniciativas", caminho: "/iniciativas", ordem: 37 }],
+    },
+    {
+        // Sessão 12c: arquivos anexados a documentos, itens da Base e iniciativas (sem item de menu).
+        chave: "anexos",
+        nome: "Anexos",
+        rotas: [AnexoRoutes],
+        permissoes: [],
+        menu: [],
     },
     {
         chave: "config",

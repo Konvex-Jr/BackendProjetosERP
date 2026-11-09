@@ -11,6 +11,9 @@ import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRep
 import ExpressHttp from "../../source/infra/http/ExpressHttp";
 import ExpressAuth from "../../source/infra/http/Middleware/AuthExpress";
 import Router from "../../source/infra/http/Router";
+import { mkdtempSync, readdirSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import path from "path";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -356,5 +359,54 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("DELETE", `/iniciativas/${ini.corpo.codigo}`, dir)).status).toBe(200);
         expect((await daTarefa()).iniciativa).toBeNull();
         expect((await chamar("GET", `/conhecimento/${k1.corpo.codigo}`, dir)).corpo.iniciativas).toEqual([]);
+    }, 60000);
+    test("sessão 12c: anexos gravados no banco e no disco, com sigilo da pasta", async () => {
+        const pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
+        process.env.ANEXOS_DIR = pasta;
+        try {
+            const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
+            await chamar("POST", "/usuarios", dir, {
+                nome: "Anexadora", email: "anexadora@teste.com", senha: "SenhaAnexa1", perfil: "membro", codigoSenioridade: "junior",
+            });
+            const membro = (await entrar("anexadora@teste.com", "SenhaAnexa1")).corpo.token as string;
+            const enviar = async (token: string, caminho: string, nome: string, bytes = Buffer.from("%PDF-1.4 teste")) => {
+                const r = await fetch(base + caminho, {
+                    method: "POST",
+                    headers: { "access-token": token, "Content-Type": "application/octet-stream", "X-Nome-Arquivo": encodeURIComponent(nome) },
+                    body: new Uint8Array(bytes),
+                });
+                return { status: r.status, corpo: await r.json() };
+            };
+            const baixar = async (token: string, codigo: string) => {
+                const r = await fetch(`${base}/anexos/${codigo}`, { headers: { "access-token": token } });
+                return { status: r.status, texto: await r.text() };
+            };
+
+            const item = await chamar("POST", "/conhecimento", membro, { titulo: "Estudo", categoria: "estudo", resumo: "r" });
+            const anexo = await enviar(membro, `/conhecimento/${item.corpo.codigo}/anexos`, "Estudo ação.pdf");
+            expect(anexo.status).toBe(200);
+            expect(anexo.corpo.enviadoPor.nome).toBe("Anexadora");
+            expect(readdirSync(pasta)).toHaveLength(1);
+            expect((await chamar("GET", `/conhecimento/${item.corpo.codigo}`, dir)).corpo.anexos[0].nome).toBe("Estudo ação.pdf");
+            expect(await baixar(dir, anexo.corpo.codigo)).toEqual({ status: 200, texto: "%PDF-1.4 teste" });
+            expect((await baixar(dir, "nao-e-uuid")).status).toBe(404);
+
+            const restrita = await chamar("POST", "/pastas", dir, { nome: "Contratos", sigilo: "gestao" });
+            const doc = await enviar(dir, `/pastas/${restrita.corpo.codigo}/documentos/arquivo`, "contrato.pdf");
+            expect(doc.status).toBe(200);
+            expect(doc.corpo.arquivoUrl).toBeNull();
+            const lista = await chamar("GET", `/pastas/${restrita.corpo.codigo}/documentos`, dir);
+            expect(lista.corpo[0].anexo.nome).toBe("contrato.pdf");
+            expect((await baixar(membro, doc.corpo.anexo.codigo)).status).toBe(404);
+            expect((await baixar(dir, doc.corpo.anexo.codigo)).status).toBe(200);
+
+            expect((await chamar("DELETE", `/pastas/${restrita.corpo.codigo}`, dir)).status).toBe(200);
+            expect((await chamar("DELETE", `/conhecimento/${item.corpo.codigo}`, membro)).status).toBe(200);
+            expect(readdirSync(pasta)).toHaveLength(0);
+            expect((await pool.query("SELECT count(*)::int AS n FROM anexos")).rows[0].n).toBe(0);
+        } finally {
+            delete process.env.ANEXOS_DIR;
+            rmSync(pasta, { recursive: true, force: true });
+        }
     }, 60000);
 });

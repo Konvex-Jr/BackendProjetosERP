@@ -24,6 +24,8 @@ import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDat
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 import ConhecimentoRepositoryDatabase from "./database/ConhecimentoRepositoryDatabase";
 import IniciativaRepositoryDatabase from "./database/IniciativaRepositoryDatabase";
+import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
+import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
 
 export default class DatabaseRepositoryFactory implements RepositoryFactoryInterface {
     private readonly conexao: ConexaoBanco;
@@ -91,6 +93,14 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarIniciativaRepository() {
         return new IniciativaRepositoryDatabase(this.conexao);
+    }
+
+    criarAnexoRepository() {
+        return new AnexoRepositoryDatabase(this.conexao);
+    }
+
+    criarArmazenamentoAnexos() {
+        return new ArmazenamentoAnexosDisco();
     }
 
     criarRefreshTokenRepository() {

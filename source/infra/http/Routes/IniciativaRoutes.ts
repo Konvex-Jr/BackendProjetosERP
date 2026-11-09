@@ -9,6 +9,8 @@ import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { podeAlterarIniciativa } from "../../../shared/seguranca/regrasIniciativa";
+import GerirAnexos from "../../../useCases/GerirAnexos/GerirAnexos";
+import { DonoAnexo } from "../../../domain/Enum/Anexo";
 import { regrasTarefa } from "../../../shared/seguranca/regrasTarefa";
 
 const texto = (valor: unknown) => String(valor ?? "").trim() || undefined;
@@ -18,8 +20,10 @@ export default class IniciativaRoutes implements ModelRoutes {
     constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
 
     /** Cada iniciativa diz se quem pediu pode editar/excluir, para o frontend não repetir a regra. */
-    private comAcoes(usuario: UsuarioAutenticado, item: Iniciativa) {
-        return { ...item, podeAlterar: podeAlterarIniciativa(usuario, item) };
+    /** Também traz os arquivos anexados (sessão 12c). */
+    private async comAcoes(usuario: UsuarioAutenticado, itens: Iniciativa[]) {
+        const anexos = await new GerirAnexos(this.factory).porDono(DonoAnexo.INICIATIVA, itens.map((i) => i.codigo));
+        return itens.map((item) => ({ ...item, podeAlterar: podeAlterarIniciativa(usuario, item), anexos: anexos.get(item.codigo) ?? [] }));
     }
 
     /** Ficha: tarefas ligadas que a pessoa pode ver (as avulsas seguem a regra da 8c) e a contagem de todas. */
@@ -27,7 +31,7 @@ export default class IniciativaRoutes implements ModelRoutes {
         const todas = await tarefasDaIniciativa(this.factory, item.codigo);
         const visiveis = todas.filter((t) => regrasTarefa(usuario, t, null).ver);
         return {
-            ...this.comAcoes(usuario, item),
+            ...(await this.comAcoes(usuario, [item]))[0],
             tarefas: visiveis.map((t) => ({
                 codigo: t.codigo,
                 titulo: t.titulo,
@@ -65,7 +69,7 @@ export default class IniciativaRoutes implements ModelRoutes {
                 codigoProjeto: texto(query?.codigoProjeto),
                 codigoConhecimento: texto(query?.codigoConhecimento),
             });
-            return itens.map((i) => this.comAcoes(usuario, i));
+            return this.comAcoes(usuario, itens);
         });
 
         this.http.route("get", "/iniciativas/:codigo", true, async (params: any, body: any) => {

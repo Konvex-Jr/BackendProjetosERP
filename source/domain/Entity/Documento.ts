@@ -4,7 +4,7 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import Pasta from "./Pasta";
 import Usuario from "./Usuario";
 
-/** Documento é um link (Drive etc.), decisão de 03/11/2026: só http(s). */
+/** Link de documento (Drive etc.), decisão de 03/11/2026: só http(s). */
 export function exigirLinkValido(url: unknown): string {
     const texto = String(url ?? "").trim();
     let valido = false;
@@ -27,7 +27,8 @@ export default class Documento {
     readonly tamanhoBytes: number;
     readonly dataEnvio: Date;
     readonly autor: Usuario;
-    readonly arquivoUrl: string;
+    /** Link (Drive etc.) ou null quando o documento é um arquivo anexado (sessão 12c). */
+    readonly arquivoUrl: string | null;
 
     constructor(
         pasta: Pasta,
@@ -35,7 +36,7 @@ export default class Documento {
         tamanhoBytes: number,
         dataEnvio: Date,
         autor: Usuario,
-        arquivoUrl: string,
+        arquivoUrl: string | null,
         extensao: string | null = null,
         codigo?: string,
     ) {
@@ -45,7 +46,7 @@ export default class Documento {
         this.tamanhoBytes = tamanhoBytes;
         this.dataEnvio = dataEnvio;
         this.autor = autor;
-        this.arquivoUrl = arquivoUrl;
+        this.arquivoUrl = arquivoUrl?.trim() ? arquivoUrl.trim() : null;
         this.extensao = extensao ? extensao.trim().toUpperCase() : null;
 
         this.validar();
@@ -77,13 +78,6 @@ export default class Documento {
             throw new ErroValidacao(
                 "A data de envio deve ser válida.",
                 "DATA_ENVIO_INVALIDA",
-            );
-        }
-
-        if (!this.arquivoUrl.trim()) {
-            throw new ErroValidacao(
-                "O link do documento é obrigatório.",
-                "ARQUIVO_URL_OBRIGATORIA",
             );
         }
     }
