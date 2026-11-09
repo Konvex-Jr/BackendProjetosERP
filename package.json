@@ -23,7 +23,9 @@
         "dev": "npm run main",
         "test": "jest --runInBand test/",
         "test:integracao": "jest --runInBand --testMatch '**/test/integracao/**/*.int.ts'",
-        "clean": "rm -rf dist/*/"
+        "clean": "rm -rf dist/*/",
+        "dados:ficticios": "node scripts/dados-ficticios.mjs",
+        "dev:docker": "docker compose -f docker-compose.dev.yml up -d --build"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",

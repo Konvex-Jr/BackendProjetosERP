@@ -1,0 +1,105 @@
+# Compose de produção do ERP (VPS, /docker/erp-konvex).
+#
+# Este arquivo é a versão guardada no git do docker-compose.yml da VPS. Os caminhos são
+# relativos a /docker/erp-konvex (onde ficam .env, backend/, frontend/ e anexos/), por isso
+# na VPS ele é COPIADO para lá (não usado direto daqui). Veja docs/PUBLICACAO.md, seção
+# "Compose versionado".
+#
+# Segredos ficam só no .env da VPS (modelo em deploy/.env.prod.example).
+name: erp-konvex
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: konvex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-konvex_gestao}
+    volumes:
+      - dados_banco:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"   # nunca abrir para a internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [interna]
+
+  # Gera as chaves JWT só se ainda não existirem (antes era o generate-keys.js que vivia só na VPS).
+  generate-keys:
+    image: node:24-alpine
+    container_name: konvex-generate-keys
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: ["sh", "-c", "[ -s private.key ] && [ -s public.key ] && echo 'Chaves já existem.' || node source/scripts/gerarChaves.js"]
+    restart: "no"
+
+  backend:
+    build: ./backend
+    container_name: konvex-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      generate-keys:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      CORS_ORIGINS: https://${DOMINIO:-erp.konvexjr.com.br}
+      ANEXOS_DIR: /app/anexos
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE: ${DB_NAME:-konvex_gestao}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:-konvex_gestao}
+      # Só usados por "npm run seed:admin" (primeiro diretor num banco vazio).
+      ADMIN_NAME: ${ADMIN_NAME:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.konvex-api.rule=Host(`${DOMINIO:-erp.konvexjr.com.br}`) && PathPrefix(`/api`)
+      - traefik.http.routers.konvex-api.entrypoints=websecure
+      - traefik.http.routers.konvex-api.tls.certresolver=${CERT_RESOLVER:-letsencryptresolver}
+      - traefik.http.routers.konvex-api.middlewares=konvex-api-strip
+      - traefik.http.middlewares.konvex-api-strip.stripprefix.prefixes=/api
+      - traefik.http.services.konvex-api.loadbalancer.server.port=5001
+    volumes:
+      - ./anexos:/app/anexos   # arquivos anexados: entram no backup junto com o banco
+      - ./backend/private.key:/app/private.key:ro
+      - ./backend/public.key:/app/public.key:ro
+    networks: [interna, traefik-public]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    container_name: konvex-frontend
+    restart: unless-stopped
+    depends_on: [backend]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.konvex-web.rule=Host(`${DOMINIO:-erp.konvexjr.com.br}`)
+      - traefik.http.routers.konvex-web.entrypoints=websecure
+      - traefik.http.routers.konvex-web.tls.certresolver=${CERT_RESOLVER:-letsencryptresolver}
+      - traefik.http.services.konvex-web.loadbalancer.server.port=80
+    networks: [traefik-public]
+
+volumes:
+  dados_banco:
+    name: ${DB_VOLUME:-konvex_db_data}
+    external: true   # o volume do banco já existe na VPS: nunca criar um vazio por engano
+
+networks:
+  interna:
+  traefik-public:
+    external: true

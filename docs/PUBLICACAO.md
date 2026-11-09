@@ -14,6 +14,17 @@ Processo usado hoje em `erp.konvexjr.com.br`. Siga na ordem. O deploy automatiza
 - O backend aplica as migrações (`migrations/`) sozinho ao iniciar.
 - **Anexos (desde a sessão 12c):** os arquivos enviados ficam em `/docker/erp-konvex/anexos`, montada no container como `/app/anexos` (variável `ANEXOS_DIR`). O banco guarda só os dados de cada arquivo. **Banco e pasta andam juntos no backup.**
 
+## Compose versionado (desde a sessão 14a)
+O compose da VPS agora tem uma versão guardada no git: `deploy/docker-compose.prod.yml` (modelo do `.env` em `deploy/.env.prod.example`). Ele já traz o volume dos anexos, os `ADMIN_*` repassados ao backend e a geração das chaves JWT sem o `generate-keys.js` que vivia só na VPS.
+
+**Adotar na VPS (uma vez, com calma):** compare antes de trocar. O ponto crítico é o volume do banco: o arquivo versionado usa um volume **externo** com o nome de `DB_VOLUME` no `.env`, para nunca criar um banco vazio por engano.
+```bash
+cd /docker/erp-konvex
+docker volume ls | grep -i -E "konvex|erp|postgres"     # nome do volume do banco
+diff docker-compose.yml backend/deploy/docker-compose.prod.yml
+```
+Só troque (`cp backend/deploy/docker-compose.prod.yml docker-compose.yml`, com cópia `.bak` antes) depois de conferir no diff: nome do volume, variáveis do `.env`, labels do Traefik (nomes dos routers e o `certresolver`) e portas. Valide com `docker compose config` antes do `up`.
+
 ## 0. Volume dos anexos (uma vez, na publicação da 12c)
 Faça uma cópia do compose e acrescente no serviço `backend` do `docker-compose.yml`:
 
@@ -161,4 +172,4 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 
 ## O que não existe mais
 - Upload antigo (`/pastas/:codigo/documentos/upload` e `/uploads/:arquivo`, que gravava dentro do container e sem sigilo): saiu na sessão 9. Desde a 12c, os anexos usam `/anexos` e a pasta `anexos/` (volume).
-- Check-ins (`/checkins`): retirados na sessão 9. A tabela `checkins` continua no banco até a limpeza da fase 4.
+- Check-ins (`/checkins`): retirados na sessão 9. A tabela `checkins` foi apagada pela migração `010_remover_checkins.sql` (sessão 14a); os registros antigos ficam só nos backups anteriores.
