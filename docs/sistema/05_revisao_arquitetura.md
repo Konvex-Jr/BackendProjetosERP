@@ -15,7 +15,7 @@ O sistema está saudável para o tamanho que tem (cerca de 10 mil linhas de Type
 | Poucos comentários do "porquê" (≈4,6% das linhas no backend) | Falta | **Agora:** comentar os pontos-chave |
 | Sem licença nos repositórios públicos | Falta | **Agora:** licença proprietária da Konvex Jr. |
 | Erro inesperado vira 422 com a mensagem da exceção | Risco baixo | Depois (opcional) |
-| 229 usos de `any`, quase todos nas assinaturas das rotas | Dívida | Depois (lint avisa, não bloqueia) |
+| 229 usos de `any`, quase todos nas assinaturas das rotas | Dívida | Depois (regra do lint desligada até tipar as rotas) |
 | Helpers de texto/lista repetidos em três arquivos | Dívida | Depois |
 | Dependências com versão maior nova (Express 5, TypeScript 7, React 19, Vite 8) | Dívida | Depois, em sessão própria |
 | `components.css` com 1.469 linhas | Dívida | Depois |
@@ -79,7 +79,7 @@ flowchart LR
 
 ### Dívida registrada (para depois)
 - **Erro inesperado responde 422 com `exception.message`** (`ExpressHttp.responderErro`). Um `TypeError` interno chegaria à tela com texto técnico. O certo é 500 com mensagem genérica e o detalhe só no log. Muda comportamento, então vai num PR próprio, com teste.
-- **`any` nas rotas.** A assinatura `Http.route(..., callback: any)` espalha `any` por todas as rotas. Tipar o callback (`(params, body, query) => Promise<unknown>`) reduziria quase todos os 229 usos. O lint marca como aviso.
+- **`any` nas rotas.** A assinatura `Http.route(..., callback: any)` espalha `any` por todas as rotas. Tipar o callback (`(params, body, query) => Promise<unknown>`) reduziria quase todos os 229 usos. A regra `no-explicit-any` fica desligada no lint até isso ser feito.
 - **Helpers repetidos.** `lerTexto` (SalvarConhecimento), `texto`/`lista` (SalvarIniciativa) e `texto` (IniciativaRoutes) fazem quase o mesmo, mas com diferenças de `trim`. Consolidar em `shared/entradas.ts` exige cuidado com essas diferenças.
 - **Listagens que carregam tudo e filtram em memória** (ex.: `tarefasDaIniciativa`, pastas do projeto no `ExcluirProjeto`). Ok para o volume atual (dezenas de pessoas, centenas de itens); revisitar se alguma tela ficar lenta.
 - **Atualizações maiores de dependências:** Express 5, TypeScript 7, dotenv 18, uuid 14. Nenhuma vulnerabilidade conhecida hoje (`npm audit`: 0).
