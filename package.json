@@ -10,6 +10,8 @@
     },
     "name": "backend-projetos-erp",
     "version": "0.2.0",
+    "private": true,
+    "license": "SEE LICENSE IN LICENSE",
     "description": "API do sistema interno da Konvex Jr",
     "main": "dist/source/main.js",
     "author": "perozin.arthur@gmail.com",
