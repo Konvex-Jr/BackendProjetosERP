@@ -38,7 +38,11 @@ export default class Anexo {
         this.donoTipo = dados.donoTipo;
         this.donoCodigo = dados.donoCodigo;
         // Só o nome, sem caminho, e sem caracteres de controle.
-        this.nome = String(dados.nome ?? "").split(/[\\/]/).pop()!.replace(CARACTERES_PROIBIDOS, "").trim();
+        this.nome = String(dados.nome ?? "")
+            .split(/[\\/]/)
+            .pop()!
+            .replace(CARACTERES_PROIBIDOS, "")
+            .trim();
         this.tamanhoBytes = dados.tamanhoBytes;
         this.arquivo = dados.arquivo ?? uuid();
         this.enviadoPor = dados.enviadoPor;

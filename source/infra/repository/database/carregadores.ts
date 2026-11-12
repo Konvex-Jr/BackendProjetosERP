@@ -46,47 +46,33 @@ export function areaDeLinha(linha: any): Area | null {
 export function usuarioDeLinha(linha: any): Usuario {
     const senioridade = linha.senioridade_codigo
         ? new SenioridadeUsuario(
-            linha.senioridade_codigo,
-            linha.senioridade_nome,
-            Number(linha.senioridade_valor_hora),
-            Number(linha.senioridade_ordem ?? 0),
-        )
+              linha.senioridade_codigo,
+              linha.senioridade_nome,
+              Number(linha.senioridade_valor_hora),
+              Number(linha.senioridade_ordem ?? 0),
+          )
         : null;
 
-    return new Usuario(
-        linha.nome,
-        linha.email,
-        linha.perfil as PerfilUsuario,
-        linha.ativo,
-        linha.senha_hash,
-        senioridade,
-        linha.codigo,
-        {
-            status: (linha.status as StatusPessoa) ?? undefined,
-            nomeExibicao: linha.nome_exibicao,
-            avatarUrl: linha.avatar_url,
-            telefone: linha.telefone,
-            linkedinUrl: linha.linkedin_url,
-            calendarioUrl: linha.calendario_url,
-            githubUrl: linha.github_url,
-            curso: linha.curso,
-            semestre: linha.semestre,
-            area: areaDeLinha(linha),
-            cargo: linha.cargo_codigo ? new Cargo(linha.cargo_nome, linha.cargo_ativo, linha.cargo_codigo) : null,
-            dataEntrada: linha.data_entrada,
-            dataSaida: linha.data_saida,
-            bio: linha.bio,
-            habilidades: (linha.habilidades ?? []).map(
-                (h: any) => new Habilidade(h.nome, h.tipo as TipoHabilidade, h.codigo),
-            ),
-        },
-    );
+    return new Usuario(linha.nome, linha.email, linha.perfil as PerfilUsuario, linha.ativo, linha.senha_hash, senioridade, linha.codigo, {
+        status: (linha.status as StatusPessoa) ?? undefined,
+        nomeExibicao: linha.nome_exibicao,
+        avatarUrl: linha.avatar_url,
+        telefone: linha.telefone,
+        linkedinUrl: linha.linkedin_url,
+        calendarioUrl: linha.calendario_url,
+        githubUrl: linha.github_url,
+        curso: linha.curso,
+        semestre: linha.semestre,
+        area: areaDeLinha(linha),
+        cargo: linha.cargo_codigo ? new Cargo(linha.cargo_nome, linha.cargo_ativo, linha.cargo_codigo) : null,
+        dataEntrada: linha.data_entrada,
+        dataSaida: linha.data_saida,
+        bio: linha.bio,
+        habilidades: (linha.habilidades ?? []).map((h: any) => new Habilidade(h.nome, h.tipo as TipoHabilidade, h.codigo)),
+    });
 }
 
-export async function carregarUsuarios(
-    conexao: ConexaoBanco,
-    codigos: string[],
-): Promise<Map<string, Usuario>> {
+export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Usuario>> {
     const usuarios = new Map<string, Usuario>();
     const lista = unicos(codigos);
 
@@ -94,19 +80,13 @@ export async function carregarUsuarios(
         return usuarios;
     }
 
-    const linhas = await conexao.consultar(
-        `${SELECT_USUARIO} WHERE u.codigo = ANY($1::uuid[])`,
-        [lista],
-    );
+    const linhas = await conexao.consultar(`${SELECT_USUARIO} WHERE u.codigo = ANY($1::uuid[])`, [lista]);
 
     linhas.forEach((linha) => usuarios.set(linha.codigo, usuarioDeLinha(linha)));
     return usuarios;
 }
 
-export async function carregarProjetos(
-    conexao: ConexaoBanco,
-    codigos: string[],
-): Promise<Map<string, Projeto>> {
+export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Projeto>> {
     const projetos = new Map<string, Projeto>();
     const lista = unicos(codigos);
 
@@ -142,17 +122,20 @@ export async function carregarProjetos(
     for (const linha of linhas) {
         const participacoes = vinculos
             .filter((v) => v.projeto_codigo === linha.codigo)
-            .map((v) => new Participacao(
-                usuarios.get(v.usuario_codigo)!,
-                {
-                    funcao: v.funcao,
-                    responsabilidades: v.responsabilidades,
-                    alocacao: Number(v.alocacao),
-                    dataEntrada: v.data_entrada,
-                    dataSaida: v.data_saida,
-                },
-                v.codigo,
-            ));
+            .map(
+                (v) =>
+                    new Participacao(
+                        usuarios.get(v.usuario_codigo)!,
+                        {
+                            funcao: v.funcao,
+                            responsabilidades: v.responsabilidades,
+                            alocacao: Number(v.alocacao),
+                            dataEntrada: v.data_entrada,
+                            dataSaida: v.data_saida,
+                        },
+                        v.codigo,
+                    ),
+            );
 
         projetos.set(
             linha.codigo,
@@ -170,10 +153,10 @@ export async function carregarProjetos(
                     clienteNome: linha.cliente_nome,
                     prioridade: linha.prioridade as PrioridadeProjeto,
                     progresso: Number(linha.progresso),
-                    responsavel: linha.responsavel_codigo ? usuarios.get(linha.responsavel_codigo) ?? null : null,
+                    responsavel: linha.responsavel_codigo ? (usuarios.get(linha.responsavel_codigo) ?? null) : null,
                     area: areaDeLinha(linha),
                     tags: linha.tags ?? [],
-                    lider: linha.lider_codigo ? usuarios.get(linha.lider_codigo) ?? null : null,
+                    lider: linha.lider_codigo ? (usuarios.get(linha.lider_codigo) ?? null) : null,
                 },
             ),
         );

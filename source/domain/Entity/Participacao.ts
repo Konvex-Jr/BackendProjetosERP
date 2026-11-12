@@ -41,7 +41,12 @@ export default class Participacao {
         return this.dataSaida === null;
     }
 
-    copiar(alteracoes: { funcao?: string | null; responsabilidades?: string | null; alocacao?: number; dataSaida?: Date | null }): Participacao {
+    copiar(alteracoes: {
+        funcao?: string | null;
+        responsabilidades?: string | null;
+        alocacao?: number;
+        dataSaida?: Date | null;
+    }): Participacao {
         return new Participacao(
             this.usuario,
             {

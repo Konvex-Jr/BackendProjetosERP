@@ -30,11 +30,7 @@ const nomeArquivo = {
     schema: { type: "string" },
 };
 
-const operation = (
-    tags: string[],
-    summary: string,
-    options: Record<string, any> = {},
-) => ({
+const operation = (tags: string[], summary: string, options: Record<string, any> = {}) => ({
     tags,
     summary,
     responses: {
@@ -134,7 +130,11 @@ const swaggerSpecification = {
                 properties: {
                     codigoProjeto: { type: "string", nullable: true },
                     categoria: { type: "string", nullable: true, enum: ["inovacao", "capacitacao", "execucao"] },
-                    codigoIniciativa: { type: "string", nullable: true, description: "Só em tarefa de Inovação (400 INICIATIVA_SO_EM_INOVACAO). No PUT, ausente mantém; vazio desliga." },
+                    codigoIniciativa: {
+                        type: "string",
+                        nullable: true,
+                        description: "Só em tarefa de Inovação (400 INICIATIVA_SO_EM_INOVACAO). No PUT, ausente mantém; vazio desliga.",
+                    },
                     titulo: { type: "string" },
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
@@ -244,7 +244,11 @@ const swaggerSpecification = {
                     { name: "codigoProjeto", in: "query", schema: { type: "string" } },
                     { name: "codigoResponsavel", in: "query", schema: { type: "string" } },
                     { name: "minhas", in: "query", schema: { type: "boolean" }, description: "Só as tarefas em que eu sou responsável." },
-                    { name: "categoria", in: "query", schema: { type: "string", enum: ["inovacao", "capacitacao", "execucao", "avulsas"] } },
+                    {
+                        name: "categoria",
+                        in: "query",
+                        schema: { type: "string", enum: ["inovacao", "capacitacao", "execucao", "avulsas"] },
+                    },
                     { name: "status", in: "query", schema: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
                 ],
             }),
@@ -275,13 +279,21 @@ const swaggerSpecification = {
             get: operation(["Capacitações"], "Tipos com rótulo e se a pessoa pode gerir (gestão)"),
         },
         "/capacitacoes": {
-            get: operation(["Capacitações"], "Listar capacitações (todos; inscritos só para gestão e instrutor; média e total de avaliações)"),
+            get: operation(
+                ["Capacitações"],
+                "Listar capacitações (todos; inscritos só para gestão e instrutor; média e total de avaliações)",
+            ),
             post: operation(["Capacitações"], "Criar capacitação (gestão)", { requestBody: jsonBody(CORPO_CAPACITACAO) }),
         },
         "/capacitacoes/{codigo}": {
             get: operation(["Capacitações"], "Ficha da capacitação, com a avaliação da própria pessoa", { parameters: [codigo] }),
-            put: operation(["Capacitações"], "Editar capacitação (gestão; vagas não podem ficar abaixo dos inscritos)", { parameters: [codigo], requestBody: jsonBody(CORPO_CAPACITACAO) }),
-            delete: operation(["Capacitações"], "Excluir capacitação, inscrições, avaliações e material (gestão)", { parameters: [codigo] }),
+            put: operation(["Capacitações"], "Editar capacitação (gestão; vagas não podem ficar abaixo dos inscritos)", {
+                parameters: [codigo],
+                requestBody: jsonBody(CORPO_CAPACITACAO),
+            }),
+            delete: operation(["Capacitações"], "Excluir capacitação, inscrições, avaliações e material (gestão)", {
+                parameters: [codigo],
+            }),
         },
         "/capacitacoes/{codigo}/inscricoes": {
             post: operation(["Capacitações"], "Inscrever-se até o início (gestão pode inscrever outra pessoa com codigoUsuario)", {
@@ -297,19 +309,31 @@ const swaggerSpecification = {
         "/capacitacoes/{codigo}/presencas": {
             put: operation(["Capacitações"], "Marcar presença depois do início (gestão); os inscritos fora da lista ficam ausentes", {
                 parameters: [codigo],
-                requestBody: jsonBody({ type: "object", required: ["presentes"], properties: { presentes: { type: "array", items: { type: "string" } } } }),
+                requestBody: jsonBody({
+                    type: "object",
+                    required: ["presentes"],
+                    properties: { presentes: { type: "array", items: { type: "string" } } },
+                }),
             }),
         },
         "/capacitacoes/{codigo}/avaliacao": {
             put: operation(["Capacitações"], "Avaliar (só quem compareceu, depois do início); avaliar de novo substitui", {
                 parameters: [codigo],
-                requestBody: jsonBody({ type: "object", required: ["nota"], properties: {
-                    nota: { type: "integer", minimum: 1, maximum: 5 }, bom: { type: "string" }, melhorar: { type: "string" },
-                } }),
+                requestBody: jsonBody({
+                    type: "object",
+                    required: ["nota"],
+                    properties: {
+                        nota: { type: "integer", minimum: 1, maximum: 5 },
+                        bom: { type: "string" },
+                        melhorar: { type: "string" },
+                    },
+                }),
             }),
         },
         "/capacitacoes/{codigo}/avaliacoes": {
-            get: operation(["Capacitações"], "Avaliações individuais (gestão com nome; instrutor sem nome; demais 403)", { parameters: [codigo] }),
+            get: operation(["Capacitações"], "Avaliações individuais (gestão com nome; instrutor sem nome; demais 403)", {
+                parameters: [codigo],
+            }),
         },
         "/capacitacoes/{codigo}/anexos": {
             post: operation(["Anexos"], "Anexar material a uma capacitação (gestão)", {
@@ -353,8 +377,9 @@ const swaggerSpecification = {
         },
         "/iniciativas": {
             get: operation(["Iniciativas"], "Listar iniciativas com busca e filtros (todos leem)", {
-                parameters: ["busca", "status", "tipo", "frente", "codigoResponsavel", "codigoProjeto", "codigoConhecimento"]
-                    .map((name) => ({ name, in: "query", schema: { type: "string" } })),
+                parameters: ["busca", "status", "tipo", "frente", "codigoResponsavel", "codigoProjeto", "codigoConhecimento"].map(
+                    (name) => ({ name, in: "query", schema: { type: "string" } }),
+                ),
             }),
             post: operation(["Iniciativas"], "Criar iniciativa (gestão ou área de Inovação; 403 para os demais)", {
                 requestBody: jsonBody(CORPO_INICIATIVA),
@@ -400,7 +425,13 @@ const swaggerSpecification = {
                 parameters: [
                     { $ref: "#/components/parameters/codigoPasta" },
                     nomeArquivo,
-                    { name: "nome", in: "query", required: false, description: "Nome do documento (padrão: nome do arquivo sem extensão).", schema: { type: "string" } },
+                    {
+                        name: "nome",
+                        in: "query",
+                        required: false,
+                        description: "Nome do documento (padrão: nome do arquivo sem extensão).",
+                        schema: { type: "string" },
+                    },
                 ],
                 requestBody: corpoArquivo,
             }),
@@ -413,7 +444,12 @@ const swaggerSpecification = {
                     required: ["nome"],
                     properties: {
                         nome: { type: "string" },
-                        sigilo: { type: "string", enum: ["todos", "gestao", "projeto"], description: "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão." },
+                        sigilo: {
+                            type: "string",
+                            enum: ["todos", "gestao", "projeto"],
+                            description:
+                                "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão.",
+                        },
                         codigoProjeto: { type: "string", description: "Obrigatório quando sigilo = projeto." },
                     },
                 }),
@@ -427,7 +463,12 @@ const swaggerSpecification = {
                     required: ["nome"],
                     properties: {
                         nome: { type: "string" },
-                        sigilo: { type: "string", enum: ["todos", "gestao", "projeto"], description: "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão." },
+                        sigilo: {
+                            type: "string",
+                            enum: ["todos", "gestao", "projeto"],
+                            description:
+                                "todos: qualquer pessoa ativa; gestao: gerente e diretor; projeto: equipe atual ou passada do projeto + gestão.",
+                        },
                         codigoProjeto: { type: "string", description: "Obrigatório quando sigilo = projeto." },
                     },
                 }),
@@ -485,12 +526,20 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
-    "/auth/perfil": { put: operation(["Autenticação"], "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, tecnologias[], curso, semestre, bio)", json) },
+    "/auth/perfil": {
+        put: operation(
+            ["Autenticação"],
+            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, tecnologias[], curso, semestre, bio)",
+            json,
+        ),
+    },
     "/usuarios/{codigo}": {
         get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
     },
     "/usuarios/{codigo}/perfil": { get: operation(["Usuários"], "Perfil: projetos, histórico e capacitações (RF-013)", comCodigo()) },
-    "/usuarios/{codigo}/status": { patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)) },
+    "/usuarios/{codigo}/status": {
+        patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)),
+    },
     "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
@@ -505,9 +554,15 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
     "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas (?tipo=tecnologia filtra)") },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
-    "/projetos/{codigo}/membros/{codigoParticipacao}": { put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }) },
-    "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": { post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }) },
-    "/projetos/{codigo}/lider": { put: operation(["Projetos"], "Definir o líder ({ codigoUsuario } da equipe atual, ou null)", comCodigo(json)) },
+    "/projetos/{codigo}/membros/{codigoParticipacao}": {
+        put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }),
+    },
+    "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": {
+        post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }),
+    },
+    "/projetos/{codigo}/lider": {
+        put: operation(["Projetos"], "Definir o líder ({ codigoUsuario } da equipe atual, ou null)", comCodigo(json)),
+    },
     "/tarefas/{codigo}/comentarios": {
         get: operation(["Tarefas"], "Listar comentários da tarefa", comCodigo()),
         post: operation(["Tarefas"], "Comentar (equipe atual, líder ou gestão)", comCodigo(json)),
@@ -526,11 +581,14 @@ for (const [caminho, metodos] of Object.entries(rotasFase1)) {
     caminhos[caminho] = { ...(caminhos[caminho] ?? {}), ...metodos };
 }
 caminhos["/senioridades"].post = operation(["Configurações"], "Criar senioridade (diretores)", json);
-caminhos["/projetos/{codigo}"] = { ...(caminhos["/projetos/{codigo}"] ?? {}), get: operation(["Projetos"], "Consultar projeto", {
-    ...comCodigo(),
-    responses: {
-        ...operation([], "").responses,
-        "403": { description: "Membro fora da equipe atual ou passada do projeto." },
-        "404": { description: "Projeto não encontrado." },
-    },
-}) };
+caminhos["/projetos/{codigo}"] = {
+    ...(caminhos["/projetos/{codigo}"] ?? {}),
+    get: operation(["Projetos"], "Consultar projeto", {
+        ...comCodigo(),
+        responses: {
+            ...operation([], "").responses,
+            "403": { description: "Membro fora da equipe atual ou passada do projeto." },
+            "404": { description: "Projeto não encontrado." },
+        },
+    }),
+};

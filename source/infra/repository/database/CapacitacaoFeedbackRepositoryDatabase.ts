@@ -9,15 +9,16 @@ const SELECT = `
     FROM capacitacao_feedbacks f JOIN usuarios u ON u.codigo = f.usuario_codigo
 `;
 
-const deLinha = (l: any) => new CapacitacaoFeedback({
-    codigo: l.codigo,
-    codigoCapacitacao: l.capacitacao_codigo,
-    usuario: { codigo: l.usuario_codigo, nome: l.usuario_nome },
-    nota: l.nota,
-    bom: l.bom,
-    melhorar: l.melhorar,
-    data: l.data,
-});
+const deLinha = (l: any) =>
+    new CapacitacaoFeedback({
+        codigo: l.codigo,
+        codigoCapacitacao: l.capacitacao_codigo,
+        usuario: { codigo: l.usuario_codigo, nome: l.usuario_nome },
+        nota: l.nota,
+        bom: l.bom,
+        melhorar: l.melhorar,
+        data: l.data,
+    });
 
 export default class CapacitacaoFeedbackRepositoryDatabase implements CapacitacaoFeedbackRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
@@ -34,12 +35,16 @@ export default class CapacitacaoFeedbackRepositoryDatabase implements Capacitaca
     }
 
     async listarPorCapacitacao(codigo: string): Promise<CapacitacaoFeedback[]> {
-        return (await this.conexao.consultar(`${SELECT} WHERE f.capacitacao_codigo::text = $1 ORDER BY f.data DESC, f.codigo`, [codigo])).map(deLinha);
+        return (
+            await this.conexao.consultar(`${SELECT} WHERE f.capacitacao_codigo::text = $1 ORDER BY f.data DESC, f.codigo`, [codigo])
+        ).map(deLinha);
     }
 
     async buscarPorCapacitacaoEUsuario(codigo: string, codigoUsuario: string): Promise<CapacitacaoFeedback | null> {
-        const linhas = await this.conexao.consultar(
-            `${SELECT} WHERE f.capacitacao_codigo::text = $1 AND f.usuario_codigo::text = $2`, [codigo, codigoUsuario]);
+        const linhas = await this.conexao.consultar(`${SELECT} WHERE f.capacitacao_codigo::text = $1 AND f.usuario_codigo::text = $2`, [
+            codigo,
+            codigoUsuario,
+        ]);
         return linhas[0] ? deLinha(linhas[0]) : null;
     }
 

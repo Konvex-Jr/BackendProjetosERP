@@ -36,10 +36,17 @@ type Usuario = UsuarioAutenticado | null | undefined;
 
 /** Capacitações, inscrições, presença e avaliações (sessão 13). Regras em shared/seguranca/regrasCapacitacao.ts. */
 export default class GerirCapacitacoes {
-    constructor(private readonly factory: RepositoryFactoryInterface, private readonly agora: () => Date = () => new Date()) {}
+    constructor(
+        private readonly factory: RepositoryFactoryInterface,
+        private readonly agora: () => Date = () => new Date(),
+    ) {}
 
-    private get repo() { return this.factory.criarCapacitacaoRepository(); }
-    private get feedbacks() { return this.factory.criarCapacitacaoFeedbackRepository(); }
+    private get repo() {
+        return this.factory.criarCapacitacaoRepository();
+    }
+    private get feedbacks() {
+        return this.factory.criarCapacitacaoFeedbackRepository();
+    }
 
     private async buscar(codigo: string): Promise<Capacitacao> {
         const c = await this.repo.buscarPorCodigo(codigo);
@@ -117,9 +124,7 @@ export default class GerirCapacitacoes {
             instrutor = { codigo: pessoa.codigo, nome: pessoa.nomeExibicao || pessoa.nome };
         }
         const definidos = Object.fromEntries(Object.entries(entrada).filter(([k, v]) => v !== undefined && k !== "codigoInstrutor"));
-        const nova = atual
-            ? atual.com({ ...definidos, instrutor })
-            : new Capacitacao({ ...(definidos as any), instrutor: instrutor! });
+        const nova = atual ? atual.com({ ...definidos, instrutor }) : new Capacitacao({ ...(definidos as any), instrutor: instrutor! });
         const salva = atual ? await this.repo.editar(nova) : await this.repo.criar(nova);
         return this.ficha(autenticado, salva.codigo);
     }
@@ -138,12 +143,14 @@ export default class GerirCapacitacoes {
      */
     async inscrever(usuario: Usuario, codigo: string, codigoPessoa?: string) {
         const autenticado = exigirAutenticado(usuario);
-        const alvo = codigoPessoa && codigoPessoa !== autenticado.codigo ? (this.exigirGestao(autenticado), codigoPessoa) : autenticado.codigo;
+        const alvo =
+            codigoPessoa && codigoPessoa !== autenticado.codigo ? (this.exigirGestao(autenticado), codigoPessoa) : autenticado.codigo;
         const c = await this.buscar(codigo);
         const pessoa = await this.factory.criarUsuarioRepository().buscarPorCodigo(alvo);
         if (!pessoa) throw new ErroNaoEncontrado("Pessoa não encontrada.");
         if (!pessoa.ativo) throw new ErroValidacao(M.PESSOA_INATIVA, "PESSOA_INATIVA");
-        if (!podeGerirCapacitacoes(autenticado) && c.jaComecou(this.agora())) throw new ErroConflito(M.JA_COMECOU, "CAPACITACAO_JA_COMECOU");
+        if (!podeGerirCapacitacoes(autenticado) && c.jaComecou(this.agora()))
+            throw new ErroConflito(M.JA_COMECOU, "CAPACITACAO_JA_COMECOU");
         if (c.inscricaoDe(alvo)) throw new ErroConflito(M.JA_INSCRITO, "USUARIO_JA_INSCRITO");
         const ok = await this.repo.inscrever(codigo, { codigo: pessoa.codigo, nome: pessoa.nomeExibicao || pessoa.nome });
         if (!ok) throw new ErroConflito(M.LOTADA, "CAPACITACAO_LOTADA");
@@ -182,9 +189,15 @@ export default class GerirCapacitacoes {
         if (!c.jaComecou(this.agora())) throw new ErroConflito(M.AVALIAR_ANTES, "FEEDBACK_CAPACITACAO_NAO_REALIZADA");
         const inscricao = c.inscricaoDe(autenticado.codigo);
         if (inscricao?.presente !== true) throw new ErroProibido(M.AVALIAR_SEM_PRESENCA);
-        await this.feedbacks.salvar(new CapacitacaoFeedback({
-            codigoCapacitacao: codigo, usuario: inscricao.usuario, nota: entrada.nota, bom: entrada.bom, melhorar: entrada.melhorar,
-        }));
+        await this.feedbacks.salvar(
+            new CapacitacaoFeedback({
+                codigoCapacitacao: codigo,
+                usuario: inscricao.usuario,
+                nota: entrada.nota,
+                bom: entrada.bom,
+                melhorar: entrada.melhorar,
+            }),
+        );
         return this.ficha(autenticado, codigo);
     }
 
@@ -199,7 +212,9 @@ export default class GerirCapacitacoes {
         if (acesso === "sem-nome") lista.sort((a, b) => b.nota - a.nota);
         return lista.map((f) => ({
             ...(acesso === "com-nome" ? { usuario: f.usuario, data: f.data } : {}),
-            nota: f.nota, bom: f.bom, melhorar: f.melhorar,
+            nota: f.nota,
+            bom: f.bom,
+            melhorar: f.melhorar,
         }));
     }
 }

@@ -26,11 +26,7 @@ export const TABELA_DO_DONO: Record<string, string> = {
     capacitacao: "capacitacoes",
 };
 
-export function conferirAnexos(
-    registros: RegistroAnexo[],
-    arquivosNoDisco: string[],
-    donosExistentes: Set<string>,
-): ResultadoConferencia {
+export function conferirAnexos(registros: RegistroAnexo[], arquivosNoDisco: string[], donosExistentes: Set<string>): ResultadoConferencia {
     const noDisco = new Set(arquivosNoDisco.filter((a) => NOME_ARQUIVO.test(a)));
     const registrados = new Set(registros.map((r) => r.arquivo));
     return {

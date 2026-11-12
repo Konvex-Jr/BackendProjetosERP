@@ -49,11 +49,9 @@ describe("Segurança da API", () => {
         });
         expect(gestorInscreve.status).toBe(200);
 
-        const cancelaDeOutro = await servidor.chamar(
-            "delete",
-            `/capacitacoes/${ctx.capacitacao.codigo}/inscricoes/${outroMembro.codigo}`,
-            { usuario: ctx.membro },
-        );
+        const cancelaDeOutro = await servidor.chamar("delete", `/capacitacoes/${ctx.capacitacao.codigo}/inscricoes/${outroMembro.codigo}`, {
+            usuario: ctx.membro,
+        });
         expect(cancelaDeOutro.status).toBe(403);
     });
 
@@ -103,7 +101,12 @@ describe("Segurança da API", () => {
     it("S5: gerente não promove ninguém a diretor nem altera diretores", async () => {
         const promover = await servidor.chamar("put", `/usuarios/${ctx.membro.codigo}`, {
             usuario: ctx.gerente,
-            corpo: { nome: ctx.membro.nome, email: ctx.membro.email, perfil: "diretor", senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 } },
+            corpo: {
+                nome: ctx.membro.nome,
+                email: ctx.membro.email,
+                perfil: "diretor",
+                senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 },
+            },
         });
         expect(promover.status).toBe(403);
 
@@ -112,7 +115,12 @@ describe("Segurança da API", () => {
 
         const diretorPromove = await servidor.chamar("put", `/usuarios/${ctx.membro.codigo}`, {
             usuario: diretor,
-            corpo: { nome: ctx.membro.nome, email: ctx.membro.email, perfil: "gerente", senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 } },
+            corpo: {
+                nome: ctx.membro.nome,
+                email: ctx.membro.email,
+                perfil: "gerente",
+                senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 },
+            },
         });
         expect(diretorPromove.status).toBe(200);
     });

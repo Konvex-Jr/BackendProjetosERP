@@ -36,7 +36,18 @@ export async function resolverPerfilPessoa(
     atual?: Usuario | null,
 ): Promise<DetalhesPessoa> {
     const detalhes: DetalhesPessoa = {};
-    const copiar = ["nomeExibicao", "avatarUrl", "telefone", "linkedinUrl", "calendarioUrl", "githubUrl", "curso", "semestre", "dataEntrada", "bio"] as const;
+    const copiar = [
+        "nomeExibicao",
+        "avatarUrl",
+        "telefone",
+        "linkedinUrl",
+        "calendarioUrl",
+        "githubUrl",
+        "curso",
+        "semestre",
+        "dataEntrada",
+        "bio",
+    ] as const;
     for (const campo of copiar) {
         if (entrada[campo] !== undefined) (detalhes as any)[campo] = entrada[campo];
     }

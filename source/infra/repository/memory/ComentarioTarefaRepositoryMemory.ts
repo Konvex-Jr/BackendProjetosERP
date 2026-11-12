@@ -10,9 +10,7 @@ export default class ComentarioTarefaRepositoryMemory implements ComentarioTaref
     }
 
     async listarPorTarefa(codigoTarefa: string): Promise<ComentarioTarefa[]> {
-        return this.comentarios
-            .filter((c) => c.codigoTarefa === codigoTarefa)
-            .sort((a, b) => a.criadoEm.getTime() - b.criadoEm.getTime());
+        return this.comentarios.filter((c) => c.codigoTarefa === codigoTarefa).sort((a, b) => a.criadoEm.getTime() - b.criadoEm.getTime());
     }
 
     async buscarPorCodigo(codigo: string): Promise<ComentarioTarefa | null> {

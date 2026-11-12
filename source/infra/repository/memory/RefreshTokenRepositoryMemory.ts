@@ -1,6 +1,4 @@
-import RefreshTokenRepositoryInterface, {
-    RegistroRefreshToken,
-} from "../../../domain/Interfaces/RefreshTokenRepositoryInterface";
+import RefreshTokenRepositoryInterface, { RegistroRefreshToken } from "../../../domain/Interfaces/RefreshTokenRepositoryInterface";
 
 export default class RefreshTokenRepositoryMemory implements RefreshTokenRepositoryInterface {
     private registros: RegistroRefreshToken[] = [];

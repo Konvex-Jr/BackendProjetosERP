@@ -7,9 +7,5 @@ export function dataParaSqlOuNulo(data: Date | null): string | null {
 }
 
 export function violacaoDeUnicidade(erro: unknown): boolean {
-    return (
-        typeof erro === "object" &&
-        erro !== null &&
-        (erro as { code?: string }).code === "23505"
-    );
+    return typeof erro === "object" && erro !== null && (erro as { code?: string }).code === "23505";
 }

@@ -2,8 +2,14 @@ import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import {
-    ehDaLista, FRENTES_INICIATIVA, FrenteIniciativa, STATUS_INICIATIVA, StatusIniciativa,
-    TIPOS_INICIATIVA, TipoIniciativa, valoresDa,
+    ehDaLista,
+    FRENTES_INICIATIVA,
+    FrenteIniciativa,
+    STATUS_INICIATIVA,
+    StatusIniciativa,
+    TIPOS_INICIATIVA,
+    TipoIniciativa,
+    valoresDa,
 } from "../Enum/Iniciativa";
 import { Referencia } from "./Conhecimento";
 
@@ -87,7 +93,10 @@ export default class Iniciativa {
         if (this.descricao.length > 20000) throw new ErroValidacao(M.DESCRICAO_LONGA, "DESCRICAO_INICIATIVA_LONGA");
         if (this.resultado.length > 10000) throw new ErroValidacao(M.RESULTADO_LONGO, "RESULTADO_INICIATIVA_LONGO");
         if (this.aprendizados.length > 10000) throw new ErroValidacao(M.APRENDIZADOS_LONGOS, "APRENDIZADOS_INICIATIVA_LONGOS");
-        for (const [data, campo] of [[this.dataInicio, "dataInicio"], [this.dataFim, "dataFim"]] as const) {
+        for (const [data, campo] of [
+            [this.dataInicio, "dataInicio"],
+            [this.dataFim, "dataFim"],
+        ] as const) {
             if (data && Number.isNaN(data.getTime())) {
                 throw new ErroValidacao(`O campo ${campo} deve ser uma data válida.`, "DATA_INVALIDA");
             }

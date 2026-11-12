@@ -34,7 +34,14 @@ function hoje(): Date {
 
 /** Tags em minúsculas, sem "#", sem repetição. */
 export function normalizarTags(tags: unknown[] = []): string[] {
-    const limpas = tags.map((t) => String(t ?? "").trim().replace(/^#+/, "").toLowerCase()).filter(Boolean);
+    const limpas = tags
+        .map((t) =>
+            String(t ?? "")
+                .trim()
+                .replace(/^#+/, "")
+                .toLowerCase(),
+        )
+        .filter(Boolean);
     return [...new Set(limpas)];
 }
 

@@ -78,7 +78,11 @@ export default class ObterPerfilPessoa {
             const inscricao = c.inscricaoDe(codigo);
             if (!instrutor && !inscricao) continue;
             const item: CapacitacaoNoPerfil = {
-                codigo: c.codigo, titulo: c.titulo, data: c.data, hora: c.hora, duracaoHoras: c.duracaoHoras,
+                codigo: c.codigo,
+                titulo: c.titulo,
+                data: c.data,
+                hora: c.hora,
+                duracaoHoras: c.duracaoHoras,
                 papel: instrutor ? "instrutor" : "participante",
                 presente: instrutor ? null : inscricao!.presente,
             };

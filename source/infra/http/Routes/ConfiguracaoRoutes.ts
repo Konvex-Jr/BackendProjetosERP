@@ -11,7 +11,10 @@ const SO_DIRETOR = "Somente diretores configuram áreas, cargos e senioridades."
 
 /** Configurações (ADR-007): leitura para todos, escrita só para diretores (ADMIN). */
 export default class ConfiguracaoRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     init(): void {
         const f = this.factory;
@@ -24,7 +27,10 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("put", "/areas/:codigo", true, async (params: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
             return new SalvarArea(f).execute({
-                codigo: params.codigo, nome: body.nome, codigoAreaPai: body.codigoAreaPai, ativa: body.ativa,
+                codigo: params.codigo,
+                nome: body.nome,
+                codigoAreaPai: body.codigoAreaPai,
+                ativa: body.ativa,
             });
         });
 

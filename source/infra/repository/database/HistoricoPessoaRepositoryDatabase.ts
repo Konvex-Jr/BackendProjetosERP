@@ -14,7 +14,13 @@ export default class HistoricoPessoaRepositoryDatabase implements HistoricoPesso
         await this.conexao.consultar(
             `INSERT INTO historico_cargos (usuario_codigo, cargo_anterior_codigo, cargo_novo_codigo, data_vigencia, registrado_por)
              VALUES ($1, $2, $3, $4, $5)`,
-            [m.codigoUsuario, m.cargoAnterior?.codigo ?? null, m.cargoNovo?.codigo ?? null, dataParaSql(m.dataVigencia), m.codigoRegistradoPor],
+            [
+                m.codigoUsuario,
+                m.cargoAnterior?.codigo ?? null,
+                m.cargoNovo?.codigo ?? null,
+                dataParaSql(m.dataVigencia),
+                m.codigoRegistradoPor,
+            ],
         );
     }
 
@@ -22,7 +28,13 @@ export default class HistoricoPessoaRepositoryDatabase implements HistoricoPesso
         await this.conexao.consultar(
             `INSERT INTO historico_areas (usuario_codigo, area_anterior_codigo, area_nova_codigo, data_vigencia, registrado_por)
              VALUES ($1, $2, $3, $4, $5)`,
-            [m.codigoUsuario, m.areaAnterior?.codigo ?? null, m.areaNova?.codigo ?? null, dataParaSql(m.dataVigencia), m.codigoRegistradoPor],
+            [
+                m.codigoUsuario,
+                m.areaAnterior?.codigo ?? null,
+                m.areaNova?.codigo ?? null,
+                dataParaSql(m.dataVigencia),
+                m.codigoRegistradoPor,
+            ],
         );
     }
 

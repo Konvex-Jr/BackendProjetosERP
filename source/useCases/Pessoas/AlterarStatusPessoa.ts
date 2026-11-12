@@ -48,18 +48,19 @@ export default class AlterarStatusPessoa {
             await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
         }
         if (saindo) {
-
             if (input.encerrarParticipacoes !== false) {
                 const projetos = this.factory.criarProjetoRepository();
                 for (const projeto of await projetos.listarPorMembro(usuario.codigo)) {
                     const aberta = projeto.participacaoAtivaDe(usuario.codigo);
                     if (!aberta) continue;
                     const saida = dataSaida!.getTime() < aberta.dataEntrada.getTime() ? aberta.dataEntrada : dataSaida!;
-                    await projetos.editar(projeto.copiar({
-                        participacoes: projeto.participacoes.map((p) =>
-                            p.codigo === aberta.codigo ? p.copiar({ dataSaida: saida }) : p,
-                        ),
-                    }));
+                    await projetos.editar(
+                        projeto.copiar({
+                            participacoes: projeto.participacoes.map((p) =>
+                                p.codigo === aberta.codigo ? p.copiar({ dataSaida: saida }) : p,
+                            ),
+                        }),
+                    );
                     participacoesEncerradas += 1;
                 }
             }

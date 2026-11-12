@@ -76,23 +76,68 @@ export default class Tarefa {
 
     /** Cópia com outro status/conclusão, mantendo o resto. */
     comStatus(status: StatusTarefa, dataConclusao: Date | null, concluidaPor: Usuario | null): Tarefa {
-        return new Tarefa(this.projeto, this.titulo, this.dataInicio, this.dataFim, status, this.prioridade,
-            this.descricao, dataConclusao, this.dependeDe, this.responsaveis, this.checklist, this.codigo,
-            concluidaPor, this.categoria, this.criadaPor, this.iniciativa);
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            status,
+            this.prioridade,
+            this.descricao,
+            dataConclusao,
+            this.dependeDe,
+            this.responsaveis,
+            this.checklist,
+            this.codigo,
+            concluidaPor,
+            this.categoria,
+            this.criadaPor,
+            this.iniciativa,
+        );
     }
 
     /** Cópia sem a predecessora (quando ela é excluída). */
     semDependencia(): Tarefa {
-        return new Tarefa(this.projeto, this.titulo, this.dataInicio, this.dataFim, this.status, this.prioridade,
-            this.descricao, this.dataConclusao, null, this.responsaveis, this.checklist, this.codigo,
-            this.concluidaPor, this.categoria, this.criadaPor, this.iniciativa);
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            this.status,
+            this.prioridade,
+            this.descricao,
+            this.dataConclusao,
+            null,
+            this.responsaveis,
+            this.checklist,
+            this.codigo,
+            this.concluidaPor,
+            this.categoria,
+            this.criadaPor,
+            this.iniciativa,
+        );
     }
 
     /** Cópia ligada a outra iniciativa (ou a nenhuma). */
     comIniciativa(iniciativa: Referencia | null): Tarefa {
-        return new Tarefa(this.projeto, this.titulo, this.dataInicio, this.dataFim, this.status, this.prioridade,
-            this.descricao, this.dataConclusao, this.dependeDe, this.responsaveis, this.checklist, this.codigo,
-            this.concluidaPor, this.categoria, this.criadaPor, iniciativa);
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            this.status,
+            this.prioridade,
+            this.descricao,
+            this.dataConclusao,
+            this.dependeDe,
+            this.responsaveis,
+            this.checklist,
+            this.codigo,
+            this.concluidaPor,
+            this.categoria,
+            this.criadaPor,
+            iniciativa,
+        );
     }
 
     toJSON() {
@@ -101,18 +146,12 @@ export default class Tarefa {
 
     /** Atrasada = não concluída e com prazo anterior a "hoje". */
     estaAtrasada(hoje: Date): boolean {
-        return (
-            this.status !== StatusTarefa.CONCLUIDA &&
-            this.dataFim.getTime() < hoje.getTime()
-        );
+        return this.status !== StatusTarefa.CONCLUIDA && this.dataFim.getTime() < hoje.getTime();
     }
 
     private validar(): void {
         if (!this.titulo.trim()) {
-            throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.TAREFA.TITULO_OBRIGATORIO,
-                "TITULO_TAREFA_OBRIGATORIO",
-            );
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.TITULO_OBRIGATORIO, "TITULO_TAREFA_OBRIGATORIO");
         }
 
         if (!Object.values(PrioridadeTarefa).includes(this.prioridade)) {
@@ -123,55 +162,28 @@ export default class Tarefa {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.STATUS_INVALIDO, "STATUS_TAREFA_INVALIDO");
         }
 
-        if (
-            Number.isNaN(this.dataInicio.getTime()) ||
-            Number.isNaN(this.dataFim.getTime())
-        ) {
-            throw new ErroValidacao(
-                "As datas da tarefa devem ser válidas.",
-                "DATA_TAREFA_INVALIDA",
-            );
+        if (Number.isNaN(this.dataInicio.getTime()) || Number.isNaN(this.dataFim.getTime())) {
+            throw new ErroValidacao("As datas da tarefa devem ser válidas.", "DATA_TAREFA_INVALIDA");
         }
 
         if (this.dataFim.getTime() < this.dataInicio.getTime()) {
-            throw new ErroValidacao(
-                "O prazo não pode ser anterior à data de início da tarefa.",
-                "PERIODO_TAREFA_INVALIDO",
-            );
+            throw new ErroValidacao("O prazo não pode ser anterior à data de início da tarefa.", "PERIODO_TAREFA_INVALIDO");
         }
 
-        if (
-            this.status === StatusTarefa.CONCLUIDA &&
-            this.dataConclusao === null
-        ) {
-            throw new ErroValidacao(
-                "Tarefa concluída deve ter data de conclusão.",
-                "DATA_CONCLUSAO_OBRIGATORIA",
-            );
+        if (this.status === StatusTarefa.CONCLUIDA && this.dataConclusao === null) {
+            throw new ErroValidacao("Tarefa concluída deve ter data de conclusão.", "DATA_CONCLUSAO_OBRIGATORIA");
         }
 
-        if (
-            this.status !== StatusTarefa.CONCLUIDA &&
-            this.dataConclusao !== null
-        ) {
-            throw new ErroValidacao(
-                "Somente tarefas concluídas podem ter data de conclusão.",
-                "DATA_CONCLUSAO_INCOMPATIVEL",
-            );
+        if (this.status !== StatusTarefa.CONCLUIDA && this.dataConclusao !== null) {
+            throw new ErroValidacao("Somente tarefas concluídas podem ter data de conclusão.", "DATA_CONCLUSAO_INCOMPATIVEL");
         }
 
         if ((this.projeto === null) === (this.categoria === null)) {
-            throw new ErroValidacao(
-                "A tarefa precisa ter um projeto ou uma categoria (e não os dois).",
-                "TAREFA_PROJETO_OU_CATEGORIA",
-            );
+            throw new ErroValidacao("A tarefa precisa ter um projeto ou uma categoria (e não os dois).", "TAREFA_PROJETO_OU_CATEGORIA");
         }
 
         if (this.categoria !== null && !ehCategoriaTarefa(this.categoria)) {
-            throw new ErroValidacao(
-                "Categoria inválida. Use inovacao, capacitacao ou execucao.",
-                "CATEGORIA_TAREFA_INVALIDA",
-            );
+            throw new ErroValidacao("Categoria inválida. Use inovacao, capacitacao ou execucao.", "CATEGORIA_TAREFA_INVALIDA");
         }
 
         if (this.iniciativa && this.categoria !== CategoriaTarefa.INOVACAO) {
@@ -180,38 +192,24 @@ export default class Tarefa {
 
         if (this.dependeDe) {
             if (this.dependeDe.codigo === this.codigo) {
-                throw new ErroValidacao(
-                    "Uma tarefa não pode depender dela mesma.",
-                    "DEPENDENCIA_CIRCULAR",
-                );
+                throw new ErroValidacao("Uma tarefa não pode depender dela mesma.", "DEPENDENCIA_CIRCULAR");
             }
 
             if (!this.projeto || this.dependeDe.projeto?.codigo !== this.projeto.codigo) {
-                throw new ErroValidacao(
-                    "A tarefa predecessora deve pertencer ao mesmo projeto.",
-                    "DEPENDENCIA_OUTRO_PROJETO",
-                );
+                throw new ErroValidacao("A tarefa predecessora deve pertencer ao mesmo projeto.", "DEPENDENCIA_OUTRO_PROJETO");
             }
         }
 
         const codigosResponsaveis = this.responsaveis.map((r) => r.codigo);
         if (new Set(codigosResponsaveis).size !== codigosResponsaveis.length) {
-            throw new ErroValidacao(
-                "A tarefa não pode ter responsáveis duplicados.",
-                "RESPONSAVEL_DUPLICADO_TAREFA",
-            );
+            throw new ErroValidacao("A tarefa não pode ter responsáveis duplicados.", "RESPONSAVEL_DUPLICADO_TAREFA");
         }
 
         // Em tarefa avulsa, qualquer pessoa ativa pode ser responsável (o caso de uso confere).
         if (!this.projeto) return;
-        const codigosMembros = new Set(
-            this.projeto.membros.map((membro) => membro.codigo),
-        );
+        const codigosMembros = new Set(this.projeto.membros.map((membro) => membro.codigo));
         if (!codigosResponsaveis.every((codigo) => codigosMembros.has(codigo))) {
-            throw new ErroValidacao(
-                "Os responsáveis devem ser membros do projeto.",
-                "RESPONSAVEL_FORA_DO_PROJETO",
-            );
+            throw new ErroValidacao("Os responsáveis devem ser membros do projeto.", "RESPONSAVEL_FORA_DO_PROJETO");
         }
     }
 }

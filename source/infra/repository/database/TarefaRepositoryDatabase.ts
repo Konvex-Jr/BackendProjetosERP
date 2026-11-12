@@ -53,17 +53,14 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
     }
 
     async listar(): Promise<Tarefa[]> {
-        const linhas = await this.conexao.consultar(
-            "SELECT codigo FROM tarefas ORDER BY data_fim, prioridade",
-        );
+        const linhas = await this.conexao.consultar("SELECT codigo FROM tarefas ORDER BY data_fim, prioridade");
         return this.carregar(linhas.map((l) => l.codigo));
     }
 
     async listarPorProjeto(codigoProjeto: string): Promise<Tarefa[]> {
-        const linhas = await this.conexao.consultar(
-            "SELECT codigo FROM tarefas WHERE projeto_codigo = $1 ORDER BY data_fim, prioridade",
-            [codigoProjeto],
-        );
+        const linhas = await this.conexao.consultar("SELECT codigo FROM tarefas WHERE projeto_codigo = $1 ORDER BY data_fim, prioridade", [
+            codigoProjeto,
+        ]);
         return this.carregar(linhas.map((l) => l.codigo));
     }
 
@@ -113,14 +110,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 throw new Error("Tarefa não encontrada");
             }
 
-            await conexao.consultar(
-                "DELETE FROM tarefa_responsaveis WHERE tarefa_codigo = $1",
-                [tarefa.codigo],
-            );
-            await conexao.consultar(
-                "DELETE FROM tarefa_checklist_itens WHERE tarefa_codigo = $1",
-                [tarefa.codigo],
-            );
+            await conexao.consultar("DELETE FROM tarefa_responsaveis WHERE tarefa_codigo = $1", [tarefa.codigo]);
+            await conexao.consultar("DELETE FROM tarefa_checklist_itens WHERE tarefa_codigo = $1", [tarefa.codigo]);
             await this.gravarRelacionamentos(conexao, tarefa);
         });
 
@@ -128,10 +119,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
     }
 
     async excluir(codigo: string): Promise<void> {
-        const linhas = await this.conexao.consultar(
-            "DELETE FROM tarefas WHERE codigo = $1 RETURNING codigo",
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar("DELETE FROM tarefas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
             throw new Error("Tarefa não encontrada");
@@ -139,10 +127,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
     }
 
     async excluirPorProjeto(codigoProjeto: string): Promise<void> {
-        await this.conexao.consultar(
-            "DELETE FROM tarefas WHERE projeto_codigo = $1",
-            [codigoProjeto],
-        );
+        await this.conexao.consultar("DELETE FROM tarefas WHERE projeto_codigo = $1", [codigoProjeto]);
     }
 
     private async gravarRelacionamentos(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
@@ -171,10 +156,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         let pendentes = [...new Set(codigos)];
 
         while (pendentes.length > 0) {
-            const encontradas = await this.conexao.consultar(
-                `${SELECT_TAREFA} WHERE codigo = ANY($1::uuid[])`,
-                [pendentes],
-            );
+            const encontradas = await this.conexao.consultar(`${SELECT_TAREFA} WHERE codigo = ANY($1::uuid[])`, [pendentes]);
             const proximos = new Set<string>();
 
             encontradas.forEach((linha) => {
@@ -205,19 +187,13 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             [todos],
         );
 
-        const projetos = await carregarProjetos(
-            this.conexao,
-            [...linhas.values()].map((l) => l.projeto_codigo).filter(Boolean),
-        );
+        const projetos = await carregarProjetos(this.conexao, [...linhas.values()].map((l) => l.projeto_codigo).filter(Boolean));
 
-        const usuarios = await carregarUsuarios(
-            this.conexao,
-            [
-                ...vinculos.map((v) => v.usuario_codigo),
-                ...[...linhas.values()].map((l) => l.concluida_por_codigo).filter(Boolean),
-                ...[...linhas.values()].map((l) => l.criada_por_codigo).filter(Boolean),
-            ],
-        );
+        const usuarios = await carregarUsuarios(this.conexao, [
+            ...vinculos.map((v) => v.usuario_codigo),
+            ...[...linhas.values()].map((l) => l.concluida_por_codigo).filter(Boolean),
+            ...[...linhas.values()].map((l) => l.criada_por_codigo).filter(Boolean),
+        ]);
 
         const construidas = new Map<string, Tarefa>();
 
@@ -228,13 +204,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             }
 
             const linha = linhas.get(codigo);
-            const dependeDe = linha.depende_de_codigo
-                ? construir(linha.depende_de_codigo)
-                : null;
+            const dependeDe = linha.depende_de_codigo ? construir(linha.depende_de_codigo) : null;
 
-            const responsaveis = vinculos
-                .filter((v) => v.tarefa_codigo === codigo)
-                .map((v) => usuarios.get(v.usuario_codigo)!);
+            const responsaveis = vinculos.filter((v) => v.tarefa_codigo === codigo).map((v) => usuarios.get(v.usuario_codigo)!);
 
             const checklist = itens
                 .filter((i) => i.tarefa_codigo === codigo)
@@ -253,9 +225,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 responsaveis,
                 checklist,
                 linha.codigo,
-                linha.concluida_por_codigo ? usuarios.get(linha.concluida_por_codigo) ?? null : null,
+                linha.concluida_por_codigo ? (usuarios.get(linha.concluida_por_codigo) ?? null) : null,
                 linha.categoria ?? null,
-                linha.criada_por_codigo ? usuarios.get(linha.criada_por_codigo) ?? null : null,
+                linha.criada_por_codigo ? (usuarios.get(linha.criada_por_codigo) ?? null) : null,
                 linha.iniciativa_codigo ? { codigo: linha.iniciativa_codigo, nome: linha.iniciativa_titulo } : null,
             );
 

@@ -91,7 +91,8 @@ export const MENSAGENS_DE_ERRO = {
         DONO_INVALIDO: "Anexo só pode ser de um documento, de um item da Base, de uma iniciativa ou de uma capacitação.",
         NOME_OBRIGATORIO: "Informe o nome do arquivo.",
         NOME_LONGO: "O nome do arquivo deve ter no máximo 255 caracteres.",
-        TIPO_NAO_ACEITO: "Tipo de arquivo não aceito. Envie PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, MD, imagem (PNG, JPG, WEBP, GIF) ou ZIP.",
+        TIPO_NAO_ACEITO:
+            "Tipo de arquivo não aceito. Envie PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, MD, imagem (PNG, JPG, WEBP, GIF) ou ZIP.",
         VAZIO: "O arquivo está vazio.",
         GRANDE_DEMAIS: "O arquivo passa de 20 MB, o tamanho máximo.",
         NAO_ENCONTRADO: "Anexo não encontrado.",

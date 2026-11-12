@@ -19,9 +19,7 @@ export default class EditarProjeto {
             const desejados = new Set(input.codigosMembros);
             const data = hoje();
             participacoes = participacoes.map((p) =>
-                p.ativa && !desejados.has(p.usuario.codigo)
-                    ? p.copiar({ dataSaida: data < p.dataEntrada ? p.dataEntrada : data })
-                    : p,
+                p.ativa && !desejados.has(p.usuario.codigo) ? p.copiar({ dataSaida: data < p.dataEntrada ? p.dataEntrada : data }) : p,
             );
             const usuarios = this.factory.criarUsuarioRepository();
             for (const codigo of desejados) {

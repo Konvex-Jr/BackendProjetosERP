@@ -7,8 +7,7 @@ export default class ExcluirTarefa {
         this.tarefas = factory.criarTarefaRepository();
     }
     async execute(codigo: string): Promise<void> {
-        if (!(await this.tarefas.buscarPorCodigo(codigo)))
-            throw new ErroNaoEncontrado("Tarefa não encontrada.");
+        if (!(await this.tarefas.buscarPorCodigo(codigo))) throw new ErroNaoEncontrado("Tarefa não encontrada.");
         await this.tarefas.excluir(codigo);
     }
 }

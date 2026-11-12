@@ -24,7 +24,12 @@ export default class ComentarioTarefa {
         return {
             codigo: this.codigo,
             codigoTarefa: this.codigoTarefa,
-            autor: { codigo: this.autor.codigo, nome: this.autor.nome, nomeExibicao: this.autor.nomeExibicao, avatarUrl: this.autor.avatarUrl },
+            autor: {
+                codigo: this.autor.codigo,
+                nome: this.autor.nome,
+                nomeExibicao: this.autor.nomeExibicao,
+                avatarUrl: this.autor.avatarUrl,
+            },
             texto: this.texto,
             criadoEm: this.criadoEm,
         };

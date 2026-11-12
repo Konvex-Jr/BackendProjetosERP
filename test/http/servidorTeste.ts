@@ -29,7 +29,11 @@ export async function subirServidor(factory: RepositoryFactoryInterface) {
         });
         const texto = await resposta.text();
         let corpo: any = null;
-        try { corpo = texto ? JSON.parse(texto) : null; } catch { corpo = texto; }
+        try {
+            corpo = texto ? JSON.parse(texto) : null;
+        } catch {
+            corpo = texto;
+        }
         return { status: resposta.status, corpo, headers: resposta.headers };
     }
 

@@ -38,7 +38,12 @@ export default class ComentarioTarefaRepositoryDatabase implements ComentarioTar
     }
 
     private async montar(linhas: any[]): Promise<ComentarioTarefa[]> {
-        const usuarios = await carregarUsuarios(this.conexao, linhas.map((l) => l.autor_codigo));
-        return linhas.map((l) => new ComentarioTarefa(l.tarefa_codigo, usuarios.get(l.autor_codigo)!, l.texto, new Date(l.criado_em), l.codigo));
+        const usuarios = await carregarUsuarios(
+            this.conexao,
+            linhas.map((l) => l.autor_codigo),
+        );
+        return linhas.map(
+            (l) => new ComentarioTarefa(l.tarefa_codigo, usuarios.get(l.autor_codigo)!, l.texto, new Date(l.criado_em), l.codigo),
+        );
     }
 }

@@ -17,7 +17,9 @@ export default class LoginUsuario {
     }
 
     async execute(input: LoginUsuarioInput): Promise<LoginUsuarioOutput> {
-        const email = String(input.email ?? "").trim().toLowerCase();
+        const email = String(input.email ?? "")
+            .trim()
+            .toLowerCase();
         const usuario = await this.usuarioRepository.buscarPorEmail(email);
         // Mesma mensagem para e-mail inexistente, senha errada e pessoa sem acesso (CT-001).
         if (!usuario || !usuario.ativo || !usuario.senha) {

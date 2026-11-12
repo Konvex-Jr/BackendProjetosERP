@@ -2,10 +2,10 @@ import ExcluirDocumento from "../source/useCases/ExcluirDocumento/ExcluirDocumen
 import { criarContexto, criarDocumento } from "./fixtures";
 
 test("exclui um documento existente", async () => {
-  const { factory, membro } = await criarContexto();
-  const documento = await criarDocumento(factory, membro);
+    const { factory, membro } = await criarContexto();
+    const documento = await criarDocumento(factory, membro);
 
-  await new ExcluirDocumento(factory).execute(documento.codigo);
+    await new ExcluirDocumento(factory).execute(documento.codigo);
 
-  expect(await factory.criarDocumentoRepository().contarPorPasta(documento.pasta.codigo)).toBe(0);
+    expect(await factory.criarDocumentoRepository().contarPorPasta(documento.pasta.codigo)).toBe(0);
 });

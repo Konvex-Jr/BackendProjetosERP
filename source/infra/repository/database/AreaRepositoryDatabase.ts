@@ -21,10 +21,12 @@ export default class AreaRepositoryDatabase implements AreaRepositoryInterface {
     }
 
     async criar(area: Area): Promise<Area> {
-        await this.executar(
-            "INSERT INTO areas (codigo, nome, area_pai_codigo, ativa) VALUES ($1, $2, $3, $4)",
-            [area.codigo, area.nome, area.codigoAreaPai, area.ativa],
-        );
+        await this.executar("INSERT INTO areas (codigo, nome, area_pai_codigo, ativa) VALUES ($1, $2, $3, $4)", [
+            area.codigo,
+            area.nome,
+            area.codigoAreaPai,
+            area.ativa,
+        ]);
         return area;
     }
 

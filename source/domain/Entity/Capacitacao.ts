@@ -82,21 +82,35 @@ export default class Capacitacao {
 
     dados(): DadosCapacitacao {
         return {
-            codigo: this.codigo, titulo: this.titulo, descricao: this.descricao, data: this.data, hora: this.hora,
-            duracaoHoras: this.duracaoHoras, instrutor: this.instrutor, vagas: this.vagas, tipo: this.tipo,
-            sala: this.sala, inscricoes: this.inscricoes,
+            codigo: this.codigo,
+            titulo: this.titulo,
+            descricao: this.descricao,
+            data: this.data,
+            hora: this.hora,
+            duracaoHoras: this.duracaoHoras,
+            instrutor: this.instrutor,
+            vagas: this.vagas,
+            tipo: this.tipo,
+            sala: this.sala,
+            inscricoes: this.inscricoes,
         };
     }
 
     private validar(): void {
-        const erro = (mensagem: string, codigo: string) => { throw new ErroValidacao(mensagem, codigo); };
+        const erro = (mensagem: string, codigo: string) => {
+            throw new ErroValidacao(mensagem, codigo);
+        };
         if (!this.titulo) erro(M.TITULO_OBRIGATORIO, "TITULO_CAPACITACAO_OBRIGATORIO");
         if (this.titulo.length > 200) erro(M.TITULO_LONGO, "TITULO_CAPACITACAO_LONGO");
         if (this.descricao.length > 10_000) erro(M.DESCRICAO_LONGA, "DESCRICAO_CAPACITACAO_LONGA");
         if (!(this.data instanceof Date) || Number.isNaN(this.data.getTime())) erro(M.DATA_INVALIDA, "DATA_CAPACITACAO_INVALIDA");
         if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(this.hora)) erro(M.HORA_INVALIDA, "HORA_CAPACITACAO_INVALIDA");
-        if (!Number.isFinite(this.duracaoHoras) || this.duracaoHoras < 0.5 || this.duracaoHoras > 24
-            || Math.round(this.duracaoHoras * 10) !== this.duracaoHoras * 10) {
+        if (
+            !Number.isFinite(this.duracaoHoras) ||
+            this.duracaoHoras < 0.5 ||
+            this.duracaoHoras > 24 ||
+            Math.round(this.duracaoHoras * 10) !== this.duracaoHoras * 10
+        ) {
             erro(M.DURACAO_INVALIDA, "DURACAO_CAPACITACAO_INVALIDA");
         }
         if (!Number.isInteger(this.vagas) || this.vagas < 1 || this.vagas > 500) erro(M.VAGAS_INVALIDAS, "VAGAS_INVALIDAS");

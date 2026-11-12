@@ -22,10 +22,12 @@ export default class PastaRepositoryDatabase implements PastaRepositoryInterface
     }
 
     async criar(pasta: Pasta): Promise<Pasta> {
-        await this.conexao.consultar(
-            "INSERT INTO pastas (codigo, nome, sigilo, projeto_codigo) VALUES ($1, $2, $3, $4)",
-            [pasta.codigo, pasta.nome, pasta.sigilo, pasta.projeto?.codigo ?? null],
-        );
+        await this.conexao.consultar("INSERT INTO pastas (codigo, nome, sigilo, projeto_codigo) VALUES ($1, $2, $3, $4)", [
+            pasta.codigo,
+            pasta.nome,
+            pasta.sigilo,
+            pasta.projeto?.codigo ?? null,
+        ]);
         return pasta;
     }
 
@@ -53,10 +55,7 @@ export default class PastaRepositoryDatabase implements PastaRepositoryInterface
     }
 
     async excluir(codigo: string): Promise<void> {
-        const linhas = await this.conexao.consultar(
-            "DELETE FROM pastas WHERE codigo = $1 RETURNING codigo",
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar("DELETE FROM pastas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
             throw new Error("Pasta não encontrada");

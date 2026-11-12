@@ -51,8 +51,8 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
 
     const papel = papelNoProjeto(usuario, projeto);
     const organizar = papel === "gestao" || papel === "lider";
-    const verProjeto = temPermissao(usuario, Permissao.PROJETOS_VER_TODOS)
-        || (projeto !== null && participaOuParticipou(usuario.codigo, projeto));
+    const verProjeto =
+        temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || (projeto !== null && participaOuParticipou(usuario.codigo, projeto));
     return {
         ver: organizar || responsavel || verProjeto,
         organizar,

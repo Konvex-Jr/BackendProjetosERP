@@ -16,16 +16,23 @@ import { exigirAutenticado, exigirPermissao, Permissao } from "../../../shared/s
  * devolve `anexo` (ou null), com o que o frontend baixa o arquivo em GET /anexos/:codigo.
  */
 export default class DocumentoRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     private async comAnexo(documentos: Documento[]) {
-        const anexos = await new GerirAnexos(this.factory).porDono(DonoAnexo.DOCUMENTO, documentos.map((d) => d.codigo));
+        const anexos = await new GerirAnexos(this.factory).porDono(
+            DonoAnexo.DOCUMENTO,
+            documentos.map((d) => d.codigo),
+        );
         return documentos.map((d) => Object.assign(d, { anexo: anexos.get(d.codigo)?.[0] ?? null }));
     }
 
     init(): void {
         this.http.route("get", "/pastas/:codigoPasta/documentos", true, async (params: any, body: any) =>
-            this.comAnexo(await new ListarDocumentos(this.factory).execute(params.codigoPasta, exigirAutenticado(body?.user))));
+            this.comAnexo(await new ListarDocumentos(this.factory).execute(params.codigoPasta, exigirAutenticado(body?.user))),
+        );
 
         this.http.route("post", "/pastas/:codigoPasta/documentos", true, async (params: any, body: any) =>
             new EnviarDocumento(this.factory).execute({
@@ -36,11 +43,16 @@ export default class DocumentoRoutes implements ModelRoutes {
                 codigoAutor: exigirPermissao(body.user, Permissao.DOCUMENTOS_GERIR).codigo,
                 arquivoUrl: body.arquivoUrl,
                 extensao: body.extensao ?? null,
-            }));
+            }),
+        );
 
         this.http.route("put", "/documentos/:codigo", true, async (params: any, body: any) => {
             exigirPermissao(body.user, Permissao.DOCUMENTOS_GERIR);
-            return (await this.comAnexo([await new RenomearDocumento(this.factory).execute(params.codigo, String(body.nome ?? ""), body.arquivoUrl ?? undefined)]))[0];
+            return (
+                await this.comAnexo([
+                    await new RenomearDocumento(this.factory).execute(params.codigo, String(body.nome ?? ""), body.arquivoUrl ?? undefined),
+                ])
+            )[0];
         });
 
         this.http.route("delete", "/documentos/:codigo", true, async (params: any, body: any) => {

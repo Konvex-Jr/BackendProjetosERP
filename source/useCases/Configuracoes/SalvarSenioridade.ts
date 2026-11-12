@@ -20,7 +20,9 @@ export default class SalvarSenioridade {
         if (input.codigo) {
             const atual = await repo.buscarPorCodigo(input.codigo);
             if (!atual) throw new ErroNaoEncontrado("Senioridade não encontrada.");
-            return repo.editar(new SenioridadeUsuario(atual.codigo, String(input.nome ?? "").trim(), atual.valorHora, ordem ?? atual.ordem));
+            return repo.editar(
+                new SenioridadeUsuario(atual.codigo, String(input.nome ?? "").trim(), atual.valorHora, ordem ?? atual.ordem),
+            );
         }
         const nome = String(input.nome ?? "").trim();
         const codigo = slug(nome);

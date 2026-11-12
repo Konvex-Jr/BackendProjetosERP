@@ -20,9 +20,7 @@ describe("Contrato OpenAPI", () => {
         }
 
         const paths = (swaggerSpecification as any).paths;
-        const undocumented = declaredRoutes.filter(({ method, path: routePath }) =>
-            !paths[routePath] || !paths[routePath][method],
-        );
+        const undocumented = declaredRoutes.filter(({ method, path: routePath }) => !paths[routePath] || !paths[routePath][method]);
         expect(undocumented).toEqual([]);
     });
 

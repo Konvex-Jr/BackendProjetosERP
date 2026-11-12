@@ -33,7 +33,10 @@ describe("Tarefas avulsas pela API", () => {
     afterEach(async () => servidor.fechar());
 
     const criarAvulsa = async (extra: object = {}) => {
-        const r = await servidor.chamar("post", "/tarefas", { usuario: diretor, corpo: avulsa({ codigosResponsaveis: [assessor.codigo], ...extra }) });
+        const r = await servidor.chamar("post", "/tarefas", {
+            usuario: diretor,
+            corpo: avulsa({ codigosResponsaveis: [assessor.codigo], ...extra }),
+        });
         expect(r.status).toBe(200);
         return r.corpo;
     };
@@ -59,7 +62,10 @@ describe("Tarefas avulsas pela API", () => {
     });
 
     it("membro não cria avulsa", async () => {
-        const r = await servidor.chamar("post", "/tarefas", { usuario: assessor, corpo: avulsa({ codigosResponsaveis: [assessor.codigo] }) });
+        const r = await servidor.chamar("post", "/tarefas", {
+            usuario: assessor,
+            corpo: avulsa({ codigosResponsaveis: [assessor.codigo] }),
+        });
         expect(r.status).toBe(403);
     });
 
@@ -67,24 +73,36 @@ describe("Tarefas avulsas pela API", () => {
         const t = await criarAvulsa();
         const minhas = await servidor.chamar("get", "/tarefas?minhas=true", { usuario: assessor });
         expect(minhas.corpo.map((x: any) => x.codigo)).toEqual([t.codigo]);
-        const concluida = await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, { usuario: assessor, corpo: { status: "concluida" } });
+        const concluida = await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, {
+            usuario: assessor,
+            corpo: { status: "concluida" },
+        });
         expect(concluida.status).toBe(200);
         expect(concluida.corpo.concluidaPor.codigo).toBe(assessor.codigo);
         expect(concluida.corpo.categoria).toBe("inovacao");
-        expect((await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, { usuario: assessor, corpo: { status: "pendente" } })).status).toBe(200);
+        expect(
+            (await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, { usuario: assessor, corpo: { status: "pendente" } })).status,
+        ).toBe(200);
         const c = await servidor.chamar("post", `/tarefas/${t.codigo}/comentarios`, { usuario: assessor, corpo: { texto: "Comecei" } });
         expect(c.status).toBe(200);
         expect((await servidor.chamar("get", `/tarefas/${t.codigo}/comentarios`, { usuario: diretor })).corpo).toHaveLength(1);
-        expect((await servidor.chamar("put", `/tarefas/${t.codigo}`, { usuario: assessor, corpo: { ...avulsa(), status: "pendente" } })).status).toBe(403);
+        expect(
+            (await servidor.chamar("put", `/tarefas/${t.codigo}`, { usuario: assessor, corpo: { ...avulsa(), status: "pendente" } }))
+                .status,
+        ).toBe(403);
         expect((await servidor.chamar("delete", `/tarefas/${t.codigo}`, { usuario: assessor })).status).toBe(403);
     });
 
     it("outro membro não vê nem mexe na avulsa alheia", async () => {
         const t = await criarAvulsa();
         expect((await servidor.chamar("get", "/tarefas", { usuario: outro })).corpo).toEqual([]);
-        expect((await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, { usuario: outro, corpo: { status: "concluida" } })).status).toBe(404);
+        expect(
+            (await servidor.chamar("patch", `/tarefas/${t.codigo}/status`, { usuario: outro, corpo: { status: "concluida" } })).status,
+        ).toBe(404);
         expect((await servidor.chamar("get", `/tarefas/${t.codigo}/comentarios`, { usuario: outro })).status).toBe(404);
-        expect((await servidor.chamar("post", `/tarefas/${t.codigo}/comentarios`, { usuario: outro, corpo: { texto: "oi" } })).status).toBe(404);
+        expect((await servidor.chamar("post", `/tarefas/${t.codigo}/comentarios`, { usuario: outro, corpo: { texto: "oi" } })).status).toBe(
+            404,
+        );
     });
 
     it("gestão edita (troca categoria e responsável) e exclui; gerente também organiza", async () => {
@@ -103,8 +121,9 @@ describe("Tarefas avulsas pela API", () => {
     });
 
     it("filtros do painel: categoria, avulsas, responsável e status; projeto continua igual", async () => {
-        const projeto = await ctx.factory.criarProjetoRepository().criar(
-            new Projeto("P", "d", dataInicio, dataFim, undefined, [assessor], "proj-p"));
+        const projeto = await ctx.factory
+            .criarProjetoRepository()
+            .criar(new Projeto("P", "d", dataInicio, dataFim, undefined, [assessor], "proj-p"));
         await criarTarefa(ctx.factory, assessor, projeto);
         const a = await criarAvulsa();
         await criarAvulsa({ categoria: "capacitacao", codigosResponsaveis: [outro.codigo] });

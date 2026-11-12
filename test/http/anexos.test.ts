@@ -28,7 +28,8 @@ describe("Anexos", () => {
         return { status: r.status, headers: r.headers, bytes: Buffer.from(await r.arrayBuffer()) };
     };
     const itemBase = async (usuario: Usuario) =>
-        (await servidor.chamar("post", "/conhecimento", { usuario, corpo: { titulo: "Pesquisa", categoria: "pesquisa", resumo: "r" } })).corpo;
+        (await servidor.chamar("post", "/conhecimento", { usuario, corpo: { titulo: "Pesquisa", categoria: "pesquisa", resumo: "r" } }))
+            .corpo;
 
     beforeEach(async () => {
         ctx = await criarContexto();
@@ -115,7 +116,9 @@ describe("Anexos", () => {
     });
 
     it("iniciativa: responsável anexa, todos baixam, membro comum não anexa; excluir leva os arquivos", async () => {
-        const ini = (await servidor.chamar("post", "/iniciativas", { usuario: carla, corpo: { titulo: "Chatbot", tipo: "produto", frente: "lab" } })).corpo;
+        const ini = (
+            await servidor.chamar("post", "/iniciativas", { usuario: carla, corpo: { titulo: "Chatbot", tipo: "produto", frente: "lab" } })
+        ).corpo;
         expect((await enviar(bruno, `/iniciativas/${ini.codigo}/anexos`, "a.pdf")).status).toBe(403);
         const anexo = (await enviar(carla, `/iniciativas/${ini.codigo}/anexos`, "protótipo.png")).corpo;
         expect(anexo.tipoMime).toBe("image/png");
@@ -128,7 +131,8 @@ describe("Anexos", () => {
 
     it("documento do tipo arquivo: gestão envia; sigilo da pasta vale para baixar", async () => {
         const publica = (await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "Modelos" } })).corpo;
-        const gestao = (await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "Financeiro", sigilo: "gestao" } })).corpo;
+        const gestao = (await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "Financeiro", sigilo: "gestao" } }))
+            .corpo;
 
         expect((await enviar(ctx.membro, `/pastas/${publica.codigo}/documentos/arquivo`, "a.pdf")).status).toBe(403);
 
@@ -149,11 +153,17 @@ describe("Anexos", () => {
 
     it("documento de arquivo não vira link; links continuam; excluir documento ou pasta apaga o arquivo", async () => {
         const pasta = (await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "Modelos" } })).corpo;
-        const link = await servidor.chamar("post", `/pastas/${pasta.codigo}/documentos`, { usuario: ctx.gerente, corpo: { nome: "Drive", arquivoUrl: "https://drive.google.com/x" } });
+        const link = await servidor.chamar("post", `/pastas/${pasta.codigo}/documentos`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Drive", arquivoUrl: "https://drive.google.com/x" },
+        });
         expect(link.status).toBe(200);
         const doc = (await enviar(ctx.gerente, `/pastas/${pasta.codigo}/documentos/arquivo`, "a.pdf")).corpo;
 
-        const trocar = await servidor.chamar("put", `/documentos/${doc.codigo}`, { usuario: ctx.gerente, corpo: { nome: "a", arquivoUrl: "https://x.com" } });
+        const trocar = await servidor.chamar("put", `/documentos/${doc.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "a", arquivoUrl: "https://x.com" },
+        });
         expect(trocar.status).toBe(400);
         expect(trocar.corpo.codigo).toBe("DOCUMENTO_E_ARQUIVO");
         const renomear = await servidor.chamar("put", `/documentos/${doc.codigo}`, { usuario: ctx.gerente, corpo: { nome: "Ata final" } });
@@ -180,7 +190,12 @@ describe("Anexos ao excluir projeto", () => {
         await ctx.factory.criarProjetoRepository().criar(new Projeto("App", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
         const servidor = await subirServidor(ctx.factory);
         try {
-            const pasta = (await servidor.chamar("post", "/pastas", { usuario: diretor, corpo: { nome: "Entregas", sigilo: "projeto", codigoProjeto: "proj-app" } })).corpo;
+            const pasta = (
+                await servidor.chamar("post", "/pastas", {
+                    usuario: diretor,
+                    corpo: { nome: "Entregas", sigilo: "projeto", codigoProjeto: "proj-app" },
+                })
+            ).corpo;
             const r = await fetch(`${servidor.base}/pastas/${pasta.codigo}/documentos/arquivo`, {
                 method: "POST",
                 headers: { "access-token": tokenPara(diretor), "X-Nome-Arquivo": "a.pdf" },

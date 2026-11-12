@@ -61,9 +61,7 @@ export default class Projeto {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.status = status;
-        this.participacoes = membros.map((m) =>
-            m instanceof Participacao ? m : new Participacao(m, { dataEntrada: dataInicio }),
-        );
+        this.participacoes = membros.map((m) => (m instanceof Participacao ? m : new Participacao(m, { dataEntrada: dataInicio })));
         this.referencia = detalhes.referencia?.trim() || null;
         this.objetivo = detalhes.objetivo?.trim() || null;
         this.clienteNome = detalhes.clienteNome?.trim() || null;
@@ -73,7 +71,7 @@ export default class Projeto {
         this.area = detalhes.area ?? null;
         this.tags = [...new Set((detalhes.tags ?? []).map((t) => String(t).trim()).filter(Boolean))];
         const codigoLider = detalhes.lider?.codigo;
-        this.lider = codigoLider ? this.membros.find((m) => m.codigo === codigoLider) ?? null : null;
+        this.lider = codigoLider ? (this.membros.find((m) => m.codigo === codigoLider) ?? null) : null;
 
         this.validar();
     }
@@ -91,16 +89,18 @@ export default class Projeto {
         return this.participacoes.find((p) => p.ativa && p.usuario.codigo === codigoUsuario);
     }
 
-    copiar(alteracoes: Partial<{
-        nome: string;
-        descricao: string;
-        dataInicio: Date;
-        dataFim: Date;
-        status: StatusProjeto;
-        participacoes: Participacao[];
-    }> & DetalhesProjeto = {}): Projeto {
-        const pick = (chave: string): any =>
-            (alteracoes as any)[chave] !== undefined ? (alteracoes as any)[chave] : (this as any)[chave];
+    copiar(
+        alteracoes: Partial<{
+            nome: string;
+            descricao: string;
+            dataInicio: Date;
+            dataFim: Date;
+            status: StatusProjeto;
+            participacoes: Participacao[];
+        }> &
+            DetalhesProjeto = {},
+    ): Projeto {
+        const pick = (chave: string): any => ((alteracoes as any)[chave] !== undefined ? (alteracoes as any)[chave] : (this as any)[chave]);
         return new Projeto(
             pick("nome"),
             pick("descricao"),
@@ -155,8 +155,10 @@ export default class Projeto {
         }
 
         if (
-            !(this.dataInicio instanceof Date) || !(this.dataFim instanceof Date) ||
-            Number.isNaN(this.dataInicio.getTime()) || Number.isNaN(this.dataFim.getTime())
+            !(this.dataInicio instanceof Date) ||
+            !(this.dataFim instanceof Date) ||
+            Number.isNaN(this.dataInicio.getTime()) ||
+            Number.isNaN(this.dataFim.getTime())
         ) {
             throw new ErroValidacao("As datas do projeto devem ser válidas.", "DATA_PROJETO_INVALIDA");
         }

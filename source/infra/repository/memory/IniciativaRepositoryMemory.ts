@@ -25,9 +25,7 @@ export default class IniciativaRepositoryMemory implements IniciativaRepositoryI
     }
 
     async listar(filtros: FiltrosIniciativa = {}): Promise<Iniciativa[]> {
-        return this.itens
-            .filter((i) => atende(i, filtros))
-            .sort((a, b) => b.atualizadoEm.getTime() - a.atualizadoEm.getTime());
+        return this.itens.filter((i) => atende(i, filtros)).sort((a, b) => b.atualizadoEm.getTime() - a.atualizadoEm.getTime());
     }
 
     async buscarPorCodigo(codigo: string): Promise<Iniciativa | null> {

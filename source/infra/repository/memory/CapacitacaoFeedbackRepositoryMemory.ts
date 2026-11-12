@@ -5,7 +5,9 @@ export default class CapacitacaoFeedbackRepositoryMemory implements CapacitacaoF
     private itens: CapacitacaoFeedback[] = [];
 
     async salvar(feedback: CapacitacaoFeedback): Promise<CapacitacaoFeedback> {
-        this.itens = this.itens.filter((f) => !(f.codigoCapacitacao === feedback.codigoCapacitacao && f.usuario.codigo === feedback.usuario.codigo));
+        this.itens = this.itens.filter(
+            (f) => !(f.codigoCapacitacao === feedback.codigoCapacitacao && f.usuario.codigo === feedback.usuario.codigo),
+        );
         this.itens.push(feedback);
         return feedback;
     }
@@ -22,9 +24,11 @@ export default class CapacitacaoFeedbackRepositoryMemory implements CapacitacaoF
         const mapa = new Map<string, ResumoAvaliacao>();
         for (const codigo of codigos) {
             const notas = this.itens.filter((f) => f.codigoCapacitacao === codigo).map((f) => f.nota);
-            mapa.set(codigo, { total: notas.length, media: notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null });
+            mapa.set(codigo, {
+                total: notas.length,
+                media: notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null,
+            });
         }
         return mapa;
     }
-
 }
