@@ -1,0 +1,7 @@
+dist/
+node_modules/
+uploads/
+coverage/
+migrations/
+package-lock.json
+*.md
