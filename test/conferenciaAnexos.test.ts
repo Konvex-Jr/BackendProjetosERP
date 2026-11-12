@@ -3,7 +3,13 @@ import { conferirAnexos, relatorioConferencia } from "../source/infra/arquivos/c
 const A = "11111111-1111-1111-1111-111111111111";
 const B = "22222222-2222-2222-2222-222222222222";
 const C = "33333333-3333-3333-3333-333333333333";
-const reg = (arquivo: string, donoCodigo = "d1") => ({ codigo: `c-${arquivo}`, donoTipo: "conhecimento", donoCodigo, nome: "x.pdf", arquivo });
+const reg = (arquivo: string, donoCodigo = "d1") => ({
+    codigo: `c-${arquivo}`,
+    donoTipo: "conhecimento",
+    donoCodigo,
+    nome: "x.pdf",
+    arquivo,
+});
 
 describe("conferência de anexos órfãos", () => {
     it("não acusa nada quando banco, disco e donos batem", () => {

@@ -54,7 +54,12 @@ async function main() {
     async function pessoa(nome, email, perfil, extra = {}) {
         if (porEmail.has(email)) return porEmail.get(email);
         const criada = await exigir("POST", "/usuarios", dir, {
-            nome, email, senha: SENHA_FICTICIA, perfil, codigoSenioridade: "junior", ...extra,
+            nome,
+            email,
+            senha: SENHA_FICTICIA,
+            perfil,
+            codigoSenioridade: "junior",
+            ...extra,
         });
         console.log(`Pessoa criada: ${nome} (${perfil})`);
         return criada;
@@ -68,8 +73,11 @@ async function main() {
     let projeto = projetos.find((p) => p.nome === "Site institucional (fictício)");
     if (!projeto) {
         projeto = await exigir("POST", "/projetos", dir, {
-            nome: "Site institucional (fictício)", descricao: "Projeto de exemplo para desenvolvimento.",
-            dataInicio: dia(-20), dataFim: dia(40), status: "em_execucao",
+            nome: "Site institucional (fictício)",
+            descricao: "Projeto de exemplo para desenvolvimento.",
+            dataInicio: dia(-20),
+            dataFim: dia(40),
+            status: "em_execucao",
         });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev", alocacao: 50 });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: caio.codigo, funcao: "Design", alocacao: 30 });
@@ -80,7 +88,11 @@ async function main() {
             ["Publicar primeira versão", 5, 20, bia],
         ]) {
             await exigir("POST", "/tarefas", dir, {
-                codigoProjeto: projeto.codigo, titulo, dataInicio: dia(ini), dataFim: dia(fim), prioridade: "P2",
+                codigoProjeto: projeto.codigo,
+                titulo,
+                dataInicio: dia(ini),
+                dataFim: dia(fim),
+                prioridade: "P2",
                 codigosResponsaveis: [quem.codigo],
             });
         }
@@ -89,11 +101,25 @@ async function main() {
 
     const caps = await exigir("GET", "/capacitacoes", dir);
     if (!caps.some((c) => c.titulo.endsWith("(fictícia)"))) {
-        const base = { descricao: "Capacitação de exemplo.", hora: "19:00", duracaoHoras: 2, codigoInstrutor: ines.codigo, vagas: 10, tipo: "computacao", sala: "Lab 1" };
+        const base = {
+            descricao: "Capacitação de exemplo.",
+            hora: "19:00",
+            duracaoHoras: 2,
+            codigoInstrutor: ines.codigo,
+            vagas: 10,
+            tipo: "computacao",
+            sala: "Lab 1",
+        };
         const passada = await exigir("POST", "/capacitacoes", dir, { ...base, titulo: "Git e GitHub (fictícia)", data: dia(-7) });
         for (const p of [bia, caio]) await exigir("POST", `/capacitacoes/${passada.codigo}/inscricoes`, dir, { codigoUsuario: p.codigo });
         await exigir("POST", "/capacitacoes", dir, { ...base, titulo: "React do zero (fictícia)", data: dia(3) });
-        await exigir("POST", "/capacitacoes", dir, { ...base, titulo: "Circuitos básicos (fictícia)", data: dia(10), tipo: "eletrica", vagas: 2 });
+        await exigir("POST", "/capacitacoes", dir, {
+            ...base,
+            titulo: "Circuitos básicos (fictícia)",
+            data: dia(10),
+            tipo: "eletrica",
+            vagas: 2,
+        });
         console.log("Capacitações criadas (uma já passou, com Bia e Caio inscritos).");
     }
 

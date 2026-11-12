@@ -68,10 +68,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             );
         }
         const where = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
-        const linhas = await this.conexao.consultar(
-            `SELECT codigo FROM projetos ${where} ORDER BY data_inicio, nome`,
-            parametros,
-        );
+        const linhas = await this.conexao.consultar(`SELECT codigo FROM projetos ${where} ORDER BY data_inicio, nome`, parametros);
         return this.hidratar(linhas.map((l) => l.codigo));
     }
 
@@ -108,10 +105,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
     }
 
     async excluir(codigo: string): Promise<void> {
-        const linhas = await this.conexao.consultar(
-            "DELETE FROM projetos WHERE codigo = $1 RETURNING codigo",
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar("DELETE FROM projetos WHERE codigo = $1 RETURNING codigo", [codigo]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Projeto não encontrado.");
     }
 

@@ -58,7 +58,6 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new CapacitacaoFeedbackRepositoryDatabase(this.conexao);
     }
 
-
     criarPastaRepository(): PastaRepositoryInterface {
         return new PastaRepositoryDatabase(this.conexao);
     }

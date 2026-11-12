@@ -3,12 +3,7 @@ import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepository
 import Router from "../source/infra/http/Router";
 import { MODULOS, menuDoUsuario, menuOrdenado } from "../source/modulos/registro";
 import { Permissao, TODAS_AS_PERMISSOES, permissoesDoPapel } from "../source/shared/seguranca/catalogoPermissoes";
-import {
-    exigirPermissao,
-    exigirPodeGerirPerfil,
-    resolverUsuarioAlvo,
-    temPermissao,
-} from "../source/shared/seguranca/permissoes";
+import { exigirPermissao, exigirPodeGerirPerfil, resolverUsuarioAlvo, temPermissao } from "../source/shared/seguranca/permissoes";
 import { ErroProibido } from "../source/shared/erros/ErroProibido";
 import { ErroNaoAutorizado } from "../source/shared/erros/ErroNaoAutorizado";
 import { criarContexto } from "./fixtures";
@@ -58,11 +53,37 @@ describe("Registro de módulos", () => {
     test("menu esconde itens sem permissão", () => {
         const chaves = (u: any) => menuDoUsuario(u).map((m) => m.chave);
         const telas = (u: any) => menuOrdenado(u).map((i) => i.chave);
-        expect(telas(diretor)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "iniciativas", "estrategia", "gestao", "precificacao", "usuarios", "configuracoes", "perfil"]);
+        expect(telas(diretor)).toEqual([
+            "dashboard",
+            "tarefas",
+            "projetos",
+            "capacitacoes",
+            "conhecimento",
+            "iniciativas",
+            "estrategia",
+            "gestao",
+            "precificacao",
+            "usuarios",
+            "configuracoes",
+            "perfil",
+        ]);
         expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
-        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "conhecimento", "iniciativas", "gestao", "perfil"]);
+        expect(telas(membro)).toEqual([
+            "dashboard",
+            "tarefas",
+            "projetos",
+            "capacitacoes",
+            "conhecimento",
+            "iniciativas",
+            "gestao",
+            "perfil",
+        ]);
         // Do módulo Pessoas, o membro só vê o próprio perfil.
-        expect(menuDoUsuario(membro).find((m) => m.chave === "pessoas")?.itens.map((i) => i.chave)).toEqual(["perfil"]);
+        expect(
+            menuDoUsuario(membro)
+                .find((m) => m.chave === "pessoas")
+                ?.itens.map((i) => i.chave),
+        ).toEqual(["perfil"]);
         expect(chaves(membro)).not.toContain("config");
         expect(new Set(MODULOS.flatMap((m) => m.menu.map((i) => i.chave))).size).toBe(MODULOS.flatMap((m) => m.menu).length);
     });
@@ -70,7 +91,9 @@ describe("Registro de módulos", () => {
     test("Router registra as rotas de todos os módulos e expõe /auth/permissoes", async () => {
         const rotas: Record<string, any> = {};
         const http: any = {
-            route: (metodo: string, url: string, _auth: boolean, cb: any) => { rotas[`${metodo} ${url}`] = cb; },
+            route: (metodo: string, url: string, _auth: boolean, cb: any) => {
+                rotas[`${metodo} ${url}`] = cb;
+            },
             swagger: () => undefined,
         };
         new Router(http, new MemoryRepositoryFactory()).init();
@@ -92,17 +115,28 @@ describe("PUT /auth/perfil", () => {
         const { factory, membro: ana } = await criarContexto();
         const rotas: Record<string, any> = {};
         const http: any = {
-            route: (metodo: string, url: string, _auth: boolean, cb: any) => { rotas[`${metodo} ${url}`] = cb; },
+            route: (metodo: string, url: string, _auth: boolean, cb: any) => {
+                rotas[`${metodo} ${url}`] = cb;
+            },
             swagger: () => undefined,
         };
         new Router(http, factory).init();
         const eu = { codigo: ana.codigo, perfil: ana.perfil };
 
-        const editado = await rotas["put /auth/perfil"]({}, {
-            user: eu, telefone: "47 99999-0000", bio: "Oi", curso: "Eng. de Software",
-            // Ignorados: só a gestão muda nome, e-mail, perfil e área.
-            nome: "Outro", email: "x@y.com", perfil: PerfilUsuario.DIRETOR, codigoArea: "qualquer",
-        });
+        const editado = await rotas["put /auth/perfil"](
+            {},
+            {
+                user: eu,
+                telefone: "47 99999-0000",
+                bio: "Oi",
+                curso: "Eng. de Software",
+                // Ignorados: só a gestão muda nome, e-mail, perfil e área.
+                nome: "Outro",
+                email: "x@y.com",
+                perfil: PerfilUsuario.DIRETOR,
+                codigoArea: "qualquer",
+            },
+        );
         expect(editado.telefone).toBe("47 99999-0000");
         expect(editado.bio).toBe("Oi");
         expect(editado.nome).toBe(ana.nome);

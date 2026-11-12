@@ -22,9 +22,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
     }
 
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {
-        return this.tarefas.filter((t) =>
-            t.responsaveis.some((r) => r.codigo === codigoUsuario),
-        );
+        return this.tarefas.filter((t) => t.responsaveis.some((r) => r.codigo === codigoUsuario));
     }
 
     async buscarPorCodigo(codigo: string): Promise<Tarefa | null> {
@@ -50,9 +48,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         }
 
         this.tarefas.splice(indice, 1);
-        this.tarefas = this.tarefas.map((t) =>
-            t.dependeDe?.codigo === codigo ? t.semDependencia() : t,
-        );
+        this.tarefas = this.tarefas.map((t) => (t.dependeDe?.codigo === codigo ? t.semDependencia() : t));
     }
 
     async excluirPorProjeto(codigoProjeto: string): Promise<void> {

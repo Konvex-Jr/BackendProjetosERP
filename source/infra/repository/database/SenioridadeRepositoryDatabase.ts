@@ -9,26 +9,23 @@ export default class SenioridadeRepositoryDatabase implements SenioridadeReposit
     constructor(private readonly conexao: ConexaoBanco) {}
 
     async listar(): Promise<SenioridadeUsuario[]> {
-        const linhas = await this.conexao.consultar(
-            "SELECT codigo, nome, valor_hora, ordem FROM senioridades ORDER BY ordem, nome",
-        );
+        const linhas = await this.conexao.consultar("SELECT codigo, nome, valor_hora, ordem FROM senioridades ORDER BY ordem, nome");
         return linhas.map((l) => this.paraEntidade(l));
     }
 
     async buscarPorCodigo(codigo: string): Promise<SenioridadeUsuario | null> {
-        const linhas = await this.conexao.consultar(
-            "SELECT codigo, nome, valor_hora, ordem FROM senioridades WHERE codigo = $1",
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar("SELECT codigo, nome, valor_hora, ordem FROM senioridades WHERE codigo = $1", [codigo]);
         return linhas.length > 0 ? this.paraEntidade(linhas[0]) : null;
     }
 
     async criar(senioridade: SenioridadeUsuario): Promise<SenioridadeUsuario> {
         try {
-            await this.conexao.consultar(
-                "INSERT INTO senioridades (codigo, nome, valor_hora, ordem) VALUES ($1, $2, $3, $4)",
-                [senioridade.codigo, senioridade.nome, senioridade.valorHora, senioridade.ordem],
-            );
+            await this.conexao.consultar("INSERT INTO senioridades (codigo, nome, valor_hora, ordem) VALUES ($1, $2, $3, $4)", [
+                senioridade.codigo,
+                senioridade.nome,
+                senioridade.valorHora,
+                senioridade.ordem,
+            ]);
         } catch (erro) {
             if (violacaoDeUnicidade(erro)) {
                 throw new ErroConflito("Já existe uma senioridade com esse código.", "SENIORIDADE_DUPLICADA");

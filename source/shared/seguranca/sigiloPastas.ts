@@ -21,10 +21,7 @@ export function podeVerPasta(usuario: UsuarioAutenticado, pasta: Pasta, meusProj
 }
 
 /** Códigos dos projetos de que a pessoa participa ou participou (só consulta se precisar). */
-export async function projetosDoUsuario(
-    usuario: UsuarioAutenticado,
-    factory: RepositoryFactoryInterface,
-): Promise<Set<string>> {
+export async function projetosDoUsuario(usuario: UsuarioAutenticado, factory: RepositoryFactoryInterface): Promise<Set<string>> {
     if (podeVerTodasPastas(usuario)) return new Set();
     const projetos = await factory.criarProjetoRepository().listarPorMembro(usuario.codigo);
     return new Set(projetos.map((p) => p.codigo));

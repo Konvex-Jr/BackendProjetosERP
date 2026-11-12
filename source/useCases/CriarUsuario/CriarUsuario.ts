@@ -24,7 +24,9 @@ export default class CriarUsuario {
 
     async execute(input: CriarUsuarioInput): Promise<CriarUsuarioOutput> {
         validarNovaSenha(input.senha);
-        const email = String(input.email ?? "").trim().toLowerCase();
+        const email = String(input.email ?? "")
+            .trim()
+            .toLowerCase();
         if (await this.usuarioRepository.buscarPorEmail(email)) {
             throw new ErroValidacao("Já existe um usuário cadastrado com este e-mail.", "EMAIL_JA_CADASTRADO");
         }
@@ -63,14 +65,20 @@ export default class CriarUsuario {
         const dataVigencia = usuario.dataEntrada ?? hoje();
         if (usuario.cargo) {
             await historico.registrarCargo({
-                codigoUsuario: usuario.codigo, cargoAnterior: null, cargoNovo: usuario.cargo,
-                dataVigencia, codigoRegistradoPor: input.codigoAutor ?? null,
+                codigoUsuario: usuario.codigo,
+                cargoAnterior: null,
+                cargoNovo: usuario.cargo,
+                dataVigencia,
+                codigoRegistradoPor: input.codigoAutor ?? null,
             });
         }
         if (usuario.area) {
             await historico.registrarArea({
-                codigoUsuario: usuario.codigo, areaAnterior: null, areaNova: usuario.area,
-                dataVigencia, codigoRegistradoPor: input.codigoAutor ?? null,
+                codigoUsuario: usuario.codigo,
+                areaAnterior: null,
+                areaNova: usuario.area,
+                dataVigencia,
+                codigoRegistradoPor: input.codigoAutor ?? null,
             });
         }
         return usuario;

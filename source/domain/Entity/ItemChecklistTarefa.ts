@@ -6,11 +6,7 @@ export default class ItemChecklistTarefa {
     readonly texto: string;
     readonly feito: boolean;
 
-    constructor(
-        texto: string,
-        feito: boolean = false,
-        codigo?: string,
-    ) {
+    constructor(texto: string, feito: boolean = false, codigo?: string) {
         this.codigo = codigo ?? uuid();
         this.texto = texto;
         this.feito = feito;
@@ -20,17 +16,11 @@ export default class ItemChecklistTarefa {
 
     private validar(): void {
         if (!this.texto.trim()) {
-            throw new ErroValidacao(
-                "O texto do item do checklist é obrigatório.",
-                "TEXTO_CHECKLIST_OBRIGATORIO",
-            );
+            throw new ErroValidacao("O texto do item do checklist é obrigatório.", "TEXTO_CHECKLIST_OBRIGATORIO");
         }
 
         if (this.texto.length > 300) {
-            throw new ErroValidacao(
-                "O item do checklist deve ter no máximo 300 caracteres.",
-                "TEXTO_CHECKLIST_MUITO_LONGO",
-            );
+            throw new ErroValidacao("O item do checklist deve ter no máximo 300 caracteres.", "TEXTO_CHECKLIST_MUITO_LONGO");
         }
     }
 }

@@ -9,7 +9,10 @@ import { ErroAplicacao } from "../../shared/erros/ErroAplicacao";
 /** Origens autorizadas a chamar a API pelo navegador (CORS_ORIGINS, separadas por vírgula). */
 export function origensCors(): string[] {
     const configuradas = process.env.CORS_ORIGINS ?? "http://localhost:5173,http://localhost:4173";
-    return configuradas.split(",").map((origem) => origem.trim()).filter(Boolean);
+    return configuradas
+        .split(",")
+        .map((origem) => origem.trim())
+        .filter(Boolean);
 }
 
 /**
@@ -108,9 +111,7 @@ export default class ExpressHttp implements Http {
 
     swagger(specification: object): void {
         // Em produção, a documentação só fica pública se SWAGGER_ENABLED=true.
-        const habilitado = process.env.SWAGGER_ENABLED
-            ? process.env.SWAGGER_ENABLED === "true"
-            : process.env.NODE_ENV !== "production";
+        const habilitado = process.env.SWAGGER_ENABLED ? process.env.SWAGGER_ENABLED === "true" : process.env.NODE_ENV !== "production";
         if (!habilitado) return;
         this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specification));
         this.app.get("/api-docs.json", (_req: any, res: any) => res.json(specification));

@@ -47,10 +47,10 @@ export default class IniciativaRepositoryDatabase implements IniciativaRepositor
     private async gravarLigacoes(conexao: ConexaoBanco, item: Iniciativa): Promise<void> {
         await conexao.consultar("DELETE FROM iniciativa_projetos WHERE iniciativa_codigo = $1", [item.codigo]);
         await conexao.consultar("DELETE FROM iniciativa_conhecimentos WHERE iniciativa_codigo = $1", [item.codigo]);
-        await conexao.consultar(
-            "INSERT INTO iniciativa_projetos (iniciativa_codigo, projeto_codigo) SELECT $1::uuid, unnest($2::uuid[])",
-            [item.codigo, item.projetos.map((p) => p.codigo)],
-        );
+        await conexao.consultar("INSERT INTO iniciativa_projetos (iniciativa_codigo, projeto_codigo) SELECT $1::uuid, unnest($2::uuid[])", [
+            item.codigo,
+            item.projetos.map((p) => p.codigo),
+        ]);
         await conexao.consultar(
             "INSERT INTO iniciativa_conhecimentos (iniciativa_codigo, conhecimento_codigo) SELECT $1::uuid, unnest($2::uuid[])",
             [item.codigo, item.conhecimentos.map((c) => c.codigo)],
@@ -58,9 +58,20 @@ export default class IniciativaRepositoryDatabase implements IniciativaRepositor
     }
 
     private valores(item: Iniciativa): unknown[] {
-        return [item.codigo, item.titulo, item.descricao, item.tipo, item.frente, item.status,
-            item.responsavel?.codigo ?? null, dataParaSqlOuNulo(item.dataInicio), dataParaSqlOuNulo(item.dataFim),
-            item.resultado, item.aprendizados, item.atualizadoEm];
+        return [
+            item.codigo,
+            item.titulo,
+            item.descricao,
+            item.tipo,
+            item.frente,
+            item.status,
+            item.responsavel?.codigo ?? null,
+            dataParaSqlOuNulo(item.dataInicio),
+            dataParaSqlOuNulo(item.dataFim),
+            item.resultado,
+            item.aprendizados,
+            item.atualizadoEm,
+        ];
     }
 
     async criar(item: Iniciativa): Promise<Iniciativa> {

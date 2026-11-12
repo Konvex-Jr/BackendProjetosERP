@@ -1,6 +1,4 @@
-import RefreshTokenRepositoryInterface, {
-    RegistroRefreshToken,
-} from "../../../domain/Interfaces/RefreshTokenRepositoryInterface";
+import RefreshTokenRepositoryInterface, { RegistroRefreshToken } from "../../../domain/Interfaces/RefreshTokenRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 
 export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepositoryInterface {
@@ -21,20 +19,22 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
         );
         if (!linhas.length) return null;
         const l = linhas[0];
-        return { codigo: l.codigo, codigoUsuario: l.usuario_codigo, tokenHash: l.token_hash, expiraEm: l.expira_em, revogadoEm: l.revogado_em };
+        return {
+            codigo: l.codigo,
+            codigoUsuario: l.usuario_codigo,
+            tokenHash: l.token_hash,
+            expiraEm: l.expira_em,
+            revogadoEm: l.revogado_em,
+        };
     }
 
     async revogar(codigo: string): Promise<void> {
-        await this.conexao.consultar(
-            "UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL",
-            [codigo],
-        );
+        await this.conexao.consultar("UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL", [codigo]);
     }
 
     async revogarTodosDoUsuario(codigoUsuario: string): Promise<void> {
-        await this.conexao.consultar(
-            "UPDATE refresh_tokens SET revogado_em = now() WHERE usuario_codigo = $1 AND revogado_em IS NULL",
-            [codigoUsuario],
-        );
+        await this.conexao.consultar("UPDATE refresh_tokens SET revogado_em = now() WHERE usuario_codigo = $1 AND revogado_em IS NULL", [
+            codigoUsuario,
+        ]);
     }
 }

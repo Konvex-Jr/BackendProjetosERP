@@ -39,26 +39,19 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
     }
 
     async listarPorPasta(codigoPasta: string): Promise<Documento[]> {
-        const linhas = await this.conexao.consultar(
-            `${SELECT_DOCUMENTO} WHERE pasta_codigo = $1 ORDER BY data_envio DESC, nome`,
-            [codigoPasta],
-        );
+        const linhas = await this.conexao.consultar(`${SELECT_DOCUMENTO} WHERE pasta_codigo = $1 ORDER BY data_envio DESC, nome`, [
+            codigoPasta,
+        ]);
         return this.hidratar(linhas);
     }
 
     async contarPorPasta(codigoPasta: string): Promise<number> {
-        const linhas = await this.conexao.consultar(
-            "SELECT count(*)::int AS total FROM documentos WHERE pasta_codigo = $1",
-            [codigoPasta],
-        );
+        const linhas = await this.conexao.consultar("SELECT count(*)::int AS total FROM documentos WHERE pasta_codigo = $1", [codigoPasta]);
         return Number(linhas[0].total);
     }
 
     async buscarPorCodigo(codigo: string): Promise<Documento | null> {
-        const linhas = await this.conexao.consultar(
-            `${SELECT_DOCUMENTO} WHERE codigo = $1`,
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar(`${SELECT_DOCUMENTO} WHERE codigo = $1`, [codigo]);
         const documentos = await this.hidratar(linhas);
         return documentos[0] ?? null;
     }
@@ -80,10 +73,7 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
     }
 
     async excluir(codigo: string): Promise<void> {
-        const linhas = await this.conexao.consultar(
-            "DELETE FROM documentos WHERE codigo = $1 RETURNING codigo",
-            [codigo],
-        );
+        const linhas = await this.conexao.consultar("DELETE FROM documentos WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
             throw new Error("Documento não encontrado");
@@ -91,10 +81,7 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
     }
 
     async excluirPorPasta(codigoPasta: string): Promise<void> {
-        await this.conexao.consultar(
-            "DELETE FROM documentos WHERE pasta_codigo = $1",
-            [codigoPasta],
-        );
+        await this.conexao.consultar("DELETE FROM documentos WHERE pasta_codigo = $1", [codigoPasta]);
     }
 
     private async hidratar(linhas: any[]): Promise<Documento[]> {
@@ -103,13 +90,8 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
         }
 
         const codigosPastas = [...new Set<string>(linhas.map((l) => l.pasta_codigo))];
-        const pastasLinhas = await this.conexao.consultar(
-            `${SELECT_PASTA} WHERE pa.codigo = ANY($1::uuid[])`,
-            [codigosPastas],
-        );
-        const pastas = new Map<string, Pasta>(
-            pastasLinhas.map((p) => [p.codigo, pastaDaLinha(p)]),
-        );
+        const pastasLinhas = await this.conexao.consultar(`${SELECT_PASTA} WHERE pa.codigo = ANY($1::uuid[])`, [codigosPastas]);
+        const pastas = new Map<string, Pasta>(pastasLinhas.map((p) => [p.codigo, pastaDaLinha(p)]));
 
         const autores = await carregarUsuarios(
             this.conexao,

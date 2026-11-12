@@ -37,7 +37,16 @@ function deLinha(l: any): Capacitacao {
 }
 
 const valores = (c: Capacitacao) => [
-    c.codigo, c.titulo, c.descricao, dataParaSql(c.data), c.hora, c.duracaoHoras, c.instrutor.codigo, c.vagas, c.tipo, c.sala,
+    c.codigo,
+    c.titulo,
+    c.descricao,
+    dataParaSql(c.data),
+    c.hora,
+    c.duracaoHoras,
+    c.instrutor.codigo,
+    c.vagas,
+    c.tipo,
+    c.sala,
 ];
 
 export default class CapacitacaoRepositoryDatabase implements CapacitacaoRepositoryInterface {

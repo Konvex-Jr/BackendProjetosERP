@@ -17,12 +17,18 @@ const texto = (valor: unknown) => String(valor ?? "").trim() || undefined;
 
 /** Iniciativas de inovação (sessão 12b, RF-090 a RF-092). Leitura para todos. */
 export default class IniciativaRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     /** Cada iniciativa diz se quem pediu pode editar/excluir, para o frontend não repetir a regra. */
     /** Também traz os arquivos anexados (sessão 12c). */
     private async comAcoes(usuario: UsuarioAutenticado, itens: Iniciativa[]) {
-        const anexos = await new GerirAnexos(this.factory).porDono(DonoAnexo.INICIATIVA, itens.map((i) => i.codigo));
+        const anexos = await new GerirAnexos(this.factory).porDono(
+            DonoAnexo.INICIATIVA,
+            itens.map((i) => i.codigo),
+        );
         return itens.map((item) => ({ ...item, podeAlterar: podeAlterarIniciativa(usuario, item), anexos: anexos.get(item.codigo) ?? [] }));
     }
 
@@ -90,6 +96,7 @@ export default class IniciativaRoutes implements ModelRoutes {
         });
 
         this.http.route("delete", "/iniciativas/:codigo", true, async (params: any, body: any) =>
-            new SalvarIniciativa(f).excluir(body?.user, params.codigo));
+            new SalvarIniciativa(f).excluir(body?.user, params.codigo),
+        );
     }
 }

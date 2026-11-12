@@ -35,9 +35,11 @@ export function podeCriarIniciativa(usuario: UsuarioAutenticado | null | undefin
 
 export function podeAlterarIniciativa(usuario: UsuarioAutenticado | null | undefined, item: Iniciativa): boolean {
     if (!usuario) return false;
-    return item.responsavel?.codigo === usuario.codigo
-        || item.criadoPor?.codigo === usuario.codigo
-        || temPermissao(usuario, Permissao.INICIATIVAS_GERIR);
+    return (
+        item.responsavel?.codigo === usuario.codigo ||
+        item.criadoPor?.codigo === usuario.codigo ||
+        temPermissao(usuario, Permissao.INICIATIVAS_GERIR)
+    );
 }
 
 export function exigirAlterarIniciativa(usuario: UsuarioAutenticado | null | undefined, item: Iniciativa): UsuarioAutenticado {

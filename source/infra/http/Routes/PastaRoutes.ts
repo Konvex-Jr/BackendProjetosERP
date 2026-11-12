@@ -9,11 +9,15 @@ import { exigirAutenticado, exigirPermissao, Permissao } from "../../../shared/s
 
 /** Pastas com sigilo (sessão 9): leitura conforme sigiloPastas.ts; organizar é documentos.gerir. */
 export default class PastaRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     init(): void {
         this.http.route("get", "/pastas", true, async (_params: any, body: any) =>
-            new ListarPastas(this.factory).execute(exigirAutenticado(body?.user)));
+            new ListarPastas(this.factory).execute(exigirAutenticado(body?.user)),
+        );
 
         this.http.route("post", "/pastas", true, async (_params: any, body: any) => {
             exigirPermissao(body.user, Permissao.DOCUMENTOS_GERIR);

@@ -30,7 +30,10 @@ function lerDetalhes(body: any): EntradaDetalhesProjeto {
 
 /** Projetos e equipe (RF-020 a RF-024). Gestores veem todos; membro vê os de que participa ou participou. Escrita para gestores. */
 export default class ProjetoRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     init(): void {
         const f = this.factory;
@@ -42,7 +45,8 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoArea: query?.codigoArea || undefined,
                 codigoResponsavel: query?.codigoResponsavel || undefined,
                 busca: query?.busca || undefined,
-            }));
+            }),
+        );
 
         this.http.route("get", "/projetos/:codigo", true, async (params: any, body: any) => {
             const projeto = await f.criarProjetoRepository().buscarPorCodigo(params.codigo);

@@ -14,11 +14,19 @@ export default class EnviarDocumento {
     }
     async execute(input: EnviarDocumentoInput): Promise<Documento> {
         const pasta = await this.pastas.buscarPorCodigo(input.codigoPasta);
-        if (!pasta)
-            throw new ErroNaoEncontrado("Pasta não encontrada.");
+        if (!pasta) throw new ErroNaoEncontrado("Pasta não encontrada.");
         const autor = await this.usuarios.buscarPorCodigo(input.codigoAutor);
-        if (!autor || !autor.ativo)
-            throw new ErroNaoEncontrado("Usuário ativo não encontrado.");
-        return this.documentos.criar(new Documento(pasta, input.nome, input.tamanhoBytes, input.dataEnvio ?? new Date(), autor, exigirLinkValido(input.arquivoUrl), input.extensao ?? null));
+        if (!autor || !autor.ativo) throw new ErroNaoEncontrado("Usuário ativo não encontrado.");
+        return this.documentos.criar(
+            new Documento(
+                pasta,
+                input.nome,
+                input.tamanhoBytes,
+                input.dataEnvio ?? new Date(),
+                autor,
+                exigirLinkValido(input.arquivoUrl),
+                input.extensao ?? null,
+            ),
+        );
     }
 }

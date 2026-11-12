@@ -30,8 +30,17 @@ export default class AnexoRepositoryDatabase implements AnexoRepositoryInterface
         await this.conexao.consultar(
             `INSERT INTO anexos (codigo, dono_tipo, dono_codigo, nome, tipo_mime, tamanho_bytes, arquivo, enviado_por, enviado_em)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [anexo.codigo, anexo.donoTipo, anexo.donoCodigo, anexo.nome, anexo.tipoMime, anexo.tamanhoBytes,
-                anexo.arquivo, anexo.enviadoPor?.codigo ?? null, anexo.enviadoEm],
+            [
+                anexo.codigo,
+                anexo.donoTipo,
+                anexo.donoCodigo,
+                anexo.nome,
+                anexo.tipoMime,
+                anexo.tamanhoBytes,
+                anexo.arquivo,
+                anexo.enviadoPor?.codigo ?? null,
+                anexo.enviadoEm,
+            ],
         );
         return anexo;
     }

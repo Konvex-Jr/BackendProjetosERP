@@ -12,9 +12,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
 
     async criar(usuario: Usuario): Promise<Usuario | null> {
         const codigoEmUso = this.usuarios.some((u) => u.codigo === usuario.codigo);
-        const emailEmUso = this.usuarios.some(
-            (u) => u.email.toLowerCase() === usuario.email.toLowerCase(),
-        );
+        const emailEmUso = this.usuarios.some((u) => u.email.toLowerCase() === usuario.email.toLowerCase());
 
         if (codigoEmUso || emailEmUso) {
             return null;
@@ -39,10 +37,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
 
     async buscarPorEmail(email: string): Promise<Usuario | null> {
         const emailNormalizado = email.trim().toLowerCase();
-        return (
-            this.usuarios.find((u) => u.email.toLowerCase() === emailNormalizado) ??
-            null
-        );
+        return this.usuarios.find((u) => u.email.toLowerCase() === emailNormalizado) ?? null;
     }
 
     async editar(usuario: Usuario): Promise<Usuario> {
@@ -53,9 +48,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
         }
 
         const emailEmUsoPorOutro = this.usuarios.some(
-            (u) =>
-                u.codigo !== usuario.codigo &&
-                u.email.toLowerCase() === usuario.email.toLowerCase(),
+            (u) => u.codigo !== usuario.codigo && u.email.toLowerCase() === usuario.email.toLowerCase(),
         );
 
         if (emailEmUsoPorOutro) {

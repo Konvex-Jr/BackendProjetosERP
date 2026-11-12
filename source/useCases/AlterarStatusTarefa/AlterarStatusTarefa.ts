@@ -11,13 +11,15 @@ export default class AlterarStatusTarefa {
     }
     async execute(codigo: string, status: StatusTarefa, hoje = new Date(), quem: Usuario | null = null): Promise<Tarefa> {
         const t = await this.tarefas.buscarPorCodigo(codigo);
-        if (!t)
-            throw new ErroNaoEncontrado("Tarefa não encontrada.");
+        if (!t) throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const concluida = status === StatusTarefa.CONCLUIDA;
         const jaConcluida = t.status === StatusTarefa.CONCLUIDA;
         // Se já estava concluída, mantém data e autor originais.
-        const editada = t.comStatus(status, concluida ? (jaConcluida ? t.dataConclusao : hoje) : null,
-            concluida ? (jaConcluida ? t.concluidaPor : quem) : null);
+        const editada = t.comStatus(
+            status,
+            concluida ? (jaConcluida ? t.dataConclusao : hoje) : null,
+            concluida ? (jaConcluida ? t.concluidaPor : quem) : null,
+        );
         return this.tarefas.editar(editada);
     }
 }

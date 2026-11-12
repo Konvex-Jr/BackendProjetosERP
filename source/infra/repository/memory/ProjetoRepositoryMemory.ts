@@ -24,9 +24,7 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
     }
 
     async listarPorMembro(codigoUsuario: string): Promise<Projeto[]> {
-        return this.projetos.filter((p) =>
-            p.participacoes.some((m) => m.usuario.codigo === codigoUsuario),
-        );
+        return this.projetos.filter((p) => p.participacoes.some((m) => m.usuario.codigo === codigoUsuario));
     }
 
     async buscarPorCodigo(codigo: string): Promise<Projeto | null> {

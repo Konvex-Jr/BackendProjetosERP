@@ -56,7 +56,15 @@ export const MODULOS: Modulo[] = [
         nome: "Precificação",
         rotas: [],
         permissoes: [Permissao.PRECIFICACAO_SIMULAR],
-        menu: [{ chave: "precificacao", rotulo: "Simular precificação", caminho: "/precificacao", ordem: 70, permissao: Permissao.PRECIFICACAO_SIMULAR }],
+        menu: [
+            {
+                chave: "precificacao",
+                rotulo: "Simular precificação",
+                caminho: "/precificacao",
+                ordem: 70,
+                permissao: Permissao.PRECIFICACAO_SIMULAR,
+            },
+        ],
     },
     {
         chave: "pessoas",
@@ -127,7 +135,15 @@ export const MODULOS: Modulo[] = [
         nome: "Configurações",
         rotas: [ConfiguracaoRoutes],
         permissoes: [Permissao.CONFIGURACOES_EDITAR],
-        menu: [{ chave: "configuracoes", rotulo: "Configurações", caminho: "/configuracoes", ordem: 90, permissao: Permissao.CONFIGURACOES_EDITAR }],
+        menu: [
+            {
+                chave: "configuracoes",
+                rotulo: "Configurações",
+                caminho: "/configuracoes",
+                ordem: 90,
+                permissao: Permissao.CONFIGURACOES_EDITAR,
+            },
+        ],
     },
 ];
 

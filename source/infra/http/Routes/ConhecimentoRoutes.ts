@@ -15,7 +15,10 @@ import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 
 /** Base de Inteligência (sessão 12a, RF-080 a RF-084). Leitura e cadastro para todos. */
 export default class ConhecimentoRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     init(): void {
         const f = this.factory;
@@ -33,7 +36,10 @@ export default class ConhecimentoRoutes implements ModelRoutes {
         // E os arquivos anexados (sessão 12c).
         const responder = async (usuario: any, itens: Conhecimento[]) => {
             const mapa = await iniciativasPorItem();
-            const anexos = await new GerirAnexos(f).porDono(DonoAnexo.CONHECIMENTO, itens.map((i) => i.codigo));
+            const anexos = await new GerirAnexos(f).porDono(
+                DonoAnexo.CONHECIMENTO,
+                itens.map((i) => i.codigo),
+            );
             return itens.map((item) => ({
                 ...item,
                 podeAlterar: podeAlterarConhecimento(usuario, item),
@@ -58,7 +64,10 @@ export default class ConhecimentoRoutes implements ModelRoutes {
             const itens = await f.criarConhecimentoRepository().listar({
                 busca: String(query?.busca ?? "").trim() || undefined,
                 categoria: query?.categoria || undefined,
-                tag: String(query?.tag ?? "").trim().replace(/^#+/, "") || undefined,
+                tag:
+                    String(query?.tag ?? "")
+                        .trim()
+                        .replace(/^#+/, "") || undefined,
                 codigoAutor: query?.codigoAutor || undefined,
                 codigoProjeto: query?.codigoProjeto || undefined,
                 de,
@@ -75,12 +84,15 @@ export default class ConhecimentoRoutes implements ModelRoutes {
         });
 
         this.http.route("post", "/conhecimento", true, async (_p: any, body: any) =>
-            responderUm(body?.user, await new SalvarConhecimento(f).criar(body?.user, body ?? {})));
+            responderUm(body?.user, await new SalvarConhecimento(f).criar(body?.user, body ?? {})),
+        );
 
         this.http.route("put", "/conhecimento/:codigo", true, async (params: any, body: any) =>
-            responderUm(body?.user, await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})));
+            responderUm(body?.user, await new SalvarConhecimento(f).editar(body?.user, params.codigo, body ?? {})),
+        );
 
         this.http.route("delete", "/conhecimento/:codigo", true, async (params: any, body: any) =>
-            new SalvarConhecimento(f).excluir(body?.user, params.codigo));
+            new SalvarConhecimento(f).excluir(body?.user, params.codigo),
+        );
     }
 }

@@ -54,31 +54,19 @@ export default class Documento {
 
     private validar(): void {
         if (!this.nome.trim()) {
-            throw new ErroValidacao(
-                MENSAGENS_DE_ERRO.VALIDACAO.NOME_OBRIGATORIO,
-                "NOME_DOCUMENTO_OBRIGATORIO",
-            );
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.NOME_OBRIGATORIO, "NOME_DOCUMENTO_OBRIGATORIO");
         }
 
         if (this.extensao !== null && this.extensao.length > 5) {
-            throw new ErroValidacao(
-                "A extensão deve ter no máximo 5 caracteres.",
-                "EXTENSAO_DOCUMENTO_INVALIDA",
-            );
+            throw new ErroValidacao("A extensão deve ter no máximo 5 caracteres.", "EXTENSAO_DOCUMENTO_INVALIDA");
         }
 
         if (!Number.isInteger(this.tamanhoBytes) || this.tamanhoBytes < 0) {
-            throw new ErroValidacao(
-                "O tamanho do documento deve ser um inteiro não negativo.",
-                "TAMANHO_DOCUMENTO_INVALIDO",
-            );
+            throw new ErroValidacao("O tamanho do documento deve ser um inteiro não negativo.", "TAMANHO_DOCUMENTO_INVALIDO");
         }
 
         if (Number.isNaN(this.dataEnvio.getTime())) {
-            throw new ErroValidacao(
-                "A data de envio deve ser válida.",
-                "DATA_ENVIO_INVALIDA",
-            );
+            throw new ErroValidacao("A data de envio deve ser válida.", "DATA_ENVIO_INVALIDA");
         }
     }
 }

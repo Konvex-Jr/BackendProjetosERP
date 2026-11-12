@@ -88,9 +88,10 @@ export default class Usuario {
         this.calendarioUrl = textoOuNulo(detalhes.calendarioUrl);
         this.githubUrl = textoOuNulo(detalhes.githubUrl);
         this.curso = textoOuNulo(detalhes.curso);
-        this.semestre = detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
-            ? null
-            : Number(detalhes.semestre);
+        this.semestre =
+            detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
+                ? null
+                : Number(detalhes.semestre);
         this.area = detalhes.area ?? null;
         this.cargo = detalhes.cargo ?? null;
         this.dataEntrada = detalhes.dataEntrada ?? null;
@@ -102,42 +103,36 @@ export default class Usuario {
     }
 
     /** Cria uma cópia com alterações, preservando o que não foi informado. */
-    copiar(alteracoes: Partial<{
-        nome: string;
-        email: string;
-        perfil: PerfilUsuario;
-        senha: string;
-        senioridade: SenioridadeUsuario | null;
-    }> & DetalhesPessoa = {}): Usuario {
+    copiar(
+        alteracoes: Partial<{
+            nome: string;
+            email: string;
+            perfil: PerfilUsuario;
+            senha: string;
+            senioridade: SenioridadeUsuario | null;
+        }> &
+            DetalhesPessoa = {},
+    ): Usuario {
         // undefined = "não alterar"; null = "limpar o campo".
         const pick = <K extends keyof Usuario>(chave: K): any =>
             (alteracoes as any)[chave] !== undefined ? (alteracoes as any)[chave] : this[chave];
-        return new Usuario(
-            pick("nome"),
-            pick("email"),
-            pick("perfil"),
-            this.ativo,
-            pick("senha"),
-            pick("senioridade"),
-            this.codigo,
-            {
-                status: pick("status"),
-                nomeExibicao: pick("nomeExibicao"),
-                avatarUrl: pick("avatarUrl"),
-                telefone: pick("telefone"),
-                linkedinUrl: pick("linkedinUrl"),
-                calendarioUrl: pick("calendarioUrl"),
-                githubUrl: pick("githubUrl"),
-                curso: pick("curso"),
-                semestre: pick("semestre"),
-                area: pick("area"),
-                cargo: pick("cargo"),
-                dataEntrada: pick("dataEntrada"),
-                dataSaida: pick("dataSaida"),
-                bio: pick("bio"),
-                habilidades: pick("habilidades"),
-            },
-        );
+        return new Usuario(pick("nome"), pick("email"), pick("perfil"), this.ativo, pick("senha"), pick("senioridade"), this.codigo, {
+            status: pick("status"),
+            nomeExibicao: pick("nomeExibicao"),
+            avatarUrl: pick("avatarUrl"),
+            telefone: pick("telefone"),
+            linkedinUrl: pick("linkedinUrl"),
+            calendarioUrl: pick("calendarioUrl"),
+            githubUrl: pick("githubUrl"),
+            curso: pick("curso"),
+            semestre: pick("semestre"),
+            area: pick("area"),
+            cargo: pick("cargo"),
+            dataEntrada: pick("dataEntrada"),
+            dataSaida: pick("dataSaida"),
+            bio: pick("bio"),
+            habilidades: pick("habilidades"),
+        });
     }
 
     toJSON() {
@@ -196,7 +191,12 @@ export default class Usuario {
             throw new ErroValidacao("O semestre deve ser um número entre 1 e 20.", "SEMESTRE_INVALIDO");
         }
 
-        for (const [campo, valor] of [["do avatar", this.avatarUrl], ["do LinkedIn", this.linkedinUrl], ["do calendário", this.calendarioUrl], ["do GitHub", this.githubUrl]] as const) {
+        for (const [campo, valor] of [
+            ["do avatar", this.avatarUrl],
+            ["do LinkedIn", this.linkedinUrl],
+            ["do calendário", this.calendarioUrl],
+            ["do GitHub", this.githubUrl],
+        ] as const) {
             if (valor && !URL_VALIDA.test(valor)) {
                 throw new ErroValidacao(`O link ${campo} deve começar com http:// ou https://.`, "URL_INVALIDA");
             }

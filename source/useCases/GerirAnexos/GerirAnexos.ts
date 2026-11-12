@@ -88,7 +88,12 @@ export default class GerirAnexos {
     }
 
     /** Anexa um arquivo a um item da Base, a uma iniciativa ou a uma capacitação. */
-    async enviar(usuario: UsuarioAutenticado | null | undefined, tipo: DonoAnexo, codigoDono: string, arquivo: ArquivoRecebido): Promise<Anexo> {
+    async enviar(
+        usuario: UsuarioAutenticado | null | undefined,
+        tipo: DonoAnexo,
+        codigoDono: string,
+        arquivo: ArquivoRecebido,
+    ): Promise<Anexo> {
         const autenticado = exigirAutenticado(usuario);
         const acesso = await this.acesso(autenticado, tipo, codigoDono);
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);

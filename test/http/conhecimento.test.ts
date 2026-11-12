@@ -19,7 +19,9 @@ describe("Base de Inteligência", () => {
         ctx = await criarContexto();
         bruno = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
         await ctx.factory.criarUsuarioRepository().criar(bruno);
-        await ctx.factory.criarProjetoRepository().criar(new Projeto("App Delivery", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
+        await ctx.factory
+            .criarProjetoRepository()
+            .criar(new Projeto("App Delivery", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
         servidor = await subirServidor(ctx.factory);
     });
 
@@ -50,17 +52,32 @@ describe("Base de Inteligência", () => {
     });
 
     it("outro membro encontra pela busca, pela tag e pelo filtro de projeto", async () => {
-        await novo(ctx.membro, { titulo: "Pesquisa de concorrentes", conteudo: "O iFood domina", tags: ["delivery"], codigosProjetos: ["proj-app"] });
+        await novo(ctx.membro, {
+            titulo: "Pesquisa de concorrentes",
+            conteudo: "O iFood domina",
+            tags: ["delivery"],
+            codigosProjetos: ["proj-app"],
+        });
         await novo(ctx.gerente, { titulo: "Como fazer onboarding", categoria: "aprendizado", resumo: "Passos" });
 
         const busca = await servidor.chamar("get", "/conhecimento?busca=IFOOD", { usuario: bruno });
         expect(titulos(busca.corpo)).toEqual(["Pesquisa de concorrentes"]);
         expect(busca.corpo[0].podeAlterar).toBe(false);
-        expect(titulos((await servidor.chamar("get", "/conhecimento?busca=deliv", { usuario: bruno })).corpo)).toEqual(["Pesquisa de concorrentes"]);
-        expect(titulos((await servidor.chamar("get", "/conhecimento?tag=delivery", { usuario: bruno })).corpo)).toEqual(["Pesquisa de concorrentes"]);
-        expect(titulos((await servidor.chamar("get", "/conhecimento?codigoProjeto=proj-app", { usuario: bruno })).corpo)).toEqual(["Pesquisa de concorrentes"]);
-        expect(titulos((await servidor.chamar("get", "/conhecimento?categoria=aprendizado", { usuario: bruno })).corpo)).toEqual(["Como fazer onboarding"]);
-        expect(titulos((await servidor.chamar("get", "/conhecimento?codigoAutor=usr-joao", { usuario: bruno })).corpo)).toEqual(["Como fazer onboarding"]);
+        expect(titulos((await servidor.chamar("get", "/conhecimento?busca=deliv", { usuario: bruno })).corpo)).toEqual([
+            "Pesquisa de concorrentes",
+        ]);
+        expect(titulos((await servidor.chamar("get", "/conhecimento?tag=delivery", { usuario: bruno })).corpo)).toEqual([
+            "Pesquisa de concorrentes",
+        ]);
+        expect(titulos((await servidor.chamar("get", "/conhecimento?codigoProjeto=proj-app", { usuario: bruno })).corpo)).toEqual([
+            "Pesquisa de concorrentes",
+        ]);
+        expect(titulos((await servidor.chamar("get", "/conhecimento?categoria=aprendizado", { usuario: bruno })).corpo)).toEqual([
+            "Como fazer onboarding",
+        ]);
+        expect(titulos((await servidor.chamar("get", "/conhecimento?codigoAutor=usr-joao", { usuario: bruno })).corpo)).toEqual([
+            "Como fazer onboarding",
+        ]);
         expect((await servidor.chamar("get", "/conhecimento", { usuario: bruno })).corpo).toHaveLength(2);
     });
 
@@ -92,7 +109,9 @@ describe("Base de Inteligência", () => {
         expect(proprio.corpo.autor.codigo).toBe("usr-ana");
 
         expect((await editar(ctx.gerente, "Benchmark (revisado)")).status).toBe(200);
-        expect((await servidor.chamar("get", `/conhecimento/${item.codigo}`, { usuario: bruno })).corpo.titulo).toBe("Benchmark (revisado)");
+        expect((await servidor.chamar("get", `/conhecimento/${item.codigo}`, { usuario: bruno })).corpo.titulo).toBe(
+            "Benchmark (revisado)",
+        );
         expect((await servidor.chamar("delete", `/conhecimento/${item.codigo}`, { usuario: ctx.gerente })).status).toBe(200);
         expect((await servidor.chamar("get", `/conhecimento/${item.codigo}`, { usuario: bruno })).status).toBe(404);
     });
@@ -119,7 +138,9 @@ describe("Base de Inteligência", () => {
     it("exige login e devolve 404 para item inexistente", async () => {
         expect((await servidor.chamar("get", "/conhecimento")).status).toBe(401);
         expect((await servidor.chamar("get", "/conhecimento/nao-existe", { usuario: bruno })).status).toBe(404);
-        expect((await servidor.chamar("put", "/conhecimento/nao-existe", { usuario: ctx.gerente, corpo: { titulo: "X" } })).status).toBe(404);
+        expect((await servidor.chamar("put", "/conhecimento/nao-existe", { usuario: ctx.gerente, corpo: { titulo: "X" } })).status).toBe(
+            404,
+        );
     });
 
     it("aparece no menu de todos, depois de Capacitações", async () => {

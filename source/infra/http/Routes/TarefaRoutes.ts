@@ -24,7 +24,10 @@ const SO_GESTAO_AVULSA = "Só a gestão organiza tarefas avulsas.";
 
 /** Tarefas (de projeto e avulsas) e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b e 8c). */
 export default class TarefaRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     private async carregar(usuario: UsuarioAutenticado, codigo: string): Promise<{ tarefa: Tarefa; regras: RegrasTarefa }> {
         const tarefa = await this.factory.criarTarefaRepository().buscarPorCodigo(codigo);
@@ -64,9 +67,12 @@ export default class TarefaRoutes implements ModelRoutes {
             const visiveis = new Set(
                 (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
             );
-            return tarefas.filter((t) => t.responsaveis.some((r) => r.codigo === usuario.codigo)
-                || (t.projeto !== null && (podeVerTodosProjetos(usuario) || visiveis.has(t.projeto.codigo)))
-                || (t.avulsa && podeAtribuirAvulsas(usuario)));
+            return tarefas.filter(
+                (t) =>
+                    t.responsaveis.some((r) => r.codigo === usuario.codigo) ||
+                    (t.projeto !== null && (podeVerTodosProjetos(usuario) || visiveis.has(t.projeto.codigo))) ||
+                    (t.avulsa && podeAtribuirAvulsas(usuario)),
+            );
         });
 
         this.http.route("post", "/tarefas", true, async (_params: any, body: any) => {
@@ -111,14 +117,14 @@ export default class TarefaRoutes implements ModelRoutes {
                 codigoDependencia: body.codigoDependencia ?? null,
                 checklist: Array.isArray(body.checklist)
                     ? body.checklist.map((item: any) => ({
-                        codigo: item.codigo ?? item.id,
-                        texto: item.texto,
-                        feito: Boolean(item.feito),
-                    }))
+                          codigo: item.codigo ?? item.id,
+                          texto: item.texto,
+                          feito: Boolean(item.feito),
+                      }))
                     : undefined,
                 quem: await this.usuarioAtual(usuario),
                 categoria: body.categoria ?? undefined,
-                codigoIniciativa: body.codigoIniciativa === undefined ? undefined : (body.codigoIniciativa || null),
+                codigoIniciativa: body.codigoIniciativa === undefined ? undefined : body.codigoIniciativa || null,
             });
         });
 
@@ -129,7 +135,11 @@ export default class TarefaRoutes implements ModelRoutes {
                 throw new ErroProibido("Você só pode concluir ou reabrir tarefas em que é responsável.");
             }
             return new AlterarStatusTarefa(this.factory).execute(
-                params.codigo, body.status as StatusTarefa, new Date(), await this.usuarioAtual(usuario));
+                params.codigo,
+                body.status as StatusTarefa,
+                new Date(),
+                await this.usuarioAtual(usuario),
+            );
         });
 
         this.http.route("delete", "/tarefas/:codigo", true, async (params: any, body: any) => {
@@ -149,9 +159,11 @@ export default class TarefaRoutes implements ModelRoutes {
             const usuario = exigirAutenticado(body.user);
             const { tarefa, regras } = await this.carregar(usuario, params.codigo);
             if (!regras.comentar) {
-                throw new ErroProibido(tarefa.avulsa
-                    ? "Só os responsáveis e a gestão comentam nesta tarefa."
-                    : "Só a equipe atual do projeto comenta nas tarefas.");
+                throw new ErroProibido(
+                    tarefa.avulsa
+                        ? "Só os responsáveis e a gestão comentam nesta tarefa."
+                        : "Só a equipe atual do projeto comenta nas tarefas.",
+                );
             }
             const autor = await this.usuarioAtual(usuario);
             if (!autor) throw new ErroNaoEncontrado("Pessoa não encontrada.");

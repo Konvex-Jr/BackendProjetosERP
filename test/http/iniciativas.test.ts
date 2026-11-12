@@ -20,11 +20,20 @@ describe("Iniciativas de inovação", () => {
     const nova = (usuario: Usuario, corpo: Record<string, unknown>) =>
         servidor.chamar("post", "/iniciativas", { usuario, corpo: { tipo: "produto", frente: "lab", ...corpo } });
     const itemBase = async (titulo: string) =>
-        (await servidor.chamar("post", "/conhecimento", { usuario: ctx.membro, corpo: { titulo, categoria: "pesquisa", resumo: "r" } })).corpo;
+        (await servidor.chamar("post", "/conhecimento", { usuario: ctx.membro, corpo: { titulo, categoria: "pesquisa", resumo: "r" } }))
+            .corpo;
     const tarefaInovacao = (corpo: Record<string, unknown>) =>
         servidor.chamar("post", "/tarefas", {
             usuario: ctx.gerente,
-            corpo: { categoria: "inovacao", titulo: "Protótipo", dataInicio: "2026-11-03", dataFim: "2026-11-10", prioridade: "P2", codigosResponsaveis: ["usr-bruno"], ...corpo },
+            corpo: {
+                categoria: "inovacao",
+                titulo: "Protótipo",
+                dataInicio: "2026-11-03",
+                dataFim: "2026-11-10",
+                prioridade: "P2",
+                codigosResponsaveis: ["usr-bruno"],
+                ...corpo,
+            },
         });
     const titulos = (corpo: any[]) => corpo.map((i) => i.titulo).sort();
 
@@ -40,7 +49,9 @@ describe("Iniciativas de inovação", () => {
         carla = pessoa("Carla", "usr-carla", (await areas.buscarPorCodigo("area-inov"))!);
         diego = pessoa("Diego", "usr-diego", (await areas.buscarPorCodigo("area-lab"))!);
         for (const u of [bruno, carla, diego]) await ctx.factory.criarUsuarioRepository().criar(u);
-        await ctx.factory.criarProjetoRepository().criar(new Projeto("App Delivery", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
+        await ctx.factory
+            .criarProjetoRepository()
+            .criar(new Projeto("App Delivery", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
         servidor = await subirServidor(ctx.factory);
     });
 
@@ -71,17 +82,26 @@ describe("Iniciativas de inovação", () => {
         expect(daCarla.corpo.criadoPor).toEqual({ codigo: "usr-carla", nome: "Carla" });
         expect(daCarla.corpo.responsavel).toEqual({ codigo: "usr-carla", nome: "Carla" });
         expect(daCarla.corpo.podeAlterar).toBe(true);
-        expect((await nova(ctx.gerente, { titulo: "Esteira de SaaS", codigoResponsavel: "usr-diego" })).corpo.responsavel.nome).toBe("Diego");
+        expect((await nova(ctx.gerente, { titulo: "Esteira de SaaS", codigoResponsavel: "usr-diego" })).corpo.responsavel.nome).toBe(
+            "Diego",
+        );
     });
 
     it("gestão liga a um projeto e a dois itens da Base, e tudo aparece na ficha e no item", async () => {
         const a = await itemBase("Pesquisa de chatbots");
         const b = await itemBase("Benchmark de LLMs");
         const criada = await nova(ctx.gerente, {
-            titulo: "Chatbot", status: "andamento", frente: "radar", tipo: "servico",
-            dataInicio: "2026-11-01", dataFim: "2026-12-15",
-            descricao: "## Objetivo\nTestar", resultado: "Ainda em teste", aprendizados: "Começar pequeno",
-            codigosProjetos: ["proj-app"], codigosConhecimentos: [a.codigo, b.codigo],
+            titulo: "Chatbot",
+            status: "andamento",
+            frente: "radar",
+            tipo: "servico",
+            dataInicio: "2026-11-01",
+            dataFim: "2026-12-15",
+            descricao: "## Objetivo\nTestar",
+            resultado: "Ainda em teste",
+            aprendizados: "Começar pequeno",
+            codigosProjetos: ["proj-app"],
+            codigosConhecimentos: [a.codigo, b.codigo],
         });
         expect(criada.status).toBe(200);
         expect(criada.corpo.projetos).toEqual([{ codigo: "proj-app", nome: "App Delivery" }]);
@@ -126,10 +146,20 @@ describe("Iniciativas de inovação", () => {
         expect((await tarefaInovacao({ codigoIniciativa: "nao-existe" })).status).toBe(404);
 
         const t = (await tarefaInovacao({ codigoIniciativa: ini.codigo })).corpo;
-        const base = { titulo: "Protótipo", dataInicio: "2026-11-03", dataFim: "2026-11-10", status: "pendente", prioridade: "P2", codigosResponsaveis: ["usr-bruno"] };
+        const base = {
+            titulo: "Protótipo",
+            dataInicio: "2026-11-03",
+            dataFim: "2026-11-10",
+            status: "pendente",
+            prioridade: "P2",
+            codigosResponsaveis: ["usr-bruno"],
+        };
         const mantida = await servidor.chamar("put", `/tarefas/${t.codigo}`, { usuario: ctx.gerente, corpo: base });
         expect(mantida.corpo.iniciativa?.codigo).toBe(ini.codigo);
-        const trocada = await servidor.chamar("put", `/tarefas/${t.codigo}`, { usuario: ctx.gerente, corpo: { ...base, categoria: "execucao" } });
+        const trocada = await servidor.chamar("put", `/tarefas/${t.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { ...base, categoria: "execucao" },
+        });
         expect(trocada.status).toBe(200);
         expect(trocada.corpo.iniciativa).toBeNull();
     });
@@ -143,7 +173,10 @@ describe("Iniciativas de inovação", () => {
         expect(negado.status).toBe(403);
         expect(negado.corpo.message).toMatch(/responsável, quem criou/);
         expect((await servidor.chamar("delete", `/iniciativas/${ini.codigo}`, { usuario: bruno })).status).toBe(403);
-        const editada = await servidor.chamar("put", `/iniciativas/${ini.codigo}`, { usuario: ctx.gerente, corpo: { ...corpo, status: "concluida" } });
+        const editada = await servidor.chamar("put", `/iniciativas/${ini.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { ...corpo, status: "concluida" },
+        });
         expect(editada.corpo.status).toBe("concluida");
         // Sem codigoResponsavel no corpo, o responsável continua o mesmo.
         expect(editada.corpo.responsavel.codigo).toBe("usr-diego");
@@ -167,7 +200,13 @@ describe("Iniciativas de inovação", () => {
     });
 
     it("filtra por busca, status, frente, tipo, responsável e projeto", async () => {
-        await nova(ctx.gerente, { titulo: "Chatbot", descricao: "Atendimento com IA", status: "andamento", frente: "radar", codigosProjetos: ["proj-app"] });
+        await nova(ctx.gerente, {
+            titulo: "Chatbot",
+            descricao: "Atendimento com IA",
+            status: "andamento",
+            frente: "radar",
+            codigosProjetos: ["proj-app"],
+        });
         await nova(carla, { titulo: "Esteira SaaS", tipo: "processo" });
         const q = async (query: string) => titulos((await servidor.chamar("get", `/iniciativas?${query}`, { usuario: bruno })).corpo);
         expect(await q("")).toEqual(["Chatbot", "Esteira SaaS"]);

@@ -50,11 +50,7 @@ export class AdicionarParticipante {
             alocacao: input.alocacao,
             dataEntrada: input.dataEntrada ?? hoje(),
         });
-        return gravarEResumir(
-            this.factory,
-            projeto.copiar({ participacoes: [...projeto.participacoes, participacao] }),
-            usuario.codigo,
-        );
+        return gravarEResumir(this.factory, projeto.copiar({ participacoes: [...projeto.participacoes, participacao] }), usuario.codigo);
     }
 }
 

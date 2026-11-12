@@ -36,7 +36,12 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         calendarioUrl: texto("calendarioUrl"),
         githubUrl: texto("githubUrl"),
         curso: texto("curso"),
-        semestre: body.semestre === undefined ? undefined : body.semestre === null || body.semestre === "" ? null : lerInteiro(body.semestre, "semestre"),
+        semestre:
+            body.semestre === undefined
+                ? undefined
+                : body.semestre === null || body.semestre === ""
+                  ? null
+                  : lerInteiro(body.semestre, "semestre"),
         codigoArea: texto("codigoArea"),
         codigoCargo: texto("codigoCargo"),
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
@@ -64,18 +69,17 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         // Sessão. Não há cadastro público: contas são criadas por diretores e gerentes.
         this.http.route("post", "/auth/login", false, async (_p: any, body: any) =>
-            new LoginUsuario(f).execute({ email: body.email, senha: body.senha }));
+            new LoginUsuario(f).execute({ email: body.email, senha: body.senha }),
+        );
 
-        this.http.route("post", "/auth/refresh", false, async (_p: any, body: any) =>
-            new RenovarSessao(f).execute(body.refreshToken));
+        this.http.route("post", "/auth/refresh", false, async (_p: any, body: any) => new RenovarSessao(f).execute(body.refreshToken));
 
         this.http.route("post", "/auth/logout", false, async (_p: any, body: any) => {
             await new EncerrarSessao(f).execute(body.refreshToken);
             return { message: "Sessão encerrada." };
         });
 
-        this.http.route("get", "/auth/me", true, async (_p: any, body: any) =>
-            this.buscarAlvo(exigirAutenticado(body.user).codigo));
+        this.http.route("get", "/auth/me", true, async (_p: any, body: any) => this.buscarAlvo(exigirAutenticado(body.user).codigo));
 
         this.http.route("put", "/auth/senha", true, async (_p: any, body: any) => {
             await new AlterarSenha(f).execute({
@@ -93,7 +97,15 @@ export default class UsuarioRoutes implements ModelRoutes {
             const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio, tecnologias } = lerPerfil(body);
             return new EditarUsuario(f).execute({
                 codigo: eu.codigo,
-                nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio, tecnologias,
+                nomeExibicao,
+                telefone,
+                linkedinUrl,
+                calendarioUrl,
+                githubUrl,
+                curso,
+                semestre,
+                bio,
+                tecnologias,
                 codigoAutor: eu.codigo,
             });
         });
@@ -104,12 +116,12 @@ export default class UsuarioRoutes implements ModelRoutes {
                 status: lerLista(query?.status).map((s) => lerStatusPessoa(s)!),
                 codigoArea: query?.codigoArea || undefined,
                 busca: query?.busca || undefined,
-            }));
+            }),
+        );
 
         this.http.route("get", "/usuarios/:codigo", true, async (params: any) => this.buscarAlvo(params.codigo));
 
-        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any) =>
-            new ObterPerfilPessoa(f).execute(params.codigo));
+        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any) => new ObterPerfilPessoa(f).execute(params.codigo));
 
         this.http.route("get", "/senioridades", true, async () => f.criarSenioridadeRepository().listar());
 

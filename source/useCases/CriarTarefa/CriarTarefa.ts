@@ -18,21 +18,35 @@ export default class CriarTarefa {
         let projeto = null;
         if (input.codigoProjeto) {
             projeto = await this.projetos.buscarPorCodigo(input.codigoProjeto);
-            if (!projeto)
-                throw new ErroNaoEncontrado("Projeto não encontrado.");
+            if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
         }
         const todos = await this.usuarios.listar();
-        const responsaveis = [...new Set(input.codigosResponsaveis ?? [])].map(c => {
-            const u = todos.find(x => x.codigo === c && x.ativo);
-            if (!u)
-                throw new ErroNaoEncontrado(`Responsável ativo não encontrado: ${c}`);
-            if (projeto && !projeto.membros.some(m => m.codigo === c))
+        const responsaveis = [...new Set(input.codigosResponsaveis ?? [])].map((c) => {
+            const u = todos.find((x) => x.codigo === c && x.ativo);
+            if (!u) throw new ErroNaoEncontrado(`Responsável ativo não encontrado: ${c}`);
+            if (projeto && !projeto.membros.some((m) => m.codigo === c))
                 throw new ErroValidacao(`${u.nome} não está na equipe do projeto.`, "RESPONSAVEL_FORA_DO_PROJETO");
             return u;
         });
-        return this.tarefas.criar(new Tarefa(projeto, (input.titulo ?? "").trim(), input.dataInicio, input.dataFim,
-            undefined, input.prioridade, input.descricao ?? null, null, null, responsaveis, [], undefined, null,
-            input.categoria ?? null, input.criadaPor ?? null,
-            await referenciaDaIniciativa(this.factory, input.codigoIniciativa)));
+        return this.tarefas.criar(
+            new Tarefa(
+                projeto,
+                (input.titulo ?? "").trim(),
+                input.dataInicio,
+                input.dataFim,
+                undefined,
+                input.prioridade,
+                input.descricao ?? null,
+                null,
+                null,
+                responsaveis,
+                [],
+                undefined,
+                null,
+                input.categoria ?? null,
+                input.criadaPor ?? null,
+                await referenciaDaIniciativa(this.factory, input.codigoIniciativa),
+            ),
+        );
     }
 }

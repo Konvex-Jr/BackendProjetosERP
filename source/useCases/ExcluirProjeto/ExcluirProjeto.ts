@@ -10,8 +10,7 @@ export default class ExcluirProjeto {
         this.tarefas = factory.criarTarefaRepository();
     }
     async execute(codigo: string): Promise<void> {
-        if (!(await this.projetos.buscarPorCodigo(codigo)))
-            throw new ErroNaoEncontrado("Projeto não encontrado.");
+        if (!(await this.projetos.buscarPorCodigo(codigo))) throw new ErroNaoEncontrado("Projeto não encontrado.");
         // As pastas da equipe do projeto saem junto; antes, apaga os arquivos anexados (sessão 12c).
         const pastas = (await this.factory.criarPastaRepository().listar()).filter((p) => p.projeto?.codigo === codigo);
         for (const pasta of pastas) await new ExcluirPasta(this.factory).execute(pasta.codigo);

@@ -45,10 +45,10 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
     private async gravarProjetos(conexao: ConexaoBanco, item: Conhecimento): Promise<void> {
         await conexao.consultar("DELETE FROM conhecimento_projetos WHERE conhecimento_codigo = $1", [item.codigo]);
         for (const projeto of item.projetos) {
-            await conexao.consultar(
-                "INSERT INTO conhecimento_projetos (conhecimento_codigo, projeto_codigo) VALUES ($1, $2)",
-                [item.codigo, projeto.codigo],
-            );
+            await conexao.consultar("INSERT INTO conhecimento_projetos (conhecimento_codigo, projeto_codigo) VALUES ($1, $2)", [
+                item.codigo,
+                projeto.codigo,
+            ]);
         }
     }
 
@@ -57,8 +57,20 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
             await conexao.consultar(
                 `INSERT INTO conhecimentos (codigo, titulo, categoria, resumo, conteudo, autor_codigo, fonte, links, tags, data, criado_em, atualizado_em)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-                [item.codigo, item.titulo, item.categoria, item.resumo, item.conteudo, item.autor?.codigo ?? null,
-                    item.fonte, item.links, item.tags, dataParaSql(item.data), item.criadoEm, item.atualizadoEm],
+                [
+                    item.codigo,
+                    item.titulo,
+                    item.categoria,
+                    item.resumo,
+                    item.conteudo,
+                    item.autor?.codigo ?? null,
+                    item.fonte,
+                    item.links,
+                    item.tags,
+                    dataParaSql(item.data),
+                    item.criadoEm,
+                    item.atualizadoEm,
+                ],
             );
             await this.gravarProjetos(conexao, item);
         });
@@ -75,7 +87,9 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
 
         if (f.busca) {
             const p = param(literal(f.busca));
-            condicoes.push(`(c.titulo ILIKE ${p} OR c.resumo ILIKE ${p} OR c.conteudo ILIKE ${p} OR array_to_string(c.tags, ' ') ILIKE ${p})`);
+            condicoes.push(
+                `(c.titulo ILIKE ${p} OR c.resumo ILIKE ${p} OR c.conteudo ILIKE ${p} OR array_to_string(c.tags, ' ') ILIKE ${p})`,
+            );
         }
         if (f.categoria) condicoes.push(`c.categoria = ${param(f.categoria)}`);
         if (f.tag) condicoes.push(`${param(f.tag.toLowerCase())} = ANY(c.tags)`);
@@ -103,8 +117,18 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
                 `UPDATE conhecimentos SET titulo = $2, categoria = $3, resumo = $4, conteudo = $5, fonte = $6,
                         links = $7, tags = $8, data = $9, atualizado_em = $10
                  WHERE codigo = $1 RETURNING codigo`,
-                [item.codigo, item.titulo, item.categoria, item.resumo, item.conteudo, item.fonte,
-                    item.links, item.tags, dataParaSql(item.data), item.atualizadoEm],
+                [
+                    item.codigo,
+                    item.titulo,
+                    item.categoria,
+                    item.resumo,
+                    item.conteudo,
+                    item.fonte,
+                    item.links,
+                    item.tags,
+                    dataParaSql(item.data),
+                    item.atualizadoEm,
+                ],
             );
             if (linhas.length === 0) throw new Error("Item não encontrado");
             await this.gravarProjetos(conexao, item);

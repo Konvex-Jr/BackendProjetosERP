@@ -11,11 +11,11 @@ export default class RenomearPasta {
     }
     async execute(codigo: string, nome: string, sigilo?: string, codigoProjeto?: string | null): Promise<Pasta> {
         const p = await this.pastas.buscarPorCodigo(codigo);
-        if (!p)
-            throw new ErroNaoEncontrado("Pasta não encontrada.");
-        const editada = sigilo === undefined
-            ? new Pasta(String(nome ?? "").trim(), p.codigo, p.sigilo, p.projeto)
-            : await montarPasta(this.factory, nome, sigilo, codigoProjeto, p.codigo);
+        if (!p) throw new ErroNaoEncontrado("Pasta não encontrada.");
+        const editada =
+            sigilo === undefined
+                ? new Pasta(String(nome ?? "").trim(), p.codigo, p.sigilo, p.projeto)
+                : await montarPasta(this.factory, nome, sigilo, codigoProjeto, p.codigo);
         return this.pastas.editar(editada);
     }
 }

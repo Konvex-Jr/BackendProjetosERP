@@ -18,8 +18,15 @@ describe("Capacitações", () => {
     const amanha = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
     const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     const corpo = (extra: Record<string, unknown> = {}) => ({
-        titulo: "Git na prática", data: amanha, hora: "18:30", duracaoHoras: "1,5",
-        codigoInstrutor: "usr-ines", vagas: 2, tipo: "computacao", sala: "Lab 2", ...extra,
+        titulo: "Git na prática",
+        data: amanha,
+        hora: "18:30",
+        duracaoHoras: "1,5",
+        codigoInstrutor: "usr-ines",
+        vagas: 2,
+        tipo: "computacao",
+        sala: "Lab 2",
+        ...extra,
     });
     const criar = async (extra: Record<string, unknown> = {}) => {
         const r = await servidor.chamar("post", "/capacitacoes", { usuario: ctx.gerente, corpo: corpo(extra) });
@@ -61,8 +68,17 @@ describe("Capacitações", () => {
         }
 
         const c = await criar({ descricao: "**Branches** e PRs" });
-        expect(c).toMatchObject({ duracaoHoras: 1.5, instrutor: { codigo: "usr-ines", nome: "Inês" }, vagasRestantes: 2, situacao: "aberta", podeGerir: true });
-        const editada = await servidor.chamar("put", `/capacitacoes/${c.codigo}`, { usuario: ctx.gerente, corpo: { titulo: "Git avançado" } });
+        expect(c).toMatchObject({
+            duracaoHoras: 1.5,
+            instrutor: { codigo: "usr-ines", nome: "Inês" },
+            vagasRestantes: 2,
+            situacao: "aberta",
+            podeGerir: true,
+        });
+        const editada = await servidor.chamar("put", `/capacitacoes/${c.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { titulo: "Git avançado" },
+        });
         expect(editada.corpo).toMatchObject({ titulo: "Git avançado", sala: "Lab 2", hora: "18:30" });
         expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}`, { usuario: bia, corpo: { titulo: "x" } })).status).toBe(403);
         expect((await servidor.chamar("delete", `/capacitacoes/${c.codigo}`, { usuario: bia })).status).toBe(403);
@@ -104,18 +120,43 @@ describe("Capacitações", () => {
         const c = await criar({ data: ontem, vagas: 5 });
         for (const u of [bia, caio]) await inscrever(ctx.gerente, c.codigo, { codigoUsuario: u.codigo });
 
-        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 5 } })).status).toBe(403);
-        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, { usuario: bia, corpo: { presentes: ["usr-bia"] } })).status).toBe(403);
-        const fora = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, { usuario: ctx.gerente, corpo: { presentes: ["usr-ana"] } });
+        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 5 } })).status).toBe(
+            403,
+        );
+        expect(
+            (await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, { usuario: bia, corpo: { presentes: ["usr-bia"] } }))
+                .status,
+        ).toBe(403);
+        const fora = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, {
+            usuario: ctx.gerente,
+            corpo: { presentes: ["usr-ana"] },
+        });
         expect(fora.corpo.codigo).toBe("PRESENCA_FORA_DOS_INSCRITOS");
-        const marcada = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, { usuario: ctx.gerente, corpo: { presentes: ["usr-bia"] } });
-        expect(marcada.corpo.inscritos.map((i: any) => [i.nome, i.presente])).toEqual([["Bia", true], ["Caio", false]]);
+        const marcada = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, {
+            usuario: ctx.gerente,
+            corpo: { presentes: ["usr-bia"] },
+        });
+        expect(marcada.corpo.inscritos.map((i: any) => [i.nome, i.presente])).toEqual([
+            ["Bia", true],
+            ["Caio", false],
+        ]);
 
-        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: caio, corpo: { nota: 2 } })).status).toBe(403);
-        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 7 } })).corpo.codigo).toBe("NOTA_FEEDBACK_INVALIDA");
+        expect((await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: caio, corpo: { nota: 2 } })).status).toBe(
+            403,
+        );
+        expect(
+            (await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 7 } })).corpo.codigo,
+        ).toBe("NOTA_FEEDBACK_INVALIDA");
         await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 3 } });
-        const avaliou = await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, { usuario: bia, corpo: { nota: 4, bom: "Exemplos reais", melhorar: "" } });
-        expect(avaliou.corpo).toMatchObject({ avaliacao: { media: 4, total: 1 }, minhaAvaliacao: { nota: 4, bom: "Exemplos reais", melhorar: null }, podeAvaliar: true });
+        const avaliou = await servidor.chamar("put", `/capacitacoes/${c.codigo}/avaliacao`, {
+            usuario: bia,
+            corpo: { nota: 4, bom: "Exemplos reais", melhorar: "" },
+        });
+        expect(avaliou.corpo).toMatchObject({
+            avaliacao: { media: 4, total: 1 },
+            minhaAvaliacao: { nota: 4, bom: "Exemplos reais", melhorar: null },
+            podeAvaliar: true,
+        });
 
         // Média para todos; avaliações individuais: gestão com nome, instrutora sem nome, membro não vê.
         const lista = await servidor.chamar("get", "/capacitacoes", { usuario: caio });
@@ -136,10 +177,12 @@ describe("Capacitações", () => {
     it("material: a gestão anexa, todos baixam, e excluir a capacitação apaga o arquivo", async () => {
         const c = await criar();
         // Corpo binário: fetch direto, como o frontend faz.
-        const enviar = (usuario: Usuario) => fetch(`${servidor.base}/capacitacoes/${c.codigo}/anexos`, {
-            method: "POST", body: Buffer.from("%PDF-1.4 slides"),
-            headers: { "access-token": tokenPara(usuario), "X-Nome-Arquivo": "slides.pdf", "Content-Type": "application/octet-stream" },
-        });
+        const enviar = (usuario: Usuario) =>
+            fetch(`${servidor.base}/capacitacoes/${c.codigo}/anexos`, {
+                method: "POST",
+                body: Buffer.from("%PDF-1.4 slides"),
+                headers: { "access-token": tokenPara(usuario), "X-Nome-Arquivo": "slides.pdf", "Content-Type": "application/octet-stream" },
+            });
         const envio = await enviar(ctx.gerente);
         expect(envio.status).toBe(200);
         const anexo = await envio.json();
@@ -168,10 +211,17 @@ describe("Perfil completo", () => {
 
         const r = await servidor.chamar("put", "/auth/perfil", {
             usuario: ctx.membro,
-            corpo: { calendarioUrl: "https://calendar.google.com/ana", githubUrl: "https://github.com/ana", tecnologias: ["React", "TypeScript", "react"] },
+            corpo: {
+                calendarioUrl: "https://calendar.google.com/ana",
+                githubUrl: "https://github.com/ana",
+                tecnologias: ["React", "TypeScript", "react"],
+            },
         });
         expect(r.status).toBe(200);
-        expect(r.corpo.habilidades.map((h: any) => [h.nome, h.tipo])).toEqual([["React", "tecnologia"], ["TypeScript", "tecnologia"]]);
+        expect(r.corpo.habilidades.map((h: any) => [h.nome, h.tipo])).toEqual([
+            ["React", "tecnologia"],
+            ["TypeScript", "tecnologia"],
+        ]);
 
         // Outro membro escolhe uma existente com outra grafia e cria uma nova.
         await servidor.chamar("put", "/auth/perfil", { usuario: ctx.gerente, corpo: { tecnologias: ["typescript", "Node.js"] } });
@@ -179,8 +229,14 @@ describe("Perfil completo", () => {
         expect(sugestoes.corpo.map((h: any) => h.nome).sort()).toEqual(["Node.js", "React", "TypeScript"]);
 
         const visto = await servidor.chamar("get", "/usuarios/usr-ana/perfil", { usuario: ctx.gerente });
-        expect(visto.corpo.usuario).toMatchObject({ calendarioUrl: "https://calendar.google.com/ana", githubUrl: "https://github.com/ana" });
-        expect((await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente })).corpo.find((u: any) => u.codigo === "usr-ana").habilidades).toHaveLength(2);
+        expect(visto.corpo.usuario).toMatchObject({
+            calendarioUrl: "https://calendar.google.com/ana",
+            githubUrl: "https://github.com/ana",
+        });
+        expect(
+            (await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente })).corpo.find((u: any) => u.codigo === "usr-ana")
+                .habilidades,
+        ).toHaveLength(2);
 
         // Trocar as tecnologias não apaga as habilidades.
         await servidor.chamar("put", "/usuarios/usr-ana", { usuario: ctx.gerente, corpo: { habilidades: ["Liderança"] } });

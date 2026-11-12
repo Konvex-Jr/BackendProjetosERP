@@ -21,18 +21,16 @@ export default class CargoRepositoryDatabase implements CargoRepositoryInterface
     }
 
     async criar(cargo: Cargo): Promise<Cargo> {
-        await this.executar(
-            "INSERT INTO cargos (codigo, nome, ativo) VALUES ($1, $2, $3)",
-            [cargo.codigo, cargo.nome, cargo.ativo],
-        );
+        await this.executar("INSERT INTO cargos (codigo, nome, ativo) VALUES ($1, $2, $3)", [cargo.codigo, cargo.nome, cargo.ativo]);
         return cargo;
     }
 
     async editar(cargo: Cargo): Promise<Cargo> {
-        const linhas = await this.executar(
-            "UPDATE cargos SET nome = $2, ativo = $3 WHERE codigo = $1 RETURNING codigo",
-            [cargo.codigo, cargo.nome, cargo.ativo],
-        );
+        const linhas = await this.executar("UPDATE cargos SET nome = $2, ativo = $3 WHERE codigo = $1 RETURNING codigo", [
+            cargo.codigo,
+            cargo.nome,
+            cargo.ativo,
+        ]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Cargo não encontrado.");
         return cargo;
     }

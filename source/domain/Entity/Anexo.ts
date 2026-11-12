@@ -18,6 +18,9 @@ export interface DadosAnexo {
     enviadoEm?: Date;
 }
 
+// eslint-disable-next-line no-control-regex -- tirar os caracteres de controle é o objetivo
+const CARACTERES_PROIBIDOS = /[\u0000-\u001f\u007f"]/g;
+
 /** Arquivo anexado a um documento de pasta, a um item da Base ou a uma iniciativa. */
 export default class Anexo {
     readonly codigo: string;
@@ -35,7 +38,11 @@ export default class Anexo {
         this.donoTipo = dados.donoTipo;
         this.donoCodigo = dados.donoCodigo;
         // Só o nome, sem caminho, e sem caracteres de controle.
-        this.nome = String(dados.nome ?? "").split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f"]/g, "").trim();
+        this.nome = String(dados.nome ?? "")
+            .split(/[\\/]/)
+            .pop()!
+            .replace(CARACTERES_PROIBIDOS, "")
+            .trim();
         this.tamanhoBytes = dados.tamanhoBytes;
         this.arquivo = dados.arquivo ?? uuid();
         this.enviadoPor = dados.enviadoPor;

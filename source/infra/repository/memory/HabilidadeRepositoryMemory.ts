@@ -11,9 +11,7 @@ export default class HabilidadeRepositoryMemory implements HabilidadeRepositoryI
 
     async garantir(nome: string, tipo: TipoHabilidade): Promise<Habilidade> {
         const nova = new Habilidade(nome, tipo);
-        const existente = this.habilidades.find(
-            (h) => h.tipo === tipo && h.nome.toLowerCase() === nova.nome.toLowerCase(),
-        );
+        const existente = this.habilidades.find((h) => h.tipo === tipo && h.nome.toLowerCase() === nova.nome.toLowerCase());
         if (existente) return existente;
         this.habilidades.push(nova);
         return nova;

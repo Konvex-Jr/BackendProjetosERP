@@ -13,10 +13,7 @@ export function podeVerTodosProjetos(usuario: UsuarioAutenticado | undefined | n
  * Filtro de pessoa para listar projetos. Gestor pode pedir os de qualquer pessoa (ou todos);
  * membro sempre recebe só os próprios, mesmo que peça os de outra pessoa.
  */
-export function projetosVisiveisPara(
-    usuario: UsuarioAutenticado | undefined | null,
-    codigoUsuarioPedido?: string,
-): string | undefined {
+export function projetosVisiveisPara(usuario: UsuarioAutenticado | undefined | null, codigoUsuarioPedido?: string): string | undefined {
     const autenticado = exigirAutenticado(usuario);
     return podeVerTodosProjetos(autenticado) ? codigoUsuarioPedido : autenticado.codigo;
 }

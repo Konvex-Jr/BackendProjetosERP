@@ -85,10 +85,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
     }
 
     async buscarPorEmail(email: string): Promise<Usuario | null> {
-        const linhas = await this.conexao.consultar(
-            `${SELECT_USUARIO} WHERE lower(u.email) = lower($1)`,
-            [email.trim()],
-        );
+        const linhas = await this.conexao.consultar(`${SELECT_USUARIO} WHERE lower(u.email) = lower($1)`, [email.trim()]);
         return linhas.length > 0 ? usuarioDeLinha(linhas[0]) : null;
     }
 
@@ -116,10 +113,10 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
     }
 
     async desativar(codigo: string): Promise<void> {
-        const linhas = await this.conexao.consultar(
-            "UPDATE usuarios SET status = $2, ativo = false WHERE codigo = $1 RETURNING codigo",
-            [codigo, StatusPessoa.INATIVO],
-        );
+        const linhas = await this.conexao.consultar("UPDATE usuarios SET status = $2, ativo = false WHERE codigo = $1 RETURNING codigo", [
+            codigo,
+            StatusPessoa.INATIVO,
+        ]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
     }
 

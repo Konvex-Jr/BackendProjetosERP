@@ -38,7 +38,10 @@ function lerEntrada(body: any): EntradaCapacitacao {
 
 /** Capacitações (RF-070 a RF-073, sessão 13). Regras em shared/seguranca/regrasCapacitacao.ts. */
 export default class CapacitacaoRoutes implements ModelRoutes {
-    constructor(private readonly http: Http, private readonly factory: RepositoryFactoryInterface) {}
+    constructor(
+        private readonly http: Http,
+        private readonly factory: RepositoryFactoryInterface,
+    ) {}
 
     init(): void {
         const gerir = () => new GerirCapacitacoes(this.factory);
@@ -50,32 +53,37 @@ export default class CapacitacaoRoutes implements ModelRoutes {
 
         this.http.route("get", "/capacitacoes", true, async (_p: any, body: any) => gerir().listar(body?.user));
 
-        this.http.route("get", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
-            gerir().ficha(body?.user, params.codigo));
+        this.http.route("get", "/capacitacoes/:codigo", true, async (params: any, body: any) => gerir().ficha(body?.user, params.codigo));
 
-        this.http.route("post", "/capacitacoes", true, async (_p: any, body: any) =>
-            gerir().salvar(body?.user, lerEntrada(body)));
+        this.http.route("post", "/capacitacoes", true, async (_p: any, body: any) => gerir().salvar(body?.user, lerEntrada(body)));
 
         this.http.route("put", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
-            gerir().salvar(body?.user, lerEntrada(body), params.codigo));
+            gerir().salvar(body?.user, lerEntrada(body), params.codigo),
+        );
 
         this.http.route("delete", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
-            gerir().excluir(body?.user, params.codigo));
+            gerir().excluir(body?.user, params.codigo),
+        );
 
         // Sem `codigoUsuario`, inscreve quem está logado; com outro código, só a gestão.
         this.http.route("post", "/capacitacoes/:codigo/inscricoes", true, async (params: any, body: any) =>
-            gerir().inscrever(body?.user, params.codigo, body?.codigoUsuario || undefined));
+            gerir().inscrever(body?.user, params.codigo, body?.codigoUsuario || undefined),
+        );
 
         this.http.route("delete", "/capacitacoes/:codigo/inscricoes/:codigoUsuario", true, async (params: any, body: any) =>
-            gerir().cancelar(body?.user, params.codigo, params.codigoUsuario));
+            gerir().cancelar(body?.user, params.codigo, params.codigoUsuario),
+        );
 
         this.http.route("put", "/capacitacoes/:codigo/presencas", true, async (params: any, body: any) =>
-            gerir().marcarPresencas(body?.user, params.codigo, body?.presentes));
+            gerir().marcarPresencas(body?.user, params.codigo, body?.presentes),
+        );
 
         this.http.route("put", "/capacitacoes/:codigo/avaliacao", true, async (params: any, body: any) =>
-            gerir().avaliar(body?.user, params.codigo, { nota: Number(body?.nota), bom: body?.bom, melhorar: body?.melhorar }));
+            gerir().avaliar(body?.user, params.codigo, { nota: Number(body?.nota), bom: body?.bom, melhorar: body?.melhorar }),
+        );
 
         this.http.route("get", "/capacitacoes/:codigo/avaliacoes", true, async (params: any, body: any) =>
-            gerir().avaliacoes(body?.user, params.codigo));
+            gerir().avaliacoes(body?.user, params.codigo),
+        );
     }
 }

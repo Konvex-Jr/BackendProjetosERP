@@ -11,9 +11,7 @@ async function seedAdmin(): Promise<void> {
     const senha = process.env.ADMIN_PASSWORD;
 
     if (!nome || !email || !senha) {
-        throw new Error(
-            "Configure ADMIN_NAME, ADMIN_EMAIL e ADMIN_PASSWORD no .env.",
-        );
+        throw new Error("Configure ADMIN_NAME, ADMIN_EMAIL e ADMIN_PASSWORD no .env.");
     }
 
     if (senha.length < 6) {

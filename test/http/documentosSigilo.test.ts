@@ -62,7 +62,10 @@ describe("Pastas e documentos com sigilo", () => {
     it("pasta de projeto exige projeto existente", async () => {
         const sem = await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "X", sigilo: "projeto" } });
         expect(sem.status).toBe(400);
-        const inexistente = await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "X", sigilo: "projeto", codigoProjeto: "nao-existe" } });
+        const inexistente = await servidor.chamar("post", "/pastas", {
+            usuario: ctx.gerente,
+            corpo: { nome: "X", sigilo: "projeto", codigoProjeto: "nao-existe" },
+        });
         expect(inexistente.status).toBe(404);
         const invalido = await servidor.chamar("post", "/pastas", { usuario: ctx.gerente, corpo: { nome: "X", sigilo: "secreto" } });
         expect(invalido.status).toBe(400);
@@ -79,19 +82,31 @@ describe("Pastas e documentos com sigilo", () => {
         expect((await servidor.chamar("post", "/pastas", { usuario: ctx.membro, corpo: { nome: "X" } })).status).toBe(403);
         expect((await servidor.chamar("put", `/pastas/${pastas.publica}`, { usuario: ctx.membro, corpo: { nome: "X" } })).status).toBe(403);
         expect((await servidor.chamar("delete", `/pastas/${pastas.publica}`, { usuario: ctx.membro })).status).toBe(403);
-        const doc = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, { usuario: ctx.membro, corpo: { nome: "X", arquivoUrl: "https://drive.google.com/x" } });
+        const doc = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, {
+            usuario: ctx.membro,
+            corpo: { nome: "X", arquivoUrl: "https://drive.google.com/x" },
+        });
         expect(doc.status).toBe(403);
     });
 
     it("documento é link http(s); gestão cadastra, troca o link e exclui", async () => {
-        const invalido = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, { usuario: ctx.gerente, corpo: { nome: "Ata", arquivoUrl: "javascript:alert(1)" } });
+        const invalido = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Ata", arquivoUrl: "javascript:alert(1)" },
+        });
         expect(invalido.status).toBe(400);
 
-        const criado = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, { usuario: ctx.gerente, corpo: { nome: "Ata", arquivoUrl: "https://drive.google.com/ata" } });
+        const criado = await servidor.chamar("post", `/pastas/${pastas.publica}/documentos`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Ata", arquivoUrl: "https://drive.google.com/ata" },
+        });
         expect(criado.status).toBe(200);
         expect(criado.corpo.tamanhoBytes).toBe(0);
 
-        const editado = await servidor.chamar("put", `/documentos/${criado.corpo.codigo}`, { usuario: ctx.gerente, corpo: { nome: "Ata de outubro", arquivoUrl: "https://drive.google.com/ata2" } });
+        const editado = await servidor.chamar("put", `/documentos/${criado.corpo.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Ata de outubro", arquivoUrl: "https://drive.google.com/ata2" },
+        });
         expect(editado.corpo.arquivoUrl).toBe("https://drive.google.com/ata2");
 
         const lista = await servidor.chamar("get", `/pastas/${pastas.publica}/documentos`, { usuario: ctx.membro });
