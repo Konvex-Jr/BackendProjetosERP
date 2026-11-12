@@ -6,6 +6,15 @@ O que cada pessoa vê depende do papel: **diretor**, **gerente** ou **membro**. 
 
 No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitações; o botão **Mais** abre o resto do menu.
 
+## Como acessar
+
+O sistema **não aparece no Google**, e é de propósito: ele é só para membros. Para entrar, digite o endereço **erp.konvexjr.com.br** no navegador. Para não precisar digitar toda vez:
+
+- **No computador, salve nos favoritos**: com o sistema aberto, aperte **Ctrl+D** (no Mac, **Cmd+D**) ou clique na estrela da barra de endereço.
+- **No celular, adicione à tela inicial**: o sistema ganha um ícone com o símbolo da Konvex, como um aplicativo.
+  - **Android (Chrome)**: menu **⋮** → **Adicionar à tela inicial** (ou **Instalar app**).
+  - **iPhone (Safari)**: botão **Compartilhar** → **Adicionar à Tela de Início**.
+
 ---
 
 ## Membro
