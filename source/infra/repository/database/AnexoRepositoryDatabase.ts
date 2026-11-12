@@ -23,6 +23,12 @@ function anexoDaLinha(l: any): Anexo {
     });
 }
 
+/**
+ * Registros de anexos no PostgreSQL (os bytes ficam no disco). O dono é `dono_tipo` + `dono_codigo`,
+ * sem chave estrangeira, porque pode ser de várias tabelas; por isso quem exclui um dono apaga
+ * os anexos pelo caso de uso (GerirAnexos.excluirDosDonos). Códigos comparados como texto:
+ * código que não é UUID dá 404, não erro do banco.
+ */
 export default class AnexoRepositoryDatabase implements AnexoRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
 

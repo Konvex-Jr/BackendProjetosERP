@@ -49,6 +49,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
                  RETURNING codigo`,
                 [usuario.codigo, ...valores(usuario)],
             );
+            // E-mail repetido não lança erro aqui: devolve null e o caso de uso (CriarUsuario) avisa.
             if (linhas.length === 0) return null;
             await this.gravarHabilidades(conexao, usuario);
             return usuario;
@@ -68,6 +69,8 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         }
         const busca = normalizarBusca(filtro.busca);
         if (busca) {
+            // translate tira os acentos no banco, como normalizarBusca faz no texto buscado:
+            // assim "joao" acha "João".
             parametros.push(`%${busca}%`);
             condicoes.push(
                 `translate(lower(u.nome || ' ' || coalesce(u.nome_exibicao, '') || ' ' || u.email),

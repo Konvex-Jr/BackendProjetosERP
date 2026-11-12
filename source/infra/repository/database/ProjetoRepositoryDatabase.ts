@@ -113,6 +113,8 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         try {
             await this.conexao.transacao(operacao);
         } catch (erro: any) {
+            // Duas restrições únicas podem estourar: o código (referência) do projeto e a
+            // participação ativa repetida da mesma pessoa (idx_projeto_membros_ativo).
             if (violacaoDeUnicidade(erro)) {
                 throw new ErroConflito(
                     erro.constraint === "idx_projetos_referencia"
@@ -156,6 +158,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         }
     }
 
+    /** Monta os projetos mantendo a ordem dos códigos (a do ORDER BY de quem chamou). */
     private async hidratar(codigos: string[]): Promise<Projeto[]> {
         const projetos = await carregarProjetos(this.conexao, codigos);
         return codigos.map((codigo) => projetos.get(codigo)!);

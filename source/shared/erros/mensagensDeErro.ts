@@ -1,3 +1,7 @@
+/**
+ * Textos de erro mostrados ao usuário, num lugar só para manter o tom e evitar repetição.
+ * Regra da casa: dizer qual campo ou valor está errado e o que é aceito.
+ */
 export const MENSAGENS_DE_ERRO = {
     VALIDACAO: {
         SENHA_CURTA: "A senha deve possuir pelo menos 6 caracteres.",

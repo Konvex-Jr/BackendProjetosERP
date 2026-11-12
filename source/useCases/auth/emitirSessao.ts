@@ -19,10 +19,15 @@ export interface Sessao {
     usuario: Usuario;
 }
 
+/**
+ * O banco guarda só o SHA-256 do refresh token: quem ler a tabela não consegue usar as sessões.
+ * Um hash rápido basta (sem bcrypt) porque o token é aleatório e longo, não uma senha escolhida.
+ */
 export function hashToken(token: string): string {
     return createHash("sha256").update(token).digest("hex");
 }
 
+/** O token leva só código e e-mail; papel e status são relidos do banco a cada requisição (AuthExpress). */
 export function gerarTokenAcesso(usuario: Usuario): string {
     return sign({ codigo: usuario.codigo, email: usuario.email }, obterChavePrivada(), {
         algorithm: "RS256",

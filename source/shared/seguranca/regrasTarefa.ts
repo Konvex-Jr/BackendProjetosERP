@@ -25,6 +25,10 @@ export interface RegrasTarefa {
     comentar: boolean;
 }
 
+/**
+ * Papel mais forte da pessoa no projeto. A gestão vem primeiro: um gerente que também lidera
+ * o projeto conta como "gestao". `membros` só tem a equipe atual, então quem saiu vira "nenhum".
+ */
 export function papelNoProjeto(usuario: UsuarioAutenticado, projeto: Projeto | null): PapelProjeto {
     if (temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS)) return "gestao";
     if (!projeto) return "nenhum";
@@ -57,6 +61,7 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
         ver: organizar || responsavel || verProjeto,
         organizar,
         mudarStatus: organizar || (papel === "participante" && responsavel),
+        // Comentar exige estar na equipe atual: quem só participou no passado continua lendo, mas não comenta.
         comentar: papel !== "nenhum",
     };
 }

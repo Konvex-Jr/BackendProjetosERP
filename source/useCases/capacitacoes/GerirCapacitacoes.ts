@@ -36,6 +36,7 @@ type Usuario = UsuarioAutenticado | null | undefined;
 
 /** Capacitações, inscrições, presença e avaliações (sessão 13). Regras em shared/seguranca/regrasCapacitacao.ts. */
 export default class GerirCapacitacoes {
+    /** `agora` é injetável para os testes simularem antes e depois do início sem esperar o relógio. */
     constructor(
         private readonly factory: RepositoryFactoryInterface,
         private readonly agora: () => Date = () => new Date(),
@@ -123,6 +124,7 @@ export default class GerirCapacitacoes {
             if (!pessoa || !pessoa.ativo) throw new ErroNaoEncontrado(M.INSTRUTOR_INVALIDO);
             instrutor = { codigo: pessoa.codigo, nome: pessoa.nomeExibicao || pessoa.nome };
         }
+        // Só os campos enviados: na edição, campo ausente mantém o valor atual.
         const definidos = Object.fromEntries(Object.entries(entrada).filter(([k, v]) => v !== undefined && k !== "codigoInstrutor"));
         const nova = atual ? atual.com({ ...definidos, instrutor }) : new Capacitacao({ ...(definidos as any), instrutor: instrutor! });
         const salva = atual ? await this.repo.editar(nova) : await this.repo.criar(nova);
@@ -132,6 +134,7 @@ export default class GerirCapacitacoes {
     async excluir(usuario: Usuario, codigo: string) {
         this.exigirGestao(usuario);
         await this.buscar(codigo);
+        // Anexos não têm chave estrangeira para o dono: saem aqui, antes da capacitação.
         await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.CAPACITACAO, [codigo]);
         await this.repo.excluir(codigo);
         return { codigo };
@@ -152,6 +155,7 @@ export default class GerirCapacitacoes {
         if (!podeGerirCapacitacoes(autenticado) && c.jaComecou(this.agora()))
             throw new ErroConflito(M.JA_COMECOU, "CAPACITACAO_JA_COMECOU");
         if (c.inscricaoDe(alvo)) throw new ErroConflito(M.JA_INSCRITO, "USUARIO_JA_INSCRITO");
+        // A checagem final de vaga fica no banco (repo.inscrever), não em vagasRestantes, que pode estar velho.
         const ok = await this.repo.inscrever(codigo, { codigo: pessoa.codigo, nome: pessoa.nomeExibicao || pessoa.nome });
         if (!ok) throw new ErroConflito(M.LOTADA, "CAPACITACAO_LOTADA");
         return this.ficha(autenticado, codigo);

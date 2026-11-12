@@ -6,6 +6,10 @@ import { Pool } from "pg";
  * Aplica, em ordem, os arquivos .sql da pasta migrations/ que ainda não foram aplicados.
  * Cada arquivo roda numa transação; o registro fica na tabela schema_migrations.
  * Um advisory lock impede duas instâncias de migrarem ao mesmo tempo.
+ *
+ * O controle é pelo nome do arquivo: migração já aplicada nunca roda de novo, então editar
+ * um arquivo antigo não muda o banco. Para alterar o esquema, crie o próximo número.
+ * Quem chama é scripts/migrar.ts, antes de subir a API (ver o CMD do Dockerfile).
  */
 export async function aplicarMigracoes(
     pool: Pool,
@@ -20,6 +24,7 @@ export async function aplicarMigracoes(
     const cliente = await pool.connect();
     const aplicadasAgora: string[] = [];
     try {
+        // Número fixo e arbitrário; só precisa ser o mesmo no lock e no unlock.
         await cliente.query("SELECT pg_advisory_lock(727001)");
         await cliente.query(`
             CREATE TABLE IF NOT EXISTS schema_migrations (

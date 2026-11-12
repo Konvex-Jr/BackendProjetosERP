@@ -13,6 +13,7 @@ export interface FiltrosIniciativa {
     codigoConhecimento?: string;
 }
 
+/** Iniciativas de inovação. Permissões ficam em shared/seguranca/regrasIniciativa.ts. */
 export default interface IniciativaRepositoryInterface {
     criar(item: Iniciativa): Promise<Iniciativa>;
     /** Atualizadas mais recentemente primeiro. */

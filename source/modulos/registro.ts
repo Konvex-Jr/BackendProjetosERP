@@ -24,11 +24,14 @@ export interface ItemMenu {
     permissao?: Permissao;
 }
 
+/** Toda classe de rotas tem este construtor; o Router cria uma instância de cada. */
 type CriarRotas = new (http: Http, factory: RepositoryFactoryInterface) => ModelRoutes;
 
+/** Um módulo do sistema: rotas da API, ações do catálogo que ele usa e itens do menu. */
 export interface Modulo {
     chave: string;
     nome: string;
+    /** Vazio nos módulos só de tela (painel e precificação são calculados no frontend). */
     rotas: CriarRotas[];
     /** Ações do catálogo que pertencem a este módulo. */
     permissoes: Permissao[];
@@ -151,6 +154,7 @@ function itensVisiveis(usuario: UsuarioAutenticado, modulo: Modulo): ItemMenu[] 
     return modulo.menu.filter((item) => !item.permissao || temPermissao(usuario, item.permissao));
 }
 
+// O frontend recebe só chave, rótulo e caminho; `permissao` e `ordem` são detalhes do backend.
 const semPermissao = ({ chave, rotulo, caminho }: ItemMenu) => ({ chave, rotulo, caminho });
 
 /** Módulos com itens de menu que a pessoa pode ver (módulos sem item visível ficam de fora). */

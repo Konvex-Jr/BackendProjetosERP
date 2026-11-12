@@ -6,7 +6,10 @@ import { MODULOS, Modulo, menuDoUsuario, menuOrdenado } from "../../modulos/regi
 import { exigirAutenticado } from "../../shared/seguranca/permissoes";
 import { permissoesDoPapel } from "../../shared/seguranca/catalogoPermissoes";
 
-/** Monta as rotas a partir do registro de módulos. */
+/**
+ * Monta as rotas a partir do registro de módulos. Módulo novo não mexe aqui: basta a entrada
+ * em modulos/registro.ts com as classes de rotas.
+ */
 export default class Router {
     private readonly routes: ModelRoutes[];
 
@@ -33,6 +36,7 @@ export default class Router {
         });
 
         this.routes.forEach((routes) => routes.init());
+        // Sempre chamado; é o ExpressHttp que decide se a documentação fica no ar (desligada em produção).
         this.http.swagger(swaggerSpecification);
     }
 }
