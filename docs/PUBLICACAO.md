@@ -17,13 +17,28 @@ Processo usado hoje em `erp.konvexjr.com.br`. Siga na ordem. O deploy automatiza
 ## Compose versionado (desde a sessão 14a)
 O compose da VPS agora tem uma versão guardada no git: `deploy/docker-compose.prod.yml` (modelo do `.env` em `deploy/.env.prod.example`). Ele já traz o volume dos anexos, os `ADMIN_*` repassados ao backend e a geração das chaves JWT sem o `generate-keys.js` que vivia só na VPS.
 
-**Adotar na VPS (uma vez, com calma):** compare antes de trocar. O ponto crítico é o volume do banco: o arquivo versionado usa um volume **externo** com o nome de `DB_VOLUME` no `.env`, para nunca criar um banco vazio por engano.
+**Adotar na VPS (uma vez, sessão 14b).** O arquivo versionado já usa os nomes reais da VPS: volume `erp-konvex_konvex_postgres_data`, rede `internal`, certresolver `letsencrypt`, router `erp`/serviço `erp-frontend` do frontend e o banco lido de `DATABASE` (o `.env` atual serve sem mudanças). O volume do banco é **externo**: se o nome estiver errado, o `up` para com erro em vez de criar um banco vazio.
 ```bash
 cd /docker/erp-konvex
-docker volume ls | grep -i -E "konvex|erp|postgres"     # nome do volume do banco
-diff docker-compose.yml backend/deploy/docker-compose.prod.yml
+# 1. backup do banco e dos anexos (seção 3)
+# 2. conferir o volume do banco; se for outro nome, ele vai para o .env
+VOL=$(docker inspect konvex-db --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}'); echo "volume: $VOL"
+[ "$VOL" = erp-konvex_konvex_postgres_data ] || echo "DB_VOLUME=$VOL" >> .env
+# 3. trocar, guardando o antigo
+git -C backend pull --ff-only
+cp docker-compose.yml docker-compose.yml.bak-antes-versionado
+cp backend/deploy/docker-compose.prod.yml docker-compose.yml
+docker compose config >/dev/null && echo "compose ok"
+docker compose config | grep -E "POSTGRES_DB|certresolver|erp-konvex_konvex_postgres_data|name: erp-konvex_internal"
+# 4. subir (o banco pode reiniciar por alguns segundos; os dados ficam no volume)
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -5                 # "API disponível na porta 5001"
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/                       # 200
 ```
-Só troque (`cp backend/deploy/docker-compose.prod.yml docker-compose.yml`, com cópia `.bak` antes) depois de conferir no diff: nome do volume, variáveis do `.env`, labels do Traefik (nomes dos routers e o `certresolver`) e portas. Valide com `docker compose config` antes do `up`.
+- **Deu errado?** `cp docker-compose.yml.bak-antes-versionado docker-compose.yml && docker compose up -d`.
+- **Deu certo?** Entre no sistema, abra um anexo e então apague o script antigo: `rm backend/generate-keys.js` (as chaves agora vêm do serviço `generate-keys`, que só gera se faltarem).
+- **Daqui em diante:** o `docker-compose.yml` da VPS é uma **cópia**. Quando um PR mudar `deploy/docker-compose.prod.yml`, depois do `git pull` rode `diff docker-compose.yml backend/deploy/docker-compose.prod.yml` e copie de novo (com `.bak`).
 
 ## 0. Volume dos anexos (uma vez, na publicação da 12c)
 Faça uma cópia do compose e acrescente no serviço `backend` do `docker-compose.yml`:
@@ -132,6 +147,42 @@ docker image prune -f                            # apaga só imagens sem nome/ta
 df -h /                                          # conferir o espaço
 ```
 Não use `docker system prune -a` sem pensar: ele apaga também imagens guardadas de propósito, como `erp-konvex-backend:antes-fase1`.
+
+## 8. Testar a restauração de um backup (a cada 3 meses, ou depois de mudar o backup)
+Restaura o último `.dump` e o último `anexos_*.tar.gz` num banco descartável, **sem tocar na produção**, compara as contagens e roda a conferência de anexos sobre a cópia. Leva uns 2 minutos.
+```bash
+cd /docker/erp-konvex
+DUMP=$(ls -t /root/backup-konvex/konvex_*.dump | head -1); echo "$DUMP"
+TAR=$(ls -t /root/backup-konvex/anexos_*.tar.gz | head -1); echo "$TAR"
+docker network create konvex-restauracao
+docker run -d --name konvex-restauracao-db --network konvex-restauracao \
+  -e POSTGRES_PASSWORD=restauracao -e POSTGRES_DB=konvex_restaurado postgres:17-alpine
+until docker exec konvex-restauracao-db pg_isready -q -U postgres; do sleep 1; done; sleep 3
+docker exec -i konvex-restauracao-db pg_restore --no-owner --no-privileges -U postgres -d konvex_restaurado < "$DUMP"; echo "pg_restore terminou com $?"
+for t in usuarios projetos tarefas capacitacoes conhecimentos iniciativas documentos anexos; do
+  a=$(docker exec konvex-db sh -c "psql -tAU \"\$POSTGRES_USER\" \"\$POSTGRES_DB\" -c 'SELECT count(*) FROM $t'")
+  b=$(docker exec konvex-restauracao-db psql -tAU postgres konvex_restaurado -c "SELECT count(*) FROM $t")
+  echo "$t: produção=$a restaurado=$b"
+done
+RESTO=$(mktemp -d); tar -xzf "$TAR" -C "$RESTO"
+echo "arquivos: produção=$(ls anexos | wc -l) restaurado=$(ls "$RESTO/anexos" | wc -l)"
+docker run --rm --network konvex-restauracao -v "$RESTO/anexos:/anexos:ro" -e ANEXOS_DIR=/anexos \
+  -e DATABASE_URL=postgresql://postgres:restauracao@konvex-restauracao-db:5432/konvex_restaurado \
+  erp-konvex-backend node dist/source/scripts/conferirAnexos.js
+# limpar
+docker rm -f konvex-restauracao-db; docker network rm konvex-restauracao; rm -rf "$RESTO"
+```
+- **Deu certo quando:** `pg_restore terminou com 0`, as contagens batem (ou diferem só pelo que foi criado depois do backup) e a conferência termina com "Tudo certo".
+- Anote a data do teste no acompanhamento. Se algo falhar, o backup **não serve**: corrija o procedimento da seção 3 antes da próxima publicação.
+
+## 9. Conferir anexos órfãos (de vez em quando)
+Lista registros sem arquivo, arquivos sem registro e anexos cujo dono foi apagado. **Só relata, não apaga nada.**
+```bash
+docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
+```
+- "Registro sem arquivo": o anexo aparece na tela mas não baixa. Procure o arquivo no backup do mesmo dia (`anexos_*.tar.gz`) e copie para `/docker/erp-konvex/anexos/`.
+- "Arquivo sem registro": sobra no disco (por exemplo, envio interrompido). Pode mover para fora da pasta depois de um backup.
+- "Dono não existe mais": exclua o anexo pelo banco só depois de conferir com a gestão.
 
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
