@@ -1,5 +1,5 @@
-import SenioridadeUsuario from "../../../domain/Entity/SenioridadeUsuario";
-import SenioridadeRepositoryInterface from "../../../domain/Interfaces/SenioridadeRepositoryInterface";
+import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
+import SenioridadeRepositoryInterface from "../../../domain/interfaces/SenioridadeRepositoryInterface";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 

@@ -1,6 +1,6 @@
-import Usuario from "../../../domain/Entity/Usuario";
-import UsuarioRepositoryInterface, { FiltroPessoas } from "../../../domain/Interfaces/UsuarioRepositoryInterface";
-import StatusPessoa from "../../../domain/Enum/StatusPessoa";
+import Usuario from "../../../domain/entity/Usuario";
+import UsuarioRepositoryInterface, { FiltroPessoas } from "../../../domain/interfaces/UsuarioRepositoryInterface";
+import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSqlOuNulo, violacaoDeUnicidade } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";

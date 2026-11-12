@@ -1,5 +1,5 @@
-import AlternarStatusProjeto from "../source/useCases/AlternarStatusProjeto/AlternarStatusProjeto";
-import StatusProjeto from "../source/domain/Enum/StatusProjeto";
+import AlternarStatusProjeto from "../source/useCases/projetos/AlternarStatusProjeto";
+import StatusProjeto from "../source/domain/enum/StatusProjeto";
 import { criarContexto, criarProjeto } from "./fixtures";
 
 test("alterna o status do projeto entre execução e conclusão", async () => {

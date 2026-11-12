@@ -1,4 +1,4 @@
-import RefreshTokenRepositoryInterface, { RegistroRefreshToken } from "../../../domain/Interfaces/RefreshTokenRepositoryInterface";
+import RefreshTokenRepositoryInterface, { RegistroRefreshToken } from "../../../domain/interfaces/RefreshTokenRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 
 export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepositoryInterface {

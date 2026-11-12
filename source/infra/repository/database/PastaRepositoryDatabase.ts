@@ -1,5 +1,5 @@
-import Pasta from "../../../domain/Entity/Pasta";
-import PastaRepositoryInterface from "../../../domain/Interfaces/PastaRepositoryInterface";
+import Pasta from "../../../domain/entity/Pasta";
+import PastaRepositoryInterface from "../../../domain/interfaces/PastaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 
 /** SELECT de pastas com o projeto ligado (sigilo "projeto"). Reaproveitado pelo repositório de documentos. */

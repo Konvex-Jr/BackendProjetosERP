@@ -1,6 +1,6 @@
-import Habilidade from "../../../domain/Entity/Habilidade";
-import TipoHabilidade from "../../../domain/Enum/TipoHabilidade";
-import HabilidadeRepositoryInterface from "../../../domain/Interfaces/HabilidadeRepositoryInterface";
+import Habilidade from "../../../domain/entity/Habilidade";
+import TipoHabilidade from "../../../domain/enum/TipoHabilidade";
+import HabilidadeRepositoryInterface from "../../../domain/interfaces/HabilidadeRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 
 export default class HabilidadeRepositoryDatabase implements HabilidadeRepositoryInterface {

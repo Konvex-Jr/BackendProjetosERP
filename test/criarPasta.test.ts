@@ -1,4 +1,4 @@
-import CriarPasta from "../source/useCases/CriarPasta/CriarPasta";
+import CriarPasta from "../source/useCases/documentos/CriarPasta";
 import { criarContexto } from "./fixtures";
 
 test("cria uma pasta e remove espaços excedentes do nome", async () => {

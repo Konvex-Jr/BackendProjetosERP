@@ -3,7 +3,7 @@ import * as path from "path";
 import swaggerSpecification from "../source/infra/http/swagger";
 
 describe("Contrato OpenAPI", () => {
-    const routesDirectory = path.join(__dirname, "../source/infra/http/Routes");
+    const routesDirectory = path.join(__dirname, "../source/infra/http/routes");
     const routeFiles = fs.readdirSync(routesDirectory).filter((file) => file.endsWith("Routes.ts"));
 
     it("documenta todas as rotas HTTP declaradas no backend", () => {

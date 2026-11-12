@@ -1,9 +1,9 @@
-import RepositoryFactoryInterface from "../source/domain/Interfaces/RepositoryFactoryInterface";
+import RepositoryFactoryInterface from "../source/domain/interfaces/RepositoryFactoryInterface";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
-import CriarUsuario from "../source/useCases/CriarUsuario/CriarUsuario";
-import LoginUsuario, { MENSAGEM_CREDENCIAIS_INVALIDAS } from "../source/useCases/LoginUsuario/LoginUsuario";
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
-import SenioridadeUsuario from "../source/domain/Entity/SenioridadeUsuario";
+import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
+import LoginUsuario, { MENSAGEM_CREDENCIAIS_INVALIDAS } from "../source/useCases/auth/LoginUsuario";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 
 describe("Caso de uso LoginUsuario", () => {
     let repositoryFactory: RepositoryFactoryInterface;

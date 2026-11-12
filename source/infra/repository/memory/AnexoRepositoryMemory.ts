@@ -1,6 +1,6 @@
-import Anexo from "../../../domain/Entity/Anexo";
-import { DonoAnexo } from "../../../domain/Enum/Anexo";
-import AnexoRepositoryInterface from "../../../domain/Interfaces/AnexoRepositoryInterface";
+import Anexo from "../../../domain/entity/Anexo";
+import { DonoAnexo } from "../../../domain/enum/Anexo";
+import AnexoRepositoryInterface from "../../../domain/interfaces/AnexoRepositoryInterface";
 
 export default class AnexoRepositoryMemory implements AnexoRepositoryInterface {
     private itens: Anexo[] = [];

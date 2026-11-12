@@ -1,5 +1,5 @@
-import Tarefa from "../../../domain/Entity/Tarefa";
-import TarefaRepositoryInterface from "../../../domain/Interfaces/TarefaRepositoryInterface";
+import Tarefa from "../../../domain/entity/Tarefa";
+import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
 
 export default class TarefaRepositoryMemory implements TarefaRepositoryInterface {
     private tarefas: Tarefa[];

@@ -1,6 +1,6 @@
-import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
+import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Http from "./Http";
-import ModelRoutes from "./Routes/ModelRoutes";
+import ModelRoutes from "./routes/ModelRoutes";
 import swaggerSpecification from "./swagger";
 import { MODULOS, Modulo, menuDoUsuario, menuOrdenado } from "../../modulos/registro";
 import { exigirAutenticado } from "../../shared/seguranca/permissoes";

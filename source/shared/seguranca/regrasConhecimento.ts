@@ -1,4 +1,4 @@
-import Conhecimento from "../../domain/Entity/Conhecimento";
+import Conhecimento from "../../domain/entity/Conhecimento";
 import { ErroProibido } from "../erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../erros/mensagensDeErro";
 import { Permissao } from "./catalogoPermissoes";

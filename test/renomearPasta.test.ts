@@ -1,4 +1,4 @@
-import RenomearPasta from "../source/useCases/RenomearPasta/RenomearPasta";
+import RenomearPasta from "../source/useCases/documentos/RenomearPasta";
 import { criarContexto, criarPasta } from "./fixtures";
 
 test("renomeia uma pasta existente", async () => {

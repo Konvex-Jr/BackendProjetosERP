@@ -1,5 +1,5 @@
-import Documento from "../../../domain/Entity/Documento";
-import DocumentoRepositoryInterface from "../../../domain/Interfaces/DocumentoRepositoryInterface";
+import Documento from "../../../domain/entity/Documento";
+import DocumentoRepositoryInterface from "../../../domain/interfaces/DocumentoRepositoryInterface";
 
 export default class DocumentoRepositoryMemory implements DocumentoRepositoryInterface {
     private documentos: Documento[];

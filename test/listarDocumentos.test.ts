@@ -1,4 +1,4 @@
-import ListarDocumentos from "../source/useCases/ListarDocumentos/ListarDocumentos";
+import ListarDocumentos from "../source/useCases/documentos/ListarDocumentos";
 import { criarContexto, criarDocumento } from "./fixtures";
 
 test("lista documentos de uma pasta", async () => {

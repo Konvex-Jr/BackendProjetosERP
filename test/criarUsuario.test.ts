@@ -1,8 +1,8 @@
-import RepositoryFactoryInterface from "../source/domain/Interfaces/RepositoryFactoryInterface";
+import RepositoryFactoryInterface from "../source/domain/interfaces/RepositoryFactoryInterface";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
-import CriarUsuario from "../source/useCases/CriarUsuario/CriarUsuario";
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
-import SenioridadeUsuario from "../source/domain/Entity/SenioridadeUsuario";
+import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import { ErroValidacao } from "../source/shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../source/shared/erros/mensagensDeErro";
 

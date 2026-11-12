@@ -1,4 +1,4 @@
-import ListarTarefas from "../source/useCases/ListarTarefas/ListarTarefas";
+import ListarTarefas from "../source/useCases/tarefas/ListarTarefas";
 import { criarContexto, criarTarefa } from "./fixtures";
 
 test("lista tarefas por projeto e por responsável", async () => {

@@ -25,9 +25,9 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 | CI | GitHub Actions em todo PR (testes, integração com PostgreSQL, build, validação dos compose) |
 
 ## Backend em camadas
-- `source/domain`: entidades (`Entity/`), enums e interfaces dos repositórios. Validação de valores na entidade.
-- `source/useCases`: um caso de uso por operação nos módulos antigos (`CriarTarefa`, `ExcluirPasta`…) e um caso de uso por módulo nos novos (`SalvarConhecimento`, `SalvarIniciativa`, `GerirAnexos`, `GerirCapacitacoes`).
-- `source/infra`: repositórios em memória (testes) e em banco, rotas HTTP, armazenamento de anexos, migrações.
+- `source/domain`: entidades (`entity/`), enums (`enum/`), interfaces dos repositórios (`interfaces/`) e cálculos de domínio (`service/`). Validação de valores na entidade.
+- `source/useCases/<módulo>/`: casos de uso agrupados por módulo (`auth`, `pessoas`, `config`, `projetos`, `tarefas`, `documentos`, `conhecimento`, `iniciativas`, `anexos`, `capacitacoes`). Os módulos antigos têm uma classe por operação (`CriarTarefa`, `ExcluirPasta`…); os novos, um caso de uso por módulo (`SalvarConhecimento`, `GerirCapacitacoes`). Ver ADR-010.
+- `source/infra`: repositórios em memória (testes) e em banco, rotas HTTP, armazenamento de anexos, migrações (rotas em `infra/http/routes/`, autenticação em `infra/http/middleware/`).
 - `source/shared/seguranca`: permissões por papel (`catalogoPermissoes.ts`, `permissoes.ts`) e regras de acesso por item (`visibilidadeProjetos`, `sigiloPastas`, `regrasTarefa`, `regrasConhecimento`, `regrasIniciativa`, `regrasCapacitacao`).
 - `source/modulos/registro.ts`: registro único dos módulos e do menu; `GET /auth/permissoes` devolve o menu de cada pessoa.
 - Erros: `ErroValidacao` (400), `ErroProibido` (403), `ErroConflito` (409); mensagens em `source/shared/erros/mensagensDeErro.ts` dizem qual campo está errado.

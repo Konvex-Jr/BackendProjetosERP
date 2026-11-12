@@ -1,5 +1,5 @@
-import Projeto from "../../domain/Entity/Projeto";
-import Tarefa from "../../domain/Entity/Tarefa";
+import Projeto from "../../domain/entity/Projeto";
+import Tarefa from "../../domain/entity/Tarefa";
 import { Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
 import { participaOuParticipou } from "./visibilidadeProjetos";
 

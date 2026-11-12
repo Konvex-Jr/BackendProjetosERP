@@ -1,9 +1,9 @@
-import Area from "../../../domain/Entity/Area";
-import Cargo from "../../../domain/Entity/Cargo";
+import Area from "../../../domain/entity/Area";
+import Cargo from "../../../domain/entity/Cargo";
 import HistoricoPessoaRepositoryInterface, {
     MudancaArea,
     MudancaCargo,
-} from "../../../domain/Interfaces/HistoricoPessoaRepositoryInterface";
+} from "../../../domain/interfaces/HistoricoPessoaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 

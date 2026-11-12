@@ -1,8 +1,8 @@
-import Tarefa from "../../../domain/Entity/Tarefa";
-import ItemChecklistTarefa from "../../../domain/Entity/ItemChecklistTarefa";
-import StatusTarefa from "../../../domain/Enum/StatusTarefa";
-import PrioridadeTarefa from "../../../domain/Enum/PrioridadeTarefa";
-import TarefaRepositoryInterface from "../../../domain/Interfaces/TarefaRepositoryInterface";
+import Tarefa from "../../../domain/entity/Tarefa";
+import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
+import StatusTarefa from "../../../domain/enum/StatusTarefa";
+import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
+import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";

@@ -1,5 +1,5 @@
-import Projeto from "../../../domain/Entity/Projeto";
-import ProjetoRepositoryInterface, { FiltroProjetos } from "../../../domain/Interfaces/ProjetoRepositoryInterface";
+import Projeto from "../../../domain/entity/Projeto";
+import ProjetoRepositoryInterface, { FiltroProjetos } from "../../../domain/interfaces/ProjetoRepositoryInterface";
 import { normalizarBusca } from "../../../shared/texto";
 
 export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterface {

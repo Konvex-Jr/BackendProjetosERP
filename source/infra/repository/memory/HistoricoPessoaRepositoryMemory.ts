@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import HistoricoPessoaRepositoryInterface, {
     MudancaArea,
     MudancaCargo,
-} from "../../../domain/Interfaces/HistoricoPessoaRepositoryInterface";
+} from "../../../domain/interfaces/HistoricoPessoaRepositoryInterface";
 
 export default class HistoricoPessoaRepositoryMemory implements HistoricoPessoaRepositoryInterface {
     private cargos: MudancaCargo[] = [];

@@ -1,5 +1,5 @@
-import Projeto from "../../../domain/Entity/Projeto";
-import ProjetoRepositoryInterface, { FiltroProjetos } from "../../../domain/Interfaces/ProjetoRepositoryInterface";
+import Projeto from "../../../domain/entity/Projeto";
+import ProjetoRepositoryInterface, { FiltroProjetos } from "../../../domain/interfaces/ProjetoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo, violacaoDeUnicidade } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";

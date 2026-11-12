@@ -1,4 +1,4 @@
-import ExcluirProjeto from "../source/useCases/ExcluirProjeto/ExcluirProjeto";
+import ExcluirProjeto from "../source/useCases/projetos/ExcluirProjeto";
 import { criarContexto, criarProjeto, criarTarefa } from "./fixtures";
 
 test("exclui o projeto e as tarefas associadas", async () => {

@@ -1,8 +1,8 @@
-import Usuario from "../../source/domain/Entity/Usuario";
-import Projeto from "../../source/domain/Entity/Projeto";
-import Area from "../../source/domain/Entity/Area";
-import PerfilUsuario from "../../source/domain/Enum/PerfilUsuario";
-import { FRENTES_INICIATIVA, STATUS_INICIATIVA, TIPOS_INICIATIVA } from "../../source/domain/Enum/Iniciativa";
+import Usuario from "../../source/domain/entity/Usuario";
+import Projeto from "../../source/domain/entity/Projeto";
+import Area from "../../source/domain/entity/Area";
+import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import { FRENTES_INICIATIVA, STATUS_INICIATIVA, TIPOS_INICIATIVA } from "../../source/domain/enum/Iniciativa";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 

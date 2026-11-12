@@ -1,16 +1,16 @@
 import ConexaoBanco from "../../database/ConexaoBanco";
-import Usuario from "../../../domain/Entity/Usuario";
-import SenioridadeUsuario from "../../../domain/Entity/SenioridadeUsuario";
-import Projeto from "../../../domain/Entity/Projeto";
-import PerfilUsuario from "../../../domain/Enum/PerfilUsuario";
-import StatusProjeto from "../../../domain/Enum/StatusProjeto";
-import StatusPessoa from "../../../domain/Enum/StatusPessoa";
-import PrioridadeProjeto from "../../../domain/Enum/PrioridadeProjeto";
-import TipoHabilidade from "../../../domain/Enum/TipoHabilidade";
-import Area from "../../../domain/Entity/Area";
-import Cargo from "../../../domain/Entity/Cargo";
-import Habilidade from "../../../domain/Entity/Habilidade";
-import Participacao from "../../../domain/Entity/Participacao";
+import Usuario from "../../../domain/entity/Usuario";
+import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
+import Projeto from "../../../domain/entity/Projeto";
+import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
+import StatusProjeto from "../../../domain/enum/StatusProjeto";
+import StatusPessoa from "../../../domain/enum/StatusPessoa";
+import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
+import TipoHabilidade from "../../../domain/enum/TipoHabilidade";
+import Area from "../../../domain/entity/Area";
+import Cargo from "../../../domain/entity/Cargo";
+import Habilidade from "../../../domain/entity/Habilidade";
+import Participacao from "../../../domain/entity/Participacao";
 
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,

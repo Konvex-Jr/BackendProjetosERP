@@ -1,4 +1,4 @@
-import PerfilUsuario from "../../domain/Enum/PerfilUsuario";
+import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { ErroNaoAutorizado } from "../erros/ErroNaoAutorizado";
 import { ErroProibido } from "../erros/ErroProibido";
 import { Permissao, permissoesDoPapel } from "./catalogoPermissoes";

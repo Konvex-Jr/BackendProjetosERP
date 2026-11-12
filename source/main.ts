@@ -4,7 +4,7 @@ import PgConexao from "./infra/database/PgConexao";
 import ExpressHttp from "./infra/http/ExpressHttp";
 import Router from "./infra/http/Router";
 import DatabaseRepositoryFactory from "./infra/repository/DatabaseRepositoryFactory";
-import ExpressAuth from "./infra/http/Middleware/AuthExpress";
+import ExpressAuth from "./infra/http/middleware/AuthExpress";
 
 config();
 
