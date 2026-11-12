@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import ArmazenamentoAnexosInterface from "../../domain/Interfaces/ArmazenamentoAnexosInterface";
+import ArmazenamentoAnexosInterface from "../../domain/interfaces/ArmazenamentoAnexosInterface";
 
 /** Pasta dos anexos: ANEXOS_DIR (na VPS, um volume que entra no backup) ou ./anexos. */
 export function pastaDosAnexos(): string {

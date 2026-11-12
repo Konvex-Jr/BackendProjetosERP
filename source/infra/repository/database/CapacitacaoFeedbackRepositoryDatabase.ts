@@ -1,5 +1,5 @@
-import CapacitacaoFeedback from "../../../domain/Entity/CapacitacaoFeedback";
-import CapacitacaoFeedbackRepositoryInterface, { ResumoAvaliacao } from "../../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
+import CapacitacaoFeedback from "../../../domain/entity/CapacitacaoFeedback";
+import CapacitacaoFeedbackRepositoryInterface, { ResumoAvaliacao } from "../../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 

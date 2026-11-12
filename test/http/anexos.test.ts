@@ -1,7 +1,7 @@
-import Usuario from "../../source/domain/Entity/Usuario";
-import Area from "../../source/domain/Entity/Area";
-import PerfilUsuario from "../../source/domain/Enum/PerfilUsuario";
-import { LIMITE_ANEXO_BYTES } from "../../source/domain/Enum/Anexo";
+import Usuario from "../../source/domain/entity/Usuario";
+import Area from "../../source/domain/entity/Area";
+import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import { LIMITE_ANEXO_BYTES } from "../../source/domain/enum/Anexo";
 import { criarContexto } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
 
@@ -182,7 +182,7 @@ describe("Anexos", () => {
 
 describe("Anexos ao excluir projeto", () => {
     it("excluir o projeto apaga os arquivos das pastas da equipe", async () => {
-        const Projeto = (await import("../../source/domain/Entity/Projeto")).default;
+        const Projeto = (await import("../../source/domain/entity/Projeto")).default;
         const { dataInicio, dataFim } = await import("../fixtures");
         const ctx = await criarContexto();
         const diretor = new Usuario("Dora", "dora@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dora");

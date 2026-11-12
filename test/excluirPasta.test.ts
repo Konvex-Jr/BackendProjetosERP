@@ -1,4 +1,4 @@
-import ExcluirPasta from "../source/useCases/ExcluirPasta/ExcluirPasta";
+import ExcluirPasta from "../source/useCases/documentos/ExcluirPasta";
 import { criarContexto, criarPasta } from "./fixtures";
 
 test("exclui uma pasta existente", async () => {

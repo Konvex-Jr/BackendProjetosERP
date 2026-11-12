@@ -1,4 +1,4 @@
-import CriarProjeto from "../source/useCases/CriarProjeto/CriarProjeto";
+import CriarProjeto from "../source/useCases/projetos/CriarProjeto";
 import { criarContexto, dataInicio, dataFim } from "./fixtures";
 
 test("cria um projeto com membros válidos", async () => {

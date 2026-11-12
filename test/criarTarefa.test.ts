@@ -1,5 +1,5 @@
-import CriarTarefa from "../source/useCases/CriarTarefa/CriarTarefa";
-import PrioridadeTarefa from "../source/domain/Enum/PrioridadeTarefa";
+import CriarTarefa from "../source/useCases/tarefas/CriarTarefa";
+import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarProjeto, dataInicio, dataFim } from "./fixtures";
 
 test("cria uma tarefa vinculada a um projeto e responsável", async () => {

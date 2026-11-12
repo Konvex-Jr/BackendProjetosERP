@@ -1,4 +1,4 @@
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Router from "../source/infra/http/Router";
 import { MODULOS, menuDoUsuario, menuOrdenado } from "../source/modulos/registro";

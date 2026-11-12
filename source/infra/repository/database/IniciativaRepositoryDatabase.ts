@@ -1,5 +1,5 @@
-import Iniciativa from "../../../domain/Entity/Iniciativa";
-import IniciativaRepositoryInterface, { FiltrosIniciativa } from "../../../domain/Interfaces/IniciativaRepositoryInterface";
+import Iniciativa from "../../../domain/entity/Iniciativa";
+import IniciativaRepositoryInterface, { FiltrosIniciativa } from "../../../domain/interfaces/IniciativaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSqlOuNulo } from "../../database/conversoes";
 

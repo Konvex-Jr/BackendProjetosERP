@@ -1,5 +1,5 @@
-import CapacitacaoFeedback from "../../../domain/Entity/CapacitacaoFeedback";
-import CapacitacaoFeedbackRepositoryInterface, { ResumoAvaliacao } from "../../../domain/Interfaces/CapacitacaoFeedbackRepositoryInterface";
+import CapacitacaoFeedback from "../../../domain/entity/CapacitacaoFeedback";
+import CapacitacaoFeedbackRepositoryInterface, { ResumoAvaliacao } from "../../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
 
 export default class CapacitacaoFeedbackRepositoryMemory implements CapacitacaoFeedbackRepositoryInterface {
     private itens: CapacitacaoFeedback[] = [];

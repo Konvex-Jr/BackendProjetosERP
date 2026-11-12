@@ -1,5 +1,5 @@
-import Area from "../../../domain/Entity/Area";
-import AreaRepositoryInterface from "../../../domain/Interfaces/AreaRepositoryInterface";
+import Area from "../../../domain/entity/Area";
+import AreaRepositoryInterface from "../../../domain/interfaces/AreaRepositoryInterface";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 

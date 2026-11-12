@@ -1,15 +1,15 @@
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
-import Usuario from "../source/domain/Entity/Usuario";
-import SenioridadeUsuario from "../source/domain/Entity/SenioridadeUsuario";
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
-import CriarPasta from "../source/useCases/CriarPasta/CriarPasta";
-import ListarPastas from "../source/useCases/ListarPastas/ListarPastas";
-import RenomearPasta from "../source/useCases/RenomearPasta/RenomearPasta";
-import ExcluirPasta from "../source/useCases/ExcluirPasta/ExcluirPasta";
-import EnviarDocumento from "../source/useCases/EnviarDocumento/EnviarDocumento";
-import ListarDocumentos from "../source/useCases/ListarDocumentos/ListarDocumentos";
-import RenomearDocumento from "../source/useCases/RenomearDocumento/RenomearDocumento";
-import ExcluirDocumento from "../source/useCases/ExcluirDocumento/ExcluirDocumento";
+import Usuario from "../source/domain/entity/Usuario";
+import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import CriarPasta from "../source/useCases/documentos/CriarPasta";
+import ListarPastas from "../source/useCases/documentos/ListarPastas";
+import RenomearPasta from "../source/useCases/documentos/RenomearPasta";
+import ExcluirPasta from "../source/useCases/documentos/ExcluirPasta";
+import EnviarDocumento from "../source/useCases/documentos/EnviarDocumento";
+import ListarDocumentos from "../source/useCases/documentos/ListarDocumentos";
+import RenomearDocumento from "../source/useCases/documentos/RenomearDocumento";
+import ExcluirDocumento from "../source/useCases/documentos/ExcluirDocumento";
 
 describe("Casos de uso de pastas e documentos", () => {
     let factory: MemoryRepositoryFactory;

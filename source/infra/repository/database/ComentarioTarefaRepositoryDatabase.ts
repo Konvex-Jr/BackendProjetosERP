@@ -1,5 +1,5 @@
-import ComentarioTarefa from "../../../domain/Entity/ComentarioTarefa";
-import ComentarioTarefaRepositoryInterface from "../../../domain/Interfaces/ComentarioTarefaRepositoryInterface";
+import ComentarioTarefa from "../../../domain/entity/ComentarioTarefa";
+import ComentarioTarefaRepositoryInterface from "../../../domain/interfaces/ComentarioTarefaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { carregarUsuarios } from "./carregadores";
 

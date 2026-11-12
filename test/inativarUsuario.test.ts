@@ -1,4 +1,4 @@
-import InativarUsuario from "../source/useCases/InativarUsuario/InativarUsuario";
+import InativarUsuario from "../source/useCases/pessoas/InativarUsuario";
 import { criarContexto } from "./fixtures";
 
 test("inativa um usuário cadastrado", async () => {

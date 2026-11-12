@@ -1,6 +1,6 @@
-import Area from "../../domain/Entity/Area";
-import Iniciativa from "../../domain/Entity/Iniciativa";
-import Usuario from "../../domain/Entity/Usuario";
+import Area from "../../domain/entity/Area";
+import Iniciativa from "../../domain/entity/Iniciativa";
+import Usuario from "../../domain/entity/Usuario";
 import { ErroProibido } from "../erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../erros/mensagensDeErro";
 import { normalizarBusca } from "../texto";

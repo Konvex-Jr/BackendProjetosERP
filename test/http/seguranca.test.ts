@@ -1,5 +1,5 @@
-import Usuario from "../../source/domain/Entity/Usuario";
-import PerfilUsuario from "../../source/domain/Enum/PerfilUsuario";
+import Usuario from "../../source/domain/entity/Usuario";
+import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarProjeto, criarTarefa } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 

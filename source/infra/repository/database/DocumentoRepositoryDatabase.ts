@@ -1,7 +1,7 @@
-import Documento from "../../../domain/Entity/Documento";
-import Pasta from "../../../domain/Entity/Pasta";
+import Documento from "../../../domain/entity/Documento";
+import Pasta from "../../../domain/entity/Pasta";
 import { pastaDaLinha, SELECT_PASTA } from "./PastaRepositoryDatabase";
-import DocumentoRepositoryInterface from "../../../domain/Interfaces/DocumentoRepositoryInterface";
+import DocumentoRepositoryInterface from "../../../domain/interfaces/DocumentoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 import { carregarUsuarios } from "./carregadores";

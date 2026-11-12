@@ -1,7 +1,7 @@
-import Usuario from "../../source/domain/Entity/Usuario";
-import Projeto from "../../source/domain/Entity/Projeto";
-import PerfilUsuario from "../../source/domain/Enum/PerfilUsuario";
-import { CATEGORIAS_CONHECIMENTO } from "../../source/domain/Enum/CategoriaConhecimento";
+import Usuario from "../../source/domain/entity/Usuario";
+import Projeto from "../../source/domain/entity/Projeto";
+import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import { CATEGORIAS_CONHECIMENTO } from "../../source/domain/enum/CategoriaConhecimento";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 

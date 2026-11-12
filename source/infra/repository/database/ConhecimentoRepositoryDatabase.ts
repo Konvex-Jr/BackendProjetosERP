@@ -1,5 +1,5 @@
-import Conhecimento from "../../../domain/Entity/Conhecimento";
-import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/Interfaces/ConhecimentoRepositoryInterface";
+import Conhecimento from "../../../domain/entity/Conhecimento";
+import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/interfaces/ConhecimentoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 

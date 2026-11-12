@@ -1,4 +1,4 @@
-import ExcluirTarefa from "../source/useCases/ExcluirTarefa/ExcluirTarefa";
+import ExcluirTarefa from "../source/useCases/tarefas/ExcluirTarefa";
 import { criarContexto, criarTarefa } from "./fixtures";
 
 test("exclui uma tarefa existente", async () => {

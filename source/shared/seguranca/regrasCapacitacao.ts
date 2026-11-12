@@ -1,4 +1,4 @@
-import Capacitacao from "../../domain/Entity/Capacitacao";
+import Capacitacao from "../../domain/entity/Capacitacao";
 import { Permissao } from "./catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "./permissoes";
 

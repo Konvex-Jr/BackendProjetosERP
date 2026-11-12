@@ -1,6 +1,6 @@
-import Pasta from "../../domain/Entity/Pasta";
-import SigiloPasta from "../../domain/Enum/SigiloPasta";
-import RepositoryFactoryInterface from "../../domain/Interfaces/RepositoryFactoryInterface";
+import Pasta from "../../domain/entity/Pasta";
+import SigiloPasta from "../../domain/enum/SigiloPasta";
+import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../erros/ErroNaoEncontrado";
 import { exigirAutenticado, Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
 

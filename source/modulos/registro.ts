@@ -1,16 +1,16 @@
-import RepositoryFactoryInterface from "../domain/Interfaces/RepositoryFactoryInterface";
+import RepositoryFactoryInterface from "../domain/interfaces/RepositoryFactoryInterface";
 import Http from "../infra/http/Http";
-import ModelRoutes from "../infra/http/Routes/ModelRoutes";
-import UsuarioRoutes from "../infra/http/Routes/UsuarioRoutes";
-import ProjetoRoutes from "../infra/http/Routes/ProjetoRoutes";
-import TarefaRoutes from "../infra/http/Routes/TarefaRoutes";
-import CapacitacaoRoutes from "../infra/http/Routes/CapacitacaoRoutes";
-import PastaRoutes from "../infra/http/Routes/PastaRoutes";
-import DocumentoRoutes from "../infra/http/Routes/DocumentoRoutes";
-import ConfiguracaoRoutes from "../infra/http/Routes/ConfiguracaoRoutes";
-import ConhecimentoRoutes from "../infra/http/Routes/ConhecimentoRoutes";
-import IniciativaRoutes from "../infra/http/Routes/IniciativaRoutes";
-import AnexoRoutes from "../infra/http/Routes/AnexoRoutes";
+import ModelRoutes from "../infra/http/routes/ModelRoutes";
+import UsuarioRoutes from "../infra/http/routes/UsuarioRoutes";
+import ProjetoRoutes from "../infra/http/routes/ProjetoRoutes";
+import TarefaRoutes from "../infra/http/routes/TarefaRoutes";
+import CapacitacaoRoutes from "../infra/http/routes/CapacitacaoRoutes";
+import PastaRoutes from "../infra/http/routes/PastaRoutes";
+import DocumentoRoutes from "../infra/http/routes/DocumentoRoutes";
+import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
+import ConhecimentoRoutes from "../infra/http/routes/ConhecimentoRoutes";
+import IniciativaRoutes from "../infra/http/routes/IniciativaRoutes";
+import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 

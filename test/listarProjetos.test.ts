@@ -1,4 +1,4 @@
-import ListarProjetos from "../source/useCases/ListarProjetos/ListarProjetos";
+import ListarProjetos from "../source/useCases/projetos/ListarProjetos";
 import { criarContexto, criarProjeto } from "./fixtures";
 
 test("lista projetos associados a um membro", async () => {

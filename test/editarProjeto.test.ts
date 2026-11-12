@@ -1,4 +1,4 @@
-import EditarProjeto from "../source/useCases/EditarProjeto/EditarProjeto";
+import EditarProjeto from "../source/useCases/projetos/EditarProjeto";
 import { criarContexto, criarProjeto, dataInicio, dataFim } from "./fixtures";
 
 test("edita os dados de um projeto existente", async () => {

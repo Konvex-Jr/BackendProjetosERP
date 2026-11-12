@@ -1,5 +1,5 @@
-import AlterarStatusTarefa from "../source/useCases/AlterarStatusTarefa/AlterarStatusTarefa";
-import StatusTarefa from "../source/domain/Enum/StatusTarefa";
+import AlterarStatusTarefa from "../source/useCases/tarefas/AlterarStatusTarefa";
+import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import { criarContexto, criarTarefa } from "./fixtures";
 
 test("altera o status e registra a data de conclusão da tarefa", async () => {

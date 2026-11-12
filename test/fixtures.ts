@@ -1,15 +1,15 @@
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
-import Usuario from "../source/domain/Entity/Usuario";
-import SenioridadeUsuario from "../source/domain/Entity/SenioridadeUsuario";
-import Capacitacao from "../source/domain/Entity/Capacitacao";
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
-import TipoCapacitacao from "../source/domain/Enum/TipoCapacitacao";
-import Projeto from "../source/domain/Entity/Projeto";
-import Tarefa from "../source/domain/Entity/Tarefa";
-import StatusTarefa from "../source/domain/Enum/StatusTarefa";
-import PrioridadeTarefa from "../source/domain/Enum/PrioridadeTarefa";
-import Pasta from "../source/domain/Entity/Pasta";
-import Documento from "../source/domain/Entity/Documento";
+import Usuario from "../source/domain/entity/Usuario";
+import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
+import Capacitacao from "../source/domain/entity/Capacitacao";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import TipoCapacitacao from "../source/domain/enum/TipoCapacitacao";
+import Projeto from "../source/domain/entity/Projeto";
+import Tarefa from "../source/domain/entity/Tarefa";
+import StatusTarefa from "../source/domain/enum/StatusTarefa";
+import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
+import Pasta from "../source/domain/entity/Pasta";
+import Documento from "../source/domain/entity/Documento";
 
 export const dataInicio = new Date("2026-10-12T00:00:00.000Z");
 export const dataFim = new Date("2026-10-30T00:00:00.000Z");

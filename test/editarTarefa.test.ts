@@ -1,6 +1,6 @@
-import EditarTarefa from "../source/useCases/EditarTarefa/EditarTarefa";
-import StatusTarefa from "../source/domain/Enum/StatusTarefa";
-import PrioridadeTarefa from "../source/domain/Enum/PrioridadeTarefa";
+import EditarTarefa from "../source/useCases/tarefas/EditarTarefa";
+import StatusTarefa from "../source/domain/enum/StatusTarefa";
+import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarTarefa, dataInicio, dataFim } from "./fixtures";
 
 test("edita os dados de uma tarefa existente", async () => {

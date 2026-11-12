@@ -1,4 +1,4 @@
-import ArmazenamentoAnexosInterface from "../../domain/Interfaces/ArmazenamentoAnexosInterface";
+import ArmazenamentoAnexosInterface from "../../domain/interfaces/ArmazenamentoAnexosInterface";
 
 export default class ArmazenamentoAnexosMemoria implements ArmazenamentoAnexosInterface {
     readonly arquivos = new Map<string, Buffer>();

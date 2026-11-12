@@ -1,4 +1,4 @@
-import RenomearDocumento from "../source/useCases/RenomearDocumento/RenomearDocumento";
+import RenomearDocumento from "../source/useCases/documentos/RenomearDocumento";
 import { criarContexto, criarDocumento } from "./fixtures";
 
 test("renomeia um documento existente", async () => {

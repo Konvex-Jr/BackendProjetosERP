@@ -1,4 +1,4 @@
-import ListarUsuarios from "../source/useCases/ListarUsuarios/ListarUsuarios";
+import ListarUsuarios from "../source/useCases/pessoas/ListarUsuarios";
 import { criarContexto } from "./fixtures";
 
 test("lista os usuários cadastrados", async () => {

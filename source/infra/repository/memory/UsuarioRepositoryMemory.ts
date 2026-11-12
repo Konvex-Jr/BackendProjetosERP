@@ -1,6 +1,6 @@
-import Usuario from "../../../domain/Entity/Usuario";
-import UsuarioRepositoryInterface, { FiltroPessoas } from "../../../domain/Interfaces/UsuarioRepositoryInterface";
-import StatusPessoa from "../../../domain/Enum/StatusPessoa";
+import Usuario from "../../../domain/entity/Usuario";
+import UsuarioRepositoryInterface, { FiltroPessoas } from "../../../domain/interfaces/UsuarioRepositoryInterface";
+import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import { normalizarBusca } from "../../../shared/texto";
 
 export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterface {

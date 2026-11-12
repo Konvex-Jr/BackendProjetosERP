@@ -1,6 +1,6 @@
-import Capacitacao from "../../../domain/Entity/Capacitacao";
-import { Referencia } from "../../../domain/Entity/Conhecimento";
-import CapacitacaoRepositoryInterface from "../../../domain/Interfaces/CapacitacaoRepositoryInterface";
+import Capacitacao from "../../../domain/entity/Capacitacao";
+import { Referencia } from "../../../domain/entity/Conhecimento";
+import CapacitacaoRepositoryInterface from "../../../domain/interfaces/CapacitacaoRepositoryInterface";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 

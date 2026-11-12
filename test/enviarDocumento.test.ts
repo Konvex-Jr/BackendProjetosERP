@@ -1,4 +1,4 @@
-import EnviarDocumento from "../source/useCases/EnviarDocumento/EnviarDocumento";
+import EnviarDocumento from "../source/useCases/documentos/EnviarDocumento";
 import { criarContexto, criarPasta } from "./fixtures";
 
 test("cadastra um documento em uma pasta", async () => {

@@ -1,5 +1,5 @@
-import Pasta from "../../../domain/Entity/Pasta";
-import PastaRepositoryInterface from "../../../domain/Interfaces/PastaRepositoryInterface";
+import Pasta from "../../../domain/entity/Pasta";
+import PastaRepositoryInterface from "../../../domain/interfaces/PastaRepositoryInterface";
 
 export default class PastaRepositoryMemory implements PastaRepositoryInterface {
     private pastas: Pasta[];

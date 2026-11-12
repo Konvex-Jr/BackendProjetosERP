@@ -1,9 +1,9 @@
 import { sign } from "jsonwebtoken";
 import ExpressHttp from "../../source/infra/http/ExpressHttp";
-import ExpressAuth from "../../source/infra/http/Middleware/AuthExpress";
+import ExpressAuth from "../../source/infra/http/middleware/AuthExpress";
 import Router from "../../source/infra/http/Router";
-import RepositoryFactoryInterface from "../../source/domain/Interfaces/RepositoryFactoryInterface";
-import Usuario from "../../source/domain/Entity/Usuario";
+import RepositoryFactoryInterface from "../../source/domain/interfaces/RepositoryFactoryInterface";
+import Usuario from "../../source/domain/entity/Usuario";
 import { obterChavePrivada } from "../../source/shared/seguranca/chavesJwt";
 
 /** Sobe a API completa numa porta livre, com o repositório informado. */

@@ -1,5 +1,5 @@
-import Conhecimento from "../../../domain/Entity/Conhecimento";
-import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/Interfaces/ConhecimentoRepositoryInterface";
+import Conhecimento from "../../../domain/entity/Conhecimento";
+import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/interfaces/ConhecimentoRepositoryInterface";
 
 /** Mesmo critério do SQL (ILIKE): sem diferenciar maiúsculas, com acentos. */
 function atende(item: Conhecimento, f: FiltrosConhecimento): boolean {

@@ -1,7 +1,7 @@
-import StatusPessoa from "../source/domain/Enum/StatusPessoa";
-import AlterarStatusPessoa from "../source/useCases/Pessoas/AlterarStatusPessoa";
-import { AdicionarParticipante } from "../source/useCases/Projetos/Equipe";
-import ObterPerfilPessoa from "../source/useCases/Pessoas/ObterPerfilPessoa";
+import StatusPessoa from "../source/domain/enum/StatusPessoa";
+import AlterarStatusPessoa from "../source/useCases/pessoas/AlterarStatusPessoa";
+import { AdicionarParticipante } from "../source/useCases/projetos/Equipe";
+import ObterPerfilPessoa from "../source/useCases/pessoas/ObterPerfilPessoa";
 import { criarContexto, criarProjeto } from "./fixtures";
 
 describe("Status de pessoa (RF-011, RN-01)", () => {

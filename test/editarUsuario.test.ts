@@ -1,5 +1,5 @@
-import EditarUsuario from "../source/useCases/EditarUsuario/EditarUsuario";
-import PerfilUsuario from "../source/domain/Enum/PerfilUsuario";
+import EditarUsuario from "../source/useCases/pessoas/EditarUsuario";
+import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import { criarContexto } from "./fixtures";
 
 test("edita os dados e normaliza o e-mail do usuário", async () => {

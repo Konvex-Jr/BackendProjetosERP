@@ -1,4 +1,4 @@
-import PerfilUsuario from "../../domain/Enum/PerfilUsuario";
+import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 
 /**
  * Catálogo central de ações do sistema. As rotas checam a ação ("projetos.editar"),

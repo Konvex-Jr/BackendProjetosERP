@@ -1,6 +1,6 @@
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import Auth from "./Middleware/Auth";
+import Auth from "./middleware/Auth";
 import Http, { OpcoesRota } from "./Http";
 import RespostaArquivo from "./RespostaArquivo";
 import HttpMethods from "./HttpMethods";

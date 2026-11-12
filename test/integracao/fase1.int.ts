@@ -9,7 +9,7 @@ import { aplicarMigracoes } from "../../source/infra/database/migracoes";
 import PgConexao from "../../source/infra/database/PgConexao";
 import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRepositoryFactory";
 import ExpressHttp from "../../source/infra/http/ExpressHttp";
-import ExpressAuth from "../../source/infra/http/Middleware/AuthExpress";
+import ExpressAuth from "../../source/infra/http/middleware/AuthExpress";
 import Router from "../../source/infra/http/Router";
 import { mkdtempSync, readdirSync, rmSync } from "fs";
 import { tmpdir } from "os";

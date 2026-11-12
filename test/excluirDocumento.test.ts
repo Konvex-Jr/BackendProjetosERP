@@ -1,4 +1,4 @@
-import ExcluirDocumento from "../source/useCases/ExcluirDocumento/ExcluirDocumento";
+import ExcluirDocumento from "../source/useCases/documentos/ExcluirDocumento";
 import { criarContexto, criarDocumento } from "./fixtures";
 
 test("exclui um documento existente", async () => {

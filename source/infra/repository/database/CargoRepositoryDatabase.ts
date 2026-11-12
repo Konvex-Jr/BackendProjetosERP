@@ -1,5 +1,5 @@
-import Cargo from "../../../domain/Entity/Cargo";
-import CargoRepositoryInterface from "../../../domain/Interfaces/CargoRepositoryInterface";
+import Cargo from "../../../domain/entity/Cargo";
+import CargoRepositoryInterface from "../../../domain/interfaces/CargoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { violacaoDeUnicidade } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";

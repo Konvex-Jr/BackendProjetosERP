@@ -1,0 +1,121 @@
+import Usuario, { DetalhesPessoa } from "../../domain/entity/Usuario";
+import Habilidade from "../../domain/entity/Habilidade";
+import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
+import StatusPessoa from "../../domain/enum/StatusPessoa";
+import TipoHabilidade from "../../domain/enum/TipoHabilidade";
+import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+
+/** Campos do perfil como chegam na API (todos opcionais; ausente = não alterar). */
+export interface EntradaPerfilPessoa {
+    nomeExibicao?: string | null;
+    avatarUrl?: string | null;
+    telefone?: string | null;
+    linkedinUrl?: string | null;
+    calendarioUrl?: string | null;
+    githubUrl?: string | null;
+    curso?: string | null;
+    semestre?: number | null;
+    codigoArea?: string | null;
+    codigoCargo?: string | null;
+    dataEntrada?: Date | null;
+    bio?: string | null;
+    /** Nomes de habilidades e tecnologias. Nomes novos são cadastrados automaticamente. */
+    habilidades?: Array<string | { nome: string; tipo?: TipoHabilidade }>;
+    /**
+     * Tecnologias que a pessoa domina (sessão 13): substitui só as do tipo "tecnologia",
+     * mantendo as habilidades. Nome novo entra na lista; repetido (sem diferenciar maiúsculas) reaproveita.
+     */
+    tecnologias?: string[];
+}
+
+/** Converte a entrada da API em DetalhesPessoa, conferindo se área e cargo existem. */
+export async function resolverPerfilPessoa(
+    factory: RepositoryFactoryInterface,
+    entrada: EntradaPerfilPessoa,
+    atual?: Usuario | null,
+): Promise<DetalhesPessoa> {
+    const detalhes: DetalhesPessoa = {};
+    const copiar = [
+        "nomeExibicao",
+        "avatarUrl",
+        "telefone",
+        "linkedinUrl",
+        "calendarioUrl",
+        "githubUrl",
+        "curso",
+        "semestre",
+        "dataEntrada",
+        "bio",
+    ] as const;
+    for (const campo of copiar) {
+        if (entrada[campo] !== undefined) (detalhes as any)[campo] = entrada[campo];
+    }
+
+    if (entrada.codigoArea !== undefined) {
+        if (entrada.codigoArea) {
+            const area = await factory.criarAreaRepository().buscarPorCodigo(entrada.codigoArea);
+            if (!area) throw new ErroNaoEncontrado("Área não encontrada.");
+            detalhes.area = area;
+        } else {
+            detalhes.area = null;
+        }
+    }
+
+    if (entrada.codigoCargo !== undefined) {
+        if (entrada.codigoCargo) {
+            const cargo = await factory.criarCargoRepository().buscarPorCodigo(entrada.codigoCargo);
+            if (!cargo) throw new ErroNaoEncontrado("Cargo não encontrado.");
+            detalhes.cargo = cargo;
+        } else {
+            detalhes.cargo = null;
+        }
+    }
+
+    if (entrada.habilidades !== undefined) {
+        if (!Array.isArray(entrada.habilidades)) {
+            throw new ErroValidacao("Habilidades devem ser enviadas como lista.", "HABILIDADES_INVALIDAS");
+        }
+        if (entrada.habilidades.length > 40) {
+            throw new ErroValidacao("Informe no máximo 40 habilidades.", "HABILIDADES_DEMAIS");
+        }
+        const repositorio = factory.criarHabilidadeRepository();
+        const habilidades: Habilidade[] = [];
+        for (const item of entrada.habilidades) {
+            const nome = typeof item === "string" ? item : item?.nome;
+            const tipo = (typeof item === "string" ? undefined : item?.tipo) ?? TipoHabilidade.HABILIDADE;
+            if (!nome || !String(nome).trim()) continue;
+            const habilidade = await repositorio.garantir(String(nome), tipo);
+            if (!habilidades.some((h) => h.codigo === habilidade.codigo)) habilidades.push(habilidade);
+        }
+        detalhes.habilidades = habilidades;
+    }
+
+    if (entrada.tecnologias !== undefined) {
+        if (!Array.isArray(entrada.tecnologias)) {
+            throw new ErroValidacao("Envie as tecnologias como uma lista de nomes.", "TECNOLOGIAS_INVALIDAS");
+        }
+        if (entrada.tecnologias.length > 30) {
+            throw new ErroValidacao("Informe no máximo 30 tecnologias.", "TECNOLOGIAS_DEMAIS");
+        }
+        const repositorio = factory.criarHabilidadeRepository();
+        const base = (detalhes.habilidades ?? atual?.habilidades ?? []).filter((h) => h.tipo !== TipoHabilidade.TECNOLOGIA);
+        const tecnologias: Habilidade[] = [];
+        for (const nome of entrada.tecnologias) {
+            if (typeof nome !== "string" || !nome.trim()) continue;
+            const tecnologia = await repositorio.garantir(nome, TipoHabilidade.TECNOLOGIA);
+            if (!tecnologias.some((h) => h.codigo === tecnologia.codigo)) tecnologias.push(tecnologia);
+        }
+        detalhes.habilidades = [...base, ...tecnologias];
+    }
+
+    return detalhes;
+}
+
+export function lerStatusPessoa(valor: unknown): StatusPessoa | undefined {
+    if (valor === undefined || valor === null || valor === "") return undefined;
+    if (!Object.values(StatusPessoa).includes(valor as StatusPessoa)) {
+        throw new ErroValidacao("Status de pessoa inválido. Use ativo, trainee, alumni ou inativo.", "STATUS_PESSOA_INVALIDO");
+    }
+    return valor as StatusPessoa;
+}
