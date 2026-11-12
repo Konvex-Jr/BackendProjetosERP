@@ -7,6 +7,10 @@ export function pastaDosAnexos(): string {
     return path.resolve(process.env.ANEXOS_DIR || "anexos");
 }
 
+/**
+ * Anexos no disco da VPS, um arquivo por anexo, com o UUID como nome (o nome original fica só
+ * no banco). Assim o nome enviado pelo usuário nunca vira caminho no servidor.
+ */
 export default class ArmazenamentoAnexosDisco implements ArmazenamentoAnexosInterface {
     constructor(private readonly pasta: string = pastaDosAnexos()) {}
 
@@ -18,6 +22,7 @@ export default class ArmazenamentoAnexosDisco implements ArmazenamentoAnexosInte
 
     async salvar(arquivo: string, conteudo: Buffer): Promise<void> {
         await fs.mkdir(this.pasta, { recursive: true });
+        // "wx": falha se o arquivo já existir; um anexo gravado nunca é sobrescrito.
         await fs.writeFile(this.caminho(arquivo), conteudo, { flag: "wx" });
     }
 

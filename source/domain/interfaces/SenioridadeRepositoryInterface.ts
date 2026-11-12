@@ -1,5 +1,6 @@
 import SenioridadeUsuario from "../entity/SenioridadeUsuario";
 
+/** Senioridades (níveis da pessoa na EJ), cadastradas em Configurações. */
 export default interface SenioridadeRepositoryInterface {
     /** Em ordem crescente de senioridade. */
     listar(): Promise<SenioridadeUsuario[]>;

@@ -6,6 +6,7 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
 export const TAMANHO_MINIMO_SENHA = 6;
 
+/** Regra única de senha nova, usada também no cadastro de pessoas. */
 export function validarNovaSenha(senha: unknown): string {
     if (typeof senha !== "string" || senha.length < TAMANHO_MINIMO_SENHA) {
         throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENHA_CURTA, "SENHA_CURTA");

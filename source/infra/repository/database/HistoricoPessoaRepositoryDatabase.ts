@@ -7,6 +7,7 @@ import HistoricoPessoaRepositoryInterface, {
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 
+/** Histórico de cargo e área no PostgreSQL. Só INSERT e SELECT: o passado nunca é alterado (RN-02). */
 export default class HistoricoPessoaRepositoryDatabase implements HistoricoPessoaRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
 

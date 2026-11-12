@@ -12,6 +12,10 @@ const SELECT_DOCUMENTO = `
     FROM documentos
 `;
 
+/**
+ * Documentos no PostgreSQL. `arquivo_url` é o link do documento do tipo link; o de tipo arquivo
+ * tem os bytes num anexo (tabela anexos, dono "documento"), criado por GerirAnexos.
+ */
 export default class DocumentoRepositoryDatabase implements DocumentoRepositoryInterface {
     private readonly conexao: ConexaoBanco;
 

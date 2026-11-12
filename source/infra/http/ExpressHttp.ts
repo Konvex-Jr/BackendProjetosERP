@@ -24,23 +24,33 @@ export function responderErro(res: any, exception: any): void {
         res.status(exception.codigoHttp).json({ message: exception.message, codigo: exception.codigo });
         return;
     }
+    // Erros do driver `pg` trazem o campo `severity`; é assim que são reconhecidos.
     if (exception && typeof exception === "object" && "severity" in exception) {
         console.error(exception);
         res.status(500).json({ message: "Erro interno ao acessar o banco de dados." });
         return;
     }
+    // Qualquer outro erro (um `throw new Error` comum) vira 422 com a mensagem. Para 400/404/409,
+    // lance a classe certa de shared/erros.
     console.error(exception);
     res.status(422).json({ message: exception?.message ?? "Não foi possível concluir a operação." });
 }
 
+/**
+ * Única classe que conhece o Express. As rotas falam com a interface Http, então trocar de
+ * framework (ou subir um servidor de teste) não mexe nos módulos.
+ */
 export default class ExpressHttp implements Http {
     private readonly app: any;
     private server: any;
 
     constructor(private readonly auth: Auth) {
         this.app = express();
+        // JSON pequeno de propósito; arquivos não passam por aqui, e sim por receberArquivo (até 20 MB).
         this.app.use(express.json({ limit: "2mb" }));
         const origensPermitidas = origensCors();
+        // CORS feito à mão: só ecoa a origem se ela estiver na lista. Os cabeçalhos liberados incluem
+        // `access-token` (autenticação) e `X-Nome-Arquivo` (nome do arquivo nos uploads).
         this.app.use((req: any, res: any, next: any) => {
             const origem = req.headers.origin;
             if (origem && origensPermitidas.includes(origem)) {
@@ -59,6 +69,8 @@ export default class ExpressHttp implements Http {
         const ler = express.raw({ type: () => true, limit: opcoes.limiteBytes });
         return (req: any, res: any, next: any) => {
             const user = req.body?.user;
+            // O express.raw pula a leitura quando `_body` está marcado (marca que o express.json deixa
+            // ao ler um corpo); zerar garante que os bytes do arquivo sejam lidos aqui.
             req._body = false;
             ler(req, res, (erro: any) => {
                 if (erro) {
@@ -89,6 +101,8 @@ export default class ExpressHttp implements Http {
             try {
                 const result = await callback(req.params, req.body, req.query);
                 if (result instanceof RespostaArquivo) {
+                    // Sempre como download (attachment) e com nosniff: um arquivo enviado nunca é aberto
+                    // pelo navegador como página do sistema. Sem cache, porque o conteúdo depende de permissão.
                     res.setHeader("Content-Type", result.tipoMime);
                     res.setHeader("Content-Length", String(result.conteudo.length));
                     res.setHeader("X-Content-Type-Options", "nosniff");

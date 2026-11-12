@@ -17,6 +17,15 @@ import IniciativaRepositoryInterface from "./IniciativaRepositoryInterface";
 import AnexoRepositoryInterface from "./AnexoRepositoryInterface";
 import ArmazenamentoAnexosInterface from "./ArmazenamentoAnexosInterface";
 
+/**
+ * Ponto único de onde os casos de uso pegam os repositórios. Há duas implementações:
+ * DatabaseRepositoryFactory (PostgreSQL, em produção e nos testes de integração) e
+ * MemoryRepositoryFactory (listas em memória, nos testes rápidos, sem banco).
+ * Os casos de uso só conhecem esta interface, então rodam igual nas duas.
+ *
+ * Repositório novo: interface em domain/interfaces, uma versão em memória, uma em banco
+ * e um método `criar...` aqui e nas duas factories.
+ */
 export default interface RepositoryFactoryInterface {
     criarUsuarioRepository(): UsuarioRepositoryInterface;
     criarSenioridadeRepository(): SenioridadeRepositoryInterface;

@@ -66,7 +66,11 @@ export default class GerirAnexos {
         return { podeAlterar: podeAlterarIniciativa(usuario, item), semPermissao: MENSAGENS_DE_ERRO.INICIATIVA.SEM_PERMISSAO };
     }
 
-    /** Grava o arquivo e depois o registro; se o registro falhar, apaga o arquivo. */
+    /**
+     * Grava o arquivo e depois o registro; se o registro falhar, apaga o arquivo.
+     * Nessa ordem, uma falha no meio deixa no máximo um arquivo sem registro (que a conferência
+     * de anexos aponta), nunca um registro apontando para um arquivo que não existe.
+     */
     private async gravar(anexo: Anexo, conteudo: Buffer): Promise<Anexo> {
         await this.armazenamento.salvar(anexo.arquivo, conteudo);
         try {
@@ -121,6 +125,7 @@ export default class GerirAnexos {
         const documento = await documentos.criar(
             new Documento(pasta, nomeDocumento, arquivo.conteudo.length, new Date(), autor, null, extensaoDe(nomeArquivo) || null),
         );
+        // Se o anexo falhar, desfaz o documento, para não ficar um documento "arquivo" sem arquivo.
         try {
             const anexo = await this.gravar(this.novo(autenticado, DonoAnexo.DOCUMENTO, documento.codigo, arquivo), arquivo.conteudo);
             return Object.assign(documento, { anexo });
@@ -135,6 +140,7 @@ export default class GerirAnexos {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
         if (!anexo) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
+        // Sem acesso ao dono (ou dono apagado): responde como se o anexo não existisse.
         await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo).catch(() => {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });
@@ -152,6 +158,7 @@ export default class GerirAnexos {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);
+        // O documento do tipo arquivo não existe sem o arquivo: apagar o anexo apaga o documento.
         if (anexo.donoTipo === DonoAnexo.DOCUMENTO) {
             await this.excluirDosDonos(DonoAnexo.DOCUMENTO, [anexo.donoCodigo]);
             await this.factory.criarDocumentoRepository().excluir(anexo.donoCodigo);
@@ -161,6 +168,7 @@ export default class GerirAnexos {
         return { codigo };
     }
 
+    /** Registro primeiro, arquivo depois: se o disco falhar, sobra um arquivo órfão, não um link quebrado. */
     private async apagar(anexo: Anexo): Promise<void> {
         await this.anexos.excluir(anexo.codigo);
         await this.armazenamento.excluir(anexo.arquivo);

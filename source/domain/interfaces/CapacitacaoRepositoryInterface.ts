@@ -1,6 +1,7 @@
 import Capacitacao from "../entity/Capacitacao";
 import { Referencia } from "../entity/Conhecimento";
 
+/** Capacitações e suas inscrições (a lista de inscritos vem junto na entidade). */
 export default interface CapacitacaoRepositoryInterface {
     /** Ordenadas por data e hora. */
     listar(): Promise<Capacitacao[]>;

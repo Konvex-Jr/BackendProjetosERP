@@ -32,6 +32,10 @@ export type Permissao = (typeof Permissao)[keyof typeof Permissao];
 
 export const TODAS_AS_PERMISSOES: Permissao[] = Object.values(Permissao);
 
+/**
+ * Gerente: tudo o que o diretor faz, menos três ações que ficam só com a diretoria:
+ * gerir outros diretores, excluir projetos e editar as configurações.
+ */
 const DO_GESTOR: Permissao[] = [
     Permissao.PESSOAS_GERIR,
     Permissao.PROJETOS_VER_TODOS,
@@ -50,9 +54,15 @@ const DO_GESTOR: Permissao[] = [
 export const PERMISSOES_POR_PAPEL: Record<PerfilUsuario, readonly Permissao[]> = {
     [PerfilUsuario.DIRETOR]: TODAS_AS_PERMISSOES,
     [PerfilUsuario.GERENTE]: DO_GESTOR,
+    // Membro não tem ação do catálogo: o que ele pode fazer vem das regras por item
+    // (autor do item, responsável pela tarefa, participante do projeto...).
     [PerfilUsuario.MEMBRO]: [],
 };
 
+/**
+ * Ações liberadas para o papel. Papel desconhecido ou ausente recebe lista vazia (na dúvida,
+ * nega). Devolve uma cópia para quem chama não alterar o mapa por engano.
+ */
 export function permissoesDoPapel(perfil: PerfilUsuario | string | null | undefined): Permissao[] {
     return [...(PERMISSOES_POR_PAPEL[perfil as PerfilUsuario] ?? [])];
 }

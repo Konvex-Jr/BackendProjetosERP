@@ -27,6 +27,11 @@ import IniciativaRepositoryDatabase from "./database/IniciativaRepositoryDatabas
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
 import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
 
+/**
+ * Repositórios em PostgreSQL (produção e testes de integração). Cada chamada cria um repositório
+ * novo: eles não guardam estado, todos usam a mesma conexão (pool) e os dados ficam no banco.
+ * Repositório novo também precisa de um método em MemoryRepositoryFactory.
+ */
 export default class DatabaseRepositoryFactory implements RepositoryFactoryInterface {
     private readonly conexao: ConexaoBanco;
 
@@ -99,6 +104,7 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
     }
 
     criarArmazenamentoAnexos() {
+        // Os bytes ficam no disco (ANEXOS_DIR), não no banco; o banco guarda só o registro do anexo.
         return new ArmazenamentoAnexosDisco();
     }
 

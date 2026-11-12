@@ -18,10 +18,12 @@ export function projetosVisiveisPara(usuario: UsuarioAutenticado | undefined | n
     return podeVerTodosProjetos(autenticado) ? codigoUsuarioPedido : autenticado.codigo;
 }
 
+/** Só o que a regra precisa (tipo estrutural), para não depender da entidade Projeto inteira. */
 interface ProjetoComEquipe {
     participacoes: { usuario: { codigo: string } }[];
 }
 
+/** Olha todas as participações, inclusive as encerradas: quem saiu do projeto continua vendo o histórico. */
 export function participaOuParticipou(codigoUsuario: string, projeto: ProjetoComEquipe): boolean {
     return projeto.participacoes.some((p) => p.usuario.codigo === codigoUsuario);
 }

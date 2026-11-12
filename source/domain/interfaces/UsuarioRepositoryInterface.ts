@@ -8,6 +8,7 @@ export interface FiltroPessoas {
     busca?: string;
 }
 
+/** Pessoas da EJ (com ou sem acesso ao sistema). */
 export default interface UsuarioRepositoryInterface {
     criar(usuario: Usuario): Promise<Usuario | null>;
     listar(filtro?: FiltroPessoas): Promise<Usuario[]>;

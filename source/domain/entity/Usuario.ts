@@ -78,6 +78,7 @@ export default class Usuario {
         this.perfil = perfil;
         this.senha = senha;
         this.senioridade = senioridade;
+        // O status manda; o parâmetro `ativo` só decide quando o status não é informado.
         this.status = detalhes.status ?? (ativo ? StatusPessoa.ATIVO : StatusPessoa.INATIVO);
         this.ativo = STATUS_COM_ACESSO.includes(this.status);
         this.naEj = STATUS_NA_EJ.includes(this.status);
@@ -183,6 +184,7 @@ export default class Usuario {
             throw new ErroValidacao("Status de pessoa inválido.", "STATUS_PESSOA_INVALIDO");
         }
 
+        // Só o membro é obrigado a ter senioridade; gerente e diretor podem ficar sem.
         if (this.perfil === PerfilUsuario.MEMBRO && !this.senioridade) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
         }

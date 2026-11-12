@@ -13,6 +13,7 @@ export interface FiltrosConhecimento {
     ate?: Date;
 }
 
+/** Itens da Base de Inteligência. Permissões ficam em shared/seguranca/regrasConhecimento.ts. */
 export default interface ConhecimentoRepositoryInterface {
     criar(item: Conhecimento): Promise<Conhecimento>;
     /** Mais recentes primeiro (data do item, depois criação). */

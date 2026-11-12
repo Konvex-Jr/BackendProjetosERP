@@ -60,6 +60,7 @@ export default class Capacitacao {
 
     /** Instante de início (data + hora de São Paulo). */
     get inicio(): Date {
+        // Converte a hora de São Paulo para UTC (18:30 em UTC-3 = 21:30 UTC), sem depender do fuso do servidor.
         const [h, m] = this.hora.split(":").map(Number);
         return new Date(this.data.getTime() + ((h - FUSO_KONVEX_HORAS) * 60 + m) * 60_000);
     }
@@ -109,6 +110,7 @@ export default class Capacitacao {
             !Number.isFinite(this.duracaoHoras) ||
             this.duracaoHoras < 0.5 ||
             this.duracaoHoras > 24 ||
+            // No máximo uma casa decimal (1,5 h sim; 1,25 h não).
             Math.round(this.duracaoHoras * 10) !== this.duracaoHoras * 10
         ) {
             erro(M.DURACAO_INVALIDA, "DURACAO_CAPACITACAO_INVALIDA");
@@ -118,6 +120,7 @@ export default class Capacitacao {
         if (!this.sala) erro(M.SALA_OBRIGATORIA, "SALA_CAPACITACAO_OBRIGATORIA");
         if (this.sala.length > 60) erro(M.SALA_LONGA, "SALA_CAPACITACAO_LONGA");
         if (!this.instrutor?.codigo) erro(M.INSTRUTOR_OBRIGATORIO, "INSTRUTOR_OBRIGATORIO");
+        // Ao editar, não dá para reduzir as vagas abaixo do número de quem já se inscreveu.
         if (this.inscricoes.length > this.vagas) erro(M.VAGAS_MENOR_QUE_INSCRITOS, "VAGAS_MENOR_QUE_INSCRITOS");
     }
 }

@@ -6,6 +6,7 @@ import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 
+// Nome mostrado da pessoa: o de exibição, quando preenchido; senão o nome completo.
 const NOME = "COALESCE(NULLIF(u.nome_exibicao, ''), u.nome)";
 
 const SELECT = `
@@ -49,6 +50,11 @@ const valores = (c: Capacitacao) => [
     c.sala,
 ];
 
+/**
+ * Capacitações e inscrições no PostgreSQL. As buscas por código comparam como texto
+ * (`codigo::text = $1`): um código que não é UUID só não acha nada (404), em vez de dar
+ * erro de conversão no PostgreSQL (500).
+ */
 export default class CapacitacaoRepositoryDatabase implements CapacitacaoRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
 
