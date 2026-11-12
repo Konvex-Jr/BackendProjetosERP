@@ -9,7 +9,7 @@ Processo usado hoje em `erp.konvexjr.com.br`. Siga na ordem. O deploy automatiza
   - `konvex-db`: PostgreSQL 17, banco `konvex_gestao`.
   - `konvex-backend`: porta 5001. O Traefik encaminha `erp.konvexjr.com.br/api` para ele, tirando o `/api` do caminho.
   - `konvex-frontend`: nginx com o build do Vite (`VITE_API_URL=/api`).
-  - `konvex-generate-keys`: roda `backend/generate-keys.js` (arquivo só da VPS, fora do git) e mantém as chaves JWT.
+  - `konvex-generate-keys`: serviço `generate-keys` do compose. Roda `source/scripts/gerarChaves.js` (versionado) só se as chaves JWT ainda não existirem e termina.
 - As chaves `backend/private.key` e `backend/public.key` ficam montadas no container. Não apague: sem elas, todo mundo é deslogado.
 - O backend aplica as migrações (`migrations/`) sozinho ao iniciar.
 - **Anexos (desde a sessão 12c):** os arquivos enviados ficam em `/docker/erp-konvex/anexos`, montada no container como `/app/anexos` (variável `ANEXOS_DIR`). O banco guarda só os dados de cada arquivo. **Banco e pasta andam juntos no backup.**
@@ -30,14 +30,17 @@ cp docker-compose.yml docker-compose.yml.bak-antes-versionado
 cp backend/deploy/docker-compose.prod.yml docker-compose.yml
 docker compose config >/dev/null && echo "compose ok"
 docker compose config | grep -E "POSTGRES_DB|certresolver|erp-konvex_konvex_postgres_data|name: erp-konvex_internal"
-# 4. subir (o banco pode reiniciar por alguns segundos; os dados ficam no volume)
+# 4. construir antes de subir: o "up" sozinho reaproveita as imagens que já existem
+#    (montadas com o código antigo). Assim um erro de build aparece aqui, com tudo ainda no ar
+docker compose build backend frontend
+# 5. subir (o banco pode reiniciar por alguns segundos; os dados ficam no volume)
 docker compose up -d
 docker logs konvex-backend 2>&1 | tail -5                 # "API disponível na porta 5001"
 curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
 curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/                       # 200
 ```
 - **Deu errado?** `cp docker-compose.yml.bak-antes-versionado docker-compose.yml && docker compose up -d`.
-- **Deu certo?** Entre no sistema, abra um anexo e então apague o script antigo: `rm backend/generate-keys.js` (as chaves agora vêm do serviço `generate-keys`, que só gera se faltarem).
+- **Deu certo?** Entre no sistema, abra um anexo e então apague o script antigo: `rm backend/generate-keys.js` (as chaves agora vêm do serviço `generate-keys`, que só gera se faltarem). Depois disso, `git -C backend status --short` e `git -C frontend status --short` têm que sair **vazios**.
 - **Daqui em diante:** o `docker-compose.yml` da VPS é uma **cópia**. Quando um PR mudar `deploy/docker-compose.prod.yml`, depois do `git pull` rode `diff docker-compose.yml backend/deploy/docker-compose.prod.yml` e copie de novo (com `.bak`).
 
 ## 0. Volume dos anexos (uma vez, na publicação da 12c)
@@ -97,10 +100,11 @@ docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "
 ```bash
 cd /docker/erp-konvex
 git -C backend pull --ff-only && git -C frontend pull --ff-only
-git -C backend status --short          # só deve aparecer "?? generate-keys.js"
+git -C backend status --short && git -C frontend status --short   # têm que sair vazios
 docker compose build backend frontend && docker compose up -d backend frontend
 docker logs konvex-backend 2>&1 | tail -20
 ```
+- [ ] Os dois `git status` saíram vazios. Se aparecer algum arquivo, pare e descubra de onde veio antes de seguir: alguém editou um arquivo na VPS (ou sobrou o `generate-keys.js`, que já devia ter sido apagado na adoção do compose). As chaves (`*.key`) estão no `.gitignore` e não aparecem.
 - [ ] No log aparecem as migrações (`Migração aplicada: ...` ou `Banco já está atualizado.`) e `API disponível na porta 5001`.
 - [ ] `curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes` devolve `401` (API no ar, pedindo login).
 - [ ] Se `generate-keys` falhar com `network ... not found`, rode `docker rm -f konvex-generate-keys` e suba de novo.
@@ -187,7 +191,6 @@ docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
-- `backend/generate-keys.js`: usado pelo container `konvex-generate-keys`; fora do git.
 
 ## Segurança: porta do banco
 O banco não deve ficar aberto para a internet. No `docker-compose.yml`, o serviço do banco deve publicar só para a própria VPS:
@@ -223,4 +226,5 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 
 ## O que não existe mais
 - Upload antigo (`/pastas/:codigo/documentos/upload` e `/uploads/:arquivo`, que gravava dentro do container e sem sigilo): saiu na sessão 9. Desde a 12c, os anexos usam `/anexos` e a pasta `anexos/` (volume).
+- `backend/generate-keys.js`: o script que vivia só na VPS, fora do git. Desde a adoção do compose versionado (sessão 14b), as chaves JWT vêm do serviço `generate-keys`, que roda o `source/scripts/gerarChaves.js` do repositório. Se o arquivo ainda estiver na VPS, apague (`rm backend/generate-keys.js`).
 - Check-ins (`/checkins`): retirados na sessão 9. A tabela `checkins` foi apagada pela migração `010_remover_checkins.sql` (sessão 14a); os registros antigos ficam só nos backups anteriores.
