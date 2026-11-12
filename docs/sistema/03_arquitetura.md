@@ -1,6 +1,6 @@
 # Arquitetura do sistema real (novembro de 2026)
 
-> Descreve o que está em produção em https://erp.konvexjr.com.br. Ver ADR-009: o código é a referência.
+> Descreve o que está em produção em https://erp.konvexjr.com.br. Ver ADR-009: o código é a referência. Revisão de arquitetura e dívida técnica: [05_revisao_arquitetura.md](05_revisao_arquitetura.md).
 
 ## Visão geral
 Monólito modular com API REST, um banco PostgreSQL e um frontend React servido à parte. Sem fila, sem agendador, sem integrações externas por enquanto.
