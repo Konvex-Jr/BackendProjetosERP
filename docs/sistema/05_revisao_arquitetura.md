@@ -109,6 +109,13 @@ flowchart LR
 - **`components.css` com 1.469 linhas.** Dividir por componente quando alguém mexer pesado no visual.
 - **Páginas grandes** (`Capacitacoes.jsx` 325 linhas, `Precificacao.jsx` 270). Extrair partes quando forem alteradas.
 - **Testes só em `lib/`.** As telas são cobertas pelo levantamento no navegador (`npm run e2e`), que ainda roda à mão (fase 5 leva para o CI).
+- **Achados da leitura do código (sessão extra 2), a corrigir em PRs próprios:**
+  - O progresso do projeto (`prog` em `lib/utils.js`) é calculado sobre as tarefas carregadas; para o membro, que só recebe as próprias, o % difere do que a gestão vê.
+  - Calendário de capacitações abre no mês de `new Date().toISOString()` (UTC): no último dia do mês, depois das 21h, abre no mês seguinte.
+  - `useCarregar` não ignora respostas antigas: com filtros mudando rápido (Base, Iniciativas), uma resposta lenta pode sobrescrever a lista.
+  - "Hoje" (`D.c.hoje`) só é recalculado no login, no F5 ou depois de salvar; aba aberta de um dia para o outro mostra atrasos do dia anterior.
+  - Código sem uso: `nid` e `semana` em `lib/utils.js`; `NAV` só serve para o `path` (o menu vem da API).
+  - `FormModal`: select sem valor inicial mostra a primeira opção, mas o valor fica vazio até a pessoa trocar (as telas atuais passam valor inicial).
 - **React 19 e Vite 8** disponíveis; atualizar em sessão própria.
 
 ## 4. Convenções que esta revisão confirma
