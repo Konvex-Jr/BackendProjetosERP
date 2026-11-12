@@ -17,13 +17,28 @@ Processo usado hoje em `erp.konvexjr.com.br`. Siga na ordem. O deploy automatiza
 ## Compose versionado (desde a sessão 14a)
 O compose da VPS agora tem uma versão guardada no git: `deploy/docker-compose.prod.yml` (modelo do `.env` em `deploy/.env.prod.example`). Ele já traz o volume dos anexos, os `ADMIN_*` repassados ao backend e a geração das chaves JWT sem o `generate-keys.js` que vivia só na VPS.
 
-**Adotar na VPS (uma vez, com calma):** compare antes de trocar. O ponto crítico é o volume do banco: o arquivo versionado usa um volume **externo** com o nome de `DB_VOLUME` no `.env`, para nunca criar um banco vazio por engano.
+**Adotar na VPS (uma vez, sessão 14b).** O arquivo versionado já usa os nomes reais da VPS: volume `erp-konvex_konvex_postgres_data`, rede `internal`, certresolver `letsencrypt`, router `erp`/serviço `erp-frontend` do frontend e o banco lido de `DATABASE` (o `.env` atual serve sem mudanças). O volume do banco é **externo**: se o nome estiver errado, o `up` para com erro em vez de criar um banco vazio.
 ```bash
 cd /docker/erp-konvex
-docker volume ls | grep -i -E "konvex|erp|postgres"     # nome do volume do banco
-diff docker-compose.yml backend/deploy/docker-compose.prod.yml
+# 1. backup do banco e dos anexos (seção 3)
+# 2. conferir o volume do banco; se for outro nome, ele vai para o .env
+VOL=$(docker inspect konvex-db --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}'); echo "volume: $VOL"
+[ "$VOL" = erp-konvex_konvex_postgres_data ] || echo "DB_VOLUME=$VOL" >> .env
+# 3. trocar, guardando o antigo
+git -C backend pull --ff-only
+cp docker-compose.yml docker-compose.yml.bak-antes-versionado
+cp backend/deploy/docker-compose.prod.yml docker-compose.yml
+docker compose config >/dev/null && echo "compose ok"
+docker compose config | grep -E "POSTGRES_DB|certresolver|erp-konvex_konvex_postgres_data|name: erp-konvex_internal"
+# 4. subir (o banco pode reiniciar por alguns segundos; os dados ficam no volume)
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -5                 # "API disponível na porta 5001"
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/                       # 200
 ```
-Só troque (`cp backend/deploy/docker-compose.prod.yml docker-compose.yml`, com cópia `.bak` antes) depois de conferir no diff: nome do volume, variáveis do `.env`, labels do Traefik (nomes dos routers e o `certresolver`) e portas. Valide com `docker compose config` antes do `up`.
+- **Deu errado?** `cp docker-compose.yml.bak-antes-versionado docker-compose.yml && docker compose up -d`.
+- **Deu certo?** Entre no sistema, abra um anexo e então apague o script antigo: `rm backend/generate-keys.js` (as chaves agora vêm do serviço `generate-keys`, que só gera se faltarem).
+- **Daqui em diante:** o `docker-compose.yml` da VPS é uma **cópia**. Quando um PR mudar `deploy/docker-compose.prod.yml`, depois do `git pull` rode `diff docker-compose.yml backend/deploy/docker-compose.prod.yml` e copie de novo (com `.bak`).
 
 ## 0. Volume dos anexos (uma vez, na publicação da 12c)
 Faça uma cópia do compose e acrescente no serviço `backend` do `docker-compose.yml`:
