@@ -16,7 +16,8 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-konvex_gestao}
+      # O .env da VPS usa DATABASE (não DB_NAME); os dois nomes funcionam.
+      POSTGRES_DB: ${DB_NAME:-${DATABASE:-konvex_gestao}}
     volumes:
       - dados_banco:/var/lib/postgresql/data
     ports:
@@ -26,7 +27,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    networks: [interna]
+    networks: [internal]
 
   # Gera as chaves JWT só se ainda não existirem (antes era o generate-keys.js que vivia só na VPS).
   generate-keys:
@@ -56,18 +57,20 @@ services:
       DB_PORT: 5432
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DATABASE: ${DB_NAME:-konvex_gestao}
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:-konvex_gestao}
+      DATABASE: ${DB_NAME:-${DATABASE:-konvex_gestao}}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:-${DATABASE:-konvex_gestao}}
       # Só usados por "npm run seed:admin" (primeiro diretor num banco vazio).
       ADMIN_NAME: ${ADMIN_NAME:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     labels:
+      # O certresolver da VPS se chama "letsencrypt". O certificado é por domínio, então
+      # o router da API pode ter nome próprio sem pedir certificado novo.
       - traefik.enable=true
       - traefik.docker.network=traefik-public
       - traefik.http.routers.konvex-api.rule=Host(`${DOMINIO:-erp.konvexjr.com.br}`) && PathPrefix(`/api`)
       - traefik.http.routers.konvex-api.entrypoints=websecure
-      - traefik.http.routers.konvex-api.tls.certresolver=${CERT_RESOLVER:-letsencryptresolver}
+      - traefik.http.routers.konvex-api.tls.certresolver=${CERT_RESOLVER:-letsencrypt}
       - traefik.http.routers.konvex-api.middlewares=konvex-api-strip
       - traefik.http.middlewares.konvex-api-strip.stripprefix.prefixes=/api
       - traefik.http.services.konvex-api.loadbalancer.server.port=5001
@@ -75,11 +78,12 @@ services:
       - ./anexos:/app/anexos   # arquivos anexados: entram no backup junto com o banco
       - ./backend/private.key:/app/private.key:ro
       - ./backend/public.key:/app/public.key:ro
-    networks: [interna, traefik-public]
+    networks: [internal, traefik-public]
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
     container_name: konvex-frontend
@@ -88,18 +92,30 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
-      - traefik.http.routers.konvex-web.rule=Host(`${DOMINIO:-erp.konvexjr.com.br}`)
-      - traefik.http.routers.konvex-web.entrypoints=websecure
-      - traefik.http.routers.konvex-web.tls.certresolver=${CERT_RESOLVER:-letsencryptresolver}
-      - traefik.http.services.konvex-web.loadbalancer.server.port=80
-    networks: [traefik-public]
+      # Router "erp" e serviço "erp-frontend": mesmos nomes do compose que já rodava na VPS,
+      # para a troca não mudar nada no Traefik.
+      - traefik.http.routers.erp.rule=Host(`${DOMINIO:-erp.konvexjr.com.br}`)
+      - traefik.http.routers.erp.entrypoints=websecure
+      - traefik.http.routers.erp.tls=true
+      - traefik.http.routers.erp.tls.certresolver=${CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.erp.service=erp-frontend
+      - traefik.http.services.erp-frontend.loadbalancer.server.port=80
+    expose:
+      - "80"
+    networks: [internal, traefik-public]
 
 volumes:
   dados_banco:
-    name: ${DB_VOLUME:-konvex_db_data}
+    # Na VPS o volume nasceu da chave "konvex_postgres_data" do projeto "erp-konvex",
+    # por isso o nome real é erp-konvex_konvex_postgres_data. Confira antes de adotar:
+    #   docker inspect konvex-db --format '{{range .Mounts}}{{.Name}}{{end}}'
+    name: ${DB_VOLUME:-erp-konvex_konvex_postgres_data}
     external: true   # o volume do banco já existe na VPS: nunca criar um vazio por engano
 
 networks:
-  interna:
+  # "internal" (e não "interna"): mesmo nome da VPS, então a rede continua erp-konvex_internal.
+  internal:
+    driver: bridge
   traefik-public:
-    external: true
+    name: traefik-public
+    external: true   # criada pelo Traefik (evolution-traefik)
