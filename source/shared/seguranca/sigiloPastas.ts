@@ -17,6 +17,7 @@ export function podeVerPasta(usuario: UsuarioAutenticado, pasta: Pasta, meusProj
     if (podeVerTodasPastas(usuario)) return true;
     if (pasta.sigilo === SigiloPasta.TODOS) return true;
     if (pasta.sigilo === SigiloPasta.PROJETO) return !!pasta.projeto && meusProjetos.has(pasta.projeto.codigo);
+    // Sigilo "gestao" (ou qualquer valor desconhecido): só quem passou na primeira checagem.
     return false;
 }
 
@@ -44,5 +45,6 @@ export async function exigirVerPasta(
 ): Promise<Pasta> {
     const autenticado = exigirAutenticado(usuario);
     if (pasta && podeVerPasta(autenticado, pasta, await projetosDoUsuario(autenticado, factory))) return pasta;
+    // 404, e não 403: quem não pode ler a pasta não deve nem saber que ela existe.
     throw new ErroNaoEncontrado("Pasta não encontrada.");
 }

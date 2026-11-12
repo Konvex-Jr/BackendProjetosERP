@@ -28,6 +28,7 @@ export default class RenovarSessao {
         }
 
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(registro.codigoUsuario);
+        // Revoga antes de conferir a pessoa: o token usado não vale de novo em nenhum caso.
         await tokens.revogar(registro.codigo);
         if (!usuario || !usuario.ativo) throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
 

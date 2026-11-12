@@ -1,5 +1,6 @@
 import Documento from "../entity/Documento";
 
+/** Documentos das pastas (link ou arquivo). O sigilo é da pasta, conferido em sigiloPastas. */
 export default interface DocumentoRepositoryInterface {
     criar(documento: Documento): Promise<Documento>;
     listarPorPasta(codigoPasta: string): Promise<Documento[]>;

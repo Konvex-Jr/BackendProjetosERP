@@ -1,5 +1,8 @@
 import { ErroValidacao } from "./erros/ErroValidacao";
 
+// Leitores dos valores que chegam da API (corpo ou query string). Entrada inválida vira
+// ErroValidacao (400) com o nome do campo, nunca um 500 lá na frente.
+
 /**
  * Lê uma data vinda da API ("2026-10-29" ou ISO completo) como meia-noite UTC.
  * Vazio vira null; texto inválido gera erro de validação.
@@ -13,6 +16,7 @@ export function lerData(valor: unknown, campo = "data"): Date | null {
     if (Number.isNaN(data.getTime())) {
         throw new ErroValidacao(`O campo ${campo} deve ser uma data válida.`, "DATA_INVALIDA");
     }
+    // Descarta a hora: no sistema, data sem hora é sempre meia-noite UTC (ver conversoes.ts e PgConexao.ts).
     return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));
 }
 
@@ -29,6 +33,7 @@ export function lerLista(valor: unknown): string[] {
     return lista.map((item) => String(item).trim()).filter(Boolean);
 }
 
+/** Número vindo da API (aceita texto numérico da query string). Não exige inteiro, apesar do nome. */
 export function lerInteiro(valor: unknown, campo: string): number | undefined {
     if (valor === undefined || valor === null || valor === "") return undefined;
     const numero = Number(valor);

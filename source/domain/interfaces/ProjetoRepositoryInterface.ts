@@ -9,6 +9,7 @@ export interface FiltroProjetos {
     busca?: string;
 }
 
+/** Projetos com a equipe (participações). Não aplica permissão: quem decide o que a pessoa vê é visibilidadeProjetos. */
 export default interface ProjetoRepositoryInterface {
     criar(projeto: Projeto): Promise<Projeto>;
     listar(filtro?: FiltroProjetos): Promise<Projeto[]>;

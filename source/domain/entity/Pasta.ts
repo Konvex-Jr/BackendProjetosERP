@@ -9,6 +9,10 @@ export interface ProjetoDaPasta {
     nome: string;
 }
 
+/**
+ * Pasta de documentos. O sigilo vale para a pasta inteira (ver SigiloPasta); o projeto só é
+ * guardado quando o sigilo é "projeto" e é descartado nos demais.
+ */
 export default class Pasta {
     readonly codigo: string;
     readonly nome: string;

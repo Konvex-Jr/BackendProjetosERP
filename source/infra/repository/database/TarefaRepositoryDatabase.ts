@@ -15,6 +15,10 @@ const SELECT_TAREFA = `
     FROM tarefas
 `;
 
+/**
+ * Tarefas no PostgreSQL. Responsáveis e checklist ficam em tabelas próprias e são regravados
+ * por inteiro a cada edição (apaga e insere de novo, na mesma transação).
+ */
 export default class TarefaRepositoryDatabase implements TarefaRepositoryInterface {
     private readonly conexao: ConexaoBanco;
 
@@ -152,6 +156,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             return [];
         }
 
+        // A entidade Tarefa guarda a predecessora inteira (dependeDe), não só o código. Por isso
+        // a busca segue em ondas: cada volta traz as predecessoras que ainda não foram lidas.
         const linhas = new Map<string, any>();
         let pendentes = [...new Set(codigos)];
 
@@ -195,6 +201,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             ...[...linhas.values()].map((l) => l.criada_por_codigo).filter(Boolean),
         ]);
 
+        // Cache: várias tarefas podem depender da mesma predecessora, que é montada uma vez só.
         const construidas = new Map<string, Tarefa>();
 
         const construir = (codigo: string): Tarefa => {

@@ -1,5 +1,6 @@
 import ArmazenamentoAnexosInterface from "../../domain/interfaces/ArmazenamentoAnexosInterface";
 
+/** Versão em memória, para os testes. Guarda uma cópia dos bytes, como o disco faria. */
 export default class ArmazenamentoAnexosMemoria implements ArmazenamentoAnexosInterface {
     readonly arquivos = new Map<string, Buffer>();
 

@@ -1,6 +1,7 @@
 import Anexo from "../entity/Anexo";
 import { DonoAnexo } from "../enum/Anexo";
 
+/** Registros dos anexos (dono, nome, tamanho). Os bytes ficam no ArmazenamentoAnexosInterface. */
 export default interface AnexoRepositoryInterface {
     criar(anexo: Anexo): Promise<Anexo>;
     buscarPorCodigo(codigo: string): Promise<Anexo | null>;

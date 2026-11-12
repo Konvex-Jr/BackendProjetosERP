@@ -12,6 +12,16 @@ import Cargo from "../../../domain/entity/Cargo";
 import Habilidade from "../../../domain/entity/Habilidade";
 import Participacao from "../../../domain/entity/Participacao";
 
+/**
+ * Funções compartilhadas pelos repositórios em banco para montar pessoas e projetos.
+ * Carregam em lote (`WHERE codigo = ANY($1)`), para uma lista de cem itens custar poucas
+ * consultas, e não uma por item (o problema "N+1").
+ */
+
+/**
+ * SELECT base de pessoa, já com senioridade, área, cargo e habilidades. As habilidades vêm
+ * agregadas em JSON por subconsulta, para não repetir a linha da pessoa a cada habilidade.
+ */
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
            u.nome_exibicao, u.avatar_url, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.semestre,
@@ -72,6 +82,7 @@ export function usuarioDeLinha(linha: any): Usuario {
     });
 }
 
+/** Pessoas pelos códigos, num Map por código. Códigos repetidos são consultados uma vez só. */
 export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Usuario>> {
     const usuarios = new Map<string, Usuario>();
     const lista = unicos(codigos);
@@ -86,6 +97,10 @@ export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[])
     return usuarios;
 }
 
+/**
+ * Projetos com área, equipe (todas as participações, inclusive encerradas), responsável e líder.
+ * São três consultas no total, seja um projeto ou cem: projetos, participações e pessoas.
+ */
 export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Projeto>> {
     const projetos = new Map<string, Projeto>();
     const lista = unicos(codigos);

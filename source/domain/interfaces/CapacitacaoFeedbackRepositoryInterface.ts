@@ -5,6 +5,7 @@ export interface ResumoAvaliacao {
     total: number;
 }
 
+/** Avaliações de capacitações: no máximo uma por pessoa em cada capacitação. */
 export default interface CapacitacaoFeedbackRepositoryInterface {
     /** Cria ou substitui a avaliação da pessoa nesta capacitação. */
     salvar(feedback: CapacitacaoFeedback): Promise<CapacitacaoFeedback>;

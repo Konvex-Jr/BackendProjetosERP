@@ -21,6 +21,10 @@ export interface DetalhesProjeto {
     lider?: Usuario | null;
 }
 
+/**
+ * Projeto da EJ com a equipe. Participações nunca são apagadas, só encerradas com data de saída,
+ * para guardar o histórico de quem passou pelo projeto (e manter o acesso de quem participou).
+ */
 export default class Projeto {
     readonly codigo: string;
     readonly nome: string;

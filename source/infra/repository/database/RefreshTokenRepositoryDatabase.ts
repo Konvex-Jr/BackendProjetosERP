@@ -1,6 +1,10 @@
 import RefreshTokenRepositoryInterface, { RegistroRefreshToken } from "../../../domain/interfaces/RefreshTokenRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 
+/**
+ * Refresh tokens no PostgreSQL. Nada é apagado, só marcado como revogado: RenovarSessao precisa
+ * reconhecer um token já usado para perceber que ele pode ter vazado.
+ */
 export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
 

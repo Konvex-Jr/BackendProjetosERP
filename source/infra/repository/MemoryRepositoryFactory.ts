@@ -26,6 +26,12 @@ import HistoricoPessoaRepositoryMemory from "./memory/HistoricoPessoaRepositoryM
 import RefreshTokenRepositoryMemory from "./memory/RefreshTokenRepositoryMemory";
 import ComentarioTarefaRepositoryMemory from "./memory/ComentarioTarefaRepositoryMemory";
 
+/**
+ * Repositórios em memória, para os testes rodarem rápido e sem PostgreSQL. Ao contrário da
+ * versão em banco, cada repositório é criado uma vez e devolvido sempre o mesmo: é a instância
+ * que guarda os dados, então todos os casos de uso de um teste precisam enxergar a mesma.
+ * Uma factory nova = banco vazio (cada teste cria a sua).
+ */
 export default class MemoryRepositoryFactory implements RepositoryFactoryInterface {
     private readonly usuarioRepository: UsuarioRepositoryInterface;
     private readonly senioridadeRepository: SenioridadeRepositoryInterface;
@@ -88,6 +94,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly conhecimentoRepository = new ConhecimentoRepositoryMemory();
     private readonly iniciativaRepository = new IniciativaRepositoryMemory();
     private readonly anexoRepository = new AnexoRepositoryMemory();
+    /** Público para os testes conferirem quais arquivos foram gravados ou apagados. */
     readonly armazenamentoAnexos = new ArmazenamentoAnexosMemoria();
 
     criarAnexoRepository() {

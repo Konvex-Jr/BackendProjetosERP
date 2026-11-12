@@ -11,11 +11,19 @@ export { Permissao } from "./catalogoPermissoes";
  */
 export interface UsuarioAutenticado {
     codigo: string;
+    /**
+     * Lido do banco a cada requisição (ver AuthExpress), não do token: mudar o papel
+     * de alguém vale já na próxima chamada, sem esperar o token expirar.
+     */
     perfil: PerfilUsuario | string;
 }
 
 const MENSAGEM_PADRAO = "Você não tem permissão para fazer esta alteração.";
 
+/**
+ * 401 se não houver pessoa logada. As rotas com login já passam pelo middleware; esta checagem
+ * garante que o caso de uso também não rode sem pessoa quando chamado de outro lugar (ex.: testes).
+ */
 export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null): UsuarioAutenticado {
     if (!usuario || !usuario.codigo) {
         throw new ErroNaoAutorizado();
@@ -23,10 +31,12 @@ export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null
     return usuario;
 }
 
+/** Versão que não lança erro: serve para montar os booleanos das respostas (podeGerir, podeAlterar...). */
 export function temPermissao(usuario: UsuarioAutenticado | undefined | null, permissao: Permissao): boolean {
     return !!usuario && permissoesDoPapel(usuario.perfil).includes(permissao);
 }
 
+/** 401 sem pessoa logada; 403 (com a mensagem informada) se o papel não tiver a ação. */
 export function exigirPermissao(
     usuario: UsuarioAutenticado | undefined | null,
     permissao: Permissao,

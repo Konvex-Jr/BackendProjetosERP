@@ -1,3 +1,8 @@
+/**
+ * Base dos erros esperados (regra de negócio, validação, permissão). O ExpressHttp responde com
+ * `codigoHttp`, a mensagem e o `codigo` (texto fixo, como "SENHA_CURTA", que o frontend pode testar).
+ * Qualquer erro que não seja desta família vira 422 ou 500 (ver responderErro).
+ */
 export class ErroAplicacao extends Error {
     constructor(
         mensagem: string,
@@ -8,6 +13,8 @@ export class ErroAplicacao extends Error {
 
         this.name = this.constructor.name;
 
+        // Mantém `instanceof ErroValidacao` (etc.) funcionando mesmo se o alvo de compilação
+        // voltar a ES5, em que subclasses de Error perdem o protótipo (hoje é es2016).
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }

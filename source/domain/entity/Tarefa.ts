@@ -9,6 +9,11 @@ import PrioridadeTarefa from "../enum/PrioridadeTarefa";
 import CategoriaTarefa, { ehCategoriaTarefa } from "../enum/CategoriaTarefa";
 import { Referencia } from "./Conhecimento";
 
+/**
+ * Tarefa de projeto ou avulsa: tem projeto ou categoria, nunca os dois. Como as outras entidades,
+ * é imutável e se valida no construtor; mudar algo gera uma cópia (comStatus, semDependencia...).
+ * Quem pode ver e alterar fica em shared/seguranca/regrasTarefa.ts.
+ */
 export default class Tarefa {
     readonly codigo: string;
     /** Projeto da tarefa; nulo na tarefa avulsa (sessão 8c), que tem `categoria`. */
@@ -62,6 +67,7 @@ export default class Tarefa {
         this.dependeDe = dependeDe;
         this.responsaveis = responsaveis;
         this.checklist = checklist;
+        // Reabrir a tarefa apaga quem concluiu.
         this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
         this.categoria = categoria ?? null;
         this.criadaPor = criadaPor;
