@@ -18,7 +18,7 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 |---|---|
 | Backend | Node 24, Express, TypeScript, SQL direto com `pg` (sem ORM), Jest |
 | Frontend | React 18 em JavaScript, Vite, Bootstrap, `HashRouter`, testes com `node --test` |
-| Banco | PostgreSQL 17; migrações SQL numeradas em `migrations/`, aplicadas pelo backend ao iniciar |
+| Banco | PostgreSQL 17; migrações SQL numeradas em `migrations/`, aplicadas por `scripts/migrar.js` antes de a API subir (CMD do Dockerfile) |
 | Autenticação | JWT (RS256, chaves `private.key`/`public.key`) de 15 min + refresh token de 7 dias guardado com hash |
 | Arquivos | Disco da VPS (`ANEXOS_DIR`), até 20 MB por arquivo |
 | Infra | Docker Compose na VPS, Traefik para HTTPS, backup manual com `pg_dump` + `tar` |

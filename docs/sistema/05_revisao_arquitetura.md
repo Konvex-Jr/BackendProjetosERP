@@ -82,6 +82,14 @@ flowchart LR
 - **`any` nas rotas.** A assinatura `Http.route(..., callback: any)` espalha `any` por todas as rotas. Tipar o callback (`(params, body, query) => Promise<unknown>`) reduziria quase todos os 229 usos. A regra `no-explicit-any` fica desligada no lint até isso ser feito.
 - **Helpers repetidos.** `lerTexto` (SalvarConhecimento), `texto`/`lista` (SalvarIniciativa) e `texto` (IniciativaRoutes) fazem quase o mesmo, mas com diferenças de `trim`. Consolidar em `shared/entradas.ts` exige cuidado com essas diferenças.
 - **Listagens que carregam tudo e filtram em memória** (ex.: `tarefasDaIniciativa`, pastas do projeto no `ExcluirProjeto`). Ok para o volume atual (dezenas de pessoas, centenas de itens); revisitar se alguma tela ficar lenta.
+- **Achados da leitura do código (sessão extra 2), a corrigir em PRs próprios, com teste:**
+  - Inscrição em capacitação: a conferência de vaga no mesmo comando SQL não impede, em READ COMMITTED e sem lock, que duas inscrições simultâneas passem do limite (risco baixo).
+  - Datas de "hoje": `dataParaSql(new Date())` grava o dia em UTC (depois das 21h em São Paulo vira o dia seguinte); `Conhecimento.hoje()` usa UTC e `Participacao.hoje()` usa o fuso local.
+  - E-mail duplicado responde 400 ao criar pessoa e 409 ao editar.
+  - Repositórios antigos (tarefa, documento, pasta) lançam `Error` genérico para "não encontrado", que vira 422 em vez de 404; e comparam `codigo = $1`, então um código fora do formato UUID vira 500 (os novos usam `codigo::text = $1` e respondem 404).
+  - Mensagens: `SENIORIDADE_OBRIGATORIA` diz "todos os perfis", mas a regra só exige de membro; `LoginUsuario` não usa `MENSAGENS_DE_ERRO.AUTENTICACAO.CREDENCIAIS_INVALIDAS`.
+  - Checklist da tarefa sem ordem garantida (sem coluna de ordem nem `ORDER BY`).
+  - `lerInteiro` aceita decimais (`1.5`).
 - **Atualizações maiores de dependências:** Express 5, TypeScript 7, dotenv 18, uuid 14. Nenhuma vulnerabilidade conhecida hoje (`npm audit`: 0).
 
 ## 3. Frontend
