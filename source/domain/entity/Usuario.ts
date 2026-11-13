@@ -184,7 +184,8 @@ export default class Usuario {
             throw new ErroValidacao("Status de pessoa inválido.", "STATUS_PESSOA_INVALIDO");
         }
 
-        // Só o membro é obrigado a ter senioridade; gerente e diretor podem ficar sem.
+        // A entidade exige só do membro (o admin inicial, do seed, fica sem); CriarUsuario e
+        // EditarUsuario exigem de todos os perfis cadastrados pela tela.
         if (this.perfil === PerfilUsuario.MEMBRO && !this.senioridade) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
         }
