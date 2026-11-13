@@ -4,6 +4,8 @@
 # API em http://localhost:5001 (Swagger em /api-docs). Login: dev@konvexjr.com.br / konvex-dev
 # Integração: DATABASE_URL_TESTE=postgresql://postgres:postgres@localhost:5432/konvex_teste npm run test:integracao
 # Zerar tudo: docker compose -f docker-compose.dev.yml down -v
+# Porta ocupada? KONVEX_DB_PORTA=5434 KONVEX_API_PORTA=5002 npm run dev:docker
+#   (ou ponha as duas variáveis no .env; o compose lê esse arquivo)
 name: konvex-dev
 
 services:
@@ -14,7 +16,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: konvex_dev
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${KONVEX_DB_PORTA:-5432}:5432"
     volumes:
       - dados_dev:/var/lib/postgresql/data
       - ./deploy/dev/criar-banco-teste.sql:/docker-entrypoint-initdb.d/criar-banco-teste.sql:ro
@@ -41,7 +43,7 @@ services:
     # Chaves JWT geradas no próprio container (sessões caem a cada rebuild; ok em dev).
     command: ["sh", "-c", "node source/scripts/gerarChaves.js && node dist/source/scripts/migrar.js && node dist/source/scripts/seedAdmin.js && node dist/source/main.js"]
     ports:
-      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:${KONVEX_API_PORTA:-5001}:5001"
     volumes:
       - anexos_dev:/app/anexos
 
