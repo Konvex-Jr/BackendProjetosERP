@@ -159,9 +159,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         for (let ordem = 0; ordem < tarefa.checklist.length; ordem++) {
             const item = tarefa.checklist[ordem];
             await conexao.consultar(
-                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito)
-                 VALUES ($1, $2, $3, $4)`,
-                [item.codigo, tarefa.codigo, item.texto, item.feito],
+                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito, ordem)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [item.codigo, tarefa.codigo, item.texto, item.feito, ordem],
             );
         }
     }
@@ -204,7 +204,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         const itens = await this.conexao.consultar(
             `SELECT codigo, tarefa_codigo, texto, feito
              FROM tarefa_checklist_itens
-             WHERE tarefa_codigo = ANY($1::uuid[])`,
+             WHERE tarefa_codigo = ANY($1::uuid[])
+             ORDER BY tarefa_codigo, ordem`,
             [todos],
         );
 

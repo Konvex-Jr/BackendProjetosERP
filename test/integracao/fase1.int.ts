@@ -653,7 +653,26 @@ descrever("fase 1 contra PostgreSQL", () => {
         ]);
         expect(total.rows[0].n).toBe(2);
 
-        const dadosTarefa = { titulo: "", dataInicio: "2026-11-13", dataFim: "2026-11-20", prioridade: "P2" };
+        // Checklist volta na ordem em que foi gravado.
+        const textos = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto"];
+        const dadosTarefa = {
+            categoria: "execucao",
+            titulo: "Ordem do checklist",
+            dataInicio: "2026-11-13",
+            dataFim: "2026-11-20",
+            prioridade: "P2",
+        };
+        const tarefa = await chamar("POST", "/tarefas", dir, dadosTarefa);
+        const comChecklist = await chamar("PUT", `/tarefas/${tarefa.corpo.codigo}`, dir, {
+            ...dadosTarefa,
+            status: "pendente",
+            checklist: textos.map((texto) => ({ texto, feito: false })),
+        });
+        expect([comChecklist.status, comChecklist.corpo.message]).toEqual([200, undefined]);
+        await pool.query("UPDATE tarefa_checklist_itens SET feito = feito WHERE texto IN ('Primeiro', 'Terceiro')"); // muda a ordem física
+        const lida = (await chamar("GET", "/tarefas?categoria=execucao", dir)).corpo.find((x: any) => x.codigo === tarefa.corpo.codigo);
+        expect(lida.checklist.map((i: any) => i.texto)).toEqual(textos);
+
         // Contagem de tarefas por projeto (progresso igual para membro e gestão).
         const proj = await chamar("POST", "/projetos", dir, {
             nome: "Projeto contagem",
