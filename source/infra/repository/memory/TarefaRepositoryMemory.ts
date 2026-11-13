@@ -1,5 +1,7 @@
+import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
-import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
+import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 export default class TarefaRepositoryMemory implements TarefaRepositoryInterface {
     private tarefas: Tarefa[];
@@ -21,6 +23,17 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto);
     }
 
+    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+        for (const t of this.tarefas) {
+            const contagem = t.projeto ? mapa.get(t.projeto.codigo) : undefined;
+            if (!contagem) continue;
+            contagem.total++;
+            if (t.status === StatusTarefa.CONCLUIDA) contagem.concluidas++;
+        }
+        return mapa;
+    }
+
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {
         return this.tarefas.filter((t) => t.responsaveis.some((r) => r.codigo === codigoUsuario));
     }
@@ -33,7 +46,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         const indice = this.tarefas.findIndex((t) => t.codigo === tarefa.codigo);
 
         if (indice === -1) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
 
         this.tarefas[indice] = tarefa;
@@ -44,7 +57,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         const indice = this.tarefas.findIndex((t) => t.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
 
         this.tarefas.splice(indice, 1);

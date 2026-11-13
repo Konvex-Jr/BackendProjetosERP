@@ -622,4 +622,91 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("DELETE", `/capacitacoes/${cod}`, dir)).status).toBe(200);
         expect((await pool.query("SELECT count(*)::int AS n FROM capacitacao_feedbacks")).rows[0].n).toBe(0);
     }, 60000);
+
+    test("correções de 13/11: vagas com inscrições simultâneas e código fora do formato UUID", async () => {
+        const login = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo;
+        const dir = login.token as string;
+        const amanha = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+        const cap = await chamar("POST", "/capacitacoes", dir, {
+            titulo: "Corrida",
+            data: amanha,
+            hora: "10:00",
+            duracaoHoras: 1,
+            vagas: 2,
+            tipo: "computacao",
+            codigoInstrutor: login.usuario.codigo,
+            sala: "Lab",
+        });
+        expect([cap.status, cap.corpo.message]).toEqual([200, undefined]);
+        const pessoas = (
+            await pool.query(
+                `INSERT INTO usuarios (codigo, nome, email, perfil, senioridade_codigo, ativo, senha_hash)
+                 SELECT gen_random_uuid(), 'Corredor ' || n, 'corredor' || n || '@teste.com', 'membro', 'junior', TRUE, 'x'
+                 FROM generate_series(1, 8) n RETURNING codigo, nome`,
+            )
+        ).rows;
+        const repo = new DatabaseRepositoryFactory(conexao).criarCapacitacaoRepository();
+        const resultados = await Promise.all(pessoas.map((p) => repo.inscrever(cap.corpo.codigo, p)));
+        expect(resultados.filter(Boolean)).toHaveLength(2);
+        const total = await pool.query("SELECT count(*)::int AS n FROM capacitacao_inscricoes WHERE capacitacao_codigo = $1", [
+            cap.corpo.codigo,
+        ]);
+        expect(total.rows[0].n).toBe(2);
+
+        // Checklist volta na ordem em que foi gravado.
+        const textos = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto"];
+        const dadosTarefa = {
+            categoria: "execucao",
+            titulo: "Ordem do checklist",
+            dataInicio: "2026-11-13",
+            dataFim: "2026-11-20",
+            prioridade: "P2",
+        };
+        const tarefa = await chamar("POST", "/tarefas", dir, dadosTarefa);
+        const comChecklist = await chamar("PUT", `/tarefas/${tarefa.corpo.codigo}`, dir, {
+            ...dadosTarefa,
+            status: "pendente",
+            checklist: textos.map((texto) => ({ texto, feito: false })),
+        });
+        expect([comChecklist.status, comChecklist.corpo.message]).toEqual([200, undefined]);
+        await pool.query("UPDATE tarefa_checklist_itens SET feito = feito WHERE texto IN ('Primeiro', 'Terceiro')"); // muda a ordem física
+        const lida = (await chamar("GET", "/tarefas?categoria=execucao", dir)).corpo.find((x: any) => x.codigo === tarefa.corpo.codigo);
+        expect(lida.checklist.map((i: any) => i.texto)).toEqual(textos);
+
+        // Contagem de tarefas por projeto (progresso igual para membro e gestão).
+        const proj = await chamar("POST", "/projetos", dir, {
+            nome: "Projeto contagem",
+            descricao: "Teste",
+            dataInicio: "2026-11-01",
+            dataFim: "2026-12-31",
+            status: "em_execucao",
+        });
+        for (const titulo of ["Uma", "Outra"]) {
+            const t = await chamar("POST", "/tarefas", dir, {
+                ...dadosTarefa,
+                categoria: undefined,
+                titulo,
+                codigoProjeto: proj.corpo.codigo,
+            });
+            expect([t.status, t.corpo.message]).toEqual([200, undefined]);
+            if (titulo === "Uma") await chamar("PATCH", `/tarefas/${t.corpo.codigo}/status`, dir, { status: "concluida" });
+        }
+        const projetos = (await chamar("GET", "/projetos", dir)).corpo;
+        const porProjeto = await pool.query(
+            "SELECT projeto_codigo::text AS p, count(*)::int AS n, count(*) FILTER (WHERE status = 'concluida')::int AS c FROM tarefas WHERE projeto_codigo IS NOT NULL GROUP BY 1",
+        );
+        expect(porProjeto.rows.find((l: any) => l.p === proj.corpo.codigo)).toMatchObject({ n: 2, c: 1 });
+        for (const linha of porProjeto.rows) {
+            expect(projetos.find((x: any) => x.codigo === linha.p)?.tarefas).toEqual({ total: linha.n, concluidas: linha.c });
+        }
+
+        for (const caminho of [
+            "/tarefas/nao-e-uuid/comentarios",
+            "/pastas/nao-e-uuid/documentos",
+            "/usuarios/nao-e-uuid",
+            "/projetos/nao-e-uuid",
+        ]) {
+            expect([caminho, (await chamar("GET", caminho, dir)).status]).toEqual([caminho, 404]);
+        }
+    }, 60000);
 });

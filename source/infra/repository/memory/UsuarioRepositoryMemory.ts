@@ -2,6 +2,8 @@ import Usuario from "../../../domain/entity/Usuario";
 import UsuarioRepositoryInterface, { FiltroPessoas } from "../../../domain/interfaces/UsuarioRepositoryInterface";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import { normalizarBusca } from "../../../shared/texto";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { ErroConflito } from "../../../shared/erros/ErroConflito";
 
 export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterface {
     private usuarios: Usuario[];
@@ -44,7 +46,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
         const indice = this.usuarios.findIndex((u) => u.codigo === usuario.codigo);
 
         if (indice === -1) {
-            throw new Error("Usuário não encontrado");
+            throw new ErroNaoEncontrado("Usuário não encontrado.");
         }
 
         const emailEmUsoPorOutro = this.usuarios.some(
@@ -52,7 +54,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
         );
 
         if (emailEmUsoPorOutro) {
-            throw new Error("E-mail já cadastrado");
+            throw new ErroConflito("Este e-mail já está cadastrado.", "EMAIL_JA_CADASTRADO");
         }
 
         this.usuarios[indice] = usuario;
@@ -63,7 +65,7 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
         const indice = this.usuarios.findIndex((u) => u.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Usuário não encontrado");
+            throw new ErroNaoEncontrado("Usuário não encontrado.");
         }
 
         this.usuarios[indice] = this.usuarios[indice].copiar({ status: StatusPessoa.INATIVO });

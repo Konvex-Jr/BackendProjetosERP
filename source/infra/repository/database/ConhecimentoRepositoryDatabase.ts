@@ -2,6 +2,7 @@ import Conhecimento from "../../../domain/entity/Conhecimento";
 import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/interfaces/ConhecimentoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 const SELECT = `
     SELECT c.codigo, c.titulo, c.categoria, c.resumo, c.conteudo, c.fonte, c.links, c.tags, c.data,
@@ -130,7 +131,7 @@ export default class ConhecimentoRepositoryDatabase implements ConhecimentoRepos
                     item.atualizadoEm,
                 ],
             );
-            if (linhas.length === 0) throw new Error("Item não encontrado");
+            if (linhas.length === 0) throw new ErroNaoEncontrado("Item não encontrado.");
             await this.gravarProjetos(conexao, item);
         });
         return (await this.buscarPorCodigo(item.codigo)) ?? item;

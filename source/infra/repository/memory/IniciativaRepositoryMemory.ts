@@ -1,5 +1,6 @@
 import Iniciativa from "../../../domain/entity/Iniciativa";
 import IniciativaRepositoryInterface, { FiltrosIniciativa } from "../../../domain/interfaces/IniciativaRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** Mesmo critério do SQL (ILIKE): sem diferenciar maiúsculas, com acentos. */
 function atende(item: Iniciativa, f: FiltrosIniciativa): boolean {
@@ -34,7 +35,7 @@ export default class IniciativaRepositoryMemory implements IniciativaRepositoryI
 
     async editar(item: Iniciativa): Promise<Iniciativa> {
         const indice = this.itens.findIndex((i) => i.codigo === item.codigo);
-        if (indice === -1) throw new Error("Iniciativa não encontrada");
+        if (indice === -1) throw new ErroNaoEncontrado("Iniciativa não encontrada.");
         this.itens[indice] = item;
         return item;
     }

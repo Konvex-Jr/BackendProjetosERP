@@ -2,6 +2,7 @@ import Iniciativa from "../../../domain/entity/Iniciativa";
 import IniciativaRepositoryInterface, { FiltrosIniciativa } from "../../../domain/interfaces/IniciativaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSqlOuNulo } from "../../database/conversoes";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 // Subconsultas (e não JOIN + GROUP BY) para as duas listas não se multiplicarem.
 const SELECT = `
@@ -132,7 +133,7 @@ export default class IniciativaRepositoryDatabase implements IniciativaRepositor
                  WHERE codigo = $1 RETURNING codigo`,
                 this.valores(item),
             );
-            if (linhas.length === 0) throw new Error("Iniciativa não encontrada");
+            if (linhas.length === 0) throw new ErroNaoEncontrado("Iniciativa não encontrada.");
             await this.gravarLigacoes(conexao, item);
         });
         return (await this.buscarPorCodigo(item.codigo)) ?? item;

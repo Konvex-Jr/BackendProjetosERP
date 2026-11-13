@@ -1,3 +1,4 @@
+import Projeto from "../../../domain/entity/Projeto";
 import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFactoryInterface";
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
@@ -35,24 +36,36 @@ export default class ProjetoRoutes implements ModelRoutes {
         private readonly factory: RepositoryFactoryInterface,
     ) {}
 
+    /**
+     * Acrescenta `tarefas: { total, concluidas }` de todas as tarefas do projeto. O frontend calcula
+     * o progresso com isso; antes usava só as tarefas carregadas, e o membro, que recebe só as
+     * dele, via outro % (revisão de 12/11/2026).
+     */
+    private async comContagem(projetos: Projeto[]) {
+        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(projetos.map((p) => p.codigo));
+        return projetos.map((p) => ({ ...p.toJSON(), tarefas: contagem.get(p.codigo) ?? { total: 0, concluidas: 0 } }));
+    }
+
     init(): void {
         const f = this.factory;
 
         this.http.route("get", "/projetos", true, async (_p: any, body: any, query: any) =>
-            new ListarProjetos(f).execute({
-                codigoUsuario: projetosVisiveisPara(body?.user, query?.codigoUsuario || undefined),
-                status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
-                codigoArea: query?.codigoArea || undefined,
-                codigoResponsavel: query?.codigoResponsavel || undefined,
-                busca: query?.busca || undefined,
-            }),
+            this.comContagem(
+                await new ListarProjetos(f).execute({
+                    codigoUsuario: projetosVisiveisPara(body?.user, query?.codigoUsuario || undefined),
+                    status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
+                    codigoArea: query?.codigoArea || undefined,
+                    codigoResponsavel: query?.codigoResponsavel || undefined,
+                    busca: query?.busca || undefined,
+                }),
+            ),
         );
 
         this.http.route("get", "/projetos/:codigo", true, async (params: any, body: any) => {
             const projeto = await f.criarProjetoRepository().buscarPorCodigo(params.codigo);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
             exigirVerProjeto(body?.user, projeto);
-            return projeto;
+            return (await this.comContagem([projeto]))[0];
         });
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {

@@ -1,7 +1,7 @@
 /**
  * Base dos erros esperados (regra de negócio, validação, permissão). O ExpressHttp responde com
  * `codigoHttp`, a mensagem e o `codigo` (texto fixo, como "SENHA_CURTA", que o frontend pode testar).
- * Qualquer erro que não seja desta família vira 422 ou 500 (ver responderErro).
+ * Qualquer erro que não seja desta família vira 500 genérico (ver responderErro).
  */
 export class ErroAplicacao extends Error {
     constructor(

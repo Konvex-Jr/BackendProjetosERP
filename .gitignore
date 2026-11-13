@@ -1,6 +1,9 @@
 node_modules/
 dist/
 *.key
+*.pem
 .env
-anexos/
+.env.*
+!*.example
+/anexos/
 coverage/

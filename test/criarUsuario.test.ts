@@ -1,3 +1,4 @@
+import { ErroConflito } from "../source/shared/erros/ErroConflito";
 import RepositoryFactoryInterface from "../source/domain/interfaces/RepositoryFactoryInterface";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
@@ -66,7 +67,8 @@ test("Não deve criar dois usuários com o mesmo e-mail (sem diferenciar maiúsc
         ...inputValido,
         email: "John.Doe@Konvex.com.br",
     });
-    await expect(promessa).rejects.toBeInstanceOf(ErroValidacao);
+    // 409, como ao editar (revisão de arquitetura, 12/11/2026).
+    await expect(promessa).rejects.toBeInstanceOf(ErroConflito);
 });
 
 test("Deve verificar se há registros no repositório", async () => {

@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import ArmazenamentoAnexosInterface from "../../domain/interfaces/ArmazenamentoAnexosInterface";
+import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 /** Pasta dos anexos: ANEXOS_DIR (na VPS, um volume que entra no backup) ou ./anexos. */
 export function pastaDosAnexos(): string {
@@ -16,7 +17,7 @@ export default class ArmazenamentoAnexosDisco implements ArmazenamentoAnexosInte
 
     /** O nome no disco é sempre um UUID gerado pela API; qualquer outra coisa é recusada. */
     private caminho(arquivo: string): string {
-        if (!/^[0-9a-f-]{36}$/i.test(arquivo)) throw new Error("Nome de arquivo inválido.");
+        if (!/^[0-9a-f-]{36}$/i.test(arquivo)) throw new ErroValidacao("Nome de arquivo inválido.", "ANEXO_INVALIDO");
         return path.join(this.pasta, arquivo);
     }
 

@@ -15,6 +15,8 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
   - **Android (Chrome)**: menu **⋮** → **Adicionar à tela inicial** (ou **Instalar app**).
   - **iPhone (Safari)**: botão **Compartilhar** → **Adicionar à Tela de Início**.
 
+**Errou a senha várias vezes?** Depois de 5 tentativas erradas seguidas, o login daquele e-mail fica bloqueado **por 15 minutos** naquele aparelho e rede. É uma proteção contra quem tenta adivinhar senhas. Espere o tempo indicado na mensagem ou peça à gestão para redefinir a senha.
+
 ---
 
 ## Membro

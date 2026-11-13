@@ -78,18 +78,22 @@ flowchart LR
 2. **Pastas em minúsculas:** `domain/entity`, `domain/enum`, `domain/interfaces`, `domain/service`, `infra/http/routes`, `infra/http/middleware`. Os nomes dos arquivos (classes) não mudam.
 
 ### Dívida registrada (para depois)
-- **Erro inesperado responde 422 com `exception.message`** (`ExpressHttp.responderErro`). Um `TypeError` interno chegaria à tela com texto técnico. O certo é 500 com mensagem genérica e o detalhe só no log. Muda comportamento, então vai num PR próprio, com teste.
+- ~~**Erro inesperado responde 422 com `exception.message`**~~ Corrigido em 13/11 (sessão de correções): agora 500 genérico, detalhe só no log.
 - **`any` nas rotas.** A assinatura `Http.route(..., callback: any)` espalha `any` por todas as rotas. Tipar o callback (`(params, body, query) => Promise<unknown>`) reduziria quase todos os 229 usos. A regra `no-explicit-any` fica desligada no lint até isso ser feito.
 - **Helpers repetidos.** `lerTexto` (SalvarConhecimento), `texto`/`lista` (SalvarIniciativa) e `texto` (IniciativaRoutes) fazem quase o mesmo, mas com diferenças de `trim`. Consolidar em `shared/entradas.ts` exige cuidado com essas diferenças.
 - **Listagens que carregam tudo e filtram em memória** (ex.: `tarefasDaIniciativa`, pastas do projeto no `ExcluirProjeto`). Ok para o volume atual (dezenas de pessoas, centenas de itens); revisitar se alguma tela ficar lenta.
-- **Achados da leitura do código (sessão extra 2), a corrigir em PRs próprios, com teste:**
-  - Inscrição em capacitação: a conferência de vaga no mesmo comando SQL não impede, em READ COMMITTED e sem lock, que duas inscrições simultâneas passem do limite (risco baixo).
-  - Datas de "hoje": `dataParaSql(new Date())` grava o dia em UTC (depois das 21h em São Paulo vira o dia seguinte); `Conhecimento.hoje()` usa UTC e `Participacao.hoje()` usa o fuso local.
-  - E-mail duplicado responde 400 ao criar pessoa e 409 ao editar.
-  - Repositórios antigos (tarefa, documento, pasta) lançam `Error` genérico para "não encontrado", que vira 422 em vez de 404; e comparam `codigo = $1`, então um código fora do formato UUID vira 500 (os novos usam `codigo::text = $1` e respondem 404).
-  - Mensagens: `SENIORIDADE_OBRIGATORIA` diz "todos os perfis", mas a regra só exige de membro; `LoginUsuario` não usa `MENSAGENS_DE_ERRO.AUTENTICACAO.CREDENCIAIS_INVALIDAS`.
-  - Checklist da tarefa sem ordem garantida (sem coluna de ordem nem `ORDER BY`).
-  - `lerInteiro` aceita decimais (`1.5`).
+- **Achados da leitura do código (sessão extra 2).** Os riscados foram corrigidos na sessão de correções (13/11/2026), com teste:
+  - ~~Inscrição em capacitação~~ (trava `FOR UPDATE` numa transação): a conferência de vaga no mesmo comando SQL não impede, em READ COMMITTED e sem lock, que duas inscrições simultâneas passem do limite (risco baixo).
+  - ~~Datas de "hoje"~~ (`shared/datas.ts`, dia de São Paulo): `dataParaSql(new Date())` grava o dia em UTC (depois das 21h em São Paulo vira o dia seguinte); `Conhecimento.hoje()` usa UTC e `Participacao.hoje()` usa o fuso local.
+  - ~~E-mail duplicado responde 400 ao criar pessoa e 409 ao editar.~~ Agora 409 nos dois.
+  - ~~Repositórios antigos~~ (agora `ErroNaoEncontrado`; UUID mal formado responde 404 em `responderErro`): (tarefa, documento, pasta) lançam `Error` genérico para "não encontrado", que vira 422 em vez de 404; e comparam `codigo = $1`, então um código fora do formato UUID vira 500 (os novos usam `codigo::text = $1` e respondem 404).
+  - Mensagens: `SENIORIDADE_OBRIGATORIA` diz "todos os perfis", e é isso que vale (CriarUsuario/EditarUsuario; a entidade é mais branda por causa do admin do seed, ver comentário em `Usuario.ts`); ~~`LoginUsuario` não usa `MENSAGENS_DE_ERRO.AUTENTICACAO.CREDENCIAIS_INVALIDAS`~~ (agora usa).
+  - ~~Checklist da tarefa sem ordem garantida~~ (migração 011, coluna `ordem`).
+  - ~~`lerInteiro` aceita decimais (`1.5`).~~ Agora 400.
+- **Auditoria de segurança (13/11/2026, skill `security-audit`).** Nenhum achado crítico ou alto. Corrigidos na sessão de correções: perfil que mostrava ao membro projetos de outras pessoas; login sem limite de tentativas (agora 429); cabeçalhos de segurança na API e no nginx; `.gitignore` sem `.env.*`/`*.pem`. Em aberto:
+  - Base de Inteligência e Iniciativas mostram a todos o nome dos projetos ligados, e um membro liga um item a qualquer projeto. Pode ser intencional; depende da decisão sobre os módulos.
+  - Containers do backend e do frontend rodam como root (o Dockerfile não tem `USER`).
+  - Gerente pode redefinir senha e e-mail de outro gerente (intencional no código; a gestão confirma se aceita).
 - **Atualizações maiores de dependências:** Express 5, TypeScript 7, dotenv 18, uuid 14. Nenhuma vulnerabilidade conhecida hoje (`npm audit`: 0).
 
 ## 3. Frontend
@@ -108,14 +112,14 @@ flowchart LR
 ### Dívida registrada (para depois)
 - **`components.css` com 1.469 linhas.** Dividir por componente quando alguém mexer pesado no visual.
 - **Páginas grandes** (`Capacitacoes.jsx` 325 linhas, `Precificacao.jsx` 270). Extrair partes quando forem alteradas.
-- **Testes só em `lib/`.** As telas são cobertas pelo levantamento no navegador (`npm run e2e`), que ainda roda à mão (fase 5 leva para o CI).
+- **Testes só em `lib/`.** As telas são cobertas pelo levantamento no navegador (`npm run e2e`), que ainda roda à mão (levar para o CI está nos opcionais; a fase 5 foi cancelada em 13/11).
 - **Achados da leitura do código (sessão extra 2), a corrigir em PRs próprios:**
-  - O progresso do projeto (`prog` em `lib/utils.js`) é calculado sobre as tarefas carregadas; para o membro, que só recebe as próprias, o % difere do que a gestão vê.
-  - Calendário de capacitações abre no mês de `new Date().toISOString()` (UTC): no último dia do mês, depois das 21h, abre no mês seguinte.
-  - `useCarregar` não ignora respostas antigas: com filtros mudando rápido (Base, Iniciativas), uma resposta lenta pode sobrescrever a lista.
-  - "Hoje" (`D.c.hoje`) só é recalculado no login, no F5 ou depois de salvar; aba aberta de um dia para o outro mostra atrasos do dia anterior.
-  - Código sem uso: `nid` e `semana` em `lib/utils.js`; `NAV` só serve para o `path` (o menu vem da API).
-  - `FormModal`: select sem valor inicial mostra a primeira opção, mas o valor fica vazio até a pessoa trocar (as telas atuais passam valor inicial).
+  - ~~O progresso do projeto~~ (a API manda `tarefas: { total, concluidas }`): (`prog` em `lib/utils.js`) era calculado sobre as tarefas carregadas; para o membro, que só recebe as próprias, o % difere do que a gestão vê.
+  - ~~Calendário de capacitações~~ (usa a data local): abria no mês de `new Date().toISOString()` (UTC): no último dia do mês, depois das 21h, abre no mês seguinte.
+  - ~~`useCarregar` não ignora respostas antigas~~ (agora só vale a chamada mais nova): com filtros mudando rápido (Base, Iniciativas), uma resposta lenta pode sobrescrever a lista.
+  - ~~"Hoje" (`D.c.hoje`) só é recalculado~~ (o AppContext confere a cada minuto e no foco da aba): no login, no F5 ou depois de salvar; aba aberta de um dia para o outro mostra atrasos do dia anterior.
+  - Código sem uso: ~~`nid` e `semana` em `lib/utils.js`~~ (removidos); `NAV` só serve para o `path` (o menu vem da API).
+  - ~~`FormModal`~~ (select visível vai com a 1ª opção, `lib/formulario.js`): select sem valor inicial mostra a primeira opção, mas o valor fica vazio até a pessoa trocar (as telas atuais passam valor inicial).
 - **React 19 e Vite 8** disponíveis; atualizar em sessão própria.
 
 ## 4. Convenções que esta revisão confirma

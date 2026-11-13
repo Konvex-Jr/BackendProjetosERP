@@ -1,6 +1,7 @@
 import Pasta from "../../../domain/entity/Pasta";
 import PastaRepositoryInterface from "../../../domain/interfaces/PastaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** SELECT de pastas com o projeto ligado (sigilo "projeto"). Reaproveitado pelo repositório de documentos. */
 export const SELECT_PASTA = `
@@ -48,7 +49,7 @@ export default class PastaRepositoryDatabase implements PastaRepositoryInterface
         );
 
         if (linhas.length === 0) {
-            throw new Error("Pasta não encontrada");
+            throw new ErroNaoEncontrado("Pasta não encontrada.");
         }
 
         return pasta;
@@ -58,7 +59,7 @@ export default class PastaRepositoryDatabase implements PastaRepositoryInterface
         const linhas = await this.conexao.consultar("DELETE FROM pastas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
-            throw new Error("Pasta não encontrada");
+            throw new ErroNaoEncontrado("Pasta não encontrada.");
         }
     }
 }

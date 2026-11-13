@@ -2,10 +2,11 @@ import Tarefa from "../../../domain/entity/Tarefa";
 import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
-import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
+import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
@@ -68,6 +69,20 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         return this.carregar(linhas.map((l) => l.codigo));
     }
 
+    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+        if (!codigosProjetos.length) return mapa;
+        const linhas = await this.conexao.consultar(
+            `SELECT projeto_codigo::text AS projeto, count(*)::int AS total,
+                    count(*) FILTER (WHERE status = 'concluida')::int AS concluidas
+             FROM tarefas WHERE projeto_codigo::text = ANY($1::text[])
+             GROUP BY projeto_codigo`,
+            [codigosProjetos],
+        );
+        for (const l of linhas) mapa.set(l.projeto, { total: l.total, concluidas: l.concluidas });
+        return mapa;
+    }
+
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {
         const linhas = await this.conexao.consultar(
             `SELECT t.codigo
@@ -111,7 +126,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             );
 
             if (linhas.length === 0) {
-                throw new Error("Tarefa não encontrada");
+                throw new ErroNaoEncontrado("Tarefa não encontrada.");
             }
 
             await conexao.consultar("DELETE FROM tarefa_responsaveis WHERE tarefa_codigo = $1", [tarefa.codigo]);
@@ -126,7 +141,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         const linhas = await this.conexao.consultar("DELETE FROM tarefas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
     }
 
@@ -144,9 +159,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         for (let ordem = 0; ordem < tarefa.checklist.length; ordem++) {
             const item = tarefa.checklist[ordem];
             await conexao.consultar(
-                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito)
-                 VALUES ($1, $2, $3, $4)`,
-                [item.codigo, tarefa.codigo, item.texto, item.feito],
+                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito, ordem)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [item.codigo, tarefa.codigo, item.texto, item.feito, ordem],
             );
         }
     }
@@ -189,7 +204,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         const itens = await this.conexao.consultar(
             `SELECT codigo, tarefa_codigo, texto, feito
              FROM tarefa_checklist_itens
-             WHERE tarefa_codigo = ANY($1::uuid[])`,
+             WHERE tarefa_codigo = ANY($1::uuid[])
+             ORDER BY tarefa_codigo, ordem`,
             [todos],
         );
 

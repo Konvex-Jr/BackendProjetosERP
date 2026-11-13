@@ -6,6 +6,7 @@ import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
 import CategoriaTarefa from "../../domain/enum/CategoriaTarefa";
 import { referenciaDaIniciativa } from "../iniciativas/SalvarIniciativa";
+import { hoje } from "../../shared/datas";
 
 export default class EditarTarefa {
     private readonly tarefas;
@@ -63,7 +64,7 @@ export default class EditarTarefa {
                 input.status,
                 input.prioridade,
                 input.descricao ?? null,
-                concluida ? (atual.dataConclusao ?? new Date()) : null,
+                concluida ? (atual.dataConclusao ?? hoje()) : null,
                 dependencia,
                 responsaveis,
                 checklist,

@@ -1,5 +1,6 @@
 import Documento from "../../../domain/entity/Documento";
 import DocumentoRepositoryInterface from "../../../domain/interfaces/DocumentoRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 export default class DocumentoRepositoryMemory implements DocumentoRepositoryInterface {
     private documentos: Documento[];
@@ -29,7 +30,7 @@ export default class DocumentoRepositoryMemory implements DocumentoRepositoryInt
         const indice = this.documentos.findIndex((d) => d.codigo === documento.codigo);
 
         if (indice === -1) {
-            throw new Error("Documento não encontrado");
+            throw new ErroNaoEncontrado("Documento não encontrado.");
         }
 
         this.documentos[indice] = documento;
@@ -40,7 +41,7 @@ export default class DocumentoRepositoryMemory implements DocumentoRepositoryInt
         const indice = this.documentos.findIndex((d) => d.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Documento não encontrado");
+            throw new ErroNaoEncontrado("Documento não encontrado.");
         }
 
         this.documentos.splice(indice, 1);

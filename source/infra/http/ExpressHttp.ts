@@ -16,8 +16,8 @@ export function origensCors(): string[] {
 }
 
 /**
- * Converte exceções em respostas HTTP. Erros da aplicação usam o próprio status;
- * erros do banco viram 500 sem expor detalhes internos.
+ * Converte exceções em respostas HTTP. Erros da aplicação usam o próprio status; o resto vira
+ * 500 com mensagem genérica e o detalhe só no log (nada técnico chega à tela).
  */
 export function responderErro(res: any, exception: any): void {
     if (exception instanceof ErroAplicacao) {
@@ -26,14 +26,25 @@ export function responderErro(res: any, exception: any): void {
     }
     // Erros do driver `pg` trazem o campo `severity`; é assim que são reconhecidos.
     if (exception && typeof exception === "object" && "severity" in exception) {
+        // 22P02: texto que não serve para o tipo da coluna. Um código que não é UUID não existe
+        // no banco, então responde 404, como os repositórios que comparam `codigo::text`.
+        if (exception.code === "22P02") {
+            const uuid = /type uuid/i.test(String(exception.message));
+            res.status(uuid ? 404 : 400).json(
+                uuid
+                    ? { message: "Registro não encontrado.", codigo: "NAO_ENCONTRADO" }
+                    : { message: "Algum valor informado não está no formato esperado.", codigo: "FORMATO_INVALIDO" },
+            );
+            return;
+        }
         console.error(exception);
         res.status(500).json({ message: "Erro interno ao acessar o banco de dados." });
         return;
     }
-    // Qualquer outro erro (um `throw new Error` comum) vira 422 com a mensagem. Para 400/404/409,
-    // lance a classe certa de shared/erros.
+    // Erro inesperado (bug ou `throw new Error` comum). Para 400/404/409, lance a classe certa
+    // de shared/erros.
     console.error(exception);
-    res.status(422).json({ message: exception?.message ?? "Não foi possível concluir a operação." });
+    res.status(500).json({ message: "Erro interno. Tente de novo; se continuar, avise a gestão.", codigo: "ERRO_INTERNO" });
 }
 
 /**
@@ -46,6 +57,18 @@ export default class ExpressHttp implements Http {
 
     constructor(private readonly auth: Auth) {
         this.app = express();
+        // Atrás do Traefik, o IP real vem em X-Forwarded-For. Só se confia nesse cabeçalho quando a
+        // conexão chega de rede local/privada (o Traefik na rede Docker); um cliente direto não o falsifica.
+        this.app.set("trust proxy", process.env.TRUST_PROXY ?? "loopback, linklocal, uniquelocal");
+        this.app.disable("x-powered-by");
+        // A API só devolve JSON e downloads: nada dela deve ser aberto dentro de outra página nem
+        // ter o tipo adivinhado pelo navegador (auditoria de 13/11/2026).
+        this.app.use((_req: any, res: any, next: any) => {
+            res.setHeader("X-Content-Type-Options", "nosniff");
+            res.setHeader("X-Frame-Options", "DENY");
+            res.setHeader("Referrer-Policy", "no-referrer");
+            next();
+        });
         // JSON pequeno de propósito; arquivos não passam por aqui, e sim por receberArquivo (até 20 MB).
         this.app.use(express.json({ limit: "2mb" }));
         const origensPermitidas = origensCors();
@@ -99,7 +122,7 @@ export default class ExpressHttp implements Http {
         if (opcoes?.arquivo) handlers.push(this.receberArquivo(opcoes.arquivo));
         handlers.push(async (req: any, res: any) => {
             try {
-                const result = await callback(req.params, req.body, req.query);
+                const result = await callback(req.params, req.body, req.query, { ip: String(req.ip ?? "desconhecido") });
                 if (result instanceof RespostaArquivo) {
                     // Sempre como download (attachment) e com nosniff: um arquivo enviado nunca é aberto
                     // pelo navegador como página do sistema. Sem cache, porque o conteúdo depende de permissão.

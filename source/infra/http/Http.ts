@@ -11,10 +11,15 @@ export interface OpcoesRota {
 
 /**
  * Contrato do servidor HTTP visto pelas rotas (implementado por ExpressHttp).
- * O callback de `route` recebe (params, body, query) e devolve o objeto da resposta (vira JSON)
+ * O callback de `route` recebe (params, body, query, contexto) e devolve o objeto da resposta (vira JSON)
  * ou uma RespostaArquivo; erros lançados viram status HTTP em `responderErro`.
  * Com `auth = true`, `body.user` traz a pessoa logada.
  */
+/** Dados da requisição que não vêm do cliente como conteúdo (hoje, só o IP de origem). */
+export interface ContextoRequisicao {
+    ip: string;
+}
+
 export default interface Http {
     route(method: HttpMethods, url: string, auth: boolean, callback: any, opcoes?: OpcoesRota): Promise<any>;
     swagger(specification: object): void;

@@ -5,6 +5,7 @@ import DocumentoRepositoryInterface from "../../../domain/interfaces/DocumentoRe
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql } from "../../database/conversoes";
 import { carregarUsuarios } from "./carregadores";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 const SELECT_DOCUMENTO = `
     SELECT codigo, pasta_codigo, nome, extensao, tamanho_bytes, data_envio,
@@ -70,7 +71,7 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
         );
 
         if (linhas.length === 0) {
-            throw new Error("Documento não encontrado");
+            throw new ErroNaoEncontrado("Documento não encontrado.");
         }
 
         return documento;
@@ -80,7 +81,7 @@ export default class DocumentoRepositoryDatabase implements DocumentoRepositoryI
         const linhas = await this.conexao.consultar("DELETE FROM documentos WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
-            throw new Error("Documento não encontrado");
+            throw new ErroNaoEncontrado("Documento não encontrado.");
         }
     }
 

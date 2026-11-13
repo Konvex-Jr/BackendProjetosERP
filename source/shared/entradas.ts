@@ -40,6 +40,10 @@ export function lerInteiro(valor: unknown, campo: string): number | undefined {
     if (!Number.isFinite(numero)) {
         throw new ErroValidacao(`O campo ${campo} deve ser numérico.`, "NUMERO_INVALIDO");
     }
+    // As colunas são inteiras (SMALLINT); um decimal viraria erro do banco (500) ou seria truncado.
+    if (!Number.isInteger(numero)) {
+        throw new ErroValidacao(`O campo ${campo} deve ser um número inteiro.`, "NUMERO_INVALIDO");
+    }
     return numero;
 }
 

@@ -1,6 +1,7 @@
 import Projeto from "../../../domain/entity/Projeto";
 import ProjetoRepositoryInterface, { FiltroProjetos } from "../../../domain/interfaces/ProjetoRepositoryInterface";
 import { normalizarBusca } from "../../../shared/texto";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterface {
     private projetos: Projeto[];
@@ -35,7 +36,7 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
         const indice = this.projetos.findIndex((p) => p.codigo === projeto.codigo);
 
         if (indice === -1) {
-            throw new Error("Projeto não encontrado");
+            throw new ErroNaoEncontrado("Projeto não encontrado.");
         }
 
         this.projetos[indice] = projeto;
@@ -46,7 +47,7 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
         const indice = this.projetos.findIndex((p) => p.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Projeto não encontrado");
+            throw new ErroNaoEncontrado("Projeto não encontrado.");
         }
 
         this.projetos.splice(indice, 1);

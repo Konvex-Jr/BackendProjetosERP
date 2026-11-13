@@ -167,7 +167,7 @@ const swaggerSpecification = {
             }),
         },
         "/auth/login": {
-            post: operation(["Autenticação"], "Autenticar usuário", {
+            post: operation(["Autenticação"], "Autenticar usuário (5 erros em 15 min pelo mesmo e-mail e IP dão 429)", {
                 security: [],
                 requestBody: jsonBody({
                     type: "object",

@@ -1,10 +1,10 @@
 import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFactoryInterface";
-import Http from "../Http";
+import Http, { ContextoRequisicao } from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
 import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
-import LoginUsuario from "../../../useCases/auth/LoginUsuario";
+import LoginUsuario, { criarLimitesLogin } from "../../../useCases/auth/LoginUsuario";
 import RenovarSessao from "../../../useCases/auth/RenovarSessao";
 import EncerrarSessao from "../../../useCases/auth/EncerrarSessao";
 import AlterarSenha from "../../../useCases/auth/AlterarSenha";
@@ -68,8 +68,10 @@ export default class UsuarioRoutes implements ModelRoutes {
         const f = this.repositoryFactory;
 
         // Sessão. Não há cadastro público: contas são criadas por diretores e gerentes.
-        this.http.route("post", "/auth/login", false, async (_p: any, body: any) =>
-            new LoginUsuario(f).execute({ email: body.email, senha: body.senha }),
+        // Os limites ficam aqui (um por servidor), porque o caso de uso é criado a cada requisição.
+        const limitesLogin = criarLimitesLogin();
+        this.http.route("post", "/auth/login", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) =>
+            new LoginUsuario(f, limitesLogin).execute({ email: body?.email, senha: body?.senha }, contexto?.ip),
         );
 
         this.http.route("post", "/auth/refresh", false, async (_p: any, body: any) => new RenovarSessao(f).execute(body.refreshToken));
@@ -121,7 +123,9 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("get", "/usuarios/:codigo", true, async (params: any) => this.buscarAlvo(params.codigo));
 
-        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any) => new ObterPerfilPessoa(f).execute(params.codigo));
+        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) =>
+            new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user)),
+        );
 
         this.http.route("get", "/senioridades", true, async () => f.criarSenioridadeRepository().listar());
 

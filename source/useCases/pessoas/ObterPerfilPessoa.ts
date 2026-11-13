@@ -3,6 +3,8 @@ import Usuario from "../../domain/entity/Usuario";
 import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
 import { MudancaArea, MudancaCargo } from "../../domain/interfaces/HistoricoPessoaRepositoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
+import { participaOuParticipou, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
 
 export interface ProjetoNoPerfil {
     codigo: string;
@@ -35,15 +37,21 @@ export interface PerfilPessoa {
     alocacao: ResumoAlocacao;
 }
 
-/** RF-013: perfil com projetos atuais e anteriores, habilidades, histórico e capacitações. */
+/**
+ * RF-013: perfil com projetos atuais e anteriores, habilidades, histórico e capacitações.
+ * Projetos seguem a visibilidade (decisão de 30/10/2026): o membro que olha o perfil de outra
+ * pessoa só vê os projetos de que ele mesmo participa ou participou.
+ */
 export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(codigo: string): Promise<PerfilPessoa> {
+    async execute(codigo: string, quemPede?: UsuarioAutenticado | null): Promise<PerfilPessoa> {
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(codigo);
         if (!usuario) throw new ErroNaoEncontrado("Pessoa não encontrada.");
 
-        const projetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
+        const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
+        const veTudo = !quemPede || quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
+        const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => participaOuParticipou(quemPede.codigo, p));
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
         for (const projeto of projetos) {
@@ -98,7 +106,8 @@ export default class ObterPerfilPessoa {
             projetosAnteriores,
             historico,
             capacitacoes: { proximas, realizadas, horasCumpridas },
-            alocacao: calcularAlocacao(projetos, codigo),
+            // O total considera todos os projetos (o alerta de 100% vale igual); a lista, só os visíveis.
+            alocacao: { ...calcularAlocacao(todosOsProjetos, codigo), projetos: calcularAlocacao(projetos, codigo).projetos },
         };
     }
 }
