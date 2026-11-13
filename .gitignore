@@ -1,6 +1,9 @@
 node_modules/
 dist/
 *.key
+*.pem
 .env
+.env.*
+!*.example
 anexos/
 coverage/
