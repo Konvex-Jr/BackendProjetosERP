@@ -16,8 +16,8 @@ export function origensCors(): string[] {
 }
 
 /**
- * Converte exceções em respostas HTTP. Erros da aplicação usam o próprio status;
- * erros do banco viram 500 sem expor detalhes internos.
+ * Converte exceções em respostas HTTP. Erros da aplicação usam o próprio status; o resto vira
+ * 500 com mensagem genérica e o detalhe só no log (nada técnico chega à tela).
  */
 export function responderErro(res: any, exception: any): void {
     if (exception instanceof ErroAplicacao) {
@@ -26,14 +26,25 @@ export function responderErro(res: any, exception: any): void {
     }
     // Erros do driver `pg` trazem o campo `severity`; é assim que são reconhecidos.
     if (exception && typeof exception === "object" && "severity" in exception) {
+        // 22P02: texto que não serve para o tipo da coluna. Um código que não é UUID não existe
+        // no banco, então responde 404, como os repositórios que comparam `codigo::text`.
+        if (exception.code === "22P02") {
+            const uuid = /type uuid/i.test(String(exception.message));
+            res.status(uuid ? 404 : 400).json(
+                uuid
+                    ? { message: "Registro não encontrado.", codigo: "NAO_ENCONTRADO" }
+                    : { message: "Algum valor informado não está no formato esperado.", codigo: "FORMATO_INVALIDO" },
+            );
+            return;
+        }
         console.error(exception);
         res.status(500).json({ message: "Erro interno ao acessar o banco de dados." });
         return;
     }
-    // Qualquer outro erro (um `throw new Error` comum) vira 422 com a mensagem. Para 400/404/409,
-    // lance a classe certa de shared/erros.
+    // Erro inesperado (bug ou `throw new Error` comum). Para 400/404/409, lance a classe certa
+    // de shared/erros.
     console.error(exception);
-    res.status(422).json({ message: exception?.message ?? "Não foi possível concluir a operação." });
+    res.status(500).json({ message: "Erro interno. Tente de novo; se continuar, avise a gestão.", codigo: "ERRO_INTERNO" });
 }
 
 /**

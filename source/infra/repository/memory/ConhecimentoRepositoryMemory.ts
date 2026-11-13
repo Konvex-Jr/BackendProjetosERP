@@ -1,5 +1,6 @@
 import Conhecimento from "../../../domain/entity/Conhecimento";
 import ConhecimentoRepositoryInterface, { FiltrosConhecimento } from "../../../domain/interfaces/ConhecimentoRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** Mesmo critério do SQL (ILIKE): sem diferenciar maiúsculas, com acentos. */
 function atende(item: Conhecimento, f: FiltrosConhecimento): boolean {
@@ -37,7 +38,7 @@ export default class ConhecimentoRepositoryMemory implements ConhecimentoReposit
 
     async editar(item: Conhecimento): Promise<Conhecimento> {
         const indice = this.itens.findIndex((i) => i.codigo === item.codigo);
-        if (indice === -1) throw new Error("Item não encontrado");
+        if (indice === -1) throw new ErroNaoEncontrado("Item não encontrado.");
         this.itens[indice] = item;
         return item;
     }

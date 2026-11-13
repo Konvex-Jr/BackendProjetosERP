@@ -1,5 +1,6 @@
 import Pasta from "../../../domain/entity/Pasta";
 import PastaRepositoryInterface from "../../../domain/interfaces/PastaRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 export default class PastaRepositoryMemory implements PastaRepositoryInterface {
     private pastas: Pasta[];
@@ -25,7 +26,7 @@ export default class PastaRepositoryMemory implements PastaRepositoryInterface {
         const indice = this.pastas.findIndex((p) => p.codigo === pasta.codigo);
 
         if (indice === -1) {
-            throw new Error("Pasta não encontrada");
+            throw new ErroNaoEncontrado("Pasta não encontrada.");
         }
 
         this.pastas[indice] = pasta;
@@ -36,7 +37,7 @@ export default class PastaRepositoryMemory implements PastaRepositoryInterface {
         const indice = this.pastas.findIndex((p) => p.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Pasta não encontrada");
+            throw new ErroNaoEncontrado("Pasta não encontrada.");
         }
 
         this.pastas.splice(indice, 1);

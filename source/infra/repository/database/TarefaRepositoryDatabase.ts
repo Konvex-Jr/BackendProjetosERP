@@ -6,6 +6,7 @@ import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/inte
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
@@ -125,7 +126,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             );
 
             if (linhas.length === 0) {
-                throw new Error("Tarefa não encontrada");
+                throw new ErroNaoEncontrado("Tarefa não encontrada.");
             }
 
             await conexao.consultar("DELETE FROM tarefa_responsaveis WHERE tarefa_codigo = $1", [tarefa.codigo]);
@@ -140,7 +141,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         const linhas = await this.conexao.consultar("DELETE FROM tarefas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
         if (linhas.length === 0) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
     }
 

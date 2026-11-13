@@ -46,7 +46,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         const indice = this.tarefas.findIndex((t) => t.codigo === tarefa.codigo);
 
         if (indice === -1) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
 
         this.tarefas[indice] = tarefa;
@@ -57,7 +57,7 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         const indice = this.tarefas.findIndex((t) => t.codigo === codigo);
 
         if (indice === -1) {
-            throw new Error("Tarefa não encontrada");
+            throw new ErroNaoEncontrado("Tarefa não encontrada.");
         }
 
         this.tarefas.splice(indice, 1);

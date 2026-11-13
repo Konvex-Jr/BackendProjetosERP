@@ -1,3 +1,4 @@
+import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { hash } from "bcrypt";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
@@ -28,7 +29,7 @@ export default class CriarUsuario {
             .trim()
             .toLowerCase();
         if (await this.usuarioRepository.buscarPorEmail(email)) {
-            throw new ErroValidacao("Já existe um usuário cadastrado com este e-mail.", "EMAIL_JA_CADASTRADO");
+            throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
         }
         if (!input.senioridade?.codigo) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
@@ -57,7 +58,7 @@ export default class CriarUsuario {
 
         const criado = await this.usuarioRepository.criar(usuario);
         if (!criado) {
-            throw new ErroValidacao("Já existe um usuário cadastrado com este e-mail.", "EMAIL_JA_CADASTRADO");
+            throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
         }
 
         // O cargo e a área iniciais abrem o histórico da pessoa (RF-014).
