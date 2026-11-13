@@ -93,17 +93,23 @@ export default class CapacitacaoRepositoryDatabase implements CapacitacaoReposit
     }
 
     async inscrever(codigo: string, usuario: Referencia): Promise<boolean> {
-        // A vaga é conferida no mesmo comando, para duas inscrições ao mesmo tempo não passarem do limite.
-        const linhas = await this.conexao.consultar(
-            `INSERT INTO capacitacao_inscricoes (capacitacao_codigo, usuario_codigo)
-             SELECT c.codigo, $2::uuid FROM capacitacoes c
-             WHERE c.codigo = $1::uuid
-               AND (SELECT count(*) FROM capacitacao_inscricoes i WHERE i.capacitacao_codigo = c.codigo) < c.vagas
-             ON CONFLICT DO NOTHING
-             RETURNING usuario_codigo`,
-            [codigo, usuario.codigo],
-        );
-        return linhas.length > 0;
+        // Trava a linha da capacitação antes de contar: duas inscrições ao mesmo tempo esperam uma
+        // pela outra. A contagem fica num segundo comando porque, em READ COMMITTED, cada comando
+        // enxerga o que já foi gravado quando ele começa; no mesmo comando do lock, a inscrição
+        // que acabou de entrar não seria vista e as duas passariam do limite.
+        return this.conexao.transacao(async (conexao) => {
+            const travada = await conexao.consultar("SELECT vagas FROM capacitacoes WHERE codigo = $1::uuid FOR UPDATE", [codigo]);
+            if (!travada.length) return false;
+            const linhas = await conexao.consultar(
+                `INSERT INTO capacitacao_inscricoes (capacitacao_codigo, usuario_codigo)
+                 SELECT $1::uuid, $2::uuid
+                 WHERE (SELECT count(*) FROM capacitacao_inscricoes WHERE capacitacao_codigo = $1::uuid) < $3
+                 ON CONFLICT DO NOTHING
+                 RETURNING usuario_codigo`,
+                [codigo, usuario.codigo, travada[0].vagas],
+            );
+            return linhas.length > 0;
+        });
     }
 
     async cancelarInscricao(codigo: string, codigoUsuario: string): Promise<void> {
