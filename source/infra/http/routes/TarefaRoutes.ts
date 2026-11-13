@@ -1,3 +1,4 @@
+import { hoje } from "../../../shared/datas";
 import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFactoryInterface";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
@@ -137,7 +138,7 @@ export default class TarefaRoutes implements ModelRoutes {
             return new AlterarStatusTarefa(this.factory).execute(
                 params.codigo,
                 body.status as StatusTarefa,
-                new Date(),
+                hoje(),
                 await this.usuarioAtual(usuario),
             );
         });

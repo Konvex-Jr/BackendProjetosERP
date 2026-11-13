@@ -1,3 +1,4 @@
+import { hoje } from "../../shared/datas";
 import { v4 as uuid } from "uuid";
 import Usuario from "./Usuario";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
@@ -89,8 +90,5 @@ export default class Participacao {
     }
 }
 
-/** Data de hoje à meia-noite UTC, no mesmo formato das datas lidas do banco. */
-export function hoje(): Date {
-    const agora = new Date();
-    return new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate()));
-}
+/** Data de hoje (em São Paulo) à meia-noite UTC, no mesmo formato das datas lidas do banco. */
+export { hoje };

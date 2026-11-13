@@ -2,6 +2,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Documento, { exigirLinkValido } from "../../domain/entity/Documento";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import EnviarDocumentoInput from "./EnviarDocumentoInput";
+import { hoje } from "../../shared/datas";
 
 export default class EnviarDocumento {
     private readonly pastas;
@@ -22,7 +23,7 @@ export default class EnviarDocumento {
                 pasta,
                 input.nome,
                 input.tamanhoBytes,
-                input.dataEnvio ?? new Date(),
+                input.dataEnvio ?? hoje(),
                 autor,
                 exigirLinkValido(input.arquivoUrl),
                 input.extensao ?? null,

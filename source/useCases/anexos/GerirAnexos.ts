@@ -11,6 +11,7 @@ import { podeAlterarConhecimento } from "../../shared/seguranca/regrasConhecimen
 import { podeAlterarIniciativa } from "../../shared/seguranca/regrasIniciativa";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerPasta } from "../../shared/seguranca/sigiloPastas";
+import { hoje } from "../../shared/datas";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
 
@@ -123,7 +124,7 @@ export default class GerirAnexos {
         const documentos = this.factory.criarDocumentoRepository();
         const nomeDocumento = (nome ?? "").trim() || nomeArquivo.replace(/\.[^.]+$/, "") || nomeArquivo;
         const documento = await documentos.criar(
-            new Documento(pasta, nomeDocumento, arquivo.conteudo.length, new Date(), autor, null, extensaoDe(nomeArquivo) || null),
+            new Documento(pasta, nomeDocumento, arquivo.conteudo.length, hoje(), autor, null, extensaoDe(nomeArquivo) || null),
         );
         // Se o anexo falhar, desfaz o documento, para não ficar um documento "arquivo" sem arquivo.
         try {

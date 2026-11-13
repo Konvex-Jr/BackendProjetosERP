@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { Referencia } from "./Conhecimento";
+import { hoje } from "../../shared/datas";
 
 export interface DadosFeedback {
     codigoCapacitacao: string;
@@ -33,7 +34,7 @@ export default class CapacitacaoFeedback {
         this.nota = Number(dados.nota);
         this.bom = textoOuNulo(dados.bom);
         this.melhorar = textoOuNulo(dados.melhorar);
-        this.data = dados.data ?? new Date();
+        this.data = dados.data ?? hoje();
         if (!Number.isInteger(this.nota) || this.nota < 1 || this.nota > 5) {
             throw new ErroValidacao(M.NOTA_INVALIDA, "NOTA_FEEDBACK_INVALIDA");
         }

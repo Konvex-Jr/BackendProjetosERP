@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { CategoriaConhecimento, ehCategoriaConhecimento, LISTA_CATEGORIAS_CONHECIMENTO } from "../enum/CategoriaConhecimento";
+import { hoje } from "../../shared/datas";
 
 /** Referência curta (só o necessário para exibir). */
 export interface Referencia {
@@ -26,11 +27,6 @@ export interface DadosConhecimento {
 }
 
 const M = MENSAGENS_DE_ERRO.CONHECIMENTO;
-
-function hoje(): Date {
-    const d = new Date();
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
 
 /** Tags em minúsculas, sem "#", sem repetição. */
 export function normalizarTags(tags: unknown[] = []): string[] {

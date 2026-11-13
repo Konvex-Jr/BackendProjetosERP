@@ -3,13 +3,14 @@ import Tarefa from "../../domain/entity/Tarefa";
 import StatusTarefa from "../../domain/enum/StatusTarefa";
 import Usuario from "../../domain/entity/Usuario";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { hoje as hojeNoFuso } from "../../shared/datas";
 
 export default class AlterarStatusTarefa {
     private readonly tarefas;
     constructor(factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
     }
-    async execute(codigo: string, status: StatusTarefa, hoje = new Date(), quem: Usuario | null = null): Promise<Tarefa> {
+    async execute(codigo: string, status: StatusTarefa, hoje = hojeNoFuso(), quem: Usuario | null = null): Promise<Tarefa> {
         const t = await this.tarefas.buscarPorCodigo(codigo);
         if (!t) throw new ErroNaoEncontrado("Tarefa não encontrada.");
         const concluida = status === StatusTarefa.CONCLUIDA;
