@@ -1,5 +1,7 @@
+import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
-import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
+import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
+import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 export default class TarefaRepositoryMemory implements TarefaRepositoryInterface {
     private tarefas: Tarefa[];
@@ -19,6 +21,17 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
 
     async listarPorProjeto(codigoProjeto: string): Promise<Tarefa[]> {
         return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto);
+    }
+
+    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+        for (const t of this.tarefas) {
+            const contagem = t.projeto ? mapa.get(t.projeto.codigo) : undefined;
+            if (!contagem) continue;
+            contagem.total++;
+            if (t.status === StatusTarefa.CONCLUIDA) contagem.concluidas++;
+        }
+        return mapa;
     }
 
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {

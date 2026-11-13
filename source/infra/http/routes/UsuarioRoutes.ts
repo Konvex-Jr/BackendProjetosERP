@@ -121,7 +121,9 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("get", "/usuarios/:codigo", true, async (params: any) => this.buscarAlvo(params.codigo));
 
-        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any) => new ObterPerfilPessoa(f).execute(params.codigo));
+        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) =>
+            new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user)),
+        );
 
         this.http.route("get", "/senioridades", true, async () => f.criarSenioridadeRepository().listar());
 

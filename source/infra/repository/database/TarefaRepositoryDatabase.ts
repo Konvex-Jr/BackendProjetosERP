@@ -2,7 +2,7 @@ import Tarefa from "../../../domain/entity/Tarefa";
 import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
-import TarefaRepositoryInterface from "../../../domain/interfaces/TarefaRepositoryInterface";
+import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";
@@ -66,6 +66,20 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             codigoProjeto,
         ]);
         return this.carregar(linhas.map((l) => l.codigo));
+    }
+
+    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+        if (!codigosProjetos.length) return mapa;
+        const linhas = await this.conexao.consultar(
+            `SELECT projeto_codigo::text AS projeto, count(*)::int AS total,
+                    count(*) FILTER (WHERE status = 'concluida')::int AS concluidas
+             FROM tarefas WHERE projeto_codigo::text = ANY($1::text[])
+             GROUP BY projeto_codigo`,
+            [codigosProjetos],
+        );
+        for (const l of linhas) mapa.set(l.projeto, { total: l.total, concluidas: l.concluidas });
+        return mapa;
     }
 
     async listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]> {
