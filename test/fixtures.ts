@@ -8,8 +8,6 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
-import Pasta from "../source/domain/entity/Pasta";
-import Documento from "../source/domain/entity/Documento";
 
 export const dataInicio = new Date("2026-10-12T00:00:00.000Z");
 export const dataFim = new Date("2026-10-30T00:00:00.000Z");
@@ -61,23 +59,4 @@ export async function criarTarefa(factory: MemoryRepositoryFactory, membro: Usua
         "tarefa-teste",
     );
     return factory.criarTarefaRepository().criar(tarefa);
-}
-
-export async function criarPasta(factory: MemoryRepositoryFactory) {
-    return factory.criarPastaRepository().criar(new Pasta("Documentos", "pasta-teste"));
-}
-
-export async function criarDocumento(factory: MemoryRepositoryFactory, membro: Usuario) {
-    const pasta = await criarPasta(factory);
-    const documento = new Documento(
-        pasta,
-        "ata-reuniao",
-        120,
-        new Date("2026-10-10T00:00:00.000Z"),
-        membro,
-        "https://storage.test/ata.pdf",
-        "pdf",
-        "documento-teste",
-    );
-    return factory.criarDocumentoRepository().criar(documento);
 }

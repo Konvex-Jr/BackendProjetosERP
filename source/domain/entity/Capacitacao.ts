@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import TipoCapacitacao, { FUSO_KONVEX_HORAS } from "../enum/TipoCapacitacao";
-import { Referencia } from "./Conhecimento";
+import { Referencia } from "./Referencia";
 
 /** Inscrição numa capacitação. `presente` nulo = a gestão ainda não marcou. */
 export interface Inscricao {

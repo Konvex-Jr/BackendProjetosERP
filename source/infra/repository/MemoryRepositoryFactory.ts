@@ -5,21 +5,15 @@ import ProjetoRepositoryInterface from "../../domain/interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
-import PastaRepositoryInterface from "../../domain/interfaces/PastaRepositoryInterface";
-import DocumentoRepositoryInterface from "../../domain/interfaces/DocumentoRepositoryInterface";
 import UsuarioRepositoryMemory from "./memory/UsuarioRepositoryMemory";
 import SenioridadeRepositoryMemory from "./memory/SenioridadeRepositoryMemory";
 import ProjetoRepositoryMemory from "./memory/ProjetoRepositoryMemory";
 import TarefaRepositoryMemory from "./memory/TarefaRepositoryMemory";
 import CapacitacaoRepositoryMemory from "./memory/CapacitacaoRepositoryMemory";
 import CapacitacaoFeedbackRepositoryMemory from "./memory/CapacitacaoFeedbackRepositoryMemory";
-import PastaRepositoryMemory from "./memory/PastaRepositoryMemory";
 import BibliotecaRepositoryMemory from "./memory/BibliotecaRepositoryMemory";
-import ConhecimentoRepositoryMemory from "./memory/ConhecimentoRepositoryMemory";
-import IniciativaRepositoryMemory from "./memory/IniciativaRepositoryMemory";
 import AnexoRepositoryMemory from "./memory/AnexoRepositoryMemory";
 import ArmazenamentoAnexosMemoria from "../arquivos/ArmazenamentoAnexosMemoria";
-import DocumentoRepositoryMemory from "./memory/DocumentoRepositoryMemory";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
 import HabilidadeRepositoryMemory from "./memory/HabilidadeRepositoryMemory";
@@ -40,8 +34,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly tarefaRepository: TarefaRepositoryInterface;
     private readonly capacitacaoRepository: CapacitacaoRepositoryInterface;
     private readonly capacitacaoFeedbackRepository: CapacitacaoFeedbackRepositoryInterface;
-    private readonly pastaRepository: PastaRepositoryInterface;
-    private readonly documentoRepository: DocumentoRepositoryInterface;
 
     constructor() {
         this.usuarioRepository = new UsuarioRepositoryMemory();
@@ -50,8 +42,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         this.tarefaRepository = new TarefaRepositoryMemory();
         this.capacitacaoRepository = new CapacitacaoRepositoryMemory();
         this.capacitacaoFeedbackRepository = new CapacitacaoFeedbackRepositoryMemory();
-        this.pastaRepository = new PastaRepositoryMemory();
-        this.documentoRepository = new DocumentoRepositoryMemory();
     }
 
     criarUsuarioRepository(): UsuarioRepositoryInterface {
@@ -78,14 +68,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         return this.capacitacaoFeedbackRepository;
     }
 
-    criarPastaRepository(): PastaRepositoryInterface {
-        return this.pastaRepository;
-    }
-
-    criarDocumentoRepository(): DocumentoRepositoryInterface {
-        return this.documentoRepository;
-    }
-
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
     private readonly habilidadeRepository = new HabilidadeRepositoryMemory();
@@ -93,8 +75,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly bibliotecaRepository = new BibliotecaRepositoryMemory();
-    private readonly conhecimentoRepository = new ConhecimentoRepositoryMemory();
-    private readonly iniciativaRepository = new IniciativaRepositoryMemory();
     private readonly anexoRepository = new AnexoRepositoryMemory();
     /** Público para os testes conferirem quais arquivos foram gravados ou apagados. */
     readonly armazenamentoAnexos = new ArmazenamentoAnexosMemoria();
@@ -107,16 +87,8 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         return this.armazenamentoAnexos;
     }
 
-    criarIniciativaRepository() {
-        return this.iniciativaRepository;
-    }
-
     criarBibliotecaRepository() {
         return this.bibliotecaRepository;
-    }
-
-    criarConhecimentoRepository() {
-        return this.conhecimentoRepository;
     }
 
     criarAreaRepository() {

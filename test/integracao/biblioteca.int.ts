@@ -33,7 +33,8 @@ descrever("biblioteca contra PostgreSQL", () => {
         await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
         await aplicarMigracoes(pool);
         await aplicarMigracoes(pool);
-        const proj = "INSERT INTO projetos (nome, descricao, data_inicio, data_fim) VALUES ($1, '', '2026-11-01', '2026-12-01') RETURNING codigo";
+        const proj =
+            "INSERT INTO projetos (nome, descricao, data_inicio, data_fim) VALUES ($1, '', '2026-11-01', '2026-12-01') RETURNING codigo";
         const usu = "INSERT INTO usuarios (nome, email) VALUES ($1, $2) RETURNING codigo";
         p1 = await inserir(proj, "Projeto 1");
         p2 = await inserir(proj, "Projeto 2");
@@ -134,5 +135,21 @@ descrever("biblioteca contra PostgreSQL", () => {
         const i = await repo.criar(new ItemBiblioteca({ titulo: "i", projeto: proj }));
         await pool.query("DELETE FROM projetos WHERE codigo = $1", [proj.codigo]);
         expect((await repo.buscarPorCodigo(i.codigo))?.projeto).toBeNull();
+    });
+
+    test("anexos aceitam o dono biblioteca e recusam os donos antigos (CHECK da 012)", async () => {
+        const item = await repo.criar(new ItemBiblioteca({ titulo: "com anexo" }));
+        const anexo = (tipo: string) =>
+            pool.query(
+                `INSERT INTO anexos (codigo, dono_tipo, dono_codigo, nome, tipo_mime, tamanho_bytes, arquivo)
+                 VALUES (gen_random_uuid(), $1, $2, 'a.pdf', 'application/pdf', 10, gen_random_uuid()::text)`,
+                [tipo, item.codigo],
+            );
+        await expect(anexo("biblioteca")).resolves.toBeDefined();
+        await expect(anexo("capacitacao")).resolves.toBeDefined();
+        for (const antigo of ["documento", "conhecimento", "iniciativa"]) {
+            await expect(anexo(antigo)).rejects.toThrow(/anexos_dono_valido/);
+        }
+        await pool.query("DELETE FROM anexos");
     });
 });

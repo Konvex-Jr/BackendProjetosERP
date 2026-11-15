@@ -50,6 +50,17 @@ describe("Tarefas avulsas pela API", () => {
         expect(t.responsaveis.map((r: any) => r.codigo)).toEqual([assessor.codigo]);
     });
 
+    it("sessão 17: iniciativa saiu; o campo no corpo é ignorado no POST e no PUT", async () => {
+        const t = await criarAvulsa({ codigoIniciativa: "ini-x", iniciativa: { codigo: "ini-x" } });
+        expect(t).not.toHaveProperty("iniciativa");
+        const editada = await servidor.chamar("put", `/tarefas/${t.codigo}`, {
+            usuario: diretor,
+            corpo: avulsa({ codigosResponsaveis: [assessor.codigo], codigoIniciativa: "ini-y" }),
+        });
+        expect(editada.status).toBe(200);
+        expect(editada.corpo).not.toHaveProperty("iniciativa");
+    });
+
     it("valida: projeto OU categoria, e só categorias conhecidas", async () => {
         const nenhum = await servidor.chamar("post", "/tarefas", { usuario: diretor, corpo: avulsa({ categoria: undefined }) });
         expect(nenhum.status).toBe(400);

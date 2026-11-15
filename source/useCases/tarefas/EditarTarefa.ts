@@ -4,15 +4,13 @@ import ItemChecklistTarefa from "../../domain/entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
-import CategoriaTarefa from "../../domain/enum/CategoriaTarefa";
-import { referenciaDaIniciativa } from "../iniciativas/SalvarIniciativa";
 import { hoje } from "../../shared/datas";
 
 export default class EditarTarefa {
     private readonly tarefas;
     private readonly usuarios;
     private readonly projetos;
-    constructor(private readonly factory: RepositoryFactoryInterface) {
+    constructor(factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
         this.usuarios = factory.criarUsuarioRepository();
         this.projetos = factory.criarProjetoRepository();
@@ -47,13 +45,6 @@ export default class EditarTarefa {
                 : input.checklist.map((item) => new ItemChecklistTarefa(item.texto, item.feito, item.codigo));
 
         const categoria = atual.projeto ? null : (input.categoria ?? atual.categoria);
-        // Sem codigoIniciativa no corpo, a ligação continua (e cai sozinha se a tarefa deixar de ser de Inovação).
-        const iniciativa =
-            input.codigoIniciativa === undefined
-                ? categoria === CategoriaTarefa.INOVACAO
-                    ? atual.iniciativa
-                    : null
-                : await referenciaDaIniciativa(this.factory, input.codigoIniciativa);
 
         return this.tarefas.editar(
             new Tarefa(
@@ -73,7 +64,6 @@ export default class EditarTarefa {
                 // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
                 categoria,
                 atual.criadaPor,
-                iniciativa,
             ),
         );
     }

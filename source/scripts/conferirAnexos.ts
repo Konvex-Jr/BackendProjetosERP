@@ -3,13 +3,17 @@ import { promises as fs } from "fs";
 import { Pool } from "pg";
 import { stringConexao } from "../infra/database/stringConexao";
 import { pastaDosAnexos } from "../infra/arquivos/ArmazenamentoAnexosDisco";
-import { conferirAnexos, relatorioConferencia, TABELA_DO_DONO } from "../infra/arquivos/conferenciaAnexos";
+import { apagarSemRegistro, conferirAnexos, relatorioConferencia, TABELA_DO_DONO } from "../infra/arquivos/conferenciaAnexos";
 
 config();
 
 /**
  * Confere anexos órfãos e só relata (não apaga nada). Sai com código 1 se houver órfãos.
  * Na VPS: docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
+ *
+ * Com --apagar-sem-registro (sessão 17, depois da migração 012 e do backup): apaga do disco
+ * só os arquivos "sem registro" (nome de anexo, dentro da pasta dos anexos) e diz quantos.
+ * Registros sem arquivo e anexos sem dono continuam só no relatório.
  */
 async function main(): Promise<void> {
     const pool = new Pool({ connectionString: stringConexao() });
@@ -27,7 +31,13 @@ async function main(): Promise<void> {
         console.log(`Pasta dos anexos: ${pasta}`);
         const resultado = conferirAnexos(rows, arquivos, donos);
         console.log(relatorioConferencia(resultado));
-        if (resultado.semArquivo.length || resultado.semDono.length || resultado.semRegistro.length) process.exitCode = 1;
+        let semRegistro = resultado.semRegistro.length;
+        if (process.argv.includes("--apagar-sem-registro") && semRegistro) {
+            const apagados = await apagarSemRegistro(pasta, resultado.semRegistro);
+            console.log(`Arquivos sem registro apagados do disco: ${apagados} de ${semRegistro}.`);
+            semRegistro -= apagados;
+        }
+        if (resultado.semArquivo.length || resultado.semDono.length || semRegistro) process.exitCode = 1;
     } finally {
         await pool.end();
     }

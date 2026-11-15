@@ -1,5 +1,5 @@
 import Capacitacao from "../../../domain/entity/Capacitacao";
-import { Referencia } from "../../../domain/entity/Conhecimento";
+import { Referencia } from "../../../domain/entity/Referencia";
 import CapacitacaoRepositoryInterface from "../../../domain/interfaces/CapacitacaoRepositoryInterface";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";

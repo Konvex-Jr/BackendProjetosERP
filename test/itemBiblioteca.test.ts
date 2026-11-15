@@ -20,6 +20,9 @@ describe("ItemBiblioteca", () => {
 
     it("link ftp:// lança; https:// passa", () => {
         expect(() => new ItemBiblioteca({ titulo: "Guia", links: ["ftp://x.com/a"] })).toThrow(ErroValidacao);
+        expect(() => new ItemBiblioteca({ titulo: "Guia", links: ["ftp://x.com/a"] })).toThrow(
+            expect.objectContaining({ codigo: "LINK_INVALIDO" }),
+        );
         expect(new ItemBiblioteca({ titulo: "Guia", links: ["https://x.com/a"] }).links).toEqual(["https://x.com/a"]);
     });
 

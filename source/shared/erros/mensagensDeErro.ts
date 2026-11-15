@@ -50,32 +50,6 @@ export const MENSAGENS_DE_ERRO = {
         PROJETO_SEM_PERMISSAO: "Você só pode ligar o item a projetos de que participa ou participou.",
     },
 
-    CONHECIMENTO: {
-        TITULO_OBRIGATORIO: "O título do item é obrigatório.",
-        TITULO_LONGO: "O título do item deve ter no máximo 160 caracteres.",
-        RESUMO_OBRIGATORIO: "O resumo do item é obrigatório.",
-        RESUMO_LONGO: "O resumo do item deve ter no máximo 500 caracteres.",
-        CONTEUDO_LONGO: "O conteúdo do item deve ter no máximo 50.000 caracteres.",
-        FONTE_LONGA: "A fonte do item deve ter no máximo 300 caracteres.",
-        MUITAS_TAGS: "Use no máximo 10 tags, com até 40 caracteres cada.",
-        MUITOS_LINKS: "Use no máximo 10 links.",
-        NAO_ENCONTRADO: "Item da Base de Inteligência não encontrado.",
-        SEM_PERMISSAO: "Só quem cadastrou o item ou a gestão pode alterá-lo ou excluí-lo.",
-    },
-
-    INICIATIVA: {
-        TITULO_OBRIGATORIO: "O título da iniciativa é obrigatório.",
-        TITULO_LONGO: "O título da iniciativa deve ter no máximo 160 caracteres.",
-        DESCRICAO_LONGA: "A descrição da iniciativa deve ter no máximo 20.000 caracteres.",
-        RESULTADO_LONGO: "O resultado da iniciativa deve ter no máximo 10.000 caracteres.",
-        APRENDIZADOS_LONGOS: "Os aprendizados da iniciativa devem ter no máximo 10.000 caracteres.",
-        PERIODO_INVALIDO: "A data de fim da iniciativa não pode ser anterior à de início.",
-        NAO_ENCONTRADA: "Iniciativa não encontrada.",
-        SEM_PERMISSAO_CRIAR: "Só a gestão e quem é da área de Inovação podem criar iniciativas.",
-        SEM_PERMISSAO: "Só o responsável, quem criou a iniciativa ou a gestão podem alterá-la ou excluí-la.",
-        SO_EM_INOVACAO: "Só tarefas avulsas da categoria Inovação podem ser ligadas a uma iniciativa.",
-    },
-
     CAPACITACAO: {
         TITULO_OBRIGATORIO: "O título da capacitação é obrigatório.",
         TITULO_LONGO: "O título da capacitação deve ter no máximo 200 caracteres.",
@@ -107,7 +81,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     ANEXO: {
-        DONO_INVALIDO: "Anexo só pode ser de um documento, de um item da Base, de uma iniciativa ou de uma capacitação.",
+        DONO_INVALIDO: "Anexo só pode ser de um item da Biblioteca ou de uma capacitação.",
         NOME_OBRIGATORIO: "Informe o nome do arquivo.",
         NOME_LONGO: "O nome do arquivo deve ter no máximo 255 caracteres.",
         TIPO_NAO_ACEITO:
@@ -116,9 +90,7 @@ export const MENSAGENS_DE_ERRO = {
         GRANDE_DEMAIS: "O arquivo passa de 20 MB, o tamanho máximo.",
         NAO_ENCONTRADO: "Anexo não encontrado.",
         ARQUIVO_SUMIU: "O arquivo deste anexo não foi encontrado no servidor. Avise a gestão.",
-        SEM_PERMISSAO_DOCUMENTO: "Só a gestão pode anexar ou excluir arquivos nas pastas.",
         SEM_PERMISSAO_CAPACITACAO: "Só diretores e gerentes podem anexar ou excluir material das capacitações.",
-        DOCUMENTO_E_ARQUIVO: "Este documento é um arquivo, não um link. Para trocar, exclua e envie outro.",
     },
 
     GERAL: {

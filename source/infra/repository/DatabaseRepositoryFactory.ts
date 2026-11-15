@@ -5,8 +5,6 @@ import ProjetoRepositoryInterface from "../../domain/interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
-import PastaRepositoryInterface from "../../domain/interfaces/PastaRepositoryInterface";
-import DocumentoRepositoryInterface from "../../domain/interfaces/DocumentoRepositoryInterface";
 import ConexaoBanco from "../database/ConexaoBanco";
 import UsuarioRepositoryDatabase from "./database/UsuarioRepositoryDatabase";
 import SenioridadeRepositoryDatabase from "./database/SenioridadeRepositoryDatabase";
@@ -14,8 +12,6 @@ import ProjetoRepositoryDatabase from "./database/ProjetoRepositoryDatabase";
 import TarefaRepositoryDatabase from "./database/TarefaRepositoryDatabase";
 import CapacitacaoRepositoryDatabase from "./database/CapacitacaoRepositoryDatabase";
 import CapacitacaoFeedbackRepositoryDatabase from "./database/CapacitacaoFeedbackRepositoryDatabase";
-import PastaRepositoryDatabase from "./database/PastaRepositoryDatabase";
-import DocumentoRepositoryDatabase from "./database/DocumentoRepositoryDatabase";
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
 import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabase";
@@ -23,8 +19,6 @@ import HistoricoPessoaRepositoryDatabase from "./database/HistoricoPessoaReposit
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
-import ConhecimentoRepositoryDatabase from "./database/ConhecimentoRepositoryDatabase";
-import IniciativaRepositoryDatabase from "./database/IniciativaRepositoryDatabase";
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
 import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
 
@@ -64,14 +58,6 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new CapacitacaoFeedbackRepositoryDatabase(this.conexao);
     }
 
-    criarPastaRepository(): PastaRepositoryInterface {
-        return new PastaRepositoryDatabase(this.conexao);
-    }
-
-    criarDocumentoRepository(): DocumentoRepositoryInterface {
-        return new DocumentoRepositoryDatabase(this.conexao);
-    }
-
     criarAreaRepository() {
         return new AreaRepositoryDatabase(this.conexao);
     }
@@ -92,16 +78,8 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new ComentarioTarefaRepositoryDatabase(this.conexao);
     }
 
-    criarConhecimentoRepository() {
-        return new ConhecimentoRepositoryDatabase(this.conexao);
-    }
-
     criarBibliotecaRepository() {
         return new BibliotecaRepositoryDatabase(this.conexao);
-    }
-
-    criarIniciativaRepository() {
-        return new IniciativaRepositoryDatabase(this.conexao);
     }
 
     criarAnexoRepository() {

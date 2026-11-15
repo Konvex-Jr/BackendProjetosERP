@@ -3,13 +3,12 @@ import Tarefa from "../../domain/entity/Tarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import CriarTarefaInput from "./CriarTarefaInput";
-import { referenciaDaIniciativa } from "../iniciativas/SalvarIniciativa";
 
 export default class CriarTarefa {
     private readonly tarefas;
     private readonly projetos;
     private readonly usuarios;
-    constructor(private readonly factory: RepositoryFactoryInterface) {
+    constructor(factory: RepositoryFactoryInterface) {
         this.tarefas = factory.criarTarefaRepository();
         this.projetos = factory.criarProjetoRepository();
         this.usuarios = factory.criarUsuarioRepository();
@@ -45,7 +44,6 @@ export default class CriarTarefa {
                 null,
                 input.categoria ?? null,
                 input.criadaPor ?? null,
-                await referenciaDaIniciativa(this.factory, input.codigoIniciativa),
             ),
         );
     }

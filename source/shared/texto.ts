@@ -39,7 +39,7 @@ export function validarLink(link: string): string {
         valido = false;
     }
     if (!valido) {
-        throw new ErroValidacao(`Link inválido: ${link}. Use um endereço começando com https://.`, "LINK_CONHECIMENTO_INVALIDO");
+        throw new ErroValidacao(`Link inválido: ${link}. Use um endereço começando com https://.`, "LINK_INVALIDO");
     }
     return link;
 }

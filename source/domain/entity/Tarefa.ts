@@ -7,7 +7,6 @@ import ItemChecklistTarefa from "./ItemChecklistTarefa";
 import StatusTarefa from "../enum/StatusTarefa";
 import PrioridadeTarefa from "../enum/PrioridadeTarefa";
 import CategoriaTarefa, { ehCategoriaTarefa } from "../enum/CategoriaTarefa";
-import { Referencia } from "./Conhecimento";
 
 /**
  * Tarefa de projeto ou avulsa: tem projeto ou categoria, nunca os dois. Como as outras entidades,
@@ -34,8 +33,6 @@ export default class Tarefa {
     readonly categoria: CategoriaTarefa | null;
     /** Quem criou (sessão 8c). Nulo nas tarefas criadas antes. */
     readonly criadaPor: Usuario | null;
-    /** Iniciativa de inovação ligada (sessão 12b). Só em tarefa avulsa de categoria Inovação. */
-    readonly iniciativa: Referencia | null;
 
     constructor(
         projeto: Projeto | null,
@@ -53,7 +50,6 @@ export default class Tarefa {
         concluidaPor: Usuario | null = null,
         categoria: CategoriaTarefa | null = null,
         criadaPor: Usuario | null = null,
-        iniciativa: Referencia | null = null,
     ) {
         this.codigo = codigo ?? uuid();
         this.projeto = projeto;
@@ -71,7 +67,6 @@ export default class Tarefa {
         this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
         this.categoria = categoria ?? null;
         this.criadaPor = criadaPor;
-        this.iniciativa = iniciativa ?? null;
 
         this.validar();
     }
@@ -98,7 +93,6 @@ export default class Tarefa {
             concluidaPor,
             this.categoria,
             this.criadaPor,
-            this.iniciativa,
         );
     }
 
@@ -120,29 +114,6 @@ export default class Tarefa {
             this.concluidaPor,
             this.categoria,
             this.criadaPor,
-            this.iniciativa,
-        );
-    }
-
-    /** Cópia ligada a outra iniciativa (ou a nenhuma). */
-    comIniciativa(iniciativa: Referencia | null): Tarefa {
-        return new Tarefa(
-            this.projeto,
-            this.titulo,
-            this.dataInicio,
-            this.dataFim,
-            this.status,
-            this.prioridade,
-            this.descricao,
-            this.dataConclusao,
-            this.dependeDe,
-            this.responsaveis,
-            this.checklist,
-            this.codigo,
-            this.concluidaPor,
-            this.categoria,
-            this.criadaPor,
-            iniciativa,
         );
     }
 
@@ -190,10 +161,6 @@ export default class Tarefa {
 
         if (this.categoria !== null && !ehCategoriaTarefa(this.categoria)) {
             throw new ErroValidacao("Categoria inválida. Use inovacao, capacitacao ou execucao.", "CATEGORIA_TAREFA_INVALIDA");
-        }
-
-        if (this.iniciativa && this.categoria !== CategoriaTarefa.INOVACAO) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.INICIATIVA.SO_EM_INOVACAO, "INICIATIVA_SO_EM_INOVACAO");
         }
 
         if (this.dependeDe) {

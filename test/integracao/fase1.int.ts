@@ -279,219 +279,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         ).rejects.toThrow(/tarefas_projeto_ou_categoria/);
         expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}`, dir)).status).toBeLessThan(300);
     }, 60000);
-    test("sessão 9: pastas com sigilo e documentos como link no banco", async () => {
-        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        const pessoa = await chamar("POST", "/usuarios", dir, {
-            nome: "Leitora",
-            email: "leitora@teste.com",
-            senha: "SenhaLeitora1",
-            perfil: "membro",
-            codigoSenioridade: "junior",
-        });
-        expect(pessoa.status).toBe(200);
-        const proj = await chamar("POST", "/projetos", dir, {
-            nome: "Projeto Docs",
-            descricao: "d",
-            dataInicio: "2026-11-01",
-            dataFim: "2026-12-01",
-        });
-        expect(proj.status).toBe(200);
-        const publica = await chamar("POST", "/pastas", dir, { nome: "Modelos" });
-        const restrita = await chamar("POST", "/pastas", dir, { nome: "Financeiro", sigilo: "gestao" });
-        const doProjeto = await chamar("POST", "/pastas", dir, { nome: "Entregas", sigilo: "projeto", codigoProjeto: proj.corpo.codigo });
-        expect(doProjeto.status).toBe(200);
-        expect(doProjeto.corpo.projeto.nome).toBe("Projeto Docs");
-        const doc = await chamar("POST", `/pastas/${restrita.corpo.codigo}/documentos`, dir, {
-            nome: "Balanço",
-            arquivoUrl: "https://drive.google.com/b",
-        });
-        expect(doc.status).toBe(200);
-        expect(doc.corpo.pasta.sigilo).toBe("gestao");
-
-        const leitora = (await entrar("leitora@teste.com", "SenhaLeitora1")).corpo.token as string;
-        const visiveis = (await chamar("GET", "/pastas", leitora)).corpo.map((p: any) => p.codigo);
-        expect(visiveis).toContain(publica.corpo.codigo);
-        expect(visiveis).not.toContain(restrita.corpo.codigo);
-        expect(visiveis).not.toContain(doProjeto.corpo.codigo);
-        expect((await chamar("GET", `/pastas/${restrita.corpo.codigo}/documentos`, leitora)).status).toBe(404);
-
-        await chamar("POST", `/projetos/${proj.corpo.codigo}/membros`, dir, {
-            codigoUsuario: pessoa.corpo.codigo,
-            funcao: "Dev",
-            alocacao: 10,
-            dataEntrada: "2026-11-01",
-        });
-        expect((await chamar("GET", "/pastas", leitora)).corpo.map((p: any) => p.codigo)).toContain(doProjeto.corpo.codigo);
-
-        // O banco também barra pasta de projeto sem projeto.
-        await expect(pool.query("INSERT INTO pastas (codigo, nome, sigilo) VALUES (gen_random_uuid(), 'x', 'projeto')")).rejects.toThrow(
-            /pastas_projeto_conforme_sigilo/,
-        );
-        // Excluir o projeto leva a pasta dele junto.
-        expect((await chamar("DELETE", `/projetos/${proj.corpo.codigo}`, dir)).status).toBeLessThan(300);
-        expect((await chamar("GET", "/pastas", dir)).corpo.map((p: any) => p.codigo)).not.toContain(doProjeto.corpo.codigo);
-    }, 60000);
-
-    test("sessão 12a: Base de Inteligência com busca, filtros e projetos no banco", async () => {
-        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        const pessoa = await chamar("POST", "/usuarios", dir, {
-            nome: "Autora",
-            email: "autora@teste.com",
-            senha: "SenhaAutora1",
-            perfil: "membro",
-            codigoSenioridade: "junior",
-        });
-        expect(pessoa.status).toBe(200);
-        const autora = (await entrar("autora@teste.com", "SenhaAutora1")).corpo.token as string;
-        const proj = await chamar("POST", "/projetos", dir, {
-            nome: "Projeto Base",
-            descricao: "d",
-            dataInicio: "2026-11-01",
-            dataFim: "2026-12-01",
-        });
-
-        const item = await chamar("POST", "/conhecimento", autora, {
-            titulo: "Pesquisa 100% de mercado",
-            categoria: "pesquisa",
-            resumo: "Concorrentes",
-            conteudo: "**iFood** domina",
-            tags: ["Delivery"],
-            links: ["https://exemplo.com"],
-            codigosProjetos: [proj.corpo.codigo],
-            data: "2026-10-20",
-        });
-        expect(item.status).toBe(200);
-        expect(item.corpo.autor.nome).toBe("Autora");
-        expect(item.corpo.data).toBe("2026-10-20T00:00:00.000Z"); // DATE sem deslocar pelo fuso
-        expect(item.corpo.projetos).toEqual([{ codigo: proj.corpo.codigo, nome: "Projeto Base" }]);
-        await chamar("POST", "/conhecimento", dir, {
-            titulo: "Decisão de stack",
-            categoria: "decisao",
-            resumo: "React",
-            data: "2026-01-05",
-        });
-
-        const titulos = async (q: string) => (await chamar("GET", `/conhecimento${q}`, dir)).corpo.map((i: any) => i.titulo);
-        expect(await titulos("")).toEqual(["Pesquisa 100% de mercado", "Decisão de stack"]);
-        expect(await titulos("?busca=IFOOD")).toEqual(["Pesquisa 100% de mercado"]);
-        expect(await titulos("?busca=100%25")).toEqual(["Pesquisa 100% de mercado"]);
-        expect(await titulos("?busca=_")).toEqual([]);
-        expect(await titulos("?tag=delivery")).toEqual(["Pesquisa 100% de mercado"]);
-        expect(await titulos(`?codigoProjeto=${proj.corpo.codigo}`)).toEqual(["Pesquisa 100% de mercado"]);
-        expect(await titulos(`?codigoAutor=${pessoa.corpo.codigo}`)).toEqual(["Pesquisa 100% de mercado"]);
-        expect(await titulos("?categoria=decisao&de=2026-01-01&ate=2026-01-31")).toEqual(["Decisão de stack"]);
-        expect(await titulos("?codigoProjeto=nao-e-uuid")).toEqual([]);
-        expect((await chamar("GET", "/conhecimento/nao-e-uuid", dir)).status).toBe(404);
-
-        // Autor edita (troca os projetos); a diretora exclui; excluir o projeto não apaga o item.
-        const editado = await chamar("PUT", `/conhecimento/${item.corpo.codigo}`, autora, { ...item.corpo, codigosProjetos: [] });
-        expect(editado.status).toBe(200);
-        expect(editado.corpo.projetos).toEqual([]);
-        expect(new Date(editado.corpo.atualizadoEm).getTime()).toBeGreaterThanOrEqual(new Date(item.corpo.criadoEm).getTime());
-        await chamar("PUT", `/conhecimento/${item.corpo.codigo}`, autora, { ...item.corpo, codigosProjetos: [proj.corpo.codigo] });
-        expect((await chamar("DELETE", `/projetos/${proj.corpo.codigo}`, dir)).status).toBeLessThan(300);
-        const depois = await chamar("GET", `/conhecimento/${item.corpo.codigo}`, autora);
-        expect(depois.corpo.projetos).toEqual([]);
-        expect((await chamar("DELETE", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(200);
-        expect((await chamar("GET", `/conhecimento/${item.corpo.codigo}`, dir)).status).toBe(404);
-    }, 60000);
-    test("sessão 12b: iniciativas com projetos, itens da Base e tarefas de Inovação no banco", async () => {
-        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        // A área "Inovação" foi criada no teste da fase 1, acima.
-        const area = { corpo: (await chamar("GET", "/areas", dir)).corpo.find((a: any) => a.nome === "Inovação") };
-        expect(area.corpo).toBeTruthy();
-        const inov = await chamar("POST", "/usuarios", dir, {
-            nome: "Inovadora",
-            email: "inov@teste.com",
-            senha: "SenhaInov1",
-            perfil: "membro",
-            codigoSenioridade: "junior",
-            codigoArea: area.corpo.codigo,
-        });
-        expect(inov.status).toBe(200);
-        await chamar("POST", "/usuarios", dir, {
-            nome: "Comum",
-            email: "comum@teste.com",
-            senha: "SenhaComum1",
-            perfil: "membro",
-            codigoSenioridade: "junior",
-        });
-        const tokenInov = (await entrar("inov@teste.com", "SenhaInov1")).corpo.token as string;
-        const tokenComum = (await entrar("comum@teste.com", "SenhaComum1")).corpo.token as string;
-
-        expect((await chamar("GET", "/iniciativas/opcoes", tokenInov)).corpo.podeCriar).toBe(true);
-        expect((await chamar("GET", "/iniciativas/opcoes", tokenComum)).corpo.podeCriar).toBe(false);
-        expect((await chamar("POST", "/iniciativas", tokenComum, { titulo: "X", tipo: "produto", frente: "lab" })).status).toBe(403);
-
-        const proj = await chamar("POST", "/projetos", dir, {
-            nome: "Projeto Inov",
-            descricao: "d",
-            dataInicio: "2026-11-01",
-            dataFim: "2026-12-01",
-        });
-        const k1 = await chamar("POST", "/conhecimento", tokenComum, { titulo: "Pesquisa A", categoria: "pesquisa", resumo: "r" });
-        const k2 = await chamar("POST", "/conhecimento", tokenComum, { titulo: "Pesquisa B", categoria: "pesquisa", resumo: "r" });
-
-        const ini = await chamar("POST", "/iniciativas", tokenInov, {
-            titulo: "Chatbot 100%",
-            tipo: "servico",
-            frente: "radar",
-            status: "andamento",
-            dataInicio: "2026-11-03",
-            dataFim: "2026-12-20",
-            descricao: "**IA** no atendimento",
-            codigosProjetos: [proj.corpo.codigo],
-            codigosConhecimentos: [k1.corpo.codigo, k2.corpo.codigo],
-        });
-        expect(ini.status).toBe(200);
-        expect(ini.corpo.dataInicio).toBe("2026-11-03T00:00:00.000Z"); // DATE sem deslocar pelo fuso
-        expect(ini.corpo.dataFim).toBe("2026-12-20T00:00:00.000Z");
-        expect(ini.corpo.responsavel.nome).toBe("Inovadora");
-        expect(ini.corpo.criadoPor.nome).toBe("Inovadora");
-        expect(ini.corpo.projetos).toEqual([{ codigo: proj.corpo.codigo, nome: "Projeto Inov" }]);
-        expect(ini.corpo.conhecimentos.map((c: any) => c.nome)).toEqual(["Pesquisa A", "Pesquisa B"]);
-        expect((await chamar("GET", `/conhecimento/${k1.corpo.codigo}`, tokenComum)).corpo.iniciativas).toEqual([
-            { codigo: ini.corpo.codigo, nome: "Chatbot 100%" },
-        ]);
-
-        const tarefa = await chamar("POST", "/tarefas", dir, {
-            categoria: "inovacao",
-            titulo: "Protótipo",
-            dataInicio: "2026-11-03",
-            dataFim: "2026-11-10",
-            prioridade: "P2",
-            codigosResponsaveis: [inov.corpo.codigo],
-            codigoIniciativa: ini.corpo.codigo,
-        });
-        expect(tarefa.status).toBe(200);
-        expect(tarefa.corpo.iniciativa).toEqual({ codigo: ini.corpo.codigo, nome: "Chatbot 100%" });
-        const ficha = await chamar("GET", `/iniciativas/${ini.corpo.codigo}`, tokenInov);
-        expect(ficha.corpo.tarefas.map((t: any) => t.titulo)).toEqual(["Protótipo"]);
-        expect((await chamar("GET", `/iniciativas/${ini.corpo.codigo}`, tokenComum)).corpo.tarefas).toEqual([]);
-
-        const titulos = async (q: string) => (await chamar("GET", `/iniciativas${q}`, dir)).corpo.map((i: any) => i.titulo);
-        expect(await titulos("?busca=100%25")).toEqual(["Chatbot 100%"]);
-        expect(await titulos("?busca=_")).toEqual([]);
-        expect(await titulos(`?codigoProjeto=${proj.corpo.codigo}&status=andamento&frente=radar`)).toEqual(["Chatbot 100%"]);
-        expect(await titulos(`?codigoConhecimento=${k2.corpo.codigo}`)).toEqual(["Chatbot 100%"]);
-        expect(await titulos("?codigoResponsavel=nao-e-uuid")).toEqual([]);
-        expect((await chamar("GET", "/iniciativas/nao-e-uuid", dir)).status).toBe(404);
-
-        // Renomear aparece na tarefa; outro membro não edita; excluir deixa a tarefa e o item sem a ligação.
-        const corpo = { ...ini.corpo, titulo: "Chatbot", codigosProjetos: [], codigosConhecimentos: [k1.corpo.codigo] };
-        expect((await chamar("PUT", `/iniciativas/${ini.corpo.codigo}`, tokenComum, corpo)).status).toBe(403);
-        const editada = await chamar("PUT", `/iniciativas/${ini.corpo.codigo}`, tokenInov, corpo);
-        expect(editada.status).toBe(200);
-        expect(editada.corpo.projetos).toEqual([]);
-        expect(editada.corpo.conhecimentos).toHaveLength(1);
-        const daTarefa = async () =>
-            (await chamar("GET", "/tarefas?categoria=inovacao", dir)).corpo.find((t: any) => t.codigo === tarefa.corpo.codigo);
-        expect((await daTarefa()).iniciativa.nome).toBe("Chatbot");
-        expect((await chamar("DELETE", `/iniciativas/${ini.corpo.codigo}`, dir)).status).toBe(200);
-        expect((await daTarefa()).iniciativa).toBeNull();
-        expect((await chamar("GET", `/conhecimento/${k1.corpo.codigo}`, dir)).corpo.iniciativas).toEqual([]);
-    }, 60000);
-    test("sessão 12c: anexos gravados no banco e no disco, com sigilo da pasta", async () => {
+    test("sessão 12c/17: anexos da Biblioteca gravados no banco e no disco, com sigilo do item", async () => {
         const pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
         process.env.ANEXOS_DIR = pasta;
         try {
@@ -521,26 +309,27 @@ descrever("fase 1 contra PostgreSQL", () => {
                 return { status: r.status, texto: await r.text() };
             };
 
-            const item = await chamar("POST", "/conhecimento", membro, { titulo: "Estudo", categoria: "estudo", resumo: "r" });
-            const anexo = await enviar(membro, `/conhecimento/${item.corpo.codigo}/anexos`, "Estudo ação.pdf");
+            // Sessão 17: o dono é um item da Biblioteca (o CHECK de anexos aceita 'biblioteca' no banco).
+            const item = await chamar("POST", "/biblioteca", membro, { titulo: "Estudo" });
+            const anexo = await enviar(membro, `/biblioteca/${item.corpo.codigo}/anexos`, "Estudo ação.pdf");
             expect(anexo.status).toBe(200);
             expect(anexo.corpo.enviadoPor.nome).toBe("Anexadora");
             expect(readdirSync(pasta)).toHaveLength(1);
-            expect((await chamar("GET", `/conhecimento/${item.corpo.codigo}`, dir)).corpo.anexos[0].nome).toBe("Estudo ação.pdf");
+            expect((await chamar("GET", `/biblioteca/${item.corpo.codigo}`, dir)).corpo.anexos[0].nome).toBe("Estudo ação.pdf");
             expect(await baixar(dir, anexo.corpo.codigo)).toEqual({ status: 200, texto: "%PDF-1.4 teste" });
             expect((await baixar(dir, "nao-e-uuid")).status).toBe(404);
 
-            const restrita = await chamar("POST", "/pastas", dir, { nome: "Contratos", sigilo: "gestao" });
-            const doc = await enviar(dir, `/pastas/${restrita.corpo.codigo}/documentos/arquivo`, "contrato.pdf");
+            const restrito = await chamar("POST", "/biblioteca", dir, { titulo: "Contratos", sigilo: "gestao" });
+            const doc = await enviar(dir, `/biblioteca/${restrito.corpo.codigo}/anexos`, "contrato.pdf");
             expect(doc.status).toBe(200);
-            expect(doc.corpo.arquivoUrl).toBeNull();
-            const lista = await chamar("GET", `/pastas/${restrita.corpo.codigo}/documentos`, dir);
-            expect(lista.corpo[0].anexo.nome).toBe("contrato.pdf");
-            expect((await baixar(membro, doc.corpo.anexo.codigo)).status).toBe(404);
-            expect((await baixar(dir, doc.corpo.anexo.codigo)).status).toBe(200);
+            expect((await pool.query("SELECT dono_tipo FROM anexos WHERE codigo = $1", [doc.corpo.codigo])).rows[0].dono_tipo).toBe(
+                "biblioteca",
+            );
+            expect((await baixar(membro, doc.corpo.codigo)).status).toBe(404);
+            expect((await baixar(dir, doc.corpo.codigo)).status).toBe(200);
 
-            expect((await chamar("DELETE", `/pastas/${restrita.corpo.codigo}`, dir)).status).toBe(200);
-            expect((await chamar("DELETE", `/conhecimento/${item.corpo.codigo}`, membro)).status).toBe(200);
+            expect((await chamar("DELETE", `/biblioteca/${restrito.corpo.codigo}`, dir)).status).toBe(204);
+            expect((await chamar("DELETE", `/biblioteca/${item.corpo.codigo}`, membro)).status).toBe(204);
             expect(readdirSync(pasta)).toHaveLength(0);
             expect((await pool.query("SELECT count(*)::int AS n FROM anexos")).rows[0].n).toBe(0);
         } finally {
@@ -702,7 +491,7 @@ descrever("fase 1 contra PostgreSQL", () => {
 
         for (const caminho of [
             "/tarefas/nao-e-uuid/comentarios",
-            "/pastas/nao-e-uuid/documentos",
+            "/biblioteca/nao-e-uuid",
             "/usuarios/nao-e-uuid",
             "/projetos/nao-e-uuid",
         ]) {
