@@ -37,11 +37,30 @@ describe("Compressão das respostas", () => {
         expect(r.headers.get("content-encoding")).toBeNull();
     });
 
-    it("/auth/login nunca sai comprimido", async () => {
-        const r = await servidor.chamar("post", "/auth/login", {
-            corpo: { email: "ninguem@konvex.com.br", senha: "errada" },
-            cabecalhos: gzip,
+    describe("rotas de teste com corpo grande (> 1 KB)", () => {
+        const grande = { texto: "x".repeat(3000) };
+
+        beforeEach(async () => {
+            for (const caminho of ["/auth/grande", "/outra/grande"]) {
+                await servidor.http.route("get", caminho, false, async () => grande);
+            }
         });
-        expect(r.headers.get("content-encoding")).toBeNull();
+
+        it.each(["/auth/grande", "/Auth/grande", "/AUTH/grande"])("%s nunca sai comprimido", async (caminho) => {
+            const r = await servidor.chamar("get", caminho, { cabecalhos: gzip });
+            expect(r.status).toBe(200);
+            expect(r.headers.get("content-encoding")).toBeNull();
+        });
+
+        it("controle positivo: mesmo corpo fora de /auth sai comprimido", async () => {
+            const r = await servidor.chamar("get", "/outra/grande", { cabecalhos: gzip });
+            expect(r.headers.get("content-encoding")).toBe("gzip");
+        });
+
+        it("/authx não é /auth e comprime normalmente", async () => {
+            await servidor.http.route("get", "/authx", false, async () => grande);
+            const r = await servidor.chamar("get", "/authx", { cabecalhos: gzip });
+            expect(r.headers.get("content-encoding")).toBe("gzip");
+        });
     });
 });
