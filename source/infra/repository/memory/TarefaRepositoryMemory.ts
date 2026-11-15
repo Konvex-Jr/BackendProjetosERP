@@ -1,5 +1,6 @@
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
+import { fimDaSemana } from "../../../shared/datas";
 import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
@@ -27,13 +28,21 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto).map((t) => t.codigo);
     }
 
-    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
-        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+    async contarPorProjetos(codigosProjetos: string[], hoje: Date): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(
+            codigosProjetos.map((c) => [c, { total: 0, concluidas: 0, atrasadas: 0, semana: 0 }]),
+        );
+        const domingo = fimDaSemana(hoje);
         for (const t of this.tarefas) {
             const contagem = t.projeto ? mapa.get(t.projeto.codigo) : undefined;
             if (!contagem) continue;
             contagem.total++;
-            if (t.status === StatusTarefa.CONCLUIDA) contagem.concluidas++;
+            if (t.status === StatusTarefa.CONCLUIDA) {
+                contagem.concluidas++;
+                continue;
+            }
+            if (t.dataFim < hoje) contagem.atrasadas++;
+            else if (t.dataFim <= domingo) contagem.semana++;
         }
         return mapa;
     }

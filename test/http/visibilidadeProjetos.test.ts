@@ -90,11 +90,11 @@ describe("Visibilidade de projetos", () => {
 
         const esperado = { total: 3, concluidas: 1 };
         const doMembro = await servidor.chamar("get", "/projetos", { usuario: ctx.membro });
-        expect(doMembro.corpo.find((p: any) => p.codigo === "proj-dupla").tarefas).toEqual(esperado);
+        expect(doMembro.corpo.find((p: any) => p.codigo === "proj-dupla").tarefas).toMatchObject(esperado);
         const daGestao = await servidor.chamar("get", "/projetos", { usuario: ctx.gerente });
-        expect(daGestao.corpo.find((p: any) => p.codigo === "proj-dupla").tarefas).toEqual(esperado);
-        expect(daGestao.corpo.find((p: any) => p.codigo === "proj-alheio").tarefas).toEqual({ total: 0, concluidas: 0 });
-        expect((await servidor.chamar("get", "/projetos/proj-dupla", { usuario: ctx.membro })).corpo.tarefas).toEqual(esperado);
+        expect(daGestao.corpo.find((p: any) => p.codigo === "proj-dupla").tarefas).toMatchObject(esperado);
+        expect(daGestao.corpo.find((p: any) => p.codigo === "proj-alheio").tarefas).toMatchObject({ total: 0, concluidas: 0 });
+        expect((await servidor.chamar("get", "/projetos/proj-dupla", { usuario: ctx.membro })).corpo.tarefas).toMatchObject(esperado);
     });
 
     it("membro só recebe tarefas dos próprios projetos", async () => {

@@ -11,9 +11,17 @@ import ExcluirProjeto from "../../../useCases/projetos/ExcluirProjeto";
 import AlternarStatusProjeto from "../../../useCases/projetos/AlternarStatusProjeto";
 import { AdicionarParticipante, DefinirLider, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/projetos/dadosProjeto";
-import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
-import { exigirVerProjeto, projetosVisiveisPara } from "../../../shared/seguranca/visibilidadeProjetos";
+import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import {
+    acessoAoProjeto,
+    exigirAcessoCompleto,
+    podeGerirAcesso,
+    projetosVisiveisPara,
+} from "../../../shared/seguranca/visibilidadeProjetos";
 import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
+import { resumoProjeto } from "../../../useCases/projetos/resumoProjeto";
+import { hoje } from "../../../shared/datas";
+import { normalizarBusca } from "../../../shared/texto";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 function lerDetalhes(body: any): EntradaDetalhesProjeto {
@@ -37,35 +45,60 @@ export default class ProjetoRoutes implements ModelRoutes {
     ) {}
 
     /**
-     * Acrescenta `tarefas: { total, concluidas }` de todas as tarefas do projeto. O frontend calcula
-     * o progresso com isso; antes usava só as tarefas carregadas, e o membro, que recebe só as
-     * dele, via outro % (revisão de 12/11/2026).
+     * Monta a resposta de cada projeto conforme o acesso da pessoa: completo (`toJSON` + contagem de
+     * tarefas + `podeGerirAcesso`), resumo (gerente fora de projeto sigiloso) ou nada (some da lista).
+     * O frontend calcula o progresso com a contagem de todas as tarefas do projeto; antes usava só as
+     * carregadas, e o membro, que recebe só as dele, via outro % (revisão de 12/11/2026).
+     * Resumo não tem área nem responsável, e a busca só vale pelo nome (referência e cliente não
+     * podem servir de pista), então esses filtros o descartam.
      */
-    private async comContagem(projetos: Projeto[]) {
-        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(projetos.map((p) => p.codigo));
-        return projetos.map((p) => ({ ...p.toJSON(), tarefas: contagem.get(p.codigo) ?? { total: 0, concluidas: 0 } }));
+    private async paraResposta(
+        usuario: UsuarioAutenticado,
+        projetos: Projeto[],
+        filtro: { codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
+    ) {
+        const acessos = projetos.map((p) => ({ projeto: p, acesso: acessoAoProjeto(usuario, p) }));
+        const busca = normalizarBusca(filtro.busca);
+        const resumoServe = (p: Projeto) =>
+            !filtro.codigoArea && !filtro.codigoResponsavel && (!busca || normalizarBusca(p.nome).includes(busca));
+        const visiveis = acessos.filter((a) => a.acesso === "completo" || (a.acesso === "resumo" && resumoServe(a.projeto)));
+        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(
+            visiveis.map((a) => a.projeto.codigo),
+            hoje(),
+        );
+        return visiveis.map(({ projeto, acesso }) => {
+            const tarefas = contagem.get(projeto.codigo) ?? { total: 0, concluidas: 0, atrasadas: 0, semana: 0 };
+            return acesso === "resumo"
+                ? resumoProjeto(projeto, tarefas)
+                : { ...projeto.toJSON(), tarefas, podeGerirAcesso: podeGerirAcesso(usuario, projeto) };
+        });
     }
 
     init(): void {
         const f = this.factory;
 
-        this.http.route("get", "/projetos", true, async (_p: any, body: any, query: any) =>
-            this.comContagem(
-                await new ListarProjetos(f).execute({
-                    codigoUsuario: projetosVisiveisPara(body?.user, query?.codigoUsuario || undefined),
-                    status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
-                    codigoArea: query?.codigoArea || undefined,
-                    codigoResponsavel: query?.codigoResponsavel || undefined,
-                    busca: query?.busca || undefined,
-                }),
-            ),
-        );
+        this.http.route("get", "/projetos", true, async (_p: any, body: any, query: any) => {
+            const usuario = exigirAutenticado(body?.user);
+            const filtro = {
+                codigoArea: query?.codigoArea || undefined,
+                codigoResponsavel: query?.codigoResponsavel || undefined,
+                busca: query?.busca || undefined,
+            };
+            const projetos = await new ListarProjetos(f).execute({
+                codigoUsuario: projetosVisiveisPara(usuario, query?.codigoUsuario || undefined),
+                status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
+                ...filtro,
+            });
+            return this.paraResposta(usuario, projetos, filtro);
+        });
 
         this.http.route("get", "/projetos/:codigo", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body?.user);
             const projeto = await f.criarProjetoRepository().buscarPorCodigo(params.codigo);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
-            exigirVerProjeto(body?.user, projeto);
-            return (await this.comContagem([projeto]))[0];
+            // Quem não vê nada recebe 404 (sigiloso) ou 403 (normal), pela regra central.
+            if (acessoAoProjeto(usuario, projeto) === "nada") exigirAcessoCompleto(usuario, projeto);
+            return (await this.paraResposta(usuario, [projeto]))[0];
         });
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {

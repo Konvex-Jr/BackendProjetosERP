@@ -3,6 +3,10 @@ import Tarefa from "../entity/Tarefa";
 export interface ContagemTarefas {
     total: number;
     concluidas: number;
+    /** Não concluídas com prazo anterior a hoje. */
+    atrasadas: number;
+    /** Não concluídas com prazo de hoje até o domingo da semana. */
+    semana: number;
 }
 
 /** Tarefas de projeto e avulsas. Não aplica permissão: quem decide o que a pessoa vê é regrasTarefa. */
@@ -12,8 +16,8 @@ export default interface TarefaRepositoryInterface {
     listarPorProjeto(codigoProjeto: string): Promise<Tarefa[]>;
     /** Só os códigos das tarefas do projeto, sem montar entidades (não revalida as tarefas). */
     listarCodigosPorProjeto(codigoProjeto: string): Promise<string[]>;
-    /** Total e concluídas por projeto (sem permissão: o progresso é igual para quem vê o projeto). */
-    contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>>;
+    /** Contagens por projeto (sem permissão: o progresso é igual para quem vê o projeto). `hoje` é o dia de São Paulo. */
+    contarPorProjetos(codigosProjetos: string[], hoje: Date): Promise<Map<string, ContagemTarefas>>;
     listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]>;
     buscarPorCodigo(codigo: string): Promise<Tarefa | null>;
     editar(tarefa: Tarefa): Promise<Tarefa>;

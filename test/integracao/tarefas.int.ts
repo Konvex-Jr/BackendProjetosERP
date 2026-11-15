@@ -78,4 +78,45 @@ descrever("tarefas contra PostgreSQL", () => {
         expect(editada.titulo).toBe("Tarefa editada");
         expect(editada.responsaveis.map((r) => r.codigo)).toEqual([pessoa.codigo]);
     });
+
+    test("contarPorProjetos conta total, concluídas, atrasadas e da semana (hoje = quarta 18/11)", async () => {
+        const dia = (d: string) => new Date(`${d}T00:00:00.000Z`);
+        const pessoa = new Usuario(
+            "Conta Tarefas",
+            `conta-${crypto.randomUUID()}@teste.com`,
+            PerfilUsuario.MEMBRO,
+            true,
+            "hash",
+            new SenioridadeUsuario("pleno", "Pleno", 75),
+        );
+        await factory.criarUsuarioRepository().criar(pessoa);
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Contagem", "Descrição", dia("2026-11-01"), dia("2026-12-30"), undefined, [pessoa], crypto.randomUUID()));
+        const tarefas = factory.criarTarefaRepository();
+        const nova = (fim: string, status: StatusTarefa) =>
+            tarefas.criar(
+                new Tarefa(
+                    projeto,
+                    "T",
+                    dia("2026-11-01"),
+                    dia(fim),
+                    status,
+                    PrioridadeTarefa.P2,
+                    null,
+                    status === StatusTarefa.CONCLUIDA ? dia(fim) : null,
+                    null,
+                    [pessoa],
+                    [],
+                ),
+            );
+        await nova("2026-11-17", StatusTarefa.PENDENTE);
+        await nova("2026-11-22", StatusTarefa.PENDENTE);
+        await nova("2026-11-23", StatusTarefa.PENDENTE);
+        await nova("2026-11-10", StatusTarefa.CONCLUIDA);
+
+        const mapa = await tarefas.contarPorProjetos([projeto.codigo, "sem-tarefas"], dia("2026-11-18"));
+        expect(mapa.get(projeto.codigo)).toEqual({ total: 4, concluidas: 1, atrasadas: 1, semana: 1 });
+        expect(mapa.get("sem-tarefas")).toEqual({ total: 0, concluidas: 0, atrasadas: 0, semana: 0 });
+    });
 });

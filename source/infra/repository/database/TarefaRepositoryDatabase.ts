@@ -2,6 +2,7 @@ import Tarefa from "../../../domain/entity/Tarefa";
 import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
+import { fimDaSemana } from "../../../shared/datas";
 import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
@@ -72,17 +73,23 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         return linhas.map((l) => l.codigo);
     }
 
-    async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
-        const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
+    async contarPorProjetos(codigosProjetos: string[], hoje: Date): Promise<Map<string, ContagemTarefas>> {
+        const mapa = new Map<string, ContagemTarefas>(
+            codigosProjetos.map((c) => [c, { total: 0, concluidas: 0, atrasadas: 0, semana: 0 }]),
+        );
         if (!codigosProjetos.length) return mapa;
         const linhas = await this.conexao.consultar(
             `SELECT projeto_codigo::text AS projeto, count(*)::int AS total,
-                    count(*) FILTER (WHERE status = 'concluida')::int AS concluidas
+                    count(*) FILTER (WHERE status = 'concluida')::int AS concluidas,
+                    count(*) FILTER (WHERE status <> 'concluida' AND data_fim < $2::date)::int AS atrasadas,
+                    count(*) FILTER (WHERE status <> 'concluida' AND data_fim >= $2::date AND data_fim <= $3::date)::int AS semana
              FROM tarefas WHERE projeto_codigo::text = ANY($1::text[])
              GROUP BY projeto_codigo`,
-            [codigosProjetos],
+            [codigosProjetos, dataParaSql(hoje), dataParaSql(fimDaSemana(hoje))],
         );
-        for (const l of linhas) mapa.set(l.projeto, { total: l.total, concluidas: l.concluidas });
+        for (const l of linhas) {
+            mapa.set(l.projeto, { total: l.total, concluidas: l.concluidas, atrasadas: l.atrasadas, semana: l.semana });
+        }
         return mapa;
     }
 

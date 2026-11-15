@@ -486,7 +486,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         );
         expect(porProjeto.rows.find((l: any) => l.p === proj.corpo.codigo)).toMatchObject({ n: 2, c: 1 });
         for (const linha of porProjeto.rows) {
-            expect(projetos.find((x: any) => x.codigo === linha.p)?.tarefas).toEqual({ total: linha.n, concluidas: linha.c });
+            expect(projetos.find((x: any) => x.codigo === linha.p)?.tarefas).toMatchObject({ total: linha.n, concluidas: linha.c });
         }
 
         for (const caminho of [
