@@ -84,9 +84,15 @@ describe("Anexos", () => {
         const r = await enviar(ctx.membro, `/biblioteca/${item.codigo}/anexos`, "dados.csv", texto);
         expect(r.status).toBe(200);
 
-        const download = await baixar(bruno, r.corpo.codigo);
-        expect(download.status).toBe(200);
-        expect(download.bytes.equals(texto)).toBe(true);
+        // Node (undici) manda accept-encoding por conta própria e descomprime sozinho; explícito aqui.
+        const resposta = await fetch(`${servidor.base}/anexos/${r.corpo.codigo}`, {
+            headers: { "access-token": tokenPara(bruno), "accept-encoding": "gzip" },
+        });
+        const bytes = Buffer.from(await resposta.arrayBuffer());
+        expect(resposta.status).toBe(200);
+        expect(resposta.headers.get("content-encoding")).toBe("gzip");
+        expect(resposta.headers.get("content-length")).toBeNull();
+        expect(bytes.equals(texto)).toBe(true);
     });
 
     it("arquivo que sumiu do disco responde 404 com JSON, antes de enviar qualquer byte", async () => {

@@ -1,4 +1,5 @@
-import { createReadStream, promises as fs } from "fs";
+import { promises as fs } from "fs";
+import type { FileHandle } from "fs/promises";
 import path from "path";
 import ArmazenamentoAnexosInterface from "../../domain/interfaces/ArmazenamentoAnexosInterface";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
@@ -38,11 +39,19 @@ export default class ArmazenamentoAnexosDisco implements ArmazenamentoAnexosInte
 
     async abrir(arquivo: string): Promise<{ fluxo: NodeJS.ReadableStream; tamanho: number } | null> {
         const caminho = this.caminho(arquivo);
+        let handle: FileHandle;
         try {
-            const { size } = await fs.stat(caminho);
-            return { fluxo: createReadStream(caminho), tamanho: size };
+            handle = await fs.open(caminho, "r");
         } catch (erro: any) {
             if (erro?.code === "ENOENT") return null;
+            throw erro;
+        }
+        // Tamanho e leitura vêm do mesmo descritor: não há janela entre conferir e abrir.
+        try {
+            const { size } = await handle.stat();
+            return { fluxo: handle.createReadStream(), tamanho: size };
+        } catch (erro) {
+            await handle.close().catch(() => undefined);
             throw erro;
         }
     }
