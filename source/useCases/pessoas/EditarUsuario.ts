@@ -5,7 +5,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
 /**
@@ -36,6 +36,8 @@ export default class EditarUsuario {
         if (!senioridade) {
             throw new ErroValidacao("Selecione uma senioridade cadastrada para o usuário.", "SENIORIDADE_OBRIGATORIA");
         }
+
+        exigirTraineeMembro(atual.status, input.perfil ?? atual.perfil);
 
         const detalhes = await resolverPerfilPessoa(this.factory, input, atual);
         const editado = atual.copiar({

@@ -22,6 +22,9 @@ export const MENSAGENS_DE_ERRO = {
     USUARIO: {
         NAO_ENCONTRADO: "Usuário não encontrado.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
+        TRAINEE_SO_MEMBRO: "Trainee tem sempre o perfil de membro: troque o perfil para membro ou o status para ativo.",
+        TRAINEE_NAO_LIDERA: "Trainee não pode ser líder de projeto.",
+        TRAINEE_SEM_BIBLIOTECA: "Trainees não têm acesso à Biblioteca.",
     },
 
     PROJETO: {

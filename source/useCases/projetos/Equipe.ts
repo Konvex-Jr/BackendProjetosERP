@@ -5,6 +5,8 @@ import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao"
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import StatusPessoa from "../../domain/enum/StatusPessoa";
 
 /** Resultado das operações da aba Equipe: o projeto e o alerta de alocação da pessoa (RN-04). */
 export interface ResultadoEquipe {
@@ -110,6 +112,11 @@ export class DefinirLider {
         if (input.codigoUsuario) {
             lider = projeto.membros.find((m) => m.codigo === input.codigoUsuario) ?? null;
             if (!lider) throw new ErroValidacao("O líder precisa estar na equipe atual do projeto.", "LIDER_FORA_DO_PROJETO");
+            // Trainee (sessão 20) não lidera; o status vem do cadastro, não da cópia guardada no projeto.
+            const pessoa = await this.factory.criarUsuarioRepository().buscarPorCodigo(lider.codigo);
+            if (pessoa?.status === StatusPessoa.TRAINEE) {
+                throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.TRAINEE_NAO_LIDERA, "TRAINEE_NAO_LIDERA");
+            }
         }
         const editado = projeto.copiar({ lider });
         await this.factory.criarProjetoRepository().editar(editado);

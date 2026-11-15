@@ -3,6 +3,7 @@ import Usuario from "../../domain/entity/Usuario";
 import { hoje } from "../../domain/entity/Participacao";
 import StatusPessoa, { STATUS_DE_SAIDA } from "../../domain/enum/StatusPessoa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { exigirTraineeMembro } from "./dadosPessoa";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 export interface AlterarStatusPessoaInput {
@@ -36,6 +37,8 @@ export default class AlterarStatusPessoa {
         const usuarios = this.factory.criarUsuarioRepository();
         const atual = await usuarios.buscarPorCodigo(input.codigo);
         if (!atual) throw new ErroNaoEncontrado("Usuário não encontrado.");
+
+        exigirTraineeMembro(input.status, atual.perfil);
 
         const saindo = STATUS_DE_SAIDA.includes(input.status);
         const dataSaida = saindo ? (input.dataSaida ?? atual.dataSaida ?? hoje()) : null;

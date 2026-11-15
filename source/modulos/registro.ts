@@ -9,7 +9,7 @@ import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
 import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
 import BibliotecaRoutes from "../infra/http/routes/BibliotecaRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
-import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
+import { ehTrainee, temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
 /** Item do menu lateral. `chave` e `caminho` são os da tela no frontend; `ordem` define a posição. */
 export interface ItemMenu {
@@ -19,6 +19,8 @@ export interface ItemMenu {
     ordem: number;
     /** Sem permissão: visível para qualquer pessoa logada. */
     permissao?: Permissao;
+    /** Trainee (sessão 20) não vê o item. */
+    semTrainee?: boolean;
 }
 
 /** Toda classe de rotas tem este construtor; o Router cria uma instância de cada. */
@@ -105,7 +107,7 @@ export const MODULOS: Modulo[] = [
         nome: "Biblioteca",
         rotas: [BibliotecaRoutes],
         permissoes: [Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
-        menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 35 }],
+        menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 35, semTrainee: true }],
     },
     {
         // Sessão 12c: arquivos anexados (hoje, a itens da Biblioteca e a capacitações; sem item de menu).
@@ -133,7 +135,9 @@ export const MODULOS: Modulo[] = [
 ];
 
 function itensVisiveis(usuario: UsuarioAutenticado, modulo: Modulo): ItemMenu[] {
-    return modulo.menu.filter((item) => !item.permissao || temPermissao(usuario, item.permissao));
+    return modulo.menu.filter(
+        (item) => (!item.permissao || temPermissao(usuario, item.permissao)) && !(item.semTrainee && ehTrainee(usuario)),
+    );
 }
 
 // O frontend recebe só chave, rótulo e caminho; `permissao` e `ordem` são detalhes do backend.
