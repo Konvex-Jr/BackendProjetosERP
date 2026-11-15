@@ -3,7 +3,7 @@ import Usuario from "../../domain/entity/Usuario";
 import { hoje } from "../../domain/entity/Participacao";
 import StatusPessoa, { STATUS_DE_SAIDA } from "../../domain/enum/StatusPessoa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { exigirTraineeMembro } from "./dadosPessoa";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 export interface AlterarStatusPessoaInput {
@@ -38,7 +38,10 @@ export default class AlterarStatusPessoa {
         const atual = await usuarios.buscarPorCodigo(input.codigo);
         if (!atual) throw new ErroNaoEncontrado("Usuário não encontrado.");
 
-        exigirTraineeMembro(input.status, atual.perfil);
+        // Trainee é só a etapa de entrada (sessão 20): quem já saiu dela não volta.
+        if (input.status === StatusPessoa.TRAINEE && atual.status !== StatusPessoa.TRAINEE) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.STATUS_TRAINEE_SO_NA_ENTRADA, "STATUS_TRAINEE_SO_NA_ENTRADA");
+        }
 
         const saindo = STATUS_DE_SAIDA.includes(input.status);
         const dataSaida = saindo ? (input.dataSaida ?? atual.dataSaida ?? hoje()) : null;
@@ -46,13 +49,6 @@ export default class AlterarStatusPessoa {
         await usuarios.editar(usuario);
 
         let participacoesEncerradas = 0;
-        // Trainee não lidera (sessão 20): quem vira trainee deixa a liderança dos projetos, como na migração 014.
-        if (input.status === StatusPessoa.TRAINEE) {
-            const projetos = this.factory.criarProjetoRepository();
-            for (const projeto of await projetos.listarPorMembro(usuario.codigo)) {
-                if (projeto.lider?.codigo === usuario.codigo) await projetos.editar(projeto.copiar({ lider: null }));
-            }
-        }
         // Quem fica sem acesso (saída) tem as sessões encerradas na hora.
         if (!usuario.ativo) {
             await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);

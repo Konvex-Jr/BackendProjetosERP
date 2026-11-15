@@ -119,21 +119,15 @@ describe("Trainee", () => {
             expect(ok.status).toBe(200);
         });
 
-        it("mudar gerente para trainee: 400", async () => {
-            const r = await servidor.chamar("patch", `/usuarios/${ctx.gerente.codigo}/status`, {
-                usuario: ctx.gerente,
-                corpo: { status: "trainee" },
-            });
-            // o próprio gerente não muda o status (403); outro diretor muda
-            expect(r.status).toBe(403);
+        it("mudar alguém para trainee: 400 STATUS_TRAINEE_SO_NA_ENTRADA", async () => {
             const diretor = new Usuario("Dir", "dir@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dir");
             await ctx.factory.criarUsuarioRepository().criar(diretor);
-            const r2 = await servidor.chamar("patch", `/usuarios/${ctx.gerente.codigo}/status`, {
+            const r = await servidor.chamar("patch", `/usuarios/${ctx.gerente.codigo}/status`, {
                 usuario: diretor,
                 corpo: { status: "trainee" },
             });
-            expect(r2.status).toBe(400);
-            expect(r2.corpo.code ?? r2.corpo.codigo).toBe("TRAINEE_SO_MEMBRO");
+            expect(r.status).toBe(400);
+            expect(r.corpo.code ?? r.corpo.codigo).toBe("STATUS_TRAINEE_SO_NA_ENTRADA");
         });
 
         it("editar trainee para gerente: 400", async () => {
@@ -153,25 +147,16 @@ describe("Trainee", () => {
         expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
     });
 
-    it("membro que lidera vira trainee: perde a liderança e não organiza tarefas", async () => {
+    it("membro ativo que lidera não volta a trainee: 400 e o líder fica", async () => {
         const projeto = await criarProjeto(ctx.factory, ctx.membro);
         await ctx.factory.criarProjetoRepository().editar(projeto.copiar({ participacoes: projeto.participacoes, lider: ctx.membro }));
-        await criarTarefa(ctx.factory, ctx.gerente, projeto, "tarefa-outro");
-        const antes = await servidor.chamar("get", `/projetos/${projeto.codigo}`, { usuario: ctx.gerente });
-        expect(antes.corpo.lider?.codigo).toBe(ctx.membro.codigo);
-
         const r = await servidor.chamar("patch", `/usuarios/${ctx.membro.codigo}/status`, {
             usuario: ctx.gerente,
             corpo: { status: StatusPessoa.TRAINEE },
         });
-        expect(r.status).toBe(200);
+        expect(r.status).toBe(400);
+        expect(r.corpo.code ?? r.corpo.codigo).toBe("STATUS_TRAINEE_SO_NA_ENTRADA");
         const depois = await servidor.chamar("get", `/projetos/${projeto.codigo}`, { usuario: ctx.gerente });
-        expect(depois.corpo.lider).toBeNull();
-
-        const edicao = await servidor.chamar("put", "/tarefas/tarefa-outro", {
-            usuario: ctx.membro,
-            corpo: { titulo: "Novo", dataInicio: dataInicio.toISOString(), dataFim: dataFim.toISOString() },
-        });
-        expect(edicao.status).toBe(403);
+        expect(depois.corpo.lider?.codigo).toBe(ctx.membro.codigo);
     });
 });
