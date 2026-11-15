@@ -152,4 +152,26 @@ describe("Trainee", () => {
         expect(r.status).toBe(400);
         expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
     });
+
+    it("membro que lidera vira trainee: perde a liderança e não organiza tarefas", async () => {
+        const projeto = await criarProjeto(ctx.factory, ctx.membro);
+        await ctx.factory.criarProjetoRepository().editar(projeto.copiar({ participacoes: projeto.participacoes, lider: ctx.membro }));
+        await criarTarefa(ctx.factory, ctx.gerente, projeto, "tarefa-outro");
+        const antes = await servidor.chamar("get", `/projetos/${projeto.codigo}`, { usuario: ctx.gerente });
+        expect(antes.corpo.lider?.codigo).toBe(ctx.membro.codigo);
+
+        const r = await servidor.chamar("patch", `/usuarios/${ctx.membro.codigo}/status`, {
+            usuario: ctx.gerente,
+            corpo: { status: StatusPessoa.TRAINEE },
+        });
+        expect(r.status).toBe(200);
+        const depois = await servidor.chamar("get", `/projetos/${projeto.codigo}`, { usuario: ctx.gerente });
+        expect(depois.corpo.lider).toBeNull();
+
+        const edicao = await servidor.chamar("put", "/tarefas/tarefa-outro", {
+            usuario: ctx.membro,
+            corpo: { titulo: "Novo", dataInicio: dataInicio.toISOString(), dataFim: dataFim.toISOString() },
+        });
+        expect(edicao.status).toBe(403);
+    });
 });

@@ -46,7 +46,14 @@ export default class AlterarStatusPessoa {
         await usuarios.editar(usuario);
 
         let participacoesEncerradas = 0;
-        // Quem fica sem acesso (saída ou trainee) tem as sessões encerradas na hora.
+        // Trainee não lidera (sessão 20): quem vira trainee deixa a liderança dos projetos, como na migração 014.
+        if (input.status === StatusPessoa.TRAINEE) {
+            const projetos = this.factory.criarProjetoRepository();
+            for (const projeto of await projetos.listarPorMembro(usuario.codigo)) {
+                if (projeto.lider?.codigo === usuario.codigo) await projetos.editar(projeto.copiar({ lider: null }));
+            }
+        }
+        // Quem fica sem acesso (saída) tem as sessões encerradas na hora.
         if (!usuario.ativo) {
             await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
         }
