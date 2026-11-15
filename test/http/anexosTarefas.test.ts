@@ -204,4 +204,19 @@ describe("Anexos nas tarefas", () => {
         expect((await excluir(lider, anexo.codigo)).status).toBe(403);
         expect((await excluir(colega, anexo.codigo)).status).toBe(200);
     });
+
+    it("a lista de tarefas traz quantidadeAnexos (2 na com anexos, 0 nas outras) e o PATCH de status também", async () => {
+        const projeto = (await ctx.factory.criarProjetoRepository().buscarPorCodigo("proj-time"))!;
+        const outra = await criarTarefa(ctx.factory, colega, projeto, "tarefa-dois");
+        await enviar(colega, TAREFA, "a.pdf");
+        await enviar(colega, TAREFA, "b.pdf");
+
+        const lista = (await servidor.chamar("get", "/tarefas", { usuario: ctx.gerente })).corpo;
+        expect(lista.find((t: any) => t.codigo === TAREFA).quantidadeAnexos).toBe(2);
+        expect(lista.find((t: any) => t.codigo === outra.codigo).quantidadeAnexos).toBe(0);
+
+        const patch = await servidor.chamar("patch", `/tarefas/${TAREFA}/status`, { usuario: colega, corpo: { status: "andamento" } });
+        expect(patch.status).toBe(200);
+        expect(patch.corpo.quantidadeAnexos).toBe(2);
+    });
 });

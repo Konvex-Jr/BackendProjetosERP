@@ -42,7 +42,7 @@ export async function criarProjeto(factory: MemoryRepositoryFactory, membro: Usu
     return factory.criarProjetoRepository().criar(projeto);
 }
 
-export async function criarTarefa(factory: MemoryRepositoryFactory, membro: Usuario, projetoExistente?: Projeto) {
+export async function criarTarefa(factory: MemoryRepositoryFactory, membro: Usuario, projetoExistente?: Projeto, codigo = "tarefa-teste") {
     const projeto = projetoExistente ?? (await criarProjeto(factory, membro));
     const tarefa = new Tarefa(
         projeto,
@@ -56,7 +56,7 @@ export async function criarTarefa(factory: MemoryRepositoryFactory, membro: Usua
         null,
         [membro],
         [],
-        "tarefa-teste",
+        codigo,
     );
     return factory.criarTarefaRepository().criar(tarefa);
 }

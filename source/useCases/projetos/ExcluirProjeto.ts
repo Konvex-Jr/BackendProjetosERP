@@ -1,6 +1,8 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import SigiloBiblioteca from "../../domain/enum/SigiloBiblioteca";
+import { DonoAnexo } from "../../domain/enum/Anexo";
+import GerirAnexos from "../anexos/GerirAnexos";
 import ExcluirItemBiblioteca from "../biblioteca/ExcluirItemBiblioteca";
 
 export default class ExcluirProjeto {
@@ -19,6 +21,8 @@ export default class ExcluirProjeto {
             await excluirItem.removerComAnexos(item.codigo);
         }
         await biblioteca.desligarProjeto(codigo);
+        const codigosTarefas = (await this.tarefas.listarPorProjeto(codigo)).map((t) => t.codigo);
+        await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.TAREFA, codigosTarefas);
         await this.tarefas.excluirPorProjeto(codigo);
         await this.projetos.excluir(codigo);
     }

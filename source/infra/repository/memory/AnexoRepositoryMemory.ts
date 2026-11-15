@@ -21,6 +21,15 @@ export default class AnexoRepositoryMemory implements AnexoRepositoryInterface {
             .sort((a, b) => a.enviadoEm.getTime() - b.enviadoEm.getTime());
     }
 
+    async contarPorDonos(tipo: DonoAnexo, codigosDonos: string[]): Promise<Map<string, number>> {
+        const donos = new Set(codigosDonos);
+        const mapa = new Map<string, number>();
+        for (const a of this.itens) {
+            if (a.donoTipo === tipo && donos.has(a.donoCodigo)) mapa.set(a.donoCodigo, (mapa.get(a.donoCodigo) ?? 0) + 1);
+        }
+        return mapa;
+    }
+
     async excluir(codigo: string): Promise<void> {
         this.itens = this.itens.filter((a) => a.codigo !== codigo);
     }

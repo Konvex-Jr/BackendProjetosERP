@@ -45,3 +45,25 @@ test("excluir o projeto leva os itens da equipe (com anexos e arquivos) e solta 
     expect(await factory.criarAnexoRepository().listarPorDonos(DonoAnexo.BIBLIOTECA, [equipe.codigo])).toHaveLength(0);
     expect((await repo.buscarPorCodigo(aberto.codigo))?.projeto).toBeNull();
 });
+
+test("excluir o projeto apaga os anexos de todas as tarefas", async () => {
+    const { factory, membro } = await criarContexto();
+    const projeto = await criarProjeto(factory, membro);
+    const t1 = await criarTarefa(factory, membro, projeto);
+    const t2 = await criarTarefa(factory, membro, projeto, "tarefa-dois");
+    const gerir = new GerirAnexos(factory);
+    const usuario = { codigo: membro.codigo, perfil: membro.perfil };
+    const anexos = [];
+    for (const t of [t1, t2]) {
+        for (const nome of ["a.pdf", "b.pdf"]) {
+            anexos.push(await gerir.enviar(usuario, DonoAnexo.TAREFA, t.codigo, { nome, conteudo: Buffer.from("%PDF-1.4") }));
+        }
+    }
+    const armazenamento = factory.criarArmazenamentoAnexos();
+    expect(await armazenamento.ler(anexos[0].arquivo)).not.toBeNull();
+
+    await new ExcluirProjeto(factory).execute(projeto.codigo);
+
+    expect(await factory.criarAnexoRepository().listarPorDonos(DonoAnexo.TAREFA, [t1.codigo, t2.codigo])).toHaveLength(0);
+    for (const a of anexos) expect(await armazenamento.ler(a.arquivo)).toBeNull();
+});

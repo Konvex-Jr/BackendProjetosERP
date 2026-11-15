@@ -65,6 +65,18 @@ export default class AnexoRepositoryDatabase implements AnexoRepositoryInterface
         return linhas.map(anexoDaLinha);
     }
 
+    async contarPorDonos(tipo: DonoAnexo, codigosDonos: string[]): Promise<Map<string, number>> {
+        const mapa = new Map<string, number>();
+        if (codigosDonos.length === 0) return mapa;
+        const linhas = await this.conexao.consultar(
+            `SELECT a.dono_codigo::text AS dono_codigo, COUNT(*) AS total FROM anexos a
+             WHERE a.dono_tipo = $1 AND a.dono_codigo::text = ANY($2::text[]) GROUP BY a.dono_codigo`,
+            [tipo, codigosDonos],
+        );
+        for (const l of linhas) mapa.set(l.dono_codigo, Number(l.total));
+        return mapa;
+    }
+
     async excluir(codigo: string): Promise<void> {
         await this.conexao.consultar("DELETE FROM anexos WHERE codigo::text = $1", [codigo]);
     }

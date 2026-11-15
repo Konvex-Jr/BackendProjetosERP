@@ -4,6 +4,7 @@ import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
 import ComentarioTarefa from "../../../domain/entity/ComentarioTarefa";
+import { DonoAnexo } from "../../../domain/enum/Anexo";
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import ListarTarefas from "../../../useCases/tarefas/ListarTarefas";
@@ -44,6 +45,19 @@ export default class TarefaRoutes implements ModelRoutes {
         return r;
     }
 
+    /** Acrescenta `quantidadeAnexos` (uma consulta para todas) às tarefas da resposta. */
+    private async comAnexos(tarefas: Tarefa[]) {
+        const contagem = await this.factory.criarAnexoRepository().contarPorDonos(
+            DonoAnexo.TAREFA,
+            tarefas.map((t) => t.codigo),
+        );
+        return tarefas.map((t) => ({ ...t.toJSON(), quantidadeAnexos: contagem.get(t.codigo) ?? 0 }));
+    }
+
+    private async comAnexosDe(tarefa: Tarefa) {
+        return (await this.comAnexos([tarefa]))[0];
+    }
+
     private async usuarioAtual(usuario: UsuarioAutenticado) {
         return this.factory.criarUsuarioRepository().buscarPorCodigo(usuario.codigo);
     }
@@ -61,16 +75,18 @@ export default class TarefaRoutes implements ModelRoutes {
                 categoria: query?.categoria,
                 status: query?.status,
             });
-            if (podeVerTodosProjetos(usuario) && podeAtribuirAvulsas(usuario)) return tarefas;
+            if (podeVerTodosProjetos(usuario) && podeAtribuirAvulsas(usuario)) return this.comAnexos(tarefas);
             // Membro: tarefas dos projetos de que participa ou participou, e as (de projeto ou avulsas) em que é responsável.
             const visiveis = new Set(
                 (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
             );
-            return tarefas.filter(
-                (t) =>
-                    t.responsaveis.some((r) => r.codigo === usuario.codigo) ||
-                    (t.projeto !== null && (podeVerTodosProjetos(usuario) || visiveis.has(t.projeto.codigo))) ||
-                    (t.avulsa && podeAtribuirAvulsas(usuario)),
+            return this.comAnexos(
+                tarefas.filter(
+                    (t) =>
+                        t.responsaveis.some((r) => r.codigo === usuario.codigo) ||
+                        (t.projeto !== null && (podeVerTodosProjetos(usuario) || visiveis.has(t.projeto.codigo))) ||
+                        (t.avulsa && podeAtribuirAvulsas(usuario)),
+                ),
             );
         });
 
@@ -87,42 +103,46 @@ export default class TarefaRoutes implements ModelRoutes {
                 // Participante cria e fica como responsável; o líder organiza depois.
                 if (papel === "participante") codigosResponsaveis = [usuario.codigo];
             }
-            return new CriarTarefa(this.factory).execute({
-                codigoProjeto: body.codigoProjeto || null,
-                categoria: body.categoria || null,
-                titulo: body.titulo ?? "",
-                dataInicio: new Date(body.dataInicio),
-                dataFim: new Date(body.dataFim),
-                prioridade: body.prioridade as PrioridadeTarefa,
-                descricao: body.descricao ?? null,
-                codigosResponsaveis,
-                criadaPor: await this.usuarioAtual(usuario),
-            });
+            return this.comAnexosDe(
+                await new CriarTarefa(this.factory).execute({
+                    codigoProjeto: body.codigoProjeto || null,
+                    categoria: body.categoria || null,
+                    titulo: body.titulo ?? "",
+                    dataInicio: new Date(body.dataInicio),
+                    dataFim: new Date(body.dataFim),
+                    prioridade: body.prioridade as PrioridadeTarefa,
+                    descricao: body.descricao ?? null,
+                    codigosResponsaveis,
+                    criadaPor: await this.usuarioAtual(usuario),
+                }),
+            );
         });
 
         this.http.route("put", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             await this.exigirOrganizar(usuario, params.codigo);
-            return new EditarTarefa(this.factory).execute({
-                codigo: params.codigo,
-                titulo: body.titulo,
-                dataInicio: new Date(body.dataInicio),
-                dataFim: new Date(body.dataFim),
-                status: body.status as StatusTarefa,
-                prioridade: body.prioridade as PrioridadeTarefa,
-                descricao: body.descricao ?? null,
-                codigosResponsaveis: body.codigosResponsaveis ?? [],
-                codigoDependencia: body.codigoDependencia ?? null,
-                checklist: Array.isArray(body.checklist)
-                    ? body.checklist.map((item: any) => ({
-                          codigo: item.codigo ?? item.id,
-                          texto: item.texto,
-                          feito: Boolean(item.feito),
-                      }))
-                    : undefined,
-                quem: await this.usuarioAtual(usuario),
-                categoria: body.categoria ?? undefined,
-            });
+            return this.comAnexosDe(
+                await new EditarTarefa(this.factory).execute({
+                    codigo: params.codigo,
+                    titulo: body.titulo,
+                    dataInicio: new Date(body.dataInicio),
+                    dataFim: new Date(body.dataFim),
+                    status: body.status as StatusTarefa,
+                    prioridade: body.prioridade as PrioridadeTarefa,
+                    descricao: body.descricao ?? null,
+                    codigosResponsaveis: body.codigosResponsaveis ?? [],
+                    codigoDependencia: body.codigoDependencia ?? null,
+                    checklist: Array.isArray(body.checklist)
+                        ? body.checklist.map((item: any) => ({
+                              codigo: item.codigo ?? item.id,
+                              texto: item.texto,
+                              feito: Boolean(item.feito),
+                          }))
+                        : undefined,
+                    quem: await this.usuarioAtual(usuario),
+                    categoria: body.categoria ?? undefined,
+                }),
+            );
         });
 
         this.http.route("patch", "/tarefas/:codigo/status", true, async (params: any, body: any) => {
@@ -131,11 +151,13 @@ export default class TarefaRoutes implements ModelRoutes {
             if (!regras.mudarStatus) {
                 throw new ErroProibido("Você só pode concluir ou reabrir tarefas em que é responsável.");
             }
-            return new AlterarStatusTarefa(this.factory).execute(
-                params.codigo,
-                body.status as StatusTarefa,
-                hoje(),
-                await this.usuarioAtual(usuario),
+            return this.comAnexosDe(
+                await new AlterarStatusTarefa(this.factory).execute(
+                    params.codigo,
+                    body.status as StatusTarefa,
+                    hoje(),
+                    await this.usuarioAtual(usuario),
+                ),
             );
         });
 
