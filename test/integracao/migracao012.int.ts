@@ -82,7 +82,9 @@ descrever("migração 012 sobre dados antigos", () => {
         await anexo("iniciativa", iniciativa);
         await anexo("capacitacao", capacitacao);
 
-        expect((await aplicarMigracoes(pool, PASTA, silencio)).slice(0, 1)).toEqual(["012_biblioteca.sql"]);
+        // Só até a 012 (as posteriores têm testes próprios): acrescenta a 012 à pasta temporária.
+        copyFileSync(path.join(PASTA, "012_biblioteca.sql"), path.join(antigas, "012_biblioteca.sql"));
+        expect(await aplicarMigracoes(pool, antigas, silencio)).toEqual(["012_biblioteca.sql"]);
 
         const depois = await tabelas();
         for (const t of [
