@@ -43,7 +43,14 @@ descrever("migração 013 sobre a 012", () => {
     test("habilita unaccent, aceita dono tarefa e mantém os anexos antigos", async () => {
         await anexo("biblioteca", "00000000-0000-0000-0000-000000000001");
 
-        expect(await aplicarMigracoes(pool, PASTA, silencio)).toEqual(["013_anexos_tarefas_busca.sql"]);
+        // Só até a 013: as migrações seguintes têm teste próprio.
+        const ate013 = mkdtempSync(path.join(tmpdir(), "migracoes-"));
+        for (const arquivo of readdirSync(PASTA).filter((a) => a.endsWith(".sql") && a < "014")) {
+            copyFileSync(path.join(PASTA, arquivo), path.join(ate013, arquivo));
+        }
+        const aplicadas = await aplicarMigracoes(pool, ate013, silencio);
+        rmSync(ate013, { recursive: true, force: true });
+        expect(aplicadas).toEqual(["013_anexos_tarefas_busca.sql"]);
 
         expect((await pool.query("SELECT unaccent('Reunião') AS t")).rows[0].t).toBe("Reuniao");
         await expect(anexo("tarefa", "00000000-0000-0000-0000-000000000002")).resolves.toBeDefined();

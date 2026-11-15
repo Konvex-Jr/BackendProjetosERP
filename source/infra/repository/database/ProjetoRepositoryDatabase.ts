@@ -8,7 +8,7 @@ import { normalizarBusca } from "../../../shared/texto";
 import { carregarProjetos } from "./carregadores";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
-    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo`;
+    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo`;
 
 function valores(projeto: Projeto): unknown[] {
     return [
@@ -26,6 +26,8 @@ function valores(projeto: Projeto): unknown[] {
         projeto.area?.codigo ?? null,
         projeto.tags,
         projeto.lider?.codigo ?? null,
+        projeto.sigiloso,
+        projeto.criadoPor,
     ];
 }
 
@@ -36,10 +38,11 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
+            await this.gravarAcesso(conexao, projeto);
         });
         return projeto;
     }
@@ -84,6 +87,23 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         return this.hidratar(linhas.map((l) => l.codigo));
     }
 
+    async listarComAcesso(codigoUsuario: string): Promise<Projeto[]> {
+        const linhas = await this.conexao.consultar(
+            `SELECT p.codigo FROM projetos p
+             WHERE p.sigiloso
+               AND (p.criado_por_codigo = $1
+                    OR EXISTS (SELECT 1 FROM projeto_acesso pa WHERE pa.projeto_codigo = p.codigo AND pa.usuario_codigo = $1))
+             ORDER BY p.data_inicio, p.nome`,
+            [codigoUsuario],
+        );
+        return this.hidratar(linhas.map((l) => l.codigo));
+    }
+
+    async listarSigilosos(): Promise<Projeto[]> {
+        const linhas = await this.conexao.consultar("SELECT codigo FROM projetos WHERE sigiloso ORDER BY data_inicio, nome");
+        return this.hidratar(linhas.map((l) => l.codigo));
+    }
+
     async buscarPorCodigo(codigo: string): Promise<Projeto | null> {
         const projetos = await carregarProjetos(this.conexao, [codigo]);
         return projetos.get(codigo) ?? null;
@@ -93,13 +113,14 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],
             );
             if (linhas.length === 0) throw new ErroNaoEncontrado("Projeto não encontrado.");
             await this.gravarParticipacoes(conexao, projeto);
+            await this.gravarAcesso(conexao, projeto);
         });
         return projeto;
     }
@@ -125,6 +146,17 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             }
             throw erro;
         }
+    }
+
+    /** Regrava a lista de acesso do projeto sigiloso: apaga e insere. */
+    private async gravarAcesso(conexao: ConexaoBanco, projeto: Projeto): Promise<void> {
+        await conexao.consultar("DELETE FROM projeto_acesso WHERE projeto_codigo = $1", [projeto.codigo]);
+        if (projeto.acesso.length === 0) return;
+        await conexao.consultar(
+            `INSERT INTO projeto_acesso (projeto_codigo, usuario_codigo)
+             SELECT $1, unnest($2::uuid[])`,
+            [projeto.codigo, projeto.acesso],
+        );
     }
 
     /**

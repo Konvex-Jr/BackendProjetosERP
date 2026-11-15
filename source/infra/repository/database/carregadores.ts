@@ -112,7 +112,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
-                p.responsavel_codigo, p.tags, p.lider_codigo,
+                p.responsavel_codigo, p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa
          FROM projetos p
          LEFT JOIN areas a ON a.codigo = p.area_codigo
@@ -125,6 +125,11 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
          FROM projeto_membros
          WHERE projeto_codigo = ANY($1::uuid[])
          ORDER BY data_entrada, codigo`,
+        [lista],
+    );
+
+    const acessos = await conexao.consultar(
+        `SELECT projeto_codigo, usuario_codigo FROM projeto_acesso WHERE projeto_codigo = ANY($1::uuid[]) ORDER BY usuario_codigo`,
         [lista],
     );
 
@@ -172,6 +177,9 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                     area: areaDeLinha(linha),
                     tags: linha.tags ?? [],
                     lider: linha.lider_codigo ? (usuarios.get(linha.lider_codigo) ?? null) : null,
+                    sigiloso: linha.sigiloso,
+                    criadoPor: linha.criado_por_codigo,
+                    acesso: acessos.filter((a) => a.projeto_codigo === linha.codigo).map((a) => a.usuario_codigo),
                 },
             ),
         );

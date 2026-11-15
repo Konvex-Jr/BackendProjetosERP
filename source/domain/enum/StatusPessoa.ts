@@ -1,4 +1,4 @@
-/** RF-011. Só Ativo entra no sistema; Trainee é registrado, mas ainda sem acesso (decisão de 29/10/2026). */
+/** RF-011. Ativo e Trainee entram no sistema (trainee desde a sessão 20; antes só o Ativo). */
 enum StatusPessoa {
     ATIVO = "ativo",
     TRAINEE = "trainee",
@@ -6,9 +6,9 @@ enum StatusPessoa {
     INATIVO = "inativo",
 }
 
-/** Quem pode fazer login. Para liberar trainees no futuro, basta incluir TRAINEE aqui. */
-export const STATUS_COM_ACESSO: StatusPessoa[] = [StatusPessoa.ATIVO];
-/** Quem está na EJ e pode ser colocado em projetos, mesmo sem acesso ao sistema. */
+/** Quem pode fazer login. */
+export const STATUS_COM_ACESSO: StatusPessoa[] = [StatusPessoa.ATIVO, StatusPessoa.TRAINEE];
+/** Quem está na EJ e pode ser colocado em projetos. */
 export const STATUS_NA_EJ: StatusPessoa[] = [StatusPessoa.ATIVO, StatusPessoa.TRAINEE];
 export const STATUS_DE_SAIDA: StatusPessoa[] = [StatusPessoa.ALUMNI, StatusPessoa.INATIVO];
 

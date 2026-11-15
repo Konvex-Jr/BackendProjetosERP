@@ -18,6 +18,9 @@ export default class CriarProjeto {
             participacoes.push(new Participacao(usuario, { dataEntrada: input.dataInicio }));
         }
         const detalhes = await resolverDetalhesProjeto(this.factory, input);
+        detalhes.criadoPor = input.criadoPor ?? null;
+        if (input.sigiloso !== undefined) detalhes.sigiloso = input.sigiloso;
+        if (input.acesso !== undefined) detalhes.acesso = input.acesso;
         const projeto = new Projeto(
             String(input.nome ?? "").trim(),
             String(input.descricao ?? "").trim(),

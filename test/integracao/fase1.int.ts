@@ -94,7 +94,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         const cargo = await chamar("POST", "/cargos", dir, { nome: "Assessor" });
         expect(cargo.status).toBe(200);
 
-        // Pessoas: membro com acesso e trainee sem login
+        // Pessoas: membro e trainee, os dois com login
         const membro = await chamar("POST", "/usuarios", dir, {
             nome: "Membro",
             email: "membro@teste.com",
@@ -114,7 +114,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             status: "trainee",
         });
         expect(trainee.status).toBe(200);
-        expect((await entrar("trainee@teste.com", "SenhaTrainee1")).status).not.toBe(200);
+        expect((await entrar("trainee@teste.com", "SenhaTrainee1")).status).toBe(200);
 
         const loginMembro = await entrar("membro@teste.com", "SenhaMembro1");
         expect(loginMembro.status).toBe(200);
