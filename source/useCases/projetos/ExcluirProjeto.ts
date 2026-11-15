@@ -1,6 +1,7 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import ExcluirPasta from "../documentos/ExcluirPasta";
+import SigiloBiblioteca from "../../domain/enum/SigiloBiblioteca";
+import ExcluirItemBiblioteca from "../biblioteca/ExcluirItemBiblioteca";
 
 export default class ExcluirProjeto {
     private readonly projetos;
@@ -11,9 +12,13 @@ export default class ExcluirProjeto {
     }
     async execute(codigo: string): Promise<void> {
         if (!(await this.projetos.buscarPorCodigo(codigo))) throw new ErroNaoEncontrado("Projeto não encontrado.");
-        // As pastas da equipe do projeto saem junto; antes, apaga os arquivos anexados (sessão 12c).
-        const pastas = (await this.factory.criarPastaRepository().listar()).filter((p) => p.projeto?.codigo === codigo);
-        for (const pasta of pastas) await new ExcluirPasta(this.factory).execute(pasta.codigo);
+        // Itens só da equipe saem com anexos e arquivos; os demais ficam, sem projeto.
+        const biblioteca = this.factory.criarBibliotecaRepository();
+        const excluirItem = new ExcluirItemBiblioteca(this.factory);
+        for (const item of await biblioteca.listar({ codigoProjeto: codigo, sigilo: SigiloBiblioteca.PROJETO })) {
+            await excluirItem.removerComAnexos(item.codigo);
+        }
+        await biblioteca.desligarProjeto(codigo);
         await this.tarefas.excluirPorProjeto(codigo);
         await this.projetos.excluir(codigo);
     }

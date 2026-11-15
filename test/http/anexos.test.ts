@@ -179,34 +179,3 @@ describe("Anexos", () => {
         expect(ctx.factory.armazenamentoAnexos.arquivos.size).toBe(0);
     });
 });
-
-describe("Anexos ao excluir projeto", () => {
-    it("excluir o projeto apaga os arquivos das pastas da equipe", async () => {
-        const Projeto = (await import("../../source/domain/entity/Projeto")).default;
-        const { dataInicio, dataFim } = await import("../fixtures");
-        const ctx = await criarContexto();
-        const diretor = new Usuario("Dora", "dora@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dora");
-        await ctx.factory.criarUsuarioRepository().criar(diretor);
-        await ctx.factory.criarProjetoRepository().criar(new Projeto("App", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-app"));
-        const servidor = await subirServidor(ctx.factory);
-        try {
-            const pasta = (
-                await servidor.chamar("post", "/pastas", {
-                    usuario: diretor,
-                    corpo: { nome: "Entregas", sigilo: "projeto", codigoProjeto: "proj-app" },
-                })
-            ).corpo;
-            const r = await fetch(`${servidor.base}/pastas/${pasta.codigo}/documentos/arquivo`, {
-                method: "POST",
-                headers: { "access-token": tokenPara(diretor), "X-Nome-Arquivo": "a.pdf" },
-                body: new Uint8Array(Buffer.from("pdf")),
-            });
-            expect(r.status).toBe(200);
-            expect(ctx.factory.armazenamentoAnexos.arquivos.size).toBe(1);
-            expect((await servidor.chamar("delete", "/projetos/proj-app", { usuario: diretor })).status).toBe(200);
-            expect(ctx.factory.armazenamentoAnexos.arquivos.size).toBe(0);
-        } finally {
-            await servidor.fechar();
-        }
-    });
-});

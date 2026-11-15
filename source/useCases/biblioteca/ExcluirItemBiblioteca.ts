@@ -12,7 +12,12 @@ export default class ExcluirItemBiblioteca {
         const repo = this.factory.criarBibliotecaRepository();
         const item = await exigirVerItem(usuario, await repo.buscarPorCodigo(codigo), this.factory);
         exigirAlterarItem(usuario, item);
+        await this.removerComAnexos(codigo);
+    }
+
+    /** Sem checagem de acesso: para quem já autorizou a operação (ex.: exclusão do projeto). */
+    async removerComAnexos(codigo: string): Promise<void> {
         await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.BIBLIOTECA, [codigo]);
-        await repo.excluir(codigo);
+        await this.factory.criarBibliotecaRepository().excluir(codigo);
     }
 }
