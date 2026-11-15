@@ -4,7 +4,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import SigiloBiblioteca from "../../domain/enum/SigiloBiblioteca";
 import { lerEnum } from "../../shared/entradas";
 import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { exigirVerItem, podeVerItem, projetosDoUsuario } from "../../shared/seguranca/regrasBiblioteca";
+import { exigirVerItem, podeVerItem, podeVerProjetoDoItem, projetosDoUsuario } from "../../shared/seguranca/regrasBiblioteca";
 
 /** Query de GET /biblioteca. */
 export interface ConsultaBiblioteca {
@@ -26,7 +26,12 @@ function texto(valor: unknown): string | undefined {
 export default class ListarItensBiblioteca {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async listar(usuario: UsuarioAutenticado | null | undefined, consulta: ConsultaBiblioteca = {}): Promise<ItemBiblioteca[]> {
+    /** `meusProjetos` pode vir de quem chama (a rota usa o mesmo conjunto para esconder projetos). */
+    async listar(
+        usuario: UsuarioAutenticado | null | undefined,
+        consulta: ConsultaBiblioteca = {},
+        meusProjetos?: ReadonlySet<string>,
+    ): Promise<ItemBiblioteca[]> {
         const autenticado = exigirAutenticado(usuario);
         const filtros: FiltrosBiblioteca = {
             busca: texto(consulta.q),
@@ -35,9 +40,11 @@ export default class ListarItensBiblioteca {
             sigilo: lerEnum(texto(consulta.sigilo), SigiloBiblioteca, "sigilo"),
             codigoAutor: texto(consulta.autor),
         };
+        const meus = meusProjetos ?? (await projetosDoUsuario(autenticado, this.factory));
+        // Filtrar por projeto que a pessoa não vê não revela itens ligados a ele (Ruling 8).
+        if (filtros.codigoProjeto && !podeVerProjetoDoItem(autenticado, filtros.codigoProjeto, meus)) return [];
         const itens = await this.factory.criarBibliotecaRepository().listar(filtros);
-        const meusProjetos = await projetosDoUsuario(autenticado, this.factory);
-        return itens.filter((item) => podeVerItem(autenticado, item, meusProjetos));
+        return itens.filter((item) => podeVerItem(autenticado, item, meus));
     }
 
     /** Item invisível ou inexistente: 404 (mesma resposta). */

@@ -36,6 +36,15 @@ export async function projetosDoUsuario(usuario: UsuarioAutenticado, factory: Re
     return new Set(projetos.map((p) => p.codigo));
 }
 
+/**
+ * Se a pessoa pode ver o projeto ligado a um item (Ruling 8): projetos.verTodos ou participa/participou.
+ * `meus` vem de projetosDoUsuario (vazio para quem tem biblioteca.verTodos; quem tivesse biblioteca.verTodos
+ * sem projetos.verTodos veria todos os projetos ocultos, o lado seguro).
+ */
+export function podeVerProjetoDoItem(usuario: UsuarioAutenticado, codigoProjeto: string, meus: ReadonlySet<string>): boolean {
+    return temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || meus.has(codigoProjeto);
+}
+
 export async function exigirVerItem(
     usuario: UsuarioAutenticado | undefined | null,
     item: ItemBiblioteca | null,

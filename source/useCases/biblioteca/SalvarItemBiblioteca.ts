@@ -58,7 +58,7 @@ export default class SalvarItemBiblioteca {
     private async projeto(codigo: string | null): Promise<Referencia | null> {
         if (!codigo) return null;
         const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(codigo);
-        if (!projeto) throw new ErroNaoEncontrado(`Projeto não encontrado: ${codigo}.`);
+        if (!projeto) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
         return { codigo: projeto.codigo, nome: projeto.nome };
     }
 

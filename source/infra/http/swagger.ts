@@ -58,10 +58,9 @@ const CORPO_CONHECIMENTO = {
     },
 };
 
-const CORPO_BIBLIOTECA = {
+const CORPO_BIBLIOTECA_PUT = {
     type: "object",
-    required: ["titulo"],
-    description: "No PUT, campo ausente mantém o valor atual; codigoProjeto null tira o projeto.",
+    description: "Campo ausente mantém o valor atual; codigoProjeto null tira o projeto.",
     properties: {
         titulo: { type: "string", maxLength: 160 },
         conteudo: { type: "string", description: "Markdown simples, até 50 mil caracteres." },
@@ -82,6 +81,8 @@ const CORPO_BIBLIOTECA = {
         },
     },
 };
+
+const CORPO_BIBLIOTECA = { ...CORPO_BIBLIOTECA_PUT, required: ["titulo"], description: "Só o título é obrigatório." };
 
 const CORPO_CAPACITACAO = {
     type: "object",
@@ -390,7 +391,7 @@ const swaggerSpecification = {
             }),
             put: operation(["Biblioteca"], "Editar item (autor ou gestão; 404 se invisível); sigilo e projeto conferidos só se mudarem", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
-                requestBody: jsonBody(CORPO_BIBLIOTECA),
+                requestBody: jsonBody(CORPO_BIBLIOTECA_PUT),
             }),
             delete: operation(["Biblioteca"], "Excluir item e anexos (autor ou gestão; 404 se invisível); responde 204", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],

@@ -166,6 +166,43 @@ describe("Biblioteca", () => {
         expect((await ver(bruno, item.codigo)).status).toBe(404);
     });
 
+    it("regra de sigilo/projeto só roda quando mudam: autora mantém projeto alheio ligado pela gestão", async () => {
+        const item = (await novo(ctx.membro, { titulo: "Da Ana" })).corpo;
+        expect((await editar(ctx.gerente, item.codigo, { codigoProjeto: "proj-alheio" })).status).toBe(200);
+        // Ana não pode usar proj-alheio, mas manda o mesmo valor: a regra não roda.
+        const mesmo = await editar(ctx.membro, item.codigo, { titulo: "Da Ana 2", codigoProjeto: "proj-alheio", sigilo: "todos" });
+        expect(mesmo.status).toBe(200);
+        // Campo ausente mantém o projeto gravado.
+        expect((await editar(ctx.membro, item.codigo, { titulo: "Da Ana 3" })).status).toBe(200);
+        const visto = (await ver(ctx.gerente, item.codigo)).corpo;
+        expect(visto.titulo).toBe("Da Ana 3");
+        expect(visto.projeto).toEqual({ codigo: "proj-alheio", nome: "Alheio" });
+        // Mudar o sigilo com o projeto alheio ligado: a regra roda e recusa.
+        expect((await editar(ctx.membro, item.codigo, { sigilo: "projeto" })).status).toBe(403);
+        expect((await ver(ctx.gerente, item.codigo)).corpo.sigilo).toBe("todos");
+    });
+
+    it("(Ruling 8) projeto que a pessoa não vê sai como null e o filtro por ele volta vazio", async () => {
+        const item = (await novo(ctx.gerente, { titulo: "Ligado ao alheio", codigoProjeto: "proj-alheio" })).corpo;
+        expect(item.projeto).toEqual({ codigo: "proj-alheio", nome: "Alheio" });
+        const lista = (await servidor.chamar("get", "/biblioteca", { usuario: ctx.membro })).corpo;
+        expect(lista.map((i: any) => [i.titulo, i.projeto])).toEqual([["Ligado ao alheio", null]]);
+        expect((await ver(ctx.membro, item.codigo)).corpo.projeto).toBeNull();
+        expect(await listar(ctx.membro, "?projeto=proj-alheio")).toEqual([]);
+        expect((await ver(bruno, item.codigo)).corpo.projeto).toEqual({ codigo: "proj-alheio", nome: "Alheio" });
+        expect(await listar(bruno, "?projeto=proj-alheio")).toEqual(["Ligado ao alheio"]);
+        // Projeto de que Ana saiu continua visível para ela.
+        const antigo = (await novo(ctx.membro, { titulo: "Antigo", codigoProjeto: "proj-antigo" })).corpo;
+        expect(antigo.projeto).toEqual({ codigo: "proj-antigo", nome: "Antigo" });
+        // Resposta de edição também esconde.
+        const daAna = (await novo(ctx.membro, { titulo: "Da Ana" })).corpo;
+        await editar(ctx.gerente, daAna.codigo, { codigoProjeto: "proj-alheio" });
+        const editado = await editar(ctx.membro, daAna.codigo, { titulo: "Da Ana editado" });
+        expect(editado.status).toBe(200);
+        expect(editado.corpo.projeto).toBeNull();
+        expect((await ver(ctx.gerente, daAna.codigo)).corpo.projeto).toEqual({ codigo: "proj-alheio", nome: "Alheio" });
+    });
+
     it("(Review 4) filtro de projeto devolve só os itens que a pessoa vê", async () => {
         await novo(ctx.membro, { titulo: "Todos do meu", codigoProjeto: "proj-meu" });
         await novo(ctx.membro, { titulo: "Projeto do meu", sigilo: "projeto", codigoProjeto: "proj-meu" });
