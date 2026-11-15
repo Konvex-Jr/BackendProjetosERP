@@ -1,14 +1,14 @@
 import ItemBiblioteca from "../../../domain/entity/ItemBiblioteca";
 import SigiloBiblioteca from "../../../domain/enum/SigiloBiblioteca";
 import BibliotecaRepositoryInterface, { FiltrosBiblioteca } from "../../../domain/interfaces/BibliotecaRepositoryInterface";
-import { semAcento } from "../../../shared/textos";
+import { normalizarBusca } from "../../../shared/texto";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** Mesmo critério do SQL (unaccent + ILIKE): sem diferenciar maiúsculas nem acentos. */
 function atende(item: ItemBiblioteca, f: FiltrosBiblioteca): boolean {
     if (f.busca) {
         const texto = [item.titulo, item.conteudo, item.tags.join(" ")].join("\n");
-        if (!semAcento(texto).includes(semAcento(f.busca))) return false;
+        if (!normalizarBusca(texto).includes(normalizarBusca(f.busca))) return false;
     }
     if (f.tag && !item.tags.includes(f.tag.toLowerCase())) return false;
     if (f.codigoProjeto && item.projeto?.codigo !== f.codigoProjeto) return false;
