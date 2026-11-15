@@ -1,7 +1,7 @@
 import Projeto from "../../domain/entity/Projeto";
 import Tarefa from "../../domain/entity/Tarefa";
 import { Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
-import { participaOuParticipou } from "./visibilidadeProjetos";
+import { acessoAoProjeto, participaOuParticipou } from "./visibilidadeProjetos";
 
 /**
  * Política única de tarefas (sessões 8b e 8c). Tudo o que decide quem pode o quê numa tarefa fica aqui.
@@ -10,6 +10,10 @@ import { participaOuParticipou } from "./visibilidadeProjetos";
  * - gestao (tarefas.gerirTodas) e lider: tudo;
  * - participante (equipe atual): cria (fica como responsável), conclui/reabre as suas, comenta;
  * - nenhum: só vê se for responsável ou tiver participado do projeto.
+ *
+ * Projeto sigiloso (sessão 20): quem não tem acesso completo ao projeto (`acessoAoProjeto`) não vê nem faz
+ * nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso completo sempre vê; fora da
+ * equipe atual (lista de acesso, criador) só lê: não comenta nem muda status.
  *
  * Tarefa avulsa (8c, sem projeto, com categoria):
  * - gestão (tarefas.atribuir): cria, edita, exclui, reatribui, conclui e comenta; vê todas;
@@ -30,6 +34,8 @@ export interface RegrasTarefa {
  * o projeto conta como "gestao". `membros` só tem a equipe atual, então quem saiu vira "nenhum".
  */
 export function papelNoProjeto(usuario: UsuarioAutenticado, projeto: Projeto | null): PapelProjeto {
+    // Em sigiloso, sem acesso completo ninguém tem papel (a gestão fora também não).
+    if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") return "nenhum";
     if (temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS)) return "gestao";
     if (!projeto) return "nenhum";
     if (projeto.lider?.codigo === usuario.codigo) return "lider";
@@ -53,12 +59,16 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
         return { ver: gestao || responsavel, organizar: gestao, mudarStatus: gestao || responsavel, comentar: gestao || responsavel };
     }
 
+    if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") {
+        return { ver: false, organizar: false, mudarStatus: false, comentar: false };
+    }
     const papel = papelNoProjeto(usuario, projeto);
     const organizar = papel === "gestao" || papel === "lider";
     const verProjeto =
         temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || (projeto !== null && participaOuParticipou(usuario.codigo, projeto));
     return {
-        ver: organizar || responsavel || verProjeto,
+        // Sigiloso: chegar aqui já é ter acesso completo, que basta para ver.
+        ver: organizar || responsavel || verProjeto || Boolean(projeto?.sigiloso),
         organizar,
         mudarStatus: organizar || (papel === "participante" && responsavel),
         // Comentar exige estar na equipe atual: quem só participou no passado continua lendo, mas não comenta.

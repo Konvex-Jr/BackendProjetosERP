@@ -79,6 +79,47 @@ descrever("tarefas contra PostgreSQL", () => {
         expect(editada.responsaveis.map((r) => r.codigo)).toEqual([pessoa.codigo]);
     });
 
+    test("GET /tarefas pelo banco: tarefa de projeto sigiloso só para quem tem acesso completo", async () => {
+        const { subirServidor } = await import("../http/servidorTeste");
+        const inicio = new Date("2026-10-12T00:00:00.000Z");
+        const fim = new Date("2026-10-30T00:00:00.000Z");
+        const criar = async (nome: string, perfil: PerfilUsuario) => {
+            const u = new Usuario(
+                nome,
+                `${crypto.randomUUID()}@teste.com`,
+                perfil,
+                true,
+                "hash",
+                new SenioridadeUsuario("pleno", "Pleno", 75),
+            );
+            await factory.criarUsuarioRepository().criar(u);
+            return u;
+        };
+        const equipe = await criar("Equipe Sigilo", PerfilUsuario.MEMBRO);
+        const gerenteFora = await criar("Gerente Fora", PerfilUsuario.GERENTE);
+        const projeto = await factory.criarProjetoRepository().criar(
+            new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), {
+                sigiloso: true,
+                criadoPor: null,
+                acesso: [],
+            }),
+        );
+        const tarefa = await factory
+            .criarTarefaRepository()
+            .criar(new Tarefa(projeto, "Segredo", inicio, fim, StatusTarefa.PENDENTE, PrioridadeTarefa.P2, null, null, null, [equipe], []));
+        const servidor = await subirServidor(factory);
+        try {
+            const doGerente = await servidor.chamar("get", "/tarefas", { usuario: gerenteFora });
+            expect(doGerente.status).toBe(200);
+            expect(doGerente.corpo.map((t: any) => t.codigo)).not.toContain(tarefa.codigo);
+            const daEquipe = await servidor.chamar("get", "/tarefas", { usuario: equipe });
+            expect(daEquipe.corpo.map((t: any) => t.codigo)).toContain(tarefa.codigo);
+            expect((await servidor.chamar("get", `/tarefas/${tarefa.codigo}/comentarios`, { usuario: gerenteFora })).status).toBe(403);
+        } finally {
+            await servidor.fechar();
+        }
+    });
+
     test("contarPorProjetos conta total, concluídas, atrasadas e da semana (hoje = quarta 18/11)", async () => {
         const dia = (d: string) => new Date(`${d}T00:00:00.000Z`);
         const pessoa = new Usuario(
