@@ -56,3 +56,20 @@ Não incluído: abrir a ficha de um projeto com os dados da lista antes da respo
 - Nome e formato do módulo de memória e das chaves por tela.
 - Quais telas recebem chave (a ideia é todas as que usam `useCarregar`; filtros da Biblioteca podem ficar sem chave).
 - Desenho dos esqueletos, no visual Halo, claro e escuro, responsivo.
+
+## Resultado (medição de 15/11/2026)
+Script `e2e/carregamento.mjs` do frontend (`npm run carregamento`): Chromium com 150 ms somados a cada requisição (CDP `Network.emulateNetworkConditions`, banda sem limite), `dist/` servido com gzip e as regras de cache do `nginx.conf`, API do compose de dev, login da diretora fictícia, 5 vezes por cenário. "Antes" é a `main` dos dois repositórios; "depois" é a branch `perf/carregamento` dos dois. Valores em ms: mediana (mínimo a máximo).
+
+| Cenário | Antes | Depois |
+| --- | --- | --- |
+| (a) F5 até o "Olá" do Dashboard (`section.hero h1`) | 495 (493 a 516) | 492 (490 a 494) |
+| Só o HTML (`responseEnd`), referência de (a) | 153 (152 a 153) | 153 (152 a 154) |
+| (b) F5 com token de acesso vencido e refresh válido | 808 (798 a 827) | 655 (643 a 658) |
+| (c) Volta a Tarefas pelo menu até o Kanban pronto | 177 (176 a 193) | 16 (15 a 28) |
+| (c) "Carregando" na volta a Tarefas | 5 de 5 | 0 de 5 (sem esqueleto) |
+
+- **Meta (a), até 0,5 s acima do HTML:** cumprida (339 ms acima). O tempo, porém, não mudou: nesta medição local a API responde por HTTP/1.1, em que o Chromium abre no máximo 6 conexões por servidor. O início em paralelo dispara 7 chamadas; a sétima (`/auth/permissoes`) espera uma conexão livre e custa uma ida e volta a mais. O total fica em HTML + 2 esperas, igual ao antes (`/auth/me` e depois as outras 6). Em produção, se o Traefik responder em HTTP/2 (uma conexão com várias chamadas ao mesmo tempo), as 7 saem juntas e o F5 fica em HTML + 1 espera (cerca de 0,35 s com 150 ms). Conferir com `curl -sI --http2 https://erp.konvexjr.com.br/api/auth/permissoes | head -1`.
+- **(b):** uma espera a menos (cerca de 150 ms), da renovação antecipada do token.
+- **Meta (c), sem "Carregando" em tela já vista:** cumprida; a tela abre com o dado guardado no quadro seguinte ao clique.
+- Em produção a API está na mesma origem do site (`/api`), então não há as consultas CORS prévias (`OPTIONS`) que aparecem na medição local.
+- `npm run e2e` (3 papéis, desktop e 375 px): 50 telas, nenhum problema. `npm run desempenho`: Desempenho 99, Acessibilidade 100, Boas práticas 100.
