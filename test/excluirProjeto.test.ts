@@ -77,7 +77,7 @@ test("excluir o projeto pega só os códigos das tarefas, sem montar as entidade
         conteudo: Buffer.from("%PDF-1.4"),
     });
     const tarefas = factory.criarTarefaRepository();
-    // No banco, montar a tarefa revalida e pode falhar (responsável que saiu da equipe).
+    // Excluir só precisa dos códigos das tarefas, sem montá-las como entidades.
     jest.spyOn(tarefas, "listarPorProjeto").mockRejectedValue(new Error("não deveria montar as tarefas"));
     const codigos = jest.spyOn(tarefas, "listarCodigosPorProjeto");
 

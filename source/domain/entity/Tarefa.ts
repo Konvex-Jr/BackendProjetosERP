@@ -178,11 +178,8 @@ export default class Tarefa {
             throw new ErroValidacao("A tarefa não pode ter responsáveis duplicados.", "RESPONSAVEL_DUPLICADO_TAREFA");
         }
 
-        // Em tarefa avulsa, qualquer pessoa ativa pode ser responsável (o caso de uso confere).
-        if (!this.projeto) return;
-        const codigosMembros = new Set(this.projeto.membros.map((membro) => membro.codigo));
-        if (!codigosResponsaveis.every((codigo) => codigosMembros.has(codigo))) {
-            throw new ErroValidacao("Os responsáveis devem ser membros do projeto.", "RESPONSAVEL_FORA_DO_PROJETO");
-        }
+        // "Responsável na equipe do projeto" não é conferido aqui: a entidade também é montada ao
+        // ler do banco, e quem saiu da equipe continua responsável pelas tarefas antigas. A regra
+        // vale só ao criar e editar (CriarTarefa e EditarTarefa).
     }
 }
