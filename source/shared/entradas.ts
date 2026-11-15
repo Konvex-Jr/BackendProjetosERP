@@ -55,3 +55,10 @@ export function lerEnum<T extends string>(valor: unknown, valores: Record<string
     }
     return valor as T;
 }
+
+/** Booleano vindo da API; ausente vira undefined e qualquer outro tipo, 400 com o nome do campo. */
+export function lerBooleano(valor: unknown, campo: string): boolean | undefined {
+    if (valor === undefined || valor === null) return undefined;
+    if (typeof valor !== "boolean") throw new ErroValidacao(`O campo ${campo} deve ser verdadeiro ou falso.`, "BOOLEANO_INVALIDO");
+    return valor;
+}

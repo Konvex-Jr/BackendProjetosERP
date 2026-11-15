@@ -29,6 +29,13 @@ export const MENSAGENS_DE_ERRO = {
         DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
         NAO_ENCONTRADO: "Projeto não encontrado.",
         SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
+        SIGILO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam o sigilo.",
+        ACESSO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam a lista de acesso.",
+        ACESSO_LISTA_INVALIDA: "A lista de acesso (codigos) deve ser uma lista de códigos de pessoas.",
+        ACESSO_PESSOA_SEM_LOGIN: (codigo: string, nome?: string) =>
+            nome
+                ? `${nome} (${codigo}) não tem login: só pessoas Ativas ou Trainees entram na lista de acesso.`
+                : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
     },
 
     TAREFA: {

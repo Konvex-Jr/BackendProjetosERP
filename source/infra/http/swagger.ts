@@ -105,6 +105,17 @@ const swaggerSpecification = {
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
                     codigosMembros: { type: "array", items: { type: "string" } },
+                    sigiloso: {
+                        type: "boolean",
+                        description:
+                            "Projeto sigiloso. Na edição, omitido mantém o atual; mudar só o diretor e quem criou o projeto (403 SIGILO_SEM_PERMISSAO).",
+                    },
+                    acesso: {
+                        type: "array",
+                        items: { type: "string" },
+                        description:
+                            "Só na criação: códigos de quem vê o sigiloso além da equipe. Só pessoas com login (400 ACESSO_PESSOA_SEM_LOGIN).",
+                    },
                 },
             },
             TarefaInput: {
@@ -438,6 +449,13 @@ const rotasFase1: Record<string, Record<string, object>> = {
     },
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": {
         post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }),
+    },
+    "/projetos/{codigo}/acesso": {
+        put: operation(
+            ["Projetos"],
+            "Definir a lista de acesso do projeto sigiloso ({ codigos }; só o diretor e quem criou; 404 para membro fora, 400 ACESSO_PESSOA_SEM_LOGIN)",
+            comCodigo(json),
+        ),
     },
     "/projetos/{codigo}/lider": {
         put: operation(["Projetos"], "Definir o líder ({ codigoUsuario } da equipe atual, ou null)", comCodigo(json)),
