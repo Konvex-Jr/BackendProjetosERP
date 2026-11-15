@@ -14,7 +14,8 @@ import {
     exigirVerItem,
     podeAlterarItem,
     podeVerItem,
-    projetosDoUsuario,
+    podeVerProjetoDoItem,
+    contextoProjetos,
 } from "../source/shared/seguranca/regrasBiblioteca";
 
 const inicio = new Date("2026-10-01T00:00:00.000Z");
@@ -42,14 +43,14 @@ async function montar() {
     const item = (sigilo: string, projeto: string | null = null, autor = outro) =>
         new ItemBiblioteca({ titulo: "Item", sigilo, projeto: projeto ? ref(projeto) : null, autor: ref(autor.codigo) });
     const u = (x: Usuario) => ({ codigo: x.codigo, perfil: x.perfil });
-    return { factory, membro: u(membro), gerente: u(gerente), outro: u(outro), item };
+    return { factory, membro: u(membro), gerente: u(gerente), outro: u(outro), outroUsuario: outro, item };
 }
 
 describe("regras da Biblioteca", () => {
     it("gerente vê os três sigilos", async () => {
         const { factory, gerente, item } = await montar();
-        const meus = await projetosDoUsuario(gerente, factory);
-        expect(meus.size).toBe(0);
+        const meus = await contextoProjetos(gerente, factory);
+        expect(meus.meus.size).toBe(0);
         for (const i of [item("todos"), item("gestao"), item("projeto", "p-alheio")]) {
             expect(podeVerItem(gerente, i, meus)).toBe(true);
         }
@@ -57,13 +58,32 @@ describe("regras da Biblioteca", () => {
 
     it("membro vê todos, projeto do seu e do que saiu; não vê gestao nem projeto alheio", async () => {
         const { factory, membro, item } = await montar();
-        const meus = await projetosDoUsuario(membro, factory);
-        expect([...meus].sort()).toEqual(["p-antigo", "p-meu"]);
+        const meus = await contextoProjetos(membro, factory);
+        expect([...meus.meus].sort()).toEqual(["p-antigo", "p-meu"]);
         expect(podeVerItem(membro, item("todos"), meus)).toBe(true);
         expect(podeVerItem(membro, item("projeto", "p-meu"), meus)).toBe(true);
         expect(podeVerItem(membro, item("projeto", "p-antigo"), meus)).toBe(true);
         expect(podeVerItem(membro, item("gestao"), meus)).toBe(false);
         expect(podeVerItem(membro, item("projeto", "p-alheio"), meus)).toBe(false);
+    });
+
+    it("sigiloso oculto: nem a gestão vê item ligado a ele, nem liga item a ele", async () => {
+        const { factory, gerente, membro, outro, outroUsuario, item } = await montar();
+        await factory
+            .criarProjetoRepository()
+            .criar(
+                new Projeto("Secreto", "d", inicio, saida, undefined, [outroUsuario], "p-sec", { sigiloso: true, criadoPor: outro.codigo }),
+            );
+        const ctxGerente = await contextoProjetos(gerente, factory);
+        expect([...ctxGerente.ocultos]).toEqual(["p-sec"]);
+        expect(podeVerItem(gerente, item("todos", "p-sec"), ctxGerente)).toBe(false);
+        expect(podeVerProjetoDoItem(gerente, "p-sec", ctxGerente)).toBe(false);
+        await expect(exigirPodeUsarSigiloEProjeto(gerente, SigiloBiblioteca.TODOS, "p-sec", factory)).rejects.toThrow(ErroProibido);
+        const ctxDono = await contextoProjetos(outro, factory);
+        expect(ctxDono.ocultos.size).toBe(0);
+        expect(ctxDono.meus.has("p-sec")).toBe(true);
+        expect(podeVerItem(outro, item("projeto", "p-sec"), ctxDono)).toBe(true);
+        expect((await contextoProjetos(membro, factory)).meus.has("p-sec")).toBe(false);
     });
 
     it("exigirVerItem responde 404 para item invisível ou nulo", async () => {

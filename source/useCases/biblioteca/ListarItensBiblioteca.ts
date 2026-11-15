@@ -4,7 +4,13 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import SigiloBiblioteca from "../../domain/enum/SigiloBiblioteca";
 import { lerEnum } from "../../shared/entradas";
 import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { exigirVerItem, podeVerItem, podeVerProjetoDoItem, projetosDoUsuario } from "../../shared/seguranca/regrasBiblioteca";
+import {
+    ContextoProjetos,
+    contextoProjetos,
+    exigirVerItem,
+    podeVerItem,
+    podeVerProjetoDoItem,
+} from "../../shared/seguranca/regrasBiblioteca";
 
 /** Query de GET /biblioteca. */
 export interface ConsultaBiblioteca {
@@ -26,11 +32,11 @@ function texto(valor: unknown): string | undefined {
 export default class ListarItensBiblioteca {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    /** `meusProjetos` pode vir de quem chama (a rota usa o mesmo conjunto para esconder projetos). */
+    /** `contexto` pode vir de quem chama (a rota usa o mesmo conjunto para esconder projetos). */
     async listar(
         usuario: UsuarioAutenticado | null | undefined,
         consulta: ConsultaBiblioteca = {},
-        meusProjetos?: ReadonlySet<string>,
+        contexto?: ContextoProjetos,
     ): Promise<ItemBiblioteca[]> {
         const autenticado = exigirAutenticado(usuario);
         const filtros: FiltrosBiblioteca = {
@@ -40,11 +46,11 @@ export default class ListarItensBiblioteca {
             sigilo: lerEnum(texto(consulta.sigilo), SigiloBiblioteca, "sigilo"),
             codigoAutor: texto(consulta.autor),
         };
-        const meus = meusProjetos ?? (await projetosDoUsuario(autenticado, this.factory));
+        const ctx = contexto ?? (await contextoProjetos(autenticado, this.factory));
         // Filtrar por projeto que a pessoa não vê não revela itens ligados a ele (Ruling 8).
-        if (filtros.codigoProjeto && !podeVerProjetoDoItem(autenticado, filtros.codigoProjeto, meus)) return [];
+        if (filtros.codigoProjeto && !podeVerProjetoDoItem(autenticado, filtros.codigoProjeto, ctx)) return [];
         const itens = await this.factory.criarBibliotecaRepository().listar(filtros);
-        return itens.filter((item) => podeVerItem(autenticado, item, meus));
+        return itens.filter((item) => podeVerItem(autenticado, item, ctx));
     }
 
     /** Item invisível ou inexistente: 404 (mesma resposta). */
