@@ -1,5 +1,6 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
+import Participacao from "../../source/domain/entity/Participacao";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
@@ -20,11 +21,20 @@ describe("Resumo de projeto sigiloso na leitura", () => {
         await usuarios.criar(exEquipe);
         const repo = ctx.factory.criarProjetoRepository();
         await repo.criar(
-            new Projeto("Projeto Aurora", "descrição", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {
-                sigiloso: true,
-                clienteNome: "Cliente Zeta",
-                acesso: [naLista.codigo],
-            }),
+            new Projeto(
+                "Projeto Aurora",
+                "descrição",
+                dataInicio,
+                dataFim,
+                undefined,
+                [ctx.membro, new Participacao(exEquipe, { dataEntrada: dataInicio, dataSaida: new Date("2026-10-20T00:00:00.000Z") })],
+                "proj-sig",
+                {
+                    sigiloso: true,
+                    clienteNome: "Cliente Zeta",
+                    acesso: [naLista.codigo],
+                },
+            ),
         );
         servidor = await subirServidor(ctx.factory);
     });
@@ -44,6 +54,7 @@ describe("Resumo de projeto sigiloso na leitura", () => {
     it("membro fora não vê; membro na lista vê completo", async () => {
         const outro = await servidor.chamar("get", "/projetos", { usuario: exEquipe });
         expect(codigos(outro)).toEqual([]);
+        expect((await servidor.chamar("get", "/projetos/proj-sig", { usuario: exEquipe })).status).toBe(404);
         const dalista = await servidor.chamar("get", "/projetos", { usuario: naLista });
         expect(codigos(dalista)).toEqual(["proj-sig"]);
         expect(dalista.corpo[0].resumo).toBeUndefined();
@@ -64,6 +75,11 @@ describe("Resumo de projeto sigiloso na leitura", () => {
         expect(codigos(r)).toEqual([]);
         const r2 = await servidor.chamar("get", "/projetos?codigoResponsavel=usr-joao", { usuario: ctx.gerente });
         expect(codigos(r2)).toEqual([]);
+    });
+
+    it("filtro por pessoa só na lista de acesso não revela o sigiloso ao gerente fora", async () => {
+        const r = await servidor.chamar("get", `/projetos?codigoUsuario=${naLista.codigo}`, { usuario: ctx.gerente });
+        expect(codigos(r)).toEqual([]);
     });
 
     it("GET /projetos/:codigo", async () => {

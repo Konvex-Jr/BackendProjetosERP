@@ -49,18 +49,18 @@ export default class ProjetoRoutes implements ModelRoutes {
      * tarefas + `podeGerirAcesso`), resumo (gerente fora de projeto sigiloso) ou nada (some da lista).
      * O frontend calcula o progresso com a contagem de todas as tarefas do projeto; antes usava só as
      * carregadas, e o membro, que recebe só as dele, via outro % (revisão de 12/11/2026).
-     * Resumo não tem área nem responsável, e a busca só vale pelo nome (referência e cliente não
+     * Resumo não tem área, responsável nem pessoa (filtrar por pessoa revelaria a lista de acesso), e a busca só vale pelo nome (referência e cliente não
      * podem servir de pista), então esses filtros o descartam.
      */
     private async paraResposta(
         usuario: UsuarioAutenticado,
         projetos: Projeto[],
-        filtro: { codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
+        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
     ) {
         const acessos = projetos.map((p) => ({ projeto: p, acesso: acessoAoProjeto(usuario, p) }));
         const busca = normalizarBusca(filtro.busca);
         const resumoServe = (p: Projeto) =>
-            !filtro.codigoArea && !filtro.codigoResponsavel && (!busca || normalizarBusca(p.nome).includes(busca));
+            !filtro.codigoUsuario && !filtro.codigoArea && !filtro.codigoResponsavel && (!busca || normalizarBusca(p.nome).includes(busca));
         const visiveis = acessos.filter((a) => a.acesso === "completo" || (a.acesso === "resumo" && resumoServe(a.projeto)));
         const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(
             visiveis.map((a) => a.projeto.codigo),
@@ -80,14 +80,15 @@ export default class ProjetoRoutes implements ModelRoutes {
         this.http.route("get", "/projetos", true, async (_p: any, body: any, query: any) => {
             const usuario = exigirAutenticado(body?.user);
             const filtro = {
+                codigoUsuario: query?.codigoUsuario || undefined,
                 codigoArea: query?.codigoArea || undefined,
                 codigoResponsavel: query?.codigoResponsavel || undefined,
                 busca: query?.busca || undefined,
             };
             const projetos = await new ListarProjetos(f).execute({
-                codigoUsuario: projetosVisiveisPara(usuario, query?.codigoUsuario || undefined),
                 status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
                 ...filtro,
+                codigoUsuario: projetosVisiveisPara(usuario, filtro.codigoUsuario),
             });
             return this.paraResposta(usuario, projetos, filtro);
         });
