@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { Referencia } from "./Conhecimento";
+import { Referencia } from "./Referencia";
 import { hoje } from "../../shared/datas";
 
 export interface DadosFeedback {

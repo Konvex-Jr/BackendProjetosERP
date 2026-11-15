@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { DonoAnexo, extensaoDe, LIMITE_ANEXO_BYTES, TIPOS_ANEXO } from "../enum/Anexo";
-import { Referencia } from "./Conhecimento";
+import { Referencia } from "./Referencia";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
 
@@ -21,7 +21,7 @@ export interface DadosAnexo {
 // eslint-disable-next-line no-control-regex -- tirar os caracteres de controle é o objetivo
 const CARACTERES_PROIBIDOS = /[\u0000-\u001f\u007f"]/g;
 
-/** Arquivo anexado a um documento de pasta, a um item da Base ou a uma iniciativa. */
+/** Arquivo anexado a um item da Biblioteca ou a uma capacitação. */
 export default class Anexo {
     readonly codigo: string;
     readonly donoTipo: DonoAnexo;

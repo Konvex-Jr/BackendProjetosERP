@@ -99,7 +99,6 @@ export default class TarefaRoutes implements ModelRoutes {
                 descricao: body.descricao ?? null,
                 codigosResponsaveis,
                 criadaPor: await this.usuarioAtual(usuario),
-                codigoIniciativa: body.codigoIniciativa || null,
             });
         });
 
@@ -125,7 +124,6 @@ export default class TarefaRoutes implements ModelRoutes {
                     : undefined,
                 quem: await this.usuarioAtual(usuario),
                 categoria: body.categoria ?? undefined,
-                codigoIniciativa: body.codigoIniciativa === undefined ? undefined : body.codigoIniciativa || null,
             });
         });
 

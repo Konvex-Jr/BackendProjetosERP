@@ -13,9 +13,7 @@ Diretor (ADMIN), gerente (MANAGER) e membro (MEMBER). "Gestão" = diretores e ge
 | Pessoas | Gestão cria, edita e muda status; ninguém é excluído. Troca de área/cargo gera histórico. Perfil (GitHub, calendário, tecnologias) visível a todos os logados |
 | Projetos | Gestão cria e edita; um líder por projeto; membro vê só os projetos de que participa ou participou |
 | Tarefas | De projeto ou avulsas (Inovação, Capacitação, Execução). Participantes do projeto criam (ficam responsáveis), concluem/reabrem as suas e comentam; gestão organiza tudo |
-| Documentos | Pastas com sigilo Todos / Só gestão / Equipe de um projeto; só a gestão organiza; documento é link ou arquivo |
-| Base de Inteligência | Todos leem e cadastram; autor ou gestão alteram |
-| Iniciativas | Todos veem; criam a gestão e a área Inovação; alteram responsável, criador e gestão |
+| Biblioteca | Item com texto, links, anexos, tags, projeto opcional e sigilo (Todos / Só gestão / Equipe de um projeto). Todos cadastram; autor ou gestão alteram; leitura pelo sigilo |
 | Anexos | Até 20 MB; PDF, Office, OpenDocument, CSV, TXT, MD, imagens e ZIP; cada anexo segue as regras do dono |
 | Capacitações | Gestão cria, edita, exclui e marca presença. Inscrição e cancelamento até o início (gestão a qualquer hora), respeitando vagas. Só quem compareceu avalia; avaliações com nome só para a gestão, instrutor vê sem nome, demais só a média. Horas cumpridas no perfil |
 | Dashboard | Sete indicadores só para a gestão (projetos ativos, membros ativos sem trainees, capacitações em 30 dias, tarefas da semana…) |

@@ -16,13 +16,10 @@ export const Permissao = {
     /** Criar e organizar tarefas avulsas (sem projeto). Sessão 8c. */
     TAREFAS_ATRIBUIR: "tarefas.atribuir",
     CAPACITACOES_GERIR: "capacitacoes.gerir",
-    /** Ler pastas de qualquer sigilo (gestão). Sessão 9. */
-    DOCUMENTOS_VER_TODAS: "documentos.verTodas",
-    DOCUMENTOS_GERIR: "documentos.gerir",
-    /** Editar e excluir qualquer item da Base de Inteligência (o autor altera o próprio). Sessão 12a. */
-    CONHECIMENTO_GERIR: "conhecimento.gerir",
-    /** Criar, editar e excluir qualquer iniciativa de inovação (a área de Inovação também cria). Sessão 12b. */
-    INICIATIVAS_GERIR: "iniciativas.gerir",
+    /** Ler itens da Biblioteca de qualquer sigilo (gestão). Sessão 17. */
+    BIBLIOTECA_VER_TODOS: "biblioteca.verTodos",
+    /** Editar e excluir qualquer item da Biblioteca e usar sigilo gestão (o autor altera o próprio). Sessão 17. */
+    BIBLIOTECA_GERIR: "biblioteca.gerir",
     CONFIGURACOES_EDITAR: "configuracoes.editar",
     ESTRATEGIA_VER: "estrategia.ver",
     PRECIFICACAO_SIMULAR: "precificacao.simular",
@@ -43,10 +40,8 @@ const DO_GESTOR: Permissao[] = [
     Permissao.TAREFAS_GERIR_TODAS,
     Permissao.TAREFAS_ATRIBUIR,
     Permissao.CAPACITACOES_GERIR,
-    Permissao.DOCUMENTOS_VER_TODAS,
-    Permissao.DOCUMENTOS_GERIR,
-    Permissao.CONHECIMENTO_GERIR,
-    Permissao.INICIATIVAS_GERIR,
+    Permissao.BIBLIOTECA_VER_TODOS,
+    Permissao.BIBLIOTECA_GERIR,
     Permissao.ESTRATEGIA_VER,
     Permissao.PRECIFICACAO_SIMULAR,
 ];

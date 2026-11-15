@@ -1,17 +1,12 @@
 import Anexo from "../../domain/entity/Anexo";
-import Documento from "../../domain/entity/Documento";
-import { DonoAnexo, extensaoDe } from "../../domain/enum/Anexo";
+import { DonoAnexo } from "../../domain/enum/Anexo";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../shared/erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { Permissao } from "../../shared/seguranca/catalogoPermissoes";
-import { exigirAutenticado, temPermissao, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { podeAlterarConhecimento } from "../../shared/seguranca/regrasConhecimento";
-import { podeAlterarIniciativa } from "../../shared/seguranca/regrasIniciativa";
+import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
-import { exigirVerPasta } from "../../shared/seguranca/sigiloPastas";
-import { hoje } from "../../shared/datas";
+import { exigirVerItem, podeAlterarItem } from "../../shared/seguranca/regrasBiblioteca";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
 
@@ -27,9 +22,7 @@ interface AcessoAoDono {
 
 /**
  * Anexos (sessão 12c, decisões de 09/11/2026). Cada anexo segue as regras do dono:
- * - documento de pasta: baixa quem pode ler a pasta (sigilo da sessão 9); envia e exclui a gestão;
- * - item da Base: todos baixam; envia e exclui quem pode alterar o item (autor ou gestão);
- * - iniciativa: todos baixam; envia e exclui quem pode alterá-la (responsável, quem criou ou gestão);
+ * - item da Biblioteca (sessão 17): baixa quem vê o item (sigilo); envia e exclui quem pode alterá-lo;
  * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão.
  * Quem não pode ler o dono recebe 404, como se o anexo não existisse.
  */
@@ -46,25 +39,19 @@ export default class GerirAnexos {
 
     /** Confere se o dono existe e se a pessoa pode lê-lo (senão 404); diz se pode alterar. */
     private async acesso(usuario: UsuarioAutenticado, tipo: DonoAnexo, codigo: string): Promise<AcessoAoDono> {
-        if (tipo === DonoAnexo.DOCUMENTO) {
-            const documento = await this.factory.criarDocumentoRepository().buscarPorCodigo(codigo);
-            if (!documento) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
-            await exigirVerPasta(usuario, documento.pasta, this.factory);
-            return { podeAlterar: temPermissao(usuario, Permissao.DOCUMENTOS_GERIR), semPermissao: M.SEM_PERMISSAO_DOCUMENTO };
-        }
-        if (tipo === DonoAnexo.CONHECIMENTO) {
-            const item = await this.factory.criarConhecimentoRepository().buscarPorCodigo(codigo);
-            if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
-            return { podeAlterar: podeAlterarConhecimento(usuario, item), semPermissao: MENSAGENS_DE_ERRO.CONHECIMENTO.SEM_PERMISSAO };
+        if (tipo === DonoAnexo.BIBLIOTECA) {
+            const item = await this.factory.criarBibliotecaRepository().buscarPorCodigo(codigo);
+            // Inexistente ou invisível: 404 (exigirVerItem não distingue os dois casos).
+            const visivel = await exigirVerItem(usuario, item, this.factory);
+            return { podeAlterar: podeAlterarItem(usuario, visivel), semPermissao: MENSAGENS_DE_ERRO.BIBLIOTECA.SEM_PERMISSAO };
         }
         if (tipo === DonoAnexo.CAPACITACAO) {
             const capacitacao = await this.factory.criarCapacitacaoRepository().buscarPorCodigo(codigo);
             if (!capacitacao) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CAPACITACAO.NAO_ENCONTRADA);
             return { podeAlterar: podeGerirCapacitacoes(usuario), semPermissao: M.SEM_PERMISSAO_CAPACITACAO };
         }
-        const item = await this.factory.criarIniciativaRepository().buscarPorCodigo(codigo);
-        if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.INICIATIVA.NAO_ENCONTRADA);
-        return { podeAlterar: podeAlterarIniciativa(usuario, item), semPermissao: MENSAGENS_DE_ERRO.INICIATIVA.SEM_PERMISSAO };
+        // Dono de módulo que saiu (sessão 17) ou desconhecido: como se o anexo não existisse.
+        throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
     }
 
     /**
@@ -92,7 +79,7 @@ export default class GerirAnexos {
         });
     }
 
-    /** Anexa um arquivo a um item da Base, a uma iniciativa ou a uma capacitação. */
+    /** Anexa um arquivo a um item da Biblioteca ou a uma capacitação. */
     async enviar(
         usuario: UsuarioAutenticado | null | undefined,
         tipo: DonoAnexo,
@@ -103,37 +90,6 @@ export default class GerirAnexos {
         const acesso = await this.acesso(autenticado, tipo, codigoDono);
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);
         return this.gravar(this.novo(autenticado, tipo, codigoDono, arquivo), arquivo.conteudo);
-    }
-
-    /** Documento de pasta do tipo arquivo: cria o documento (sem link) e o anexo dele. */
-    async enviarDocumento(
-        usuario: UsuarioAutenticado | null | undefined,
-        codigoPasta: string,
-        arquivo: ArquivoRecebido,
-        nome?: string,
-    ): Promise<Documento & { anexo: Anexo }> {
-        const autenticado = exigirAutenticado(usuario);
-        if (!temPermissao(autenticado, Permissao.DOCUMENTOS_GERIR)) throw new ErroProibido(M.SEM_PERMISSAO_DOCUMENTO);
-        const pasta = await this.factory.criarPastaRepository().buscarPorCodigo(codigoPasta);
-        if (!pasta) throw new ErroNaoEncontrado("Pasta não encontrada.");
-        const autor = await this.factory.criarUsuarioRepository().buscarPorCodigo(autenticado.codigo);
-        if (!autor || !autor.ativo) throw new ErroNaoEncontrado("Usuário ativo não encontrado.");
-
-        // Valida o arquivo (tipo, tamanho, nome) antes de criar o documento.
-        const nomeArquivo = this.novo(autenticado, DonoAnexo.DOCUMENTO, codigoPasta, arquivo).nome;
-        const documentos = this.factory.criarDocumentoRepository();
-        const nomeDocumento = (nome ?? "").trim() || nomeArquivo.replace(/\.[^.]+$/, "") || nomeArquivo;
-        const documento = await documentos.criar(
-            new Documento(pasta, nomeDocumento, arquivo.conteudo.length, hoje(), autor, null, extensaoDe(nomeArquivo) || null),
-        );
-        // Se o anexo falhar, desfaz o documento, para não ficar um documento "arquivo" sem arquivo.
-        try {
-            const anexo = await this.gravar(this.novo(autenticado, DonoAnexo.DOCUMENTO, documento.codigo, arquivo), arquivo.conteudo);
-            return Object.assign(documento, { anexo });
-        } catch (erro) {
-            await documentos.excluir(documento.codigo);
-            throw erro;
-        }
     }
 
     /** Anexo + conteúdo, para baixar. */
@@ -150,7 +106,7 @@ export default class GerirAnexos {
         return { anexo, conteudo };
     }
 
-    /** Exclui um anexo da Base, de uma iniciativa ou de uma capacitação (o de documento sai junto com o documento). */
+    /** Exclui um anexo de um item da Biblioteca ou de uma capacitação. */
     async excluir(usuario: UsuarioAutenticado | null | undefined, codigo: string): Promise<{ codigo: string }> {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
@@ -159,13 +115,7 @@ export default class GerirAnexos {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);
-        // O documento do tipo arquivo não existe sem o arquivo: apagar o anexo apaga o documento.
-        if (anexo.donoTipo === DonoAnexo.DOCUMENTO) {
-            await this.excluirDosDonos(DonoAnexo.DOCUMENTO, [anexo.donoCodigo]);
-            await this.factory.criarDocumentoRepository().excluir(anexo.donoCodigo);
-        } else {
-            await this.apagar(anexo);
-        }
+        await this.apagar(anexo);
         return { codigo };
     }
 

@@ -28,6 +28,13 @@ describe("Segurança da API", () => {
         expect(r.status).toBe(404);
     });
 
+    it("sessão 17: Gestão, Base e Iniciativas saíram (a Biblioteca substitui)", async () => {
+        for (const caminho of ["/pastas", "/documentos", "/conhecimento", "/iniciativas", "/iniciativas/opcoes"]) {
+            const r = await servidor.chamar("get", caminho, { usuario: diretor });
+            expect([caminho, r.status]).toEqual([caminho, 404]);
+        }
+    });
+
     it("S1: não existe cadastro público de contas", async () => {
         const r = await servidor.chamar("post", "/auth/register", {
             corpo: { nome: "Intruso", email: "x@x.com", senha: "123456", senioridade: { codigo: "pleno" } },
@@ -76,8 +83,8 @@ describe("Segurança da API", () => {
         });
         expect(peloDono.status).toBe(200);
 
-        const pasta = await servidor.chamar("post", "/pastas", { usuario: ctx.membro, corpo: { nome: "X" } });
-        expect(pasta.status).toBe(403);
+        const sigiloso = await servidor.chamar("post", "/biblioteca", { usuario: ctx.membro, corpo: { titulo: "X", sigilo: "gestao" } });
+        expect(sigiloso.status).toBe(403);
     });
 
     it("S4: membro só cria tarefas para si, em projetos de que participa", async () => {

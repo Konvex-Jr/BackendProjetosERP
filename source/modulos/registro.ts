@@ -5,12 +5,9 @@ import UsuarioRoutes from "../infra/http/routes/UsuarioRoutes";
 import ProjetoRoutes from "../infra/http/routes/ProjetoRoutes";
 import TarefaRoutes from "../infra/http/routes/TarefaRoutes";
 import CapacitacaoRoutes from "../infra/http/routes/CapacitacaoRoutes";
-import PastaRoutes from "../infra/http/routes/PastaRoutes";
-import DocumentoRoutes from "../infra/http/routes/DocumentoRoutes";
 import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
-import ConhecimentoRoutes from "../infra/http/routes/ConhecimentoRoutes";
-import IniciativaRoutes from "../infra/http/routes/IniciativaRoutes";
 import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
+import BibliotecaRoutes from "../infra/http/routes/BibliotecaRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
@@ -103,30 +100,15 @@ export const MODULOS: Modulo[] = [
         menu: [{ chave: "capacitacoes", rotulo: "Capacitações", caminho: "/capacitacoes", ordem: 30 }],
     },
     {
-        chave: "documentos",
-        nome: "Documentos",
-        rotas: [PastaRoutes, DocumentoRoutes],
-        permissoes: [Permissao.DOCUMENTOS_VER_TODAS, Permissao.DOCUMENTOS_GERIR],
-        menu: [{ chave: "gestao", rotulo: "Gestão", caminho: "/gestao", ordem: 60 }],
+        // Sessão 17: junta Gestão, Base e Iniciativas. Todos veem (o sigilo é por item); na posição da Base.
+        chave: "biblioteca",
+        nome: "Biblioteca",
+        rotas: [BibliotecaRoutes],
+        permissoes: [Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
+        menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 35 }],
     },
     {
-        chave: "conhecimento",
-        nome: "Base de Inteligência",
-        rotas: [ConhecimentoRoutes],
-        permissoes: [Permissao.CONHECIMENTO_GERIR],
-        // Leitura e cadastro para todos (RF-083); depois de Capacitações, fora da barra do celular (decisão 03/11).
-        menu: [{ chave: "conhecimento", rotulo: "Base de Inteligência", caminho: "/conhecimento", ordem: 35 }],
-    },
-    {
-        chave: "iniciativas",
-        nome: "Iniciativas",
-        rotas: [IniciativaRoutes],
-        permissoes: [Permissao.INICIATIVAS_GERIR],
-        // Todos veem; criam a gestão e a área de Inovação (decisão 03/11, sessão 12b). Logo depois da Base.
-        menu: [{ chave: "iniciativas", rotulo: "Iniciativas", caminho: "/iniciativas", ordem: 37 }],
-    },
-    {
-        // Sessão 12c: arquivos anexados a documentos, itens da Base e iniciativas (sem item de menu).
+        // Sessão 12c: arquivos anexados (hoje, a itens da Biblioteca e a capacitações; sem item de menu).
         chave: "anexos",
         nome: "Anexos",
         rotas: [AnexoRoutes],

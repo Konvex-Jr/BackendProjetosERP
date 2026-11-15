@@ -1,6 +1,6 @@
 # Sistema interno da Konvex Jr. · Backend
 
-API do ERP interno da Konvex Jr.: projetos, tarefas, pessoas, capacitações, documentos com anexos, base de inteligência e iniciativas, com permissões por papel. Em produção em https://erp.konvexjr.com.br.
+API do ERP interno da Konvex Jr.: projetos, tarefas, pessoas, capacitações, a Biblioteca (material da Konvex com anexos e sigilo), com permissões por papel. Em produção em https://erp.konvexjr.com.br.
 
 Node.js 20 · Express · TypeScript · PostgreSQL (SQL com `pg`, sem ORM) · JWT. A interface fica no repositório [FrontendProjetosERP](https://github.com/Konvex-Jr/FrontendProjetosERP).
 
@@ -105,7 +105,7 @@ docker logs konvex-backend 2>&1 | tail -20   # migrações + "API disponível na
 - **Papéis:** diretor = `ADMIN`, gerente = `MANAGER`, membro = `MEMBER`. Gerente e diretor veem todos os projetos; membro vê só os seus.
 - **Sessão:** `POST /auth/login` com `{ email, senha }` devolve `token` (15 min, cabeçalho `access-token`) e `refreshToken` (7 dias); `POST /auth/refresh` e `POST /auth/logout`. `GET /auth/permissoes` devolve o menu da pessoa.
 - **Variáveis:** `DATABASE_URL` (ou `DB_*`), `CORS_ORIGINS`, `ANEXOS_DIR`, `JWT_ACCESS_TTL`, `REFRESH_TOKEN_DIAS`, chaves JWT (`private.key`/`public.key` ou `JWT_PRIVATE_KEY`/`JWT_PUBLIC_KEY`), `ADMIN_*`. Lista completa no `PUBLICACAO.md`.
-- **Scripts:** `npm run keys` (gera as chaves), `npm run migrate`, `npm run seed:admin`, `npm run dados:ficticios`, `node dist/source/scripts/conferirAnexos.js` (anexos órfãos; só relata).
+- **Scripts:** `npm run keys` (gera as chaves), `npm run migrate`, `npm run seed:admin`, `npm run dados:ficticios`, `node dist/source/scripts/conferirAnexos.js` (anexos órfãos; só relata; com `--apagar-sem-registro` apaga os arquivos sem registro, exceto os modificados nos últimos 10 minutos).
 
 ## 6. Documentação e licença
 - [`docs/GUIA_DE_USO.md`](docs/GUIA_DE_USO.md): o sistema tela a tela, para quem usa.

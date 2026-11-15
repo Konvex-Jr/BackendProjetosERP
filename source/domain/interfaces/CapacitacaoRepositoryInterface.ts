@@ -1,5 +1,5 @@
 import Capacitacao from "../entity/Capacitacao";
-import { Referencia } from "../entity/Conhecimento";
+import { Referencia } from "../entity/Referencia";
 
 /** Capacitações e suas inscrições (a lista de inscritos vem junto na entidade). */
 export default interface CapacitacaoRepositoryInterface {

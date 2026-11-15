@@ -4,9 +4,7 @@
  * devolve sempre o tipo desta lista, para o arquivo nunca ser servido como página.
  */
 export enum DonoAnexo {
-    DOCUMENTO = "documento",
-    CONHECIMENTO = "conhecimento",
-    INICIATIVA = "iniciativa",
+    BIBLIOTECA = "biblioteca",
     CAPACITACAO = "capacitacao",
 }
 

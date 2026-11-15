@@ -11,8 +11,7 @@ import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
            status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo,
-           categoria, criada_por_codigo, iniciativa_codigo,
-           (SELECT i.titulo FROM iniciativas i WHERE i.codigo = tarefas.iniciativa_codigo) AS iniciativa_titulo
+           categoria, criada_por_codigo
     FROM tarefas
 `;
 
@@ -32,8 +31,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
-                                      concluida_por_codigo, categoria, criada_por_codigo, iniciativa_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                                      concluida_por_codigo, categoria, criada_por_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     tarefa.codigo,
                     tarefa.projeto?.codigo ?? null,
@@ -48,7 +47,6 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.categoria,
                     tarefa.criadaPor?.codigo ?? null,
-                    tarefa.iniciativa?.codigo ?? null,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -106,7 +104,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
                      status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
-                     concluida_por_codigo = $10, categoria = $11, iniciativa_codigo = $12
+                     concluida_por_codigo = $10, categoria = $11
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -121,7 +119,6 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.categoria,
-                    tarefa.iniciativa?.codigo ?? null,
                 ],
             );
 
@@ -251,7 +248,6 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 linha.concluida_por_codigo ? (usuarios.get(linha.concluida_por_codigo) ?? null) : null,
                 linha.categoria ?? null,
                 linha.criada_por_codigo ? (usuarios.get(linha.criada_por_codigo) ?? null) : null,
-                linha.iniciativa_codigo ? { codigo: linha.iniciativa_codigo, nome: linha.iniciativa_titulo } : null,
             );
 
             construidas.set(codigo, tarefa);
