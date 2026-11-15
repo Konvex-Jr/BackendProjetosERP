@@ -7,6 +7,8 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerItem, podeAlterarItem } from "../../shared/seguranca/regrasBiblioteca";
+import { RegrasTarefa } from "../../shared/seguranca/regrasTarefa";
+import { carregarTarefa } from "../tarefas/carregarTarefa";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
 
@@ -23,7 +25,9 @@ interface AcessoAoDono {
 /**
  * Anexos (sessão 12c, decisões de 09/11/2026). Cada anexo segue as regras do dono:
  * - item da Biblioteca (sessão 17): baixa quem vê o item (sigilo); envia e exclui quem pode alterá-lo;
- * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão.
+ * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão;
+ * - tarefa (sessão 19, regras dos comentários em `regrasTarefa`): vê e baixa quem vê a tarefa; envia quem
+ *   comenta (equipe atual; na avulsa, responsáveis e gestão); exclui quem enviou ou quem organiza.
  * Quem não pode ler o dono recebe 404, como se o anexo não existisse.
  */
 export default class GerirAnexos {
@@ -37,8 +41,23 @@ export default class GerirAnexos {
         return this.factory.criarArmazenamentoAnexos();
     }
 
-    /** Confere se o dono existe e se a pessoa pode lê-lo (senão 404); diz se pode alterar. */
-    private async acesso(usuario: UsuarioAutenticado, tipo: DonoAnexo, codigo: string): Promise<AcessoAoDono> {
+    /** Tarefa que a pessoa vê, com as regras dela; inexistente ou invisível: 404 (o mesmo para os dois casos). */
+    private async tarefaVisivel(usuario: UsuarioAutenticado, codigo: string): Promise<{ avulsa: boolean; regras: RegrasTarefa }> {
+        const { tarefa, regras } = await carregarTarefa(this.factory, usuario, codigo);
+        if (!regras.ver) throw new ErroNaoEncontrado("Tarefa não encontrada.");
+        return { avulsa: tarefa.avulsa, regras };
+    }
+
+    /** Na tarefa, exclui quem enviou o anexo (mesmo que tenha saído da equipe, se ainda vê a tarefa) ou quem organiza. */
+    private podeExcluirDaTarefa(usuario: UsuarioAutenticado, regras: RegrasTarefa, anexo: Anexo): boolean {
+        return anexo.enviadoPor?.codigo === usuario.codigo || regras.organizar;
+    }
+
+    /**
+     * Confere se o dono existe e se a pessoa pode lê-lo (senão 404); diz se pode alterar.
+     * Com o `anexo` (exclusão), a tarefa decide por ele; Biblioteca e capacitação ignoram o anexo.
+     */
+    private async acesso(usuario: UsuarioAutenticado, tipo: DonoAnexo, codigo: string, anexo?: Anexo): Promise<AcessoAoDono> {
         if (tipo === DonoAnexo.BIBLIOTECA) {
             const item = await this.factory.criarBibliotecaRepository().buscarPorCodigo(codigo);
             // Inexistente ou invisível: 404 (exigirVerItem não distingue os dois casos).
@@ -49,6 +68,14 @@ export default class GerirAnexos {
             const capacitacao = await this.factory.criarCapacitacaoRepository().buscarPorCodigo(codigo);
             if (!capacitacao) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CAPACITACAO.NAO_ENCONTRADA);
             return { podeAlterar: podeGerirCapacitacoes(usuario), semPermissao: M.SEM_PERMISSAO_CAPACITACAO };
+        }
+        if (tipo === DonoAnexo.TAREFA) {
+            const { avulsa, regras } = await this.tarefaVisivel(usuario, codigo);
+            if (anexo) return { podeAlterar: this.podeExcluirDaTarefa(usuario, regras, anexo), semPermissao: M.SO_OS_PROPRIOS };
+            return {
+                podeAlterar: regras.comentar,
+                semPermissao: avulsa ? M.SEM_PERMISSAO_TAREFA_AVULSA : M.SEM_PERMISSAO_TAREFA_PROJETO,
+            };
         }
         // Dono de módulo que saiu (sessão 17) ou desconhecido: como se o anexo não existisse.
         throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
@@ -79,7 +106,7 @@ export default class GerirAnexos {
         });
     }
 
-    /** Anexa um arquivo a um item da Biblioteca ou a uma capacitação. */
+    /** Anexa um arquivo a um item da Biblioteca, a uma capacitação ou a uma tarefa. */
     async enviar(
         usuario: UsuarioAutenticado | null | undefined,
         tipo: DonoAnexo,
@@ -106,17 +133,29 @@ export default class GerirAnexos {
         return { anexo, conteudo };
     }
 
-    /** Exclui um anexo de um item da Biblioteca ou de uma capacitação. */
+    /** Exclui um anexo de um item da Biblioteca, de uma capacitação ou de uma tarefa. */
     async excluir(usuario: UsuarioAutenticado | null | undefined, codigo: string): Promise<{ codigo: string }> {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
         if (!anexo) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
-        const acesso = await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo).catch(() => {
+        const acesso = await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo, anexo).catch(() => {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);
         await this.apagar(anexo);
         return { codigo };
+    }
+
+    /** Anexos de uma tarefa (do mais antigo ao mais novo), com `podeExcluir` para quem pede. 404 se não vê a tarefa. */
+    async listar(
+        usuario: UsuarioAutenticado | null | undefined,
+        tipo: DonoAnexo.TAREFA,
+        codigoDono: string,
+    ): Promise<Array<ReturnType<Anexo["toJSON"]> & { podeExcluir: boolean }>> {
+        const autenticado = exigirAutenticado(usuario);
+        const { regras } = await this.tarefaVisivel(autenticado, codigoDono);
+        const anexos = await this.anexos.listarPorDonos(tipo, [codigoDono]);
+        return anexos.map((anexo) => ({ ...anexo.toJSON(), podeExcluir: this.podeExcluirDaTarefa(autenticado, regras, anexo) }));
     }
 
     /** Registro primeiro, arquivo depois: se o disco falhar, sobra um arquivo órfão, não um link quebrado. */

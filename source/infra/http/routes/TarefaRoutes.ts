@@ -16,7 +16,8 @@ import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
-import { papelNoProjeto, podeAtribuirAvulsas, regrasTarefa, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
+import { papelNoProjeto, podeAtribuirAvulsas, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
+import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 import { ehCategoriaTarefa } from "../../../domain/enum/CategoriaTarefa";
 import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 
@@ -31,10 +32,7 @@ export default class TarefaRoutes implements ModelRoutes {
     ) {}
 
     private async carregar(usuario: UsuarioAutenticado, codigo: string): Promise<{ tarefa: Tarefa; regras: RegrasTarefa }> {
-        const tarefa = await this.factory.criarTarefaRepository().buscarPorCodigo(codigo);
-        if (!tarefa) throw new ErroNaoEncontrado("Tarefa não encontrada.");
-        const projeto = tarefa.projeto ? await this.factory.criarProjetoRepository().buscarPorCodigo(tarefa.projeto.codigo) : null;
-        const regras = regrasTarefa(usuario, tarefa, projeto);
+        const { tarefa, regras } = await carregarTarefa(this.factory, usuario, codigo);
         // Avulsa de outra pessoa: para quem não pode ver, a tarefa "não existe".
         if (tarefa.avulsa && !regras.ver) throw new ErroNaoEncontrado("Tarefa não encontrada.");
         return { tarefa, regras };
