@@ -22,6 +22,7 @@ import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabas
 import HistoricoPessoaRepositoryDatabase from "./database/HistoricoPessoaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
+import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
 import ConhecimentoRepositoryDatabase from "./database/ConhecimentoRepositoryDatabase";
 import IniciativaRepositoryDatabase from "./database/IniciativaRepositoryDatabase";
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
@@ -93,6 +94,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarConhecimentoRepository() {
         return new ConhecimentoRepositoryDatabase(this.conexao);
+    }
+
+    criarBibliotecaRepository() {
+        return new BibliotecaRepositoryDatabase(this.conexao);
     }
 
     criarIniciativaRepository() {

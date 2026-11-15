@@ -14,6 +14,7 @@ import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
 import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
 import ConhecimentoRepositoryInterface from "./ConhecimentoRepositoryInterface";
 import IniciativaRepositoryInterface from "./IniciativaRepositoryInterface";
+import BibliotecaRepositoryInterface from "./BibliotecaRepositoryInterface";
 import AnexoRepositoryInterface from "./AnexoRepositoryInterface";
 import ArmazenamentoAnexosInterface from "./ArmazenamentoAnexosInterface";
 
@@ -43,6 +44,7 @@ export default interface RepositoryFactoryInterface {
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
     criarConhecimentoRepository(): ConhecimentoRepositoryInterface;
     criarIniciativaRepository(): IniciativaRepositoryInterface;
+    criarBibliotecaRepository(): BibliotecaRepositoryInterface;
     criarAnexoRepository(): AnexoRepositoryInterface;
     /** Bytes dos anexos (disco em produção, memória nos testes). */
     criarArmazenamentoAnexos(): ArmazenamentoAnexosInterface;
