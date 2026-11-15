@@ -11,6 +11,7 @@ import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
 import ConhecimentoRoutes from "../infra/http/routes/ConhecimentoRoutes";
 import IniciativaRoutes from "../infra/http/routes/IniciativaRoutes";
 import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
+import BibliotecaRoutes from "../infra/http/routes/BibliotecaRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
 import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
@@ -126,12 +127,12 @@ export const MODULOS: Modulo[] = [
         menu: [{ chave: "iniciativas", rotulo: "Iniciativas", caminho: "/iniciativas", ordem: 37 }],
     },
     {
-        // Sessão 17: ainda sem rotas nem menu (entram na tarefa B3); registra as ações no catálogo.
+        // Sessão 17: junta Gestão, Base e Iniciativas. Todos veem (o sigilo é por item); na posição da Base.
         chave: "biblioteca",
         nome: "Biblioteca",
-        rotas: [],
+        rotas: [BibliotecaRoutes],
         permissoes: [Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
-        menu: [],
+        menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 35 }],
     },
     {
         // Sessão 12c: arquivos anexados a documentos, itens da Base e iniciativas (sem item de menu).

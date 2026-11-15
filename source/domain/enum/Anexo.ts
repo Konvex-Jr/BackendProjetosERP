@@ -8,6 +8,7 @@ export enum DonoAnexo {
     CONHECIMENTO = "conhecimento",
     INICIATIVA = "iniciativa",
     CAPACITACAO = "capacitacao",
+    BIBLIOTECA = "biblioteca",
 }
 
 export const LIMITE_ANEXO_BYTES = 20 * 1024 * 1024;

@@ -58,6 +58,31 @@ const CORPO_CONHECIMENTO = {
     },
 };
 
+const CORPO_BIBLIOTECA = {
+    type: "object",
+    required: ["titulo"],
+    description: "No PUT, campo ausente mantém o valor atual; codigoProjeto null tira o projeto.",
+    properties: {
+        titulo: { type: "string", maxLength: 160 },
+        conteudo: { type: "string", description: "Markdown simples, até 50 mil caracteres." },
+        links: {
+            oneOf: [{ type: "array", items: { type: "string", format: "uri" }, maxItems: 10 }, { type: "string" }],
+            description: "Array ou texto separado por vírgulas; só http(s).",
+        },
+        tags: {
+            oneOf: [{ type: "array", items: { type: "string" }, maxItems: 10 }, { type: "string" }],
+            description: "Array ou texto separado por vírgulas; normalizadas (minúsculas, sem #, sem repetição).",
+        },
+        codigoProjeto: { type: "string", nullable: true, description: "Membro: só projeto de que participa ou participou." },
+        sigilo: {
+            type: "string",
+            enum: ["todos", "gestao", "projeto"],
+            default: "todos",
+            description: "gestao só com biblioteca.gerir; projeto exige projeto.",
+        },
+    },
+};
+
 const CORPO_CAPACITACAO = {
     type: "object",
     required: ["titulo", "data", "hora", "codigoInstrutor", "vagas", "tipo", "sala"],
@@ -338,6 +363,48 @@ const swaggerSpecification = {
         "/capacitacoes/{codigo}/anexos": {
             post: operation(["Anexos"], "Anexar material a uma capacitação (gestão)", {
                 parameters: [codigo, nomeArquivo],
+                requestBody: corpoArquivo,
+            }),
+        },
+        "/biblioteca": {
+            get: operation(["Biblioteca"], "Listar os itens que a pessoa pode ver, com busca e filtros", {
+                parameters: [
+                    { name: "q", in: "query", schema: { type: "string" }, description: "Procura no título, conteúdo e tags." },
+                    { name: "tag", in: "query", schema: { type: "string" } },
+                    { name: "projeto", in: "query", schema: { type: "string" }, description: "Código do projeto." },
+                    { name: "sigilo", in: "query", schema: { type: "string", enum: ["todos", "gestao", "projeto"] } },
+                    { name: "autor", in: "query", schema: { type: "string" }, description: "Código do autor." },
+                ],
+            }),
+            post: operation(
+                ["Biblioteca"],
+                "Cadastrar item (qualquer pessoa logada; vira o autor; 403 para sigilo/projeto não permitidos)",
+                {
+                    requestBody: jsonBody(CORPO_BIBLIOTECA),
+                },
+            ),
+        },
+        "/biblioteca/{codigo}": {
+            get: operation(["Biblioteca"], "Abrir item (404 se não existe ou a pessoa não pode vê-lo)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+            }),
+            put: operation(["Biblioteca"], "Editar item (autor ou gestão; 404 se invisível); sigilo e projeto conferidos só se mudarem", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+                requestBody: jsonBody(CORPO_BIBLIOTECA),
+            }),
+            delete: operation(["Biblioteca"], "Excluir item e anexos (autor ou gestão; 404 se invisível); responde 204", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }],
+                responses: {
+                    "204": { description: "Item excluído." },
+                    "401": { description: "Token inválido ou expirado." },
+                    "403": { description: "Sem permissão para esta ação." },
+                    "404": { description: "Item não encontrado." },
+                },
+            }),
+        },
+        "/biblioteca/{codigo}/anexos": {
+            post: operation(["Anexos"], "Anexar arquivo a um item da Biblioteca (autor ou gestão; 404 se invisível)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
                 requestBody: corpoArquivo,
             }),
         },

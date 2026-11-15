@@ -11,6 +11,7 @@ import { podeAlterarConhecimento } from "../../shared/seguranca/regrasConhecimen
 import { podeAlterarIniciativa } from "../../shared/seguranca/regrasIniciativa";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerPasta } from "../../shared/seguranca/sigiloPastas";
+import { exigirVerItem, podeAlterarItem } from "../../shared/seguranca/regrasBiblioteca";
 import { hoje } from "../../shared/datas";
 
 const M = MENSAGENS_DE_ERRO.ANEXO;
@@ -30,7 +31,8 @@ interface AcessoAoDono {
  * - documento de pasta: baixa quem pode ler a pasta (sigilo da sessão 9); envia e exclui a gestão;
  * - item da Base: todos baixam; envia e exclui quem pode alterar o item (autor ou gestão);
  * - iniciativa: todos baixam; envia e exclui quem pode alterá-la (responsável, quem criou ou gestão);
- * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão.
+ * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão;
+ * - item da Biblioteca (sessão 17): baixa quem vê o item (sigilo); envia e exclui quem pode alterá-lo.
  * Quem não pode ler o dono recebe 404, como se o anexo não existisse.
  */
 export default class GerirAnexos {
@@ -56,6 +58,12 @@ export default class GerirAnexos {
             const item = await this.factory.criarConhecimentoRepository().buscarPorCodigo(codigo);
             if (!item) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.CONHECIMENTO.NAO_ENCONTRADO);
             return { podeAlterar: podeAlterarConhecimento(usuario, item), semPermissao: MENSAGENS_DE_ERRO.CONHECIMENTO.SEM_PERMISSAO };
+        }
+        if (tipo === DonoAnexo.BIBLIOTECA) {
+            const item = await this.factory.criarBibliotecaRepository().buscarPorCodigo(codigo);
+            // Inexistente ou invisível: 404 (exigirVerItem não distingue os dois casos).
+            const visivel = await exigirVerItem(usuario, item, this.factory);
+            return { podeAlterar: podeAlterarItem(usuario, visivel), semPermissao: MENSAGENS_DE_ERRO.BIBLIOTECA.SEM_PERMISSAO };
         }
         if (tipo === DonoAnexo.CAPACITACAO) {
             const capacitacao = await this.factory.criarCapacitacaoRepository().buscarPorCodigo(codigo);

@@ -59,6 +59,7 @@ describe("Registro de módulos", () => {
             "projetos",
             "capacitacoes",
             "conhecimento",
+            "biblioteca",
             "iniciativas",
             "estrategia",
             "gestao",
@@ -74,9 +75,14 @@ describe("Registro de módulos", () => {
             "projetos",
             "capacitacoes",
             "conhecimento",
+            "biblioteca",
             "iniciativas",
             "gestao",
             "perfil",
+        ]);
+        // Biblioteca (sessão 17): sem permissão no menu; o membro vê o módulo.
+        expect(menuDoUsuario(membro).find((m) => m.chave === "biblioteca")?.itens).toEqual([
+            { chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca" },
         ]);
         // Do módulo Pessoas, o membro só vê o próprio perfil.
         expect(
@@ -98,7 +104,15 @@ describe("Registro de módulos", () => {
         };
         new Router(http, new MemoryRepositoryFactory()).init();
 
-        for (const rota of ["get /usuarios", "get /projetos", "get /tarefas", "get /capacitacoes", "get /pastas", "get /areas"]) {
+        for (const rota of [
+            "get /usuarios",
+            "get /projetos",
+            "get /tarefas",
+            "get /capacitacoes",
+            "get /pastas",
+            "get /areas",
+            "get /biblioteca",
+        ]) {
             expect(rotas[rota]).toBeDefined();
         }
         const resposta = await rotas["get /auth/permissoes"]({}, { user: gerente });

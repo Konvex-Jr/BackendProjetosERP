@@ -3,6 +3,7 @@ import swaggerUi from "swagger-ui-express";
 import Auth from "./middleware/Auth";
 import Http, { OpcoesRota } from "./Http";
 import RespostaArquivo from "./RespostaArquivo";
+import RespostaSemConteudo from "./RespostaSemConteudo";
 import HttpMethods from "./HttpMethods";
 import { ErroAplicacao } from "../../shared/erros/ErroAplicacao";
 
@@ -132,6 +133,10 @@ export default class ExpressHttp implements Http {
                     res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
                     res.setHeader("Cache-Control", "private, no-store");
                     res.end(result.conteudo);
+                    return;
+                }
+                if (result instanceof RespostaSemConteudo) {
+                    res.status(204).end();
                     return;
                 }
                 res.json(result === undefined ? { message: "Operação realizada com sucesso." } : result);

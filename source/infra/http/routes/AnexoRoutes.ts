@@ -48,6 +48,14 @@ export default class AnexoRoutes implements ModelRoutes {
 
         this.http.route(
             "post",
+            "/biblioteca/:codigo/anexos",
+            true,
+            async (params: any, body: any) => gerir().enviar(body?.user, DonoAnexo.BIBLIOTECA, params.codigo, body.arquivo),
+            RECEBE_ARQUIVO,
+        );
+
+        this.http.route(
+            "post",
             "/capacitacoes/:codigo/anexos",
             true,
             async (params: any, body: any) => gerir().enviar(body?.user, DonoAnexo.CAPACITACAO, params.codigo, body.arquivo),
