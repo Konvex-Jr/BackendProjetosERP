@@ -115,6 +115,7 @@ describe("Anexos nas tarefas", () => {
         const download = await baixar(exParticipante, doColega.codigo);
         expect(download.status).toBe(200);
         expect(download.bytes.equals(PDF)).toBe(true);
+        expect(download.headers.get("cache-control")).toBe("private, no-store");
 
         const negado = await enviar(exParticipante, TAREFA, "novo.pdf");
         expect(negado.status).toBe(403);

@@ -120,7 +120,10 @@ export default class GerirAnexos {
     }
 
     /** Anexo + conteúdo, para baixar. */
-    async baixar(usuario: UsuarioAutenticado | null | undefined, codigo: string): Promise<{ anexo: Anexo; conteudo: Buffer }> {
+    async baixar(
+        usuario: UsuarioAutenticado | null | undefined,
+        codigo: string,
+    ): Promise<{ anexo: Anexo; fluxo: NodeJS.ReadableStream; tamanho: number }> {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
         if (!anexo) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
@@ -128,9 +131,10 @@ export default class GerirAnexos {
         await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo).catch(() => {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });
-        const conteudo = await this.armazenamento.ler(anexo.arquivo);
-        if (!conteudo) throw new ErroNaoEncontrado(M.ARQUIVO_SUMIU);
-        return { anexo, conteudo };
+        // Abre antes de responder: arquivo que sumiu vira 404 com JSON, sem ter enviado byte algum.
+        const aberto = await this.armazenamento.abrir(anexo.arquivo);
+        if (!aberto) throw new ErroNaoEncontrado(M.ARQUIVO_SUMIU);
+        return { anexo, ...aberto };
     }
 
     /** Exclui um anexo de um item da Biblioteca, de uma capacitação ou de uma tarefa. */

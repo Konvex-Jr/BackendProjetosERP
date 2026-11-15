@@ -63,6 +63,43 @@ describe("Anexos", () => {
         expect(download.headers.get("content-disposition")).toContain("Relat%C3%B3rio%20de%20mercado.pdf");
     });
 
+    it("baixa em fluxo um PDF de 3 MB com os mesmos bytes e os cabeçalhos de segurança", async () => {
+        const grande = Buffer.alloc(3 * 1024 * 1024, "abc");
+        const item = await itemBase(ctx.membro);
+        const r = await enviar(ctx.membro, `/biblioteca/${item.codigo}/anexos`, "grande.pdf", grande);
+        expect(r.status).toBe(200);
+
+        const download = await baixar(bruno, r.corpo.codigo);
+        expect(download.status).toBe(200);
+        expect(download.bytes.equals(grande)).toBe(true);
+        expect(download.headers.get("content-length")).toBe("3145728");
+        expect(download.headers.get("content-disposition")).toContain("attachment");
+        expect(download.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(download.headers.get("cache-control")).toBe("private, no-store");
+    });
+
+    it("anexo de texto (comprimível) chega íntegro com a compressão ativa", async () => {
+        const texto = Buffer.from("linha de teste do csv\n".repeat(5000));
+        const item = await itemBase(ctx.membro);
+        const r = await enviar(ctx.membro, `/biblioteca/${item.codigo}/anexos`, "dados.csv", texto);
+        expect(r.status).toBe(200);
+
+        const download = await baixar(bruno, r.corpo.codigo);
+        expect(download.status).toBe(200);
+        expect(download.bytes.equals(texto)).toBe(true);
+    });
+
+    it("arquivo que sumiu do disco responde 404 com JSON, antes de enviar qualquer byte", async () => {
+        const item = await itemBase(ctx.membro);
+        const r = await enviar(ctx.membro, `/biblioteca/${item.codigo}/anexos`, "sumiu.pdf");
+        ctx.factory.armazenamentoAnexos.arquivos.clear();
+
+        const download = await baixar(bruno, r.corpo.codigo);
+        expect(download.status).toBe(404);
+        expect(download.headers.get("content-type")).toContain("application/json");
+        expect(JSON.parse(download.bytes.toString()).message).toEqual(expect.any(String));
+    });
+
     it("só quem pode alterar o item anexa e exclui", async () => {
         const item = await itemBase(ctx.membro);
         const negado = await enviar(bruno, `/biblioteca/${item.codigo}/anexos`, "a.pdf");

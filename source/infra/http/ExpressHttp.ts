@@ -1,3 +1,4 @@
+import { pipeline } from "stream";
 import compression from "compression";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
@@ -133,11 +134,19 @@ export default class ExpressHttp implements Http {
                     // Sempre como download (attachment) e com nosniff: um arquivo enviado nunca é aberto
                     // pelo navegador como página do sistema. Sem cache, porque o conteúdo depende de permissão.
                     res.setHeader("Content-Type", result.tipoMime);
-                    res.setHeader("Content-Length", String(result.conteudo.length));
+                    res.setHeader("Content-Length", String(result.tamanho));
                     res.setHeader("X-Content-Type-Options", "nosniff");
                     res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
                     res.setHeader("Cache-Control", "private, no-store");
-                    res.end(result.conteudo);
+                    if (Buffer.isBuffer(result.conteudo)) {
+                        res.end(result.conteudo);
+                        return;
+                    }
+                    // Em fluxo: falha depois de começar encerra a conexão (download incompleto), sem JSON.
+                    // Com a compressão ativa (tipos comprimíveis), o compression remove o Content-Length.
+                    pipeline(result.conteudo, res, (erro) => {
+                        if (erro && !res.destroyed) res.destroy(erro);
+                    });
                     return;
                 }
                 if (result instanceof RespostaSemConteudo) {
