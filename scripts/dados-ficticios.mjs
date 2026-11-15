@@ -123,6 +123,25 @@ async function main() {
         console.log("Capacitações criadas (uma já passou, com Bia e Caio inscritos).");
     }
 
+    // Biblioteca: um item por sigilo e um ligado ao projeto (reaproveita pelo título).
+    const entrou = async (email) => (await exigir("POST", "/auth/login", undefined, { email, senha: SENHA_FICTICIA })).token;
+    const tokenBia = await entrou("bia@dev.konvex");
+    const tokenInes = await entrou("ines@dev.konvex");
+    const itens = await exigir("GET", "/biblioteca", dir);
+    const itensBiblioteca = [
+        [tokenBia, { titulo: "Como pedir férias (fictício)", conteudo: "Passo a passo para todos.", tags: ["rh"], sigilo: "todos" }],
+        [tokenInes, { titulo: "Metas da diretoria (fictício)", conteudo: "Só a gestão enxerga.", tags: ["metas"], sigilo: "gestao" }],
+        [tokenBia, { titulo: "Atas do site institucional (fictício)", conteudo: "Decisões da equipe do projeto.", sigilo: "projeto", codigoProjeto: projeto.codigo }],
+        [tokenBia, { titulo: "Referências de layout (fictício)", links: ["https://example.com/layout"], sigilo: "todos", codigoProjeto: projeto.codigo }],
+    ];
+    let criados = 0;
+    for (const [token, corpo] of itensBiblioteca) {
+        if (itens.some((i) => i.titulo === corpo.titulo)) continue;
+        await exigir("POST", "/biblioteca", token, corpo);
+        criados++;
+    }
+    if (criados) console.log(`Biblioteca: ${criados} item(ns) criado(s).`);
+
     console.log(`Pronto. Contas fictícias: ines@, bia@ e caio@dev.konvex com a senha ${SENHA_FICTICIA}.`);
 }
 
