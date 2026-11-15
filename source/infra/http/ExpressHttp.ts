@@ -1,3 +1,4 @@
+import compression from "compression";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import Auth from "./middleware/Auth";
@@ -70,6 +71,10 @@ export default class ExpressHttp implements Http {
             res.setHeader("Referrer-Policy", "no-referrer");
             next();
         });
+        // Comprime as respostas (acima de 1 KB, só tipos compressíveis). /auth fica de fora: as respostas
+        // levam tokens no corpo, e comprimir segredo misturado a texto refletido abre risco do tipo BREACH.
+        // Aqui a autenticação vai em cabeçalho, não em cookie, então o risco já é baixo; a exclusão é cinto e suspensório.
+        this.app.use(compression({ filter: (req: any, res: any) => !req.path.startsWith("/auth") && compression.filter(req, res) }));
         // JSON pequeno de propósito; arquivos não passam por aqui, e sim por receberArquivo (até 20 MB).
         this.app.use(express.json({ limit: "2mb" }));
         const origensPermitidas = origensCors();
