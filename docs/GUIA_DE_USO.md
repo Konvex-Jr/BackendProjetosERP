@@ -27,7 +27,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois.
 - Arraste o cartão entre as colunas (ou mude a situação no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
-- **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); você exclui o que enviou, e o líder do projeto exclui qualquer um. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
+- **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
 **Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban, lista e cronograma), Visão geral e Equipe.
 
@@ -50,7 +50,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
 
-**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa.
+**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
 
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Trainee, Saiu…) e redefine senhas. Quando alguém sai, as participações são encerradas, mas o histórico fica.
 
@@ -65,6 +65,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 ## Diretor
 
 Tudo o que o gerente faz, mais:
+- **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive avulsa) e exclui qualquer anexo de tarefa.
 - **Pessoas**: cadastra e edita outros diretores.
 - **Projetos**: exclui projetos (leva junto os itens da Biblioteca com sigilo Equipe do projeto). Prefira **Arquivar**, que mantém o histórico.
 - **Configurações**: áreas, cargos e senioridades.

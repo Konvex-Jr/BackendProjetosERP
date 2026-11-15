@@ -48,11 +48,29 @@ async function enviarArquivo(caminho, token, nome, bytes) {
     if (r.status !== 201 && r.status !== 200) throw new Error(`POST ${caminho} → ${r.status}: ${texto}`);
 }
 
-// PDF mínimo válido de uma página, só para ter um anexo que o navegador consiga abrir.
-const PDF_FICTICIO = Buffer.from(
-    "%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
-        "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 100]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
-);
+// PDF mínimo válido de uma página (com tabela xref e deslocamentos calculados), para o visualizador abrir sem reclamar.
+function montarPdf() {
+    const conteudo = "BT /F1 18 Tf 20 50 Td (Documento ficticio) Tj ET";
+    const objetos = [
+        "<</Type/Catalog/Pages 2 0 R>>",
+        "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        "<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 100]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>",
+        `<</Length ${conteudo.length}>>\nstream\n${conteudo}\nendstream`,
+        "<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>",
+    ];
+    let pdf = "%PDF-1.4\n";
+    const deslocamentos = objetos.map((corpo, i) => {
+        const inicio = pdf.length;
+        pdf += `${i + 1} 0 obj\n${corpo}\nendobj\n`;
+        return inicio;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+    for (const d of deslocamentos) pdf += `${String(d).padStart(10, "0")} 00000 n \n`;
+    pdf += `trailer\n<</Size ${objetos.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF\n`;
+    return Buffer.from(pdf, "latin1");
+}
+const PDF_FICTICIO = montarPdf();
 
 function dia(deslocamento) {
     const d = new Date();
