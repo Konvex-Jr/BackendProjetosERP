@@ -33,6 +33,33 @@ describe("BibliotecaRepositoryMemory", () => {
         expect(await repo.listar({ busca: "contrato" })).toHaveLength(1);
     });
 
+    test("busca ignora acentos e maiúsculas", async () => {
+        await repo.criar(new ItemBiblioteca({ titulo: "Reunião de alinhamento" }));
+        await repo.criar(new ItemBiblioteca({ titulo: "x", conteudo: "Ação comercial", tags: ["inovação"] }));
+        const t = async (busca: string) => (await repo.listar({ busca })).map((i) => i.titulo).sort();
+        expect(await t("reuniao")).toEqual(["Reunião de alinhamento"]);
+        expect(await t("REUNIÃO")).toEqual(["Reunião de alinhamento"]);
+        expect(await t("reuníão")).toEqual(["Reunião de alinhamento"]);
+        expect(await t("acao")).toEqual(["x"]);
+        expect(await t("inovacao")).toEqual(["x"]);
+    });
+
+    test("busca mantém % e _ literais", async () => {
+        await repo.criar(new ItemBiblioteca({ titulo: "Meta 50%_final" }));
+        await repo.criar(new ItemBiblioteca({ titulo: "Meta 50x" }));
+        const t = async (busca: string) => (await repo.listar({ busca })).map((i) => i.titulo);
+        expect(await t("50%_")).toEqual(["Meta 50%_final"]);
+        expect(await t("50x")).toEqual(["Meta 50x"]);
+        expect(await t("%")).toEqual(["Meta 50%_final"]);
+        expect(await t("5_x")).toEqual([]);
+    });
+
+    test("filtro tag continua exato: 'inovacao' não acha 'inovação'", async () => {
+        await repo.criar(new ItemBiblioteca({ titulo: "a", tags: ["inovação"] }));
+        expect(await repo.listar({ tag: "inovacao" })).toHaveLength(0);
+        expect(await repo.listar({ tag: "inovação" })).toHaveLength(1);
+    });
+
     test("filtros tag, codigoProjeto, sigilo e codigoAutor combinam", async () => {
         await repo.criar(new ItemBiblioteca({ titulo: "1", tags: ["x"], projeto: P1, sigilo: "projeto", autor: A1 }));
         await repo.criar(new ItemBiblioteca({ titulo: "2", tags: ["x"], projeto: P1, autor: A2 }));

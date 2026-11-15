@@ -3,6 +3,8 @@ export default class RespostaArquivo {
     constructor(
         readonly nome: string,
         readonly tipoMime: string,
-        readonly conteudo: Buffer,
+        readonly conteudo: Buffer | NodeJS.ReadableStream,
+        /** Bytes do arquivo; vira o Content-Length (o fluxo não sabe o próprio tamanho). */
+        readonly tamanho: number,
     ) {}
 }

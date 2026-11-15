@@ -81,7 +81,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     ANEXO: {
-        DONO_INVALIDO: "Anexo só pode ser de um item da Biblioteca ou de uma capacitação.",
+        DONO_INVALIDO: "Anexo só pode ser de um item da Biblioteca, de uma capacitação ou de uma tarefa.",
         NOME_OBRIGATORIO: "Informe o nome do arquivo.",
         NOME_LONGO: "O nome do arquivo deve ter no máximo 255 caracteres.",
         TIPO_NAO_ACEITO:
@@ -91,6 +91,9 @@ export const MENSAGENS_DE_ERRO = {
         NAO_ENCONTRADO: "Anexo não encontrado.",
         ARQUIVO_SUMIU: "O arquivo deste anexo não foi encontrado no servidor. Avise a gestão.",
         SEM_PERMISSAO_CAPACITACAO: "Só diretores e gerentes podem anexar ou excluir material das capacitações.",
+        SEM_PERMISSAO_TAREFA_PROJETO: "Só a equipe atual do projeto anexa arquivos nas tarefas.",
+        SEM_PERMISSAO_TAREFA_AVULSA: "Só os responsáveis e a gestão anexam arquivos nesta tarefa.",
+        SO_OS_PROPRIOS: "Você só pode excluir os arquivos que enviou.",
     },
 
     GERAL: {

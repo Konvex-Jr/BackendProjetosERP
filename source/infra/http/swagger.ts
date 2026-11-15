@@ -362,6 +362,21 @@ const swaggerSpecification = {
                 requestBody: corpoArquivo,
             }),
         },
+        "/tarefas/{codigo}/anexos": {
+            get: operation(
+                ["Anexos"],
+                "Listar anexos da tarefa, do mais antigo ao mais novo, com podeExcluir (quem vê a tarefa; 404 se não vê)",
+                { parameters: [{ $ref: "#/components/parameters/codigo" }] },
+            ),
+            post: operation(
+                ["Anexos"],
+                "Anexar arquivo à tarefa (quem comenta: equipe atual; na avulsa, responsáveis e gestão; 404 se não vê)",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
+                    requestBody: corpoArquivo,
+                },
+            ),
+        },
         "/anexos/regras": {
             get: operation(["Anexos"], "Tamanho máximo (bytes) e extensões aceitas"),
         },
@@ -369,7 +384,7 @@ const swaggerSpecification = {
             get: operation(["Anexos"], "Baixar o arquivo (mesmas regras de leitura do dono; 404 se não pode ler)", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
             }),
-            delete: operation(["Anexos"], "Excluir anexo (quem pode alterar o dono)", {
+            delete: operation(["Anexos"], "Excluir anexo (quem pode alterar o dono; na tarefa, quem enviou, líder ou gestão)", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
             }),
         },

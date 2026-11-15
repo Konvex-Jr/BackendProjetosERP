@@ -62,7 +62,9 @@ export default class BibliotecaRepositoryDatabase implements BibliotecaRepositor
 
         if (f.busca) {
             const p = param(literal(f.busca));
-            condicoes.push(`(b.titulo ILIKE ${p} OR b.conteudo ILIKE ${p} OR EXISTS (SELECT 1 FROM unnest(b.tags) t WHERE t ILIKE ${p}))`);
+            condicoes.push(
+                `(unaccent(b.titulo) ILIKE unaccent(${p}) OR unaccent(b.conteudo) ILIKE unaccent(${p}) OR EXISTS (SELECT 1 FROM unnest(b.tags) t WHERE unaccent(t) ILIKE unaccent(${p})))`,
+            );
         }
         if (f.tag) condicoes.push(`${param(f.tag.toLowerCase())} = ANY(b.tags)`);
         if (f.codigoProjeto) condicoes.push(`b.projeto_codigo::text = ${param(f.codigoProjeto)}`);

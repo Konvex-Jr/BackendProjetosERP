@@ -23,6 +23,10 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
         return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto);
     }
 
+    async listarCodigosPorProjeto(codigoProjeto: string): Promise<string[]> {
+        return this.tarefas.filter((t) => t.projeto?.codigo === codigoProjeto).map((t) => t.codigo);
+    }
+
     async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
         const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
         for (const t of this.tarefas) {

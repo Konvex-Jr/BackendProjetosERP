@@ -37,6 +37,41 @@ async function exigir(metodo, caminho, token, corpo, aceitos = [200, 201]) {
     return r.dados;
 }
 
+// Envia um arquivo (bytes no corpo, nome em X-Nome-Arquivo) para a rota de anexos de um dono.
+async function enviarArquivo(caminho, token, nome, bytes) {
+    const r = await fetch(API + caminho, {
+        method: "POST",
+        headers: { "access-token": token, "Content-Type": "application/octet-stream", "X-Nome-Arquivo": encodeURIComponent(nome) },
+        body: bytes,
+    });
+    const texto = await r.text();
+    if (r.status !== 201 && r.status !== 200) throw new Error(`POST ${caminho} → ${r.status}: ${texto}`);
+}
+
+// PDF mínimo válido de uma página (com tabela xref e deslocamentos calculados), para o visualizador abrir sem reclamar.
+function montarPdf() {
+    const conteudo = "BT /F1 18 Tf 20 50 Td (Documento ficticio) Tj ET";
+    const objetos = [
+        "<</Type/Catalog/Pages 2 0 R>>",
+        "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+        "<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 100]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>",
+        `<</Length ${conteudo.length}>>\nstream\n${conteudo}\nendstream`,
+        "<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>",
+    ];
+    let pdf = "%PDF-1.4\n";
+    const deslocamentos = objetos.map((corpo, i) => {
+        const inicio = pdf.length;
+        pdf += `${i + 1} 0 obj\n${corpo}\nendobj\n`;
+        return inicio;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+    for (const d of deslocamentos) pdf += `${String(d).padStart(10, "0")} 00000 n \n`;
+    pdf += `trailer\n<</Size ${objetos.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF\n`;
+    return Buffer.from(pdf, "latin1");
+}
+const PDF_FICTICIO = montarPdf();
+
 function dia(deslocamento) {
     const d = new Date();
     d.setDate(d.getDate() + deslocamento);
@@ -99,6 +134,19 @@ async function main() {
         console.log("Projeto, equipe e tarefas criados.");
     }
 
+    // Anexo numa tarefa do projeto (Bia é responsável e da equipe); reaproveita se a tarefa já tem.
+    const tarefaComAnexo = (await exigir("GET", `/tarefas?codigoProjeto=${projeto.codigo}`, dir)).find(
+        (t) => t.titulo === "Levantar requisitos",
+    );
+    if (tarefaComAnexo) {
+        const tokenBiaTarefa = (await exigir("POST", "/auth/login", undefined, { email: "bia@dev.konvex", senha: SENHA_FICTICIA })).token;
+        const jaTem = await exigir("GET", `/tarefas/${tarefaComAnexo.codigo}/anexos`, tokenBiaTarefa);
+        if (jaTem.length === 0) {
+            await enviarArquivo(`/tarefas/${tarefaComAnexo.codigo}/anexos`, tokenBiaTarefa, "requisitos.pdf", PDF_FICTICIO);
+            console.log("Tarefa: anexo criado.");
+        }
+    }
+
     const caps = await exigir("GET", "/capacitacoes", dir);
     if (!caps.some((c) => c.titulo.endsWith("(fictícia)"))) {
         const base = {
@@ -143,6 +191,16 @@ async function main() {
         [
             tokenBia,
             {
+                titulo: "Reunião de alinhamento (fictício)",
+                conteudo: "Item com acento no título, para testar a busca sem acento (digite reuniao).",
+                tags: ["reuniao"],
+                sigilo: "todos",
+            },
+            { arquivo: "ata-da-reuniao.pdf" },
+        ],
+        [
+            tokenBia,
+            {
                 titulo: "Referências de layout (fictício)",
                 links: ["https://example.com/layout"],
                 sigilo: "todos",
@@ -151,9 +209,10 @@ async function main() {
         ],
     ];
     let criados = 0;
-    for (const [token, corpo] of itensBiblioteca) {
+    for (const [token, corpo, extra] of itensBiblioteca) {
         if (itens.some((i) => i.titulo === corpo.titulo)) continue;
-        await exigir("POST", "/biblioteca", token, corpo);
+        const item = await exigir("POST", "/biblioteca", token, corpo);
+        if (extra?.arquivo) await enviarArquivo(`/biblioteca/${item.codigo}/anexos`, token, extra.arquivo, PDF_FICTICIO);
         criados++;
     }
     if (criados) console.log(`Biblioteca: ${criados} item(ns) criado(s).`);
