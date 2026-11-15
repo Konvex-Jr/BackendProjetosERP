@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
 import { apagarSemRegistro, conferirAnexos, relatorioConferencia, TABELA_DO_DONO } from "../source/infra/arquivos/conferenciaAnexos";
@@ -36,22 +36,36 @@ describe("conferência de anexos órfãos", () => {
 
 describe("apagar arquivos sem registro (--apagar-sem-registro)", () => {
     let pasta: string;
+    const ONZE_MINUTOS_ATRAS = new Date(Date.now() - 11 * 60 * 1000);
+    /** Cria o arquivo com mtime antigo (fora da janela de upload em andamento). */
+    const antigo = (nome: string) => {
+        writeFileSync(path.join(pasta, nome), "x");
+        utimesSync(path.join(pasta, nome), ONZE_MINUTOS_ATRAS, ONZE_MINUTOS_ATRAS);
+    };
     beforeEach(() => {
         pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
     });
     afterEach(() => rmSync(pasta, { recursive: true, force: true }));
 
     it("apaga só os arquivos pedidos com nome de anexo e diz quantos", async () => {
-        for (const nome of [A, B, C, "LEIA.txt"]) writeFileSync(path.join(pasta, nome), "x");
-        const apagados = await apagarSemRegistro(pasta, [A, C]);
-        expect(apagados).toBe(2);
+        for (const nome of [A, B, C, "LEIA.txt"]) antigo(nome);
+        const r = await apagarSemRegistro(pasta, [A, C]);
+        expect(r).toEqual({ apagados: 2, jaSumiram: 0, recentes: [] });
         expect(readdirSync(pasta).sort()).toEqual([B, "LEIA.txt"]);
     });
 
-    it("ignora nome fora do padrão (nada fora da pasta dos anexos) e arquivo que já sumiu", async () => {
-        writeFileSync(path.join(pasta, "LEIA.txt"), "x");
-        const apagados = await apagarSemRegistro(pasta, ["LEIA.txt", `../${A}`, "../../etc/passwd", A]);
-        expect(apagados).toBe(0);
+    it("não apaga arquivo modificado nos últimos 10 minutos (upload em andamento); o antigo sai", async () => {
+        writeFileSync(path.join(pasta, A), "recente"); // mtime = agora
+        antigo(B);
+        const r = await apagarSemRegistro(pasta, [A, B]);
+        expect(r).toEqual({ apagados: 1, jaSumiram: 0, recentes: [A] });
+        expect(readdirSync(pasta)).toEqual([A]);
+    });
+
+    it("ignora nome fora do padrão (nada fora da pasta dos anexos); arquivo que já sumiu conta à parte", async () => {
+        antigo("LEIA.txt");
+        const r = await apagarSemRegistro(pasta, ["LEIA.txt", `../${A}`, "../../etc/passwd", A]);
+        expect(r).toEqual({ apagados: 0, jaSumiram: 1, recentes: [] });
         expect(readdirSync(pasta)).toEqual(["LEIA.txt"]);
     });
 });
