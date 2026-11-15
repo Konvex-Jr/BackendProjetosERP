@@ -46,6 +46,7 @@ Projeto sigiloso:
 - O indicador "Membros ativos" continua contando só status Ativo (já é por status).
 - **O trainee é sempre papel membro** (minha decisão: sem isso, um trainee com papel gerente veria tudo). Criar ou editar pessoa com status Trainee e papel diferente de membro responde 400 com código próprio. Mudar o status para Trainee de quem é gerente ou diretor também responde 400. A migração 014 passa a membro os trainees que tiverem outro papel.
 - **Trainee não pode ser líder (decisão do usuário, 15/11):** `PUT /projetos/:codigo/lider` com um trainee responde 400 com código próprio. A migração 014 tira a liderança de trainees que forem líderes hoje (o projeto fica sem líder até a gestão escolher).
+- **Trainee é só a etapa de entrada (decisão do usuário, 15/11):** ninguém volta a ser trainee. Mudar o status de uma pessoa **para** Trainee responde 400 `STATUS_TRAINEE_SO_NA_ENTRADA`; só se cria uma pessoa como Trainee.
 - `UsuarioAutenticado` passa a levar `status` (lido do banco a cada requisição, como o papel).
 - **Bloqueios do trainee** (além do que o papel membro já bloqueia):
   - Biblioteca: some do menu; as rotas da Biblioteca e dos anexos de item da Biblioteca respondem 403. (Minha decisão: a Biblioteca guarda material da EJ, então conta como "restrito".)
