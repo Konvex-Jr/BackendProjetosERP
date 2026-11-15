@@ -61,7 +61,7 @@ Os três viram **um módulo só, a Biblioteca**: um item com título, texto e/ou
 | `autor` | Quem cadastrou (`ON DELETE SET NULL`). |
 | `criado_em`, `atualizado_em` | Automáticos. A lista ordena por `atualizado_em` desc. |
 
-Regra de conteúdo mínimo: o item precisa ter **conteúdo, link ou anexo**. Como o anexo só é enviado depois de o item existir, a validação no salvar exige conteúdo **ou** link; o formulário do frontend permite "só arquivo" criando o item e enviando o anexo em seguida (ver 6).
+Regra de conteúdo mínimo: o item deve ter **conteúdo, link ou anexo**. Como o anexo só é enviado depois de o item existir, a API exige só o título; quem confere o mínimo é o **formulário** (conteúdo, link ou arquivo escolhido), que cria o item e envia o anexo em seguida (ver 6). *Decisão do Claude, no plano: a versão anterior exigia conteúdo ou link na API, o que impedia o "só arquivo".*
 
 ### 5.2 Quem vê
 
