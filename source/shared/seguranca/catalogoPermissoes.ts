@@ -12,6 +12,8 @@ export const Permissao = {
     PROJETOS_VER_TODOS: "projetos.verTodos",
     PROJETOS_EDITAR: "projetos.editar",
     PROJETOS_EXCLUIR: "projetos.excluir",
+    /** Ver (e gerir o acesso de) qualquer projeto sigiloso: só a diretoria. Sessão 20. */
+    PROJETOS_VER_SIGILOSOS: "projetos.verSigilosos",
     TAREFAS_GERIR_TODAS: "tarefas.gerirTodas",
     /** Criar e organizar tarefas avulsas (sem projeto). Sessão 8c. */
     TAREFAS_ATRIBUIR: "tarefas.atribuir",

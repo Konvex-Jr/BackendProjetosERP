@@ -28,6 +28,7 @@ export const MENSAGENS_DE_ERRO = {
         NOME_OBRIGATORIO: "O nome do projeto é obrigatório.",
         DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
         NAO_ENCONTRADO: "Projeto não encontrado.",
+        SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
     },
 
     TAREFA: {
