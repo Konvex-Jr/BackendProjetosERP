@@ -1,5 +1,7 @@
 # O que o sistema faz hoje (requisitos do sistema real)
 
+> Visão completa (módulos, regras e matriz papel × o que vê e faz): [06_documento_do_sistema.md](06_documento_do_sistema.md).
+>
 > Resumo por módulo das regras em produção. Os requisitos originais (RF/RN da especificação v0.1) ficam como histórico (ADR-009). Guia para as pessoas: `docs/GUIA_DE_USO.md`.
 
 ## Papéis
