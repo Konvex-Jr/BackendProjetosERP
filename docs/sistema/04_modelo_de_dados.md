@@ -17,17 +17,14 @@
 |---|---|---|
 | `projetos` | nome, descricao, datas, status, area, lider_codigo, prioridade, progresso, campos de cliente (reservados) | Ativos = Em andamento, Atenção, Bloqueado |
 | `projeto_membros` | projeto, usuario, funcao, alocacao, data_entrada/saida | Membro vê só projetos de que participa ou participou |
-| `tarefas` | projeto **ou** categoria (Inovação, Capacitação, Execução), titulo, datas, status, prioridade, iniciativa (só Inovação), concluida_por, criada_por | |
+| `tarefas` | projeto **ou** categoria (Inovação, Capacitação, Execução), titulo, datas, status, prioridade, concluida_por, criada_por | |
 | `tarefa_responsaveis`, `tarefa_checklist_itens`, `tarefa_comentarios` | | |
 
-## Documentos, Base, Iniciativas e Anexos
+## Biblioteca e Anexos
 | Tabela | Colunas principais | Observações |
 |---|---|---|
-| `pastas` | nome, sigilo (todos / gestao / projeto), projeto_codigo | Gestão vê todas |
-| `documentos` | pasta, nome, arquivo_url (link) | Link ou arquivo (anexo com dono `documento`) |
-| `conhecimentos` + `conhecimento_projetos` | titulo, categoria, resumo, conteudo, autor, fonte, links, tags | Base de Inteligência |
-| `iniciativas` + `iniciativa_projetos` + `iniciativa_conhecimentos` | titulo, tipo, frente, status, responsavel, criado_por, resultado, aprendizados | |
-| `anexos` | dono_tipo (documento, conhecimento, iniciativa, capacitacao), dono_codigo, nome, tipo_mime, tamanho_bytes, arquivo (UUID no disco), enviado_por | **Sem chave estrangeira para o dono**: a aplicação apaga junto. `conferirAnexos` acha órfãos |
+| `biblioteca_itens` | titulo, conteudo, links, tags, projeto_codigo, sigilo (todos / gestao / projeto), autor | Substituiu `pastas`, `documentos`, `conhecimentos`, `iniciativas` e as ligações (migração 012). Sigilo `projeto` exige projeto |
+| `anexos` | dono_tipo (biblioteca, capacitacao), dono_codigo, nome, tipo_mime, tamanho_bytes, arquivo (UUID no disco), enviado_por | **Sem chave estrangeira para o dono**: a aplicação apaga junto. `conferirAnexos` acha órfãos |
 
 ## Capacitações
 | Tabela | Colunas principais | Observações |

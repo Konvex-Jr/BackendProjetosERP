@@ -163,7 +163,7 @@ docker run -d --name konvex-restauracao-db --network konvex-restauracao \
   -e POSTGRES_PASSWORD=restauracao -e POSTGRES_DB=konvex_restaurado postgres:17-alpine
 until docker exec konvex-restauracao-db pg_isready -q -U postgres; do sleep 1; done; sleep 3
 docker exec -i konvex-restauracao-db pg_restore --no-owner --no-privileges -U postgres -d konvex_restaurado < "$DUMP"; echo "pg_restore terminou com $?"
-for t in usuarios projetos tarefas capacitacoes conhecimentos iniciativas documentos anexos; do
+for t in usuarios projetos tarefas capacitacoes biblioteca_itens anexos; do
   a=$(docker exec konvex-db sh -c "psql -tAU \"\$POSTGRES_USER\" \"\$POSTGRES_DB\" -c 'SELECT count(*) FROM $t'")
   b=$(docker exec konvex-restauracao-db psql -tAU postgres konvex_restaurado -c "SELECT count(*) FROM $t")
   echo "$t: produção=$a restaurado=$b"
@@ -187,6 +187,19 @@ docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
 - "Registro sem arquivo": o anexo aparece na tela mas não baixa. Procure o arquivo no backup do mesmo dia (`anexos_*.tar.gz`) e copie para `/docker/erp-konvex/anexos/`.
 - "Arquivo sem registro": sobra no disco (por exemplo, envio interrompido). Pode mover para fora da pasta depois de um backup.
 - "Dono não existe mais": exclua o anexo pelo banco só depois de conferir com a gestão.
+
+### Publicação da sessão 17 (Biblioteca): limpeza dos anexos antigos
+A migração `012_biblioteca.sql` **apaga todos os dados** de Gestão (pastas e documentos), Base de Inteligência e Iniciativas, com as linhas de anexo deles (decisão do usuário em 14/11/2026). Os arquivos no disco não saem pela migração: o script tem a flag `--apagar-sem-registro` para removê-los. Anexos de capacitações não são tocados. Ordem, sem pular passo:
+1. **Backup** do banco (`pg_dump`) e da pasta `anexos/`, como na seção 3. Sem o backup, não publique: o descarte é irreversível.
+2. **Deploy** (seção 4). A migração 012 roda ao iniciar o backend.
+3. **Apagar os arquivos sem registro:**
+```bash
+docker exec konvex-backend node dist/source/scripts/conferirAnexos.js --apagar-sem-registro
+```
+   - O script mantém os arquivos alterados nos últimos 10 minutos (podem ser envios em andamento) e os lista como "recentes". Se aparecerem, rode de novo mais tarde.
+4. **Conferir:** `docker exec konvex-backend node dist/source/scripts/conferirAnexos.js` (sem a flag) tem que terminar com código 0 (`echo $?`).
+
+Sem a flag, o script continua só relatando, como antes. Em máquina de desenvolvimento, rode `npm run clean` antes de `npm run build`: o `dist/` guarda `.js` velhos dos módulos que saíram.
 
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).

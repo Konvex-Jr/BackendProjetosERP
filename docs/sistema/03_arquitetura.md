@@ -26,9 +26,9 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 
 ## Backend em camadas
 - `source/domain`: entidades (`entity/`), enums (`enum/`), interfaces dos repositórios (`interfaces/`) e cálculos de domínio (`service/`). Validação de valores na entidade.
-- `source/useCases/<módulo>/`: casos de uso agrupados por módulo (`auth`, `pessoas`, `config`, `projetos`, `tarefas`, `documentos`, `conhecimento`, `iniciativas`, `anexos`, `capacitacoes`). Os módulos antigos têm uma classe por operação (`CriarTarefa`, `ExcluirPasta`…); os novos, um caso de uso por módulo (`SalvarConhecimento`, `GerirCapacitacoes`). Ver ADR-010.
+- `source/useCases/<módulo>/`: casos de uso agrupados por módulo (`auth`, `pessoas`, `config`, `projetos`, `tarefas`, `biblioteca`, `anexos`, `capacitacoes`). Os módulos antigos têm uma classe por operação (`CriarTarefa`, `ExcluirProjeto`…); os novos, um caso de uso por módulo (`SalvarItemBiblioteca`, `GerirCapacitacoes`). Ver ADR-010.
 - `source/infra`: repositórios em memória (testes) e em banco, rotas HTTP, armazenamento de anexos, migrações (rotas em `infra/http/routes/`, autenticação em `infra/http/middleware/`).
-- `source/shared/seguranca`: permissões por papel (`catalogoPermissoes.ts`, `permissoes.ts`) e regras de acesso por item (`visibilidadeProjetos`, `sigiloPastas`, `regrasTarefa`, `regrasConhecimento`, `regrasIniciativa`, `regrasCapacitacao`).
+- `source/shared/seguranca`: permissões por papel (`catalogoPermissoes.ts`, `permissoes.ts`) e regras de acesso por item (`visibilidadeProjetos`, `regrasTarefa`, `regrasBiblioteca`, `regrasCapacitacao`).
 - `source/modulos/registro.ts`: registro único dos módulos e do menu; `GET /auth/permissoes` devolve o menu de cada pessoa.
 - Erros: `ErroValidacao` (400), `ErroProibido` (403), `ErroConflito` (409); mensagens em `source/shared/erros/mensagensDeErro.ts` dizem qual campo está errado.
 
@@ -40,9 +40,7 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 | config | Áreas (hierárquicas), cargos, senioridades | `/areas`, `/cargos`, `/senioridades` |
 | projetos | Projetos, equipe com alocação, líder | `/projetos` |
 | tarefas | Tarefas de projeto e avulsas, kanban, comentários | `/tarefas` |
-| documentos | Pastas com sigilo e documentos (link ou arquivo) | `/pastas`, `/documentos` |
-| conhecimento | Base de Inteligência | `/conhecimento` |
-| iniciativas | Iniciativas de inovação | `/iniciativas` |
+| biblioteca | Itens com anexos, tags, projeto e sigilo (substituiu Gestão, Base e Iniciativas) | `/biblioteca` |
 | anexos | Upload, download e exclusão de arquivos dos outros módulos | `/anexos`, `/<dono>/:codigo/anexos` |
 | capacitacoes | Capacitações, inscrição, presença, avaliações | `/capacitacoes` |
 | painel, precificação | Dashboard e Visão Estratégica (calculados no front); precificação ainda local no navegador | — |

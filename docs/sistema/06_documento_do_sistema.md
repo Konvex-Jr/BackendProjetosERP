@@ -1,5 +1,7 @@
 # Documento do sistema: módulos, regras e quem vê e faz o quê (14/11/2026)
 
+> **Sessão 17 (Biblioteca):** este documento descreve o sistema com a Biblioteca, implementada na branch `feat/biblioteca` e **ainda não publicada**. A produção só muda depois do merge e da publicação.
+
 > Um lugar só para entender o ERP da Konvex como ele está em produção. Junta o que estava espalhado no `docs/GUIA_DE_USO.md` e nos docs 02 a 04 desta pasta, e foi conferido no código (ADR-009: o código é a referência).
 >
 > - Para as pessoas que usam o sistema: `docs/GUIA_DE_USO.md`.
@@ -28,21 +30,19 @@
 |---|---|
 | `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `exigirVerProjeto`, `projetosVisiveisPara`) |
 | `regrasTarefa.ts` | Ver, organizar, mudar status e comentar em cada tarefa (`papelNoProjeto`, `regrasTarefa`) |
-| `sigiloPastas.ts` | Quais pastas e documentos a pessoa lê (`podeVerPasta`) |
-| `regrasConhecimento.ts` | Quem altera um item da Base (`podeAlterarConhecimento`) |
-| `regrasIniciativa.ts` | Quem cria e altera iniciativas (`podeCriarIniciativa`, `podeAlterarIniciativa`, `ehDaAreaDeInovacao`) |
+| `regrasBiblioteca.ts` | Quem lê e quem altera um item da Biblioteca, e quem pode usar sigilo e projeto (`podeVerItem`, `podeAlterarItem`, `exigirPodeUsarSigiloEProjeto`) |
 | `regrasCapacitacao.ts` | Gestão de capacitações e acesso às avaliações (`podeGerirCapacitacoes`, `acessoAosFeedbacks`) |
 
 ### Detalhes que valem para tudo
 - O papel é lido do banco **a cada requisição**, não do token: mudar o papel de alguém vale na chamada seguinte (`UsuarioAutenticado` em `permissoes.ts`).
 - Papel desconhecido recebe lista vazia (na dúvida, nega: `permissoesDoPapel`).
-- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: pasta de outro sigilo, tarefa avulsa de outra pessoa, anexo de item que ela não lê.
+- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa avulsa de outra pessoa, anexo de item que ela não lê.
 - A API devolve booleanos por item (`podeAlterar`, `podeGerir`, `podeInscrever`…) e a tela obedece. O menu vem de `GET /auth/permissoes`, montado por `menuDoUsuario` em `source/modulos/registro.ts`; o `Layout` do frontend só abre telas que vieram no menu.
 - Login: 5 falhas bloqueiam aquele e-mail naquele IP, e 30 falhas bloqueiam o IP inteiro, por 15 minutos (429; `limiteTentativas.ts`, limites em `LoginUsuario.ts`). Sessão: JWT de 15 min + refresh de 7 dias.
 
 ## 2. Módulos e regras de negócio
 
-Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações do catálogo e itens de menu). Ordem do menu: Dashboard, Tarefas, Projetos, Capacitações, Base de Inteligência, Iniciativas, Visão Estratégica, Gestão, Simular precificação, Pessoas, Configurações, Meu perfil.
+Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações do catálogo e itens de menu). Ordem do menu: Dashboard, Tarefas, Projetos, Capacitações, Biblioteca, Visão Estratégica, Simular precificação, Pessoas, Configurações, Meu perfil.
 
 ### Pessoas (`/usuarios`, `/auth/*`, `/habilidades`)
 - A gestão cadastra, edita, muda o status e redefine a senha. Criar, editar ou promover **diretor** exige também `pessoas.gerirDiretores` (`exigirPodeGerirPerfil`).
@@ -55,18 +55,18 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 
 ### Configurações (`/areas`, `/cargos`, `/senioridades`)
 - Só o diretor cria e edita áreas (hierárquicas, com subáreas), cargos e senioridades (`configuracoes.editar`). Todos os logados leem as listas (servem aos formulários).
-- A área **Inovação** (ou uma subárea dela) dá ao membro o direito de criar iniciativas.
+- A área **Inovação** não dá mais nenhum direito especial (desde a sessão 17). É só uma área como as outras.
 - `valor_hora` da senioridade ainda é 0: a precificação pela API espera a diretoria definir as taxas.
 
 ### Projetos (`/projetos`)
 - A gestão vê todos (`projetos.verTodos`). O membro vê só os projetos de que participa **ou participou**: quem saiu continua vendo o histórico.
 - A gestão cria e edita, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder (`projetos.editar`). Um líder por projeto, escolhido na equipe.
 - O sistema avisa quando a alocação de alguém passa de 100%.
-- Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto as pastas da equipe do projeto. O recomendado é Arquivar.
+- Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
 
 ### Tarefas (`/tarefas`)
-Toda tarefa tem **projeto** ou **categoria** (Inovação, Capacitação, Execução). Sem projeto, ela é "avulsa". Uma avulsa de Inovação pode estar ligada a uma iniciativa.
+Toda tarefa tem **projeto** ou **categoria** (Inovação, Capacitação, Execução). Sem projeto, ela é "avulsa". Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna). O acompanhamento de inovação é feito com tarefas avulsas de categoria Inovação, que continuam só da gestão.
 
 Tarefa de projeto, pelo papel da pessoa no projeto (`papelNoProjeto`):
 | Papel no projeto | Pode |
@@ -91,27 +91,21 @@ Lista (`GET /tarefas`): a gestão recebe todas; o membro recebe as dos projetos 
 - A lista de inscritos aparece só para a gestão e para quem ministra.
 - Horas no perfil contam só com presença marcada.
 
-### Gestão / Documentos (`/pastas`, `/documentos`)
-- Pastas com sigilo: **Todos**, **Só gestão** ou **Equipe de um projeto**.
-- A gestão lê todas (`documentos.verTodas`). O membro lê as de sigilo Todos e as dos projetos de que participa ou participou (`podeVerPasta`). Pasta que a pessoa não lê responde 404.
-- Só a gestão cria, renomeia e exclui pastas e documentos (`documentos.gerir`).
-- Documento é **link** (Drive, Docs, Notion…) ou **arquivo** (anexo do documento, até 20 MB). O arquivo segue o sigilo da pasta. Apagar o anexo de um documento-arquivo apaga o documento.
-
-### Base de Inteligência (`/conhecimento`)
-- Pesquisas, benchmarks, cases, aprendizados, decisões… Todos os logados leem tudo e cadastram (o autor é quem cadastra).
-- Editam e excluem: o autor ou a gestão (`conhecimento.gerir`; regra em `podeAlterarConhecimento`).
-- Busca por texto (título, resumo, conteúdo, tags) e filtros por categoria, tag, autor, projeto e período. Conteúdo em Markdown simples.
-- Um item pode ser ligado a projetos (aba Base na ficha do projeto) e aparece nas iniciativas que o usam.
-
-### Iniciativas (`/iniciativas`)
-- Iniciativas de inovação com tipo, frente (Radar de Mercado, Konvex Lab, Esteira de Produtos), status (Ideia, Em andamento, Pausada, Concluída, Descartada), responsável, resultado e aprendizados. Todos os logados veem todas.
-- Criam: a gestão (`iniciativas.gerir`) ou quem é da área Inovação ou de uma subárea dela (`podeCriarIniciativa`). Sem responsável informado, quem cria fica responsável.
-- Editam e excluem: o responsável, quem criou ou a gestão (`podeAlterarIniciativa`).
-- Liga-se a projetos, a itens da Base e a tarefas avulsas de Inovação. A ficha mostra só as tarefas que a pessoa pode ver (`regrasTarefa(...).ver`); excluir a iniciativa desfaz as ligações, mas não apaga tarefas nem itens da Base.
+### Biblioteca (`/biblioteca`)
+Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência e Iniciativas. Guarda o material da Konvex: pesquisas, decisões, aprendizados, documentos, ideias.
+- **Item:** título (até 160 caracteres), texto em Markdown simples, links `http(s)://`, anexos, tags, um projeto (opcional) e o sigilo. O autor é quem cadastrou. A lista ordena pelo mais recente alterado. O formulário pede conteúdo, link ou arquivo; a API exige só o título.
+- **Sigilo:** **Todos** (padrão), **Só gestão** ou **Equipe de um projeto** (exige projeto).
+- **Quem lê:** a gestão lê tudo (`biblioteca.verTodos`). Os demais leem os itens de sigilo Todos e os de projeto de que participam **ou participaram**. Item que a pessoa não lê responde 404, na lista, na ficha, nos anexos e na aba do projeto.
+- **Quem cria:** qualquer pessoa logada. Sigilo "Só gestão" só com `biblioteca.gerir`. Ligar a um projeto (em qualquer sigilo): a gestão liga qualquer um; o membro só liga projeto de que participa ou participou.
+- **Quem edita e exclui:** o autor ou a gestão (`biblioteca.gerir`). As regras de sigilo e projeto só são conferidas quando esses campos **mudam** no salvar: quem saiu da equipe continua editando e excluindo o próprio item.
+- **Projeto ligado que a pessoa não vê:** o item aparece sem projeto (`projeto` nulo), para não revelar o nome. Filtrar a lista por um projeto que a pessoa não vê devolve vazio.
+- **Busca e filtros:** texto (título, conteúdo e tags) e filtros por tag, projeto, sigilo e autor. Tags e busca fazem o papel das antigas pastas e categorias.
+- Na ficha do projeto, a aba **Biblioteca** mostra os itens daquele projeto que a pessoa pode ver.
+- Saíram: pastas, categorias, tipos, status, responsável, frente, resultado e aprendizados. O acompanhamento de inovação passa a ser feito com tarefas avulsas de categoria Inovação.
 
 ### Anexos (`/anexos`, `/<dono>/:codigo/anexos`)
-- Arquivos de documentos, itens da Base, iniciativas e capacitações. Até 20 MB; PDF, Office, OpenDocument, CSV, TXT, MD, imagens e ZIP. Guardados no disco da VPS.
-- **Cada anexo segue as regras do dono** (`GerirAnexos.acesso`): baixa quem lê o dono; envia e exclui quem altera o dono. Excluir o dono apaga os anexos dele.
+- Arquivos de itens da Biblioteca e de capacitações. Até 20 MB; PDF, Office, OpenDocument, CSV, TXT, MD, imagens e ZIP. Guardados no disco da VPS.
+- **Cada anexo segue as regras do dono** (`GerirAnexos.acesso`): baixa quem lê o dono; envia e exclui quem altera o dono. Excluir o dono apaga os anexos dele. O script `conferirAnexos` acha arquivos órfãos; com `--apagar-sem-registro` apaga os arquivos sem registro, menos os de menos de 10 minutos.
 
 ### Painel, Visão Estratégica e Precificação (só no frontend)
 - **Dashboard**, para todos: tarefas abertas e atrasadas da pessoa, burndown e capacitações inscritas. A faixa com os **sete indicadores** (projetos ativos, em atenção, concluídos, membros ativos, capacitações próximas, tarefas da semana e atrasadas) aparece só com `projetos.verTodos` (`Dashboard.jsx`).
@@ -163,22 +157,19 @@ Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" 
 | Avaliar | se presente | se presente | se presente | `GerirCapacitacoes.avaliar` (presença) |
 | Ler avaliações individuais | com nome | com nome | sem nome, se ministrou | `acessoAosFeedbacks` |
 
-### Gestão (documentos)
+### Biblioteca
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
-| Ler pastas e documentos | todas | todas | sigilo Todos e dos seus projetos | `documentos.verTodas` / `podeVerPasta` |
-| Criar, renomear, excluir pastas e documentos (link ou arquivo) | ✅ | ✅ | ❌ | `documentos.gerir` |
+| Ler itens | todos | todos | sigilo Todos e os dos seus projetos (atuais e anteriores) | `biblioteca.verTodos` / `podeVerItem` |
+| Cadastrar item | ✅ | ✅ | ✅ | só login (`SalvarItemBiblioteca`) |
+| Usar sigilo "Só gestão" | ✅ | ✅ | ❌ | `biblioteca.gerir` (`exigirPodeUsarSigiloEProjeto`) |
+| Ligar item a projeto | qualquer | qualquer | os que participa ou participou | `biblioteca.gerir` / `exigirPodeUsarSigiloEProjeto` |
+| Editar e excluir item e seus anexos | ✅ | ✅ | se é o autor | `biblioteca.gerir` / `podeAlterarItem` |
+| Ver o nome do projeto ligado | ✅ | ✅ | só dos projetos que vê (senão, sem projeto) | `projetos.verTodos` / `podeVerProjetoDoItem` |
+| Baixar anexo | ✅ | ✅ | se lê o item | `GerirAnexos.acesso` |
+| Enviar e excluir anexo | ✅ | ✅ | se edita o item | `GerirAnexos.acesso` |
 
-### Base de Inteligência e Iniciativas
-| Ação | Diretor | Gerente | Membro | Código |
-|---|---|---|---|---|
-| Ler a Base | ✅ | ✅ | ✅ | só login (`ConhecimentoRoutes`) |
-| Cadastrar item na Base | ✅ | ✅ | ✅ | só login (`SalvarConhecimento.criar`) |
-| Editar, excluir item da Base e seus anexos | ✅ | ✅ | se é autor | `conhecimento.gerir` / `podeAlterarConhecimento` |
-| Ver iniciativas | ✅ | ✅ | ✅ | só login (`IniciativaRoutes`) |
-| Criar iniciativa | ✅ | ✅ | se é da área Inovação | `iniciativas.gerir` / `podeCriarIniciativa` |
-| Editar, excluir iniciativa e seus anexos | ✅ | ✅ | se é responsável ou criou | `iniciativas.gerir` / `podeAlterarIniciativa` |
-| Criar tarefa ligada a iniciativa | ✅ | ✅ | ❌ | `tarefas.atribuir` (é tarefa avulsa) |
+Perdas da sessão 17: a área **Inovação** não cria mais nada de forma especial; tarefa avulsa (inclusive de Inovação) continua só da gestão (`tarefas.atribuir`); ideias de quem é da área entram como itens da Biblioteca (sugestão: tag `inovacao`).
 
 ### Painel e telas da gestão
 | Ação | Diretor | Gerente | Membro | Código |
@@ -188,23 +179,13 @@ Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" 
 | Visão Estratégica | ✅ | ✅ | ❌ | `estrategia.ver` (menu) |
 | Simular precificação | ✅ | ✅ | ❌ | `precificacao.simular` (menu) |
 
-## 4. Onde os módulos se sobrepõem (insumo para a sessão 17)
+## 4. Registro da decisão de 14/11/2026 (sessão 17)
 
-Fatos tirados das regras acima, sem proposta:
-
-| Ponto | Gestão (documentos) | Base de Inteligência | Iniciativas |
-|---|---|---|---|
-| O que guarda | Pastas com links e arquivos | Itens de texto com categoria, tags, links e anexos | Itens de inovação com status, responsável, anexos |
-| Quem lê | Depende do sigilo da pasta | Todos | Todos |
-| Quem cria | Só a gestão | Todos | Gestão e área Inovação |
-| Quem altera | Só a gestão | Autor ou gestão | Responsável, criador ou gestão |
-| Ligação com projeto | Pasta com sigilo "Equipe de um projeto" | Projetos relacionados | Projetos ligados |
-| Anexos | Documento-arquivo | ✅ | ✅ |
-
-- Os três guardam "material da Konvex" com anexos e ligação a projetos; diferem no controle de acesso.
-- Base e Iniciativas já se ligam (`iniciativa_conhecimentos`) e têm a mesma leitura aberta. A iniciativa acrescenta status, responsável e tarefas.
-- Só a Gestão tem sigilo. A Base não tem como guardar algo restrito; a Gestão não deixa membro cadastrar.
-- A ligação com projeto tem três formas diferentes, uma por módulo.
+Gestão (documentos), Base de Inteligência e Iniciativas guardavam o mesmo tipo de material, com três regras de acesso diferentes. A gestão decidiu **simplificar**: viraram a **Biblioteca**, com uma regra de leitura (sigilo por item) e uma de escrita (autor ou gestão).
+- **Dados antigos descartados:** pastas, documentos, itens da Base, iniciativas, ligações e anexos deles. O usuário decidiu começar do zero; a migração 012 apaga tudo e exige backup do banco e da pasta de anexos antes da publicação.
+- **Área Inovação perdeu o direito especial** de criar. Tarefa avulsa continua só da gestão.
+- **Tarefas** perderam a ligação com iniciativa.
+- Spec: `docs/superpowers/specs/2026-11-14-biblioteca-design.md`.
 
 ## 5. O que ainda não existe
 Homologação, auditoria (quem mudou o quê), LGPD e retenção, precificação pela API, Google Calendar, e-mails, busca global, Board Tático, CRM. Ver o `.konvex/roteiro.md` (fases 6 e 7).
