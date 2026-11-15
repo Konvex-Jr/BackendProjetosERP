@@ -37,6 +37,23 @@ async function exigir(metodo, caminho, token, corpo, aceitos = [200, 201]) {
     return r.dados;
 }
 
+// Envia um arquivo (bytes no corpo, nome em X-Nome-Arquivo) para a rota de anexos de um dono.
+async function enviarArquivo(caminho, token, nome, bytes) {
+    const r = await fetch(API + caminho, {
+        method: "POST",
+        headers: { "access-token": token, "Content-Type": "application/octet-stream", "X-Nome-Arquivo": encodeURIComponent(nome) },
+        body: bytes,
+    });
+    const texto = await r.text();
+    if (r.status !== 201 && r.status !== 200) throw new Error(`POST ${caminho} → ${r.status}: ${texto}`);
+}
+
+// PDF mínimo válido de uma página, só para ter um anexo que o navegador consiga abrir.
+const PDF_FICTICIO = Buffer.from(
+    "%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+        "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 100]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
+);
+
 function dia(deslocamento) {
     const d = new Date();
     d.setDate(d.getDate() + deslocamento);
@@ -99,6 +116,19 @@ async function main() {
         console.log("Projeto, equipe e tarefas criados.");
     }
 
+    // Anexo numa tarefa do projeto (Bia é responsável e da equipe); reaproveita se a tarefa já tem.
+    const tarefaComAnexo = (await exigir("GET", `/tarefas?codigoProjeto=${projeto.codigo}`, dir)).find(
+        (t) => t.titulo === "Levantar requisitos",
+    );
+    if (tarefaComAnexo) {
+        const tokenBiaTarefa = (await exigir("POST", "/auth/login", undefined, { email: "bia@dev.konvex", senha: SENHA_FICTICIA })).token;
+        const jaTem = await exigir("GET", `/tarefas/${tarefaComAnexo.codigo}/anexos`, tokenBiaTarefa);
+        if (jaTem.length === 0) {
+            await enviarArquivo(`/tarefas/${tarefaComAnexo.codigo}/anexos`, tokenBiaTarefa, "requisitos.pdf", PDF_FICTICIO);
+            console.log("Tarefa: anexo criado.");
+        }
+    }
+
     const caps = await exigir("GET", "/capacitacoes", dir);
     if (!caps.some((c) => c.titulo.endsWith("(fictícia)"))) {
         const base = {
@@ -143,6 +173,16 @@ async function main() {
         [
             tokenBia,
             {
+                titulo: "Reunião de alinhamento (fictício)",
+                conteudo: "Item com acento no título, para testar a busca sem acento (digite reuniao).",
+                tags: ["reuniao"],
+                sigilo: "todos",
+            },
+            { arquivo: "ata-da-reuniao.pdf" },
+        ],
+        [
+            tokenBia,
+            {
                 titulo: "Referências de layout (fictício)",
                 links: ["https://example.com/layout"],
                 sigilo: "todos",
@@ -151,9 +191,10 @@ async function main() {
         ],
     ];
     let criados = 0;
-    for (const [token, corpo] of itensBiblioteca) {
+    for (const [token, corpo, extra] of itensBiblioteca) {
         if (itens.some((i) => i.titulo === corpo.titulo)) continue;
-        await exigir("POST", "/biblioteca", token, corpo);
+        const item = await exigir("POST", "/biblioteca", token, corpo);
+        if (extra?.arquivo) await enviarArquivo(`/biblioteca/${item.codigo}/anexos`, token, extra.arquivo, PDF_FICTICIO);
         criados++;
     }
     if (criados) console.log(`Biblioteca: ${criados} item(ns) criado(s).`);

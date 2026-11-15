@@ -27,18 +27,24 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois.
 - Arraste o cartão entre as colunas (ou mude a situação no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
+- **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); você exclui o que enviou, e o líder do projeto exclui qualquer um. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
 **Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban, lista e cronograma), Visão geral e Equipe.
 
-**Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar o material e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
+**Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar ou abrir o material (PDF e imagem abrem numa janela do sistema) e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
 
 **Biblioteca** (no celular, fica no **Mais**): o material da Konvex num lugar só (pesquisas, decisões, aprendizados, documentos, ideias). Cada item tem título, texto, links, anexos, tags, um projeto (se quiser) e um **sigilo**.
 - Você lê os itens de sigilo **Todos** e os de **Equipe de um projeto** dos projetos de que participa ou participou. Itens **Só gestão** são só da gestão.
-- Procure por texto (título, conteúdo e tags) e filtre por tag, projeto, sigilo e autor.
+- Procure por texto (título, conteúdo e tags): a busca **não diferencia maiúsculas nem acentos** ("reuniao" acha "Reunião"). O filtro por tag, ao contrário, pede a tag exata. Filtre também por projeto, sigilo e autor.
 - **Novo item**: título, projeto e sigilo (o formulário mostra só os que você pode usar), texto, links, tags e arquivos. Preencha texto, link ou arquivo. Você fica como autor. Só dá para ligar um projeto de que você participa ou participou.
 - O texto aceita Markdown simples: `## Título`, `- item de lista`, `**negrito**`, `*itálico*` e links `[texto](https://...)`.
 - Você edita e exclui só os itens que cadastrou. Quem sai da equipe de um projeto continua editando os próprios itens.
-- **Anexos**: na ficha dos seus itens, use **Anexar arquivo** (até 20 MB; PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, imagens ou ZIP). Quem lê o item baixa; quem edita o item exclui.
+- **Anexos**: na ficha dos seus itens, use **Anexar arquivo** (até 20 MB cada; PDF, Word, Excel, PowerPoint, OpenDocument, CSV, TXT, imagens ou ZIP). Quem lê o item baixa; quem edita o item exclui.
+- **Vários arquivos de uma vez:** escolha vários no seletor ou **arraste e solte** na área de envio (na ficha e no formulário do item, na tarefa e nas capacitações). Os arquivos sobem um de cada vez; se algum falhar (tipo ou tamanho), o aviso diz quais e os demais ficam anexados.
+- **Ver sem baixar:** clique no nome de um PDF ou de uma imagem (PNG, JPG, WEBP, GIF) para abri-lo numa janela do sistema, com o botão **Baixar**; Esc fecha. Word, Excel, PowerPoint, OpenDocument, CSV, TXT, MD e ZIP só baixam. No celular, o PDF é baixado em vez de abrir na janela.
+- **Ver e baixar mais rápido:** ao passar o mouse, focar ou tocar no nome de um PDF ou imagem de até 5 MB, o sistema já começa a buscar o arquivo. Os arquivos ficam guardados só na memória da aba por 10 minutos (até 50 MB no total): nada vai para o disco do seu aparelho, e tudo some ao sair ou trocar de conta. Arquivos maiores que 1 MB mostram uma barra de progresso.
+- **Clipe:** nas listas da Biblioteca e nos cartões de tarefa, o clipe com número mostra quantos arquivos o item tem.
+- **No perfil:** em **Meu perfil** e no perfil de outras pessoas, a seção **Itens na Biblioteca** lista o que a pessoa cadastrou (só o que você pode ler); clique para abrir a ficha.
 - Na ficha de cada projeto, a aba **Biblioteca** mostra os itens ligados a ele que você pode ver.
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas avulsas de Inovação.
 
@@ -50,7 +56,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Biblioteca**: lê todos os itens, de qualquer sigilo, e usa o sigilo **Só gestão**. Liga um item a qualquer projeto. Edita e exclui qualquer item (por exemplo, para corrigir tags ou tirar algo repetido) e os anexos dele.
 
-**Capacitações**: use **Nova capacitação** (título, quem ministra, data, início, duração em horas, tipo, sala ou local, vagas e descrição). Na ficha: editar, excluir, anexar **material** (slides, apostila), ver e tirar inscritos e **inscrever pessoa** (inclusive depois do início, para quem apareceu sem inscrição). Depois que a capacitação começa, marque quem compareceu e clique em **Salvar presença**: isso libera a avaliação e conta as horas no perfil de cada um. Em **Avaliações individuais** você lê cada avaliação com o nome.
+**Capacitações**: use **Nova capacitação** (título, quem ministra, data, início, duração em horas, tipo, sala ou local, vagas e descrição). Na ficha: editar, excluir, anexar **material** (slides, apostila; vários arquivos de uma vez, arrastando e soltando), ver e tirar inscritos e **inscrever pessoa** (inclusive depois do início, para quem apareceu sem inscrição). Depois que a capacitação começa, marque quem compareceu e clique em **Salvar presença**: isso libera a avaliação e conta as horas no perfil de cada um. Em **Avaliações individuais** você lê cada avaliação com o nome.
 
 **Visão Estratégica** e **Simular precificação**: disponíveis no menu.
 

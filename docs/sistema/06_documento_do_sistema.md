@@ -104,8 +104,9 @@ Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência 
 - Saíram: pastas, categorias, tipos, status, responsável, frente, resultado e aprendizados. O acompanhamento de inovação passa a ser feito com tarefas avulsas de categoria Inovação.
 
 ### Anexos (`/anexos`, `/<dono>/:codigo/anexos`)
-- Arquivos de itens da Biblioteca e de capacitações. Até 20 MB; PDF, Office, OpenDocument, CSV, TXT, MD, imagens e ZIP. Guardados no disco da VPS.
-- **Cada anexo segue as regras do dono** (`GerirAnexos.acesso`): baixa quem lê o dono; envia e exclui quem altera o dono. Excluir o dono apaga os anexos dele. O script `conferirAnexos` acha arquivos órfãos; com `--apagar-sem-registro` apaga os arquivos sem registro, menos os de menos de 10 minutos.
+- Arquivos de itens da Biblioteca, de capacitações e de tarefas (sessão 19). Até 20 MB; PDF, Office, OpenDocument, CSV, TXT, MD, imagens e ZIP. Guardados no disco da VPS.
+- **Cada anexo segue as regras do dono** (`GerirAnexos.acesso`): baixa quem lê o dono; envia e exclui quem altera o dono. Excluir o dono apaga os anexos dele. O download é enviado em fluxo (stream), com `Content-Disposition: attachment` e `nosniff`; a visualização de PDF e imagem é só do frontend.
+- **Anexos de tarefa** (`POST` e `GET /tarefas/:codigo/anexos`; download e exclusão em `/anexos/:codigo`): ver e baixar = quem vê a tarefa (senão 404, em todas as rotas); anexar = `regrasTarefa().comentar` (equipe atual do projeto; na avulsa, responsável e gestão), senão 403; excluir = quem enviou ou `regrasTarefa().organizar` (líder e gestão; na avulsa, gestão), senão 403. Quem enviou e saiu da equipe ainda exclui o próprio, se ainda vê a tarefa. Regras em `source/shared/seguranca/regrasTarefa.ts` e `source/useCases/anexos/GerirAnexos.ts`. Excluir a tarefa ou o projeto apaga os anexos e os arquivos; as respostas de tarefa trazem `quantidadeAnexos`. O script `conferirAnexos` acha arquivos órfãos; com `--apagar-sem-registro` apaga os arquivos sem registro, menos os de menos de 10 minutos.
 
 ### Painel, Visão Estratégica e Precificação (só no frontend)
 - **Dashboard**, para todos: tarefas abertas e atrasadas da pessoa, burndown e capacitações inscritas. A faixa com os **sete indicadores** (projetos ativos, em atenção, concluídos, membros ativos, capacitações próximas, tarefas da semana e atrasadas) aparece só com `projetos.verTodos` (`Dashboard.jsx`).
@@ -141,6 +142,9 @@ Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" 
 | Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto | `regrasTarefa().organizar` |
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
 | Comentar em tarefa de projeto | ✅ | ✅ | se é da equipe atual | `regrasTarefa().comentar` |
+| Ver e baixar anexo de tarefa | ✅ | ✅ | se vê a tarefa (senão 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
+| Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual (avulsa: se é responsável) | `regrasTarefa().comentar` / `GerirAnexos.acesso` |
+| Excluir anexo de tarefa | ✅ | ✅ | o que enviou, ou se é líder (avulsa: só o que enviou) | autor ou `regrasTarefa().organizar` / `GerirAnexos.acesso` |
 | Apagar comentário | qualquer | qualquer | os próprios (líder: qualquer do projeto) | `TarefaRoutes` + `regrasTarefa().organizar` |
 | Criar, editar, reatribuir, excluir tarefa avulsa | ✅ | ✅ | ❌ | `tarefas.atribuir` (`podeAtribuirAvulsas`) |
 | Ver, concluir e comentar tarefa avulsa | todas | todas | só as que é responsável | `regrasTarefa()` (ramo avulsa) |
