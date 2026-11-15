@@ -10,6 +10,8 @@ export default interface TarefaRepositoryInterface {
     criar(tarefa: Tarefa): Promise<Tarefa>;
     listar(): Promise<Tarefa[]>;
     listarPorProjeto(codigoProjeto: string): Promise<Tarefa[]>;
+    /** Só os códigos das tarefas do projeto, sem montar entidades (não revalida as tarefas). */
+    listarCodigosPorProjeto(codigoProjeto: string): Promise<string[]>;
     /** Total e concluídas por projeto (sem permissão: o progresso é igual para quem vê o projeto). */
     contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>>;
     listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]>;

@@ -14,6 +14,10 @@ export default class ExcluirProjeto {
     }
     async execute(codigo: string): Promise<void> {
         if (!(await this.projetos.buscarPorCodigo(codigo))) throw new ErroNaoEncontrado("Projeto não encontrado.");
+        // Só os códigos: montar as tarefas revalida cada uma e pode falhar (responsável que já saiu da equipe).
+        // Vem antes da Biblioteca, para que uma falha aqui não a deixe pela metade.
+        const codigosTarefas = await this.tarefas.listarCodigosPorProjeto(codigo);
+        await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.TAREFA, codigosTarefas);
         // Itens só da equipe saem com anexos e arquivos; os demais ficam, sem projeto.
         const biblioteca = this.factory.criarBibliotecaRepository();
         const excluirItem = new ExcluirItemBiblioteca(this.factory);
@@ -21,8 +25,6 @@ export default class ExcluirProjeto {
             await excluirItem.removerComAnexos(item.codigo);
         }
         await biblioteca.desligarProjeto(codigo);
-        const codigosTarefas = (await this.tarefas.listarPorProjeto(codigo)).map((t) => t.codigo);
-        await new GerirAnexos(this.factory).excluirDosDonos(DonoAnexo.TAREFA, codigosTarefas);
         await this.tarefas.excluirPorProjeto(codigo);
         await this.projetos.excluir(codigo);
     }

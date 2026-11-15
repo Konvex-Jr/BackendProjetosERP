@@ -67,6 +67,11 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         return this.carregar(linhas.map((l) => l.codigo));
     }
 
+    async listarCodigosPorProjeto(codigoProjeto: string): Promise<string[]> {
+        const linhas = await this.conexao.consultar("SELECT codigo FROM tarefas WHERE projeto_codigo = $1", [codigoProjeto]);
+        return linhas.map((l) => l.codigo);
+    }
+
     async contarPorProjetos(codigosProjetos: string[]): Promise<Map<string, ContagemTarefas>> {
         const mapa = new Map<string, ContagemTarefas>(codigosProjetos.map((c) => [c, { total: 0, concluidas: 0 }]));
         if (!codigosProjetos.length) return mapa;

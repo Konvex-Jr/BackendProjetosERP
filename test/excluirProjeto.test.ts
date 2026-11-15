@@ -67,3 +67,52 @@ test("excluir o projeto apaga os anexos de todas as tarefas", async () => {
     expect(await factory.criarAnexoRepository().listarPorDonos(DonoAnexo.TAREFA, [t1.codigo, t2.codigo])).toHaveLength(0);
     for (const a of anexos) expect(await armazenamento.ler(a.arquivo)).toBeNull();
 });
+
+test("excluir o projeto pega só os códigos das tarefas, sem montar as entidades", async () => {
+    const { factory, membro } = await criarContexto();
+    const projeto = await criarProjeto(factory, membro);
+    const tarefa = await criarTarefa(factory, membro, projeto);
+    const anexo = await new GerirAnexos(factory).enviar({ codigo: membro.codigo, perfil: membro.perfil }, DonoAnexo.TAREFA, tarefa.codigo, {
+        nome: "a.pdf",
+        conteudo: Buffer.from("%PDF-1.4"),
+    });
+    const tarefas = factory.criarTarefaRepository();
+    // No banco, montar a tarefa revalida e pode falhar (responsável que saiu da equipe).
+    jest.spyOn(tarefas, "listarPorProjeto").mockRejectedValue(new Error("não deveria montar as tarefas"));
+    const codigos = jest.spyOn(tarefas, "listarCodigosPorProjeto");
+
+    await new ExcluirProjeto(factory).execute(projeto.codigo);
+
+    expect(codigos).toHaveBeenCalledWith(projeto.codigo);
+    expect(await factory.criarProjetoRepository().listar()).toHaveLength(0);
+    expect(await factory.criarAnexoRepository().listarPorDonos(DonoAnexo.TAREFA, [tarefa.codigo])).toHaveLength(0);
+    expect(await factory.criarArmazenamentoAnexos().ler(anexo.arquivo)).toBeNull();
+});
+
+test("se a limpeza dos anexos das tarefas falhar, a Biblioteca do projeto fica intacta", async () => {
+    const { factory, membro, gerente } = await criarContexto();
+    const projeto = await criarProjeto(factory, membro);
+    const ref = { codigo: projeto.codigo, nome: projeto.nome };
+    const repo = factory.criarBibliotecaRepository();
+    const autor = { codigo: gerente.codigo, nome: gerente.nome };
+    const equipe = await repo.criar(new ItemBiblioteca({ titulo: "Da equipe", sigilo: "projeto", projeto: ref, autor }));
+    const aberto = await repo.criar(new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor }));
+    const original = GerirAnexos.prototype.excluirDosDonos;
+    const falha = jest.spyOn(GerirAnexos.prototype, "excluirDosDonos").mockImplementation(async function (
+        this: GerirAnexos,
+        tipo,
+        codigos,
+    ) {
+        if (tipo === DonoAnexo.TAREFA) throw new Error("falha no disco");
+        return original.call(this, tipo, codigos);
+    });
+
+    try {
+        await expect(new ExcluirProjeto(factory).execute(projeto.codigo)).rejects.toThrow("falha no disco");
+    } finally {
+        falha.mockRestore();
+    }
+
+    expect(await repo.buscarPorCodigo(equipe.codigo)).not.toBeNull();
+    expect((await repo.buscarPorCodigo(aberto.codigo))?.projeto?.codigo).toBe(projeto.codigo);
+});
