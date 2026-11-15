@@ -15,8 +15,15 @@ const reg = (arquivo: string, donoCodigo = "d1") => ({
 });
 
 describe("conferência de anexos órfãos", () => {
-    it("só os donos atuais: Biblioteca e capacitação (sessão 17)", () => {
-        expect(TABELA_DO_DONO).toEqual({ biblioteca: "biblioteca_itens", capacitacao: "capacitacoes" });
+    it("só os donos atuais: Biblioteca, capacitação e tarefa (sessão 19)", () => {
+        expect(TABELA_DO_DONO).toEqual({ biblioteca: "biblioteca_itens", capacitacao: "capacitacoes", tarefa: "tarefas" });
+        expect(TABELA_DO_DONO.tarefa).toBe("tarefas");
+    });
+
+    it("anexo de tarefa com a tarefa existente não entra em semDono", () => {
+        const registro = { ...reg(A), donoTipo: "tarefa", donoCodigo: "t1" };
+        const r = conferirAnexos([registro], [A], new Set(["tarefa:t1"]));
+        expect(r.semDono).toEqual([]);
     });
 
     it("não acusa nada quando banco, disco e donos batem", () => {

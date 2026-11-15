@@ -21,7 +21,7 @@ export interface DadosAnexo {
 // eslint-disable-next-line no-control-regex -- tirar os caracteres de controle é o objetivo
 const CARACTERES_PROIBIDOS = /[\u0000-\u001f\u007f"]/g;
 
-/** Arquivo anexado a um item da Biblioteca ou a uma capacitação. */
+/** Arquivo anexado a um item da Biblioteca, a uma capacitação ou a uma tarefa. */
 export default class Anexo {
     readonly codigo: string;
     readonly donoTipo: DonoAnexo;

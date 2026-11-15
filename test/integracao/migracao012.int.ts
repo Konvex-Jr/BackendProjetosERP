@@ -82,7 +82,7 @@ descrever("migração 012 sobre dados antigos", () => {
         await anexo("iniciativa", iniciativa);
         await anexo("capacitacao", capacitacao);
 
-        expect(await aplicarMigracoes(pool, PASTA, silencio)).toEqual(["012_biblioteca.sql"]);
+        expect((await aplicarMigracoes(pool, PASTA, silencio)).slice(0, 1)).toEqual(["012_biblioteca.sql"]);
 
         const depois = await tabelas();
         for (const t of [

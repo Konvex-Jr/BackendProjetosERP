@@ -25,6 +25,7 @@ const NOME_ARQUIVO = /^[0-9a-f-]{36}$/i;
 export const TABELA_DO_DONO: Record<string, string> = {
     biblioteca: "biblioteca_itens",
     capacitacao: "capacitacoes",
+    tarefa: "tarefas",
 };
 
 export function conferirAnexos(registros: RegistroAnexo[], arquivosNoDisco: string[], donosExistentes: Set<string>): ResultadoConferencia {
