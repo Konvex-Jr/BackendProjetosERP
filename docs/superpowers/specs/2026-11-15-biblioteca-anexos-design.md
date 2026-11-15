@@ -65,6 +65,16 @@ São melhorias pedidas desde as sessões 12a e 12c (seção 3 do `.konvex/acompa
 - No celular (375 px), PDF dentro de modal costuma não renderizar: lá, abrir/baixar o arquivo como hoje (decisão do construtor sobre como detectar; o e2e de 375 px precisa passar).
 - A API não muda: continua `attachment` + `nosniff` + `no-store`.
 
+### Ver e baixar rápido (pedido do usuário depois do desenho, 15/11)
+
+Objetivo: abrir e baixar PDF e imagem o mais rápido possível com a VPS em Boston (130 a 230 ms por ida e volta). Abordagem escolhida pelo usuário: **antecipar e guardar**. Alternativa registrada e não escolhida: link temporário assinado (o navegador abriria direto e mostraria o PDF aos poucos, mas o link funcionaria sem login enquanto não vencesse e poderia parar no histórico e em logs).
+
+- **API envia enquanto lê o disco:** `GET /anexos/:codigo` passa a mandar o arquivo em fluxo (stream) em vez de ler tudo para a memória antes; `Content-Length` continua. Cabeçalhos de segurança iguais. Falha no meio do envio encerra a conexão (o navegador vê download incompleto), nunca responde JSON depois de começar.
+- **Antecipar:** ao passar o mouse, focar pelo teclado ou tocar no nome de um PDF ou imagem de **até 5 MB**, o download começa. Um arquivo só é buscado uma vez por vez (pedidos iguais em andamento são reaproveitados).
+- **Guardar na aba:** o arquivo baixado fica na memória da aba para abrir de novo na hora. Mesmas regras da sessão 18: só na memória (nada em `localStorage`, IndexedDB ou Cache Storage), separada por pessoa, apagada ao sair e na troca de conta; total de **50 MB** (sai o usado há mais tempo); cada arquivo vale **10 minutos**; excluir o anexo tira o arquivo da memória; resposta 401, 403 ou 404 tira também.
+- **Progresso:** arquivo acima de 1 MB mostra barra de progresso na janela (ou no botão, ao baixar) enquanto chega; sem `Content-Length`, mostra "Baixando…".
+- O botão "Baixar" usa o arquivo guardado quando houver, sem buscar de novo.
+
 ### Vários arquivos e arrastar e soltar
 - Componente único de envio (evolução do `BotaoAnexar`): aceita vários arquivos pelo seletor (`multiple`) e por **arrastar e soltar** numa área marcada (com estado visual ao arrastar por cima e alternativa de teclado: o próprio botão).
 - Envio **um arquivo por vez, em sequência**; cada arquivo é conferido antes (tipo, tamanho) e tem o próprio resultado. Ao fim: aviso de sucesso com a quantidade, ou um alerta listando quais falharam e por quê. Os que deram certo ficam.

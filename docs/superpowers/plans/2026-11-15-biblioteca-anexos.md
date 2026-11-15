@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Busca sem acento, itens da pessoa no perfil, clipe nas listas, ver PDF/imagem no navegador, vários arquivos com arrastar e soltar (Biblioteca, Capacitações, tarefas) e anexos nas tarefas.
+**Goal:** Busca sem acento, ver e baixar PDF/imagem rápido (antecipar, guardar na aba, envio em fluxo), itens da pessoa no perfil, clipe nas listas, ver PDF/imagem no navegador, vários arquivos com arrastar e soltar (Biblioteca, Capacitações, tarefas) e anexos nas tarefas.
 
 **Architecture:** Backend: migração 013 (`unaccent` + dono `tarefa`), busca com `unaccent` no repositório, novo ramo `tarefa` em `GerirAnexos` com as regras de `regrasTarefa`, cascata na exclusão de tarefa e projeto, `quantidadeAnexos` nas respostas de tarefa. Frontend: `Anexos.jsx` ganha zona de envio múltiplo com arrastar e soltar e janela de visualização; seção de anexos no `TaskModal`; clipe na lista da Biblioteca e no Kanban; seção no perfil via `GET /biblioteca?autor=`.
 
@@ -28,7 +28,8 @@
 2. **Ex-participante** de projeto vê a tarefa e baixa o anexo, mas não anexa (403) e só exclui o que ele mesmo enviou. Teste em B3.
 3. **Lote com arquivo inválido no meio** (ex.: `.exe` entre dois PDFs, ou um de 21 MB): os válidos sobem, o alerta lista o que falhou. Teste em F1.
 4. **Nome com acento, espaço ou `%`** no arquivo visualizado e baixado (`Relatório 50%.pdf`): o nome aparece igual na janela e no download. Teste em F1.
-5. **Busca com `%`, `_` e acento juntos** (`"50%_reuniao"`): continua literal e ignora acento. Teste em B2.
+5. **Arquivo guardado depois de perder o acesso ou trocar de conta:** sai na troca, no logout, em 10 min e em 401/403/404. Teste em F6.
+6. **Busca com `%`, `_` e acento juntos** (`"50%_reuniao"`): continua literal e ignora acento. Teste em B2.
 
 ---
 
@@ -129,6 +130,20 @@
 - [ ] **Step 4:** `npm test` e integração: PASS.
 - [ ] **Step 5:** `git commit -m "feat(tarefas): apagar anexos com a tarefa e contar anexos na lista"`
 
+### Task B6: Download em fluxo
+
+**Files:**
+- Modify: `source/domain/interfaces/ArmazenamentoAnexosInterface.ts`, `source/infra/arquivos/ArmazenamentoAnexosDisco.ts`, `source/infra/arquivos/ArmazenamentoAnexosMemoria.ts`, `source/infra/http/RespostaArquivo.ts`, `source/infra/http/ExpressHttp.ts:132-142`, `source/useCases/anexos/GerirAnexos.ts` (`baixar`)
+- Test: `test/http/anexos.test.ts`
+
+**Interfaces:**
+- Produces: `ArmazenamentoAnexosInterface.abrir(arquivo: string): Promise<{ fluxo: NodeJS.ReadableStream; tamanho: number } | null>` (disco: `fs.stat` + `createReadStream`; memória: `Readable.from(buffer)`); `RespostaArquivo(nome, tipoMime, conteudo: Buffer | NodeJS.ReadableStream, tamanho: number)`; `GerirAnexos.baixar` devolve `{ anexo, fluxo, tamanho }`. `ler()` continua para o `conferirAnexos`.
+- `ExpressHttp`: mesmos cabeçalhos de hoje (incluir `Content-Length = tamanho`); envia com `stream.pipeline(fluxo, res, ...)`; erro depois de começar → `res.destroy(erro)`, sem JSON.
+
+- [ ] **Step 1: Testes que falham:** baixar PDF de 3 MB devolve os mesmos bytes, `Content-Length: 3145728`, `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`; arquivo que sumiu do disco continua 404 com JSON (antes de começar a enviar).
+- [ ] **Step 2:** FAIL. **Step 3:** Implementar. **Step 4:** `npm test` inteiro PASS.
+- [ ] **Step 5:** `git commit -m "perf(anexos): enviar o arquivo enquanto lê o disco"`
+
 ### Task B5: Dados fictícios e documentação
 
 **Files:**
@@ -211,6 +226,34 @@
 - [ ] **Step 2:** Manual: perfil próprio e de outra pessoa; item com sigilo "só gestão" do autor não aparece para membro; trocar de conta na mesma aba (A abre perfil de C, Sair, B abre perfil de C) e conferir que B só vê o que pode.
 - [ ] **Step 3:** Lint, format, testes.
 - [ ] **Step 4:** `git commit -m "feat(biblioteca): clipe nas listas e itens da pessoa no perfil"`
+
+### Task F6: Ver e baixar rápido (antecipar, guardar, progresso)
+
+**Files:**
+- Create: `src/lib/memoriaArquivos.js`
+- Modify: `src/services/api.js` (`baixar(path, { aoProgresso } = {})`), `src/services/anexos.js` (`anexos.abrir`/`anexos.baixar` usam a memória; `anexos.antecipar`), `src/components/Anexos.jsx` (antecipar em `onPointerEnter`, `onFocus`, `onTouchStart`; barra de progresso), `src/lib/auth*`/onde o logout chama `memoria.definirPessoa` (limpar também a memória de arquivos)
+- Test: `test/memoriaArquivos.test.js`, `test/anexos.test.js`, `test/api.test.js`
+
+**Interfaces:**
+- Produces (`src/lib/memoriaArquivos.js`):
+  - `memoriaArquivos.obter(codigo: string): Blob | undefined` — `undefined` se passou de 10 min ou se a pessoa mudou (`memoria.pessoa()` diferente da que guardou).
+  - `memoriaArquivos.buscar(codigo: string, carregar: () => Promise<Blob>): Promise<Blob>` — reaproveita busca em andamento; grava só se a pessoa ainda for a mesma ao terminar; erro com `status` 401/403/404 apaga a chave.
+  - `memoriaArquivos.apagar(codigo)`, `memoriaArquivos.limpar()`; limite total `LIMITE_BYTES = 50 * 1024 * 1024` (sai o usado há mais tempo); `VALIDADE_MS = 10 * 60 * 1000`.
+  - `anexos.antecipar(anexo)`: só se `podeVer(nome)` e `tamanhoBytes <= 5 * 1024 * 1024`; erros ignorados em silêncio.
+  - `baixar(path, { aoProgresso(recebidos, total|null) })`: lê `response.body` em pedaços quando houver `aoProgresso`.
+- Exclusão de anexo (`anexos.excluir`) chama `memoriaArquivos.apagar(codigo)`.
+
+- [ ] **Step 1: Testes que falham** (`node --test`, relógio falso):
+  - segunda `buscar` da mesma chave em andamento não chama `carregar` de novo;
+  - após 10 min `obter` devolve `undefined`;
+  - 3 blobs de 20 MB: o mais antigo sai, total ≤ 50 MB;
+  - `definirPessoa('B')` depois de A guardar: `obter` devolve `undefined`; busca de A que termina depois da troca não grava;
+  - `limpar()` no logout; erro 404 apaga a chave;
+  - `antecipar` de PDF de 6 MB ou de `.docx` não busca;
+  - `baixar` com `aoProgresso` chama com `(recebidos, total)` crescente e termina em `(total, total)`.
+- [ ] **Step 2:** FAIL. **Step 3:** Implementar. **Step 4:** `npm test` PASS.
+- [ ] **Step 5:** Manual com latência (DevTools, "Fast 4G"): passar o mouse num PDF de 2 MB e clicar depois de 1 s abre sem espera; abrir de novo é instantâneo; Sair e entrar como outra pessoa não reaproveita o arquivo.
+- [ ] **Step 6:** `git commit -m "perf(anexos): antecipar e guardar PDF e imagens na aba"`
 
 ### Task F5: Ponta a ponta, PRs e registros
 
