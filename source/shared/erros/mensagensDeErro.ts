@@ -35,6 +35,20 @@ export const MENSAGENS_DE_ERRO = {
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
     },
 
+    BIBLIOTECA: {
+        TITULO_OBRIGATORIO: "O título do item é obrigatório.",
+        TITULO_LONGO: "O título do item deve ter no máximo 160 caracteres.",
+        CONTEUDO_LONGO: "O conteúdo do item deve ter no máximo 50.000 caracteres.",
+        MUITAS_TAGS: "Use no máximo 10 tags, com até 40 caracteres cada.",
+        MUITOS_LINKS: "Use no máximo 10 links.",
+        SIGILO_INVALIDO: "Sigilo inválido. Use todos, gestao ou projeto.",
+        PROJETO_OBRIGATORIO: "O sigilo projeto exige um projeto ligado ao item.",
+        NAO_ENCONTRADO: "Item não encontrado.",
+        SEM_PERMISSAO: "Só quem cadastrou o item ou a gestão pode alterá-lo ou excluí-lo.",
+        SIGILO_SEM_PERMISSAO: "Só a gestão pode usar o sigilo gestão.",
+        PROJETO_SEM_PERMISSAO: "Você só pode ligar o item a projetos de que participa ou participou.",
+    },
+
     CONHECIMENTO: {
         TITULO_OBRIGATORIO: "O título do item é obrigatório.",
         TITULO_LONGO: "O título do item deve ter no máximo 160 caracteres.",

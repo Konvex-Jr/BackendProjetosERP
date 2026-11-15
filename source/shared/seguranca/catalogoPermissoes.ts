@@ -23,6 +23,10 @@ export const Permissao = {
     CONHECIMENTO_GERIR: "conhecimento.gerir",
     /** Criar, editar e excluir qualquer iniciativa de inovação (a área de Inovação também cria). Sessão 12b. */
     INICIATIVAS_GERIR: "iniciativas.gerir",
+    /** Ler itens da Biblioteca de qualquer sigilo (gestão). Sessão 17. */
+    BIBLIOTECA_VER_TODOS: "biblioteca.verTodos",
+    /** Editar e excluir qualquer item da Biblioteca e usar sigilo gestão (o autor altera o próprio). Sessão 17. */
+    BIBLIOTECA_GERIR: "biblioteca.gerir",
     CONFIGURACOES_EDITAR: "configuracoes.editar",
     ESTRATEGIA_VER: "estrategia.ver",
     PRECIFICACAO_SIMULAR: "precificacao.simular",
@@ -47,6 +51,8 @@ const DO_GESTOR: Permissao[] = [
     Permissao.DOCUMENTOS_GERIR,
     Permissao.CONHECIMENTO_GERIR,
     Permissao.INICIATIVAS_GERIR,
+    Permissao.BIBLIOTECA_VER_TODOS,
+    Permissao.BIBLIOTECA_GERIR,
     Permissao.ESTRATEGIA_VER,
     Permissao.PRECIFICACAO_SIMULAR,
 ];

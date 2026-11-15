@@ -126,6 +126,14 @@ export const MODULOS: Modulo[] = [
         menu: [{ chave: "iniciativas", rotulo: "Iniciativas", caminho: "/iniciativas", ordem: 37 }],
     },
     {
+        // Sessão 17: ainda sem rotas nem menu (entram na tarefa B3); registra as ações no catálogo.
+        chave: "biblioteca",
+        nome: "Biblioteca",
+        rotas: [],
+        permissoes: [Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
+        menu: [],
+    },
+    {
         // Sessão 12c: arquivos anexados a documentos, itens da Base e iniciativas (sem item de menu).
         chave: "anexos",
         nome: "Anexos",

@@ -3,12 +3,11 @@ import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { CategoriaConhecimento, ehCategoriaConhecimento, LISTA_CATEGORIAS_CONHECIMENTO } from "../enum/CategoriaConhecimento";
 import { hoje } from "../../shared/datas";
+import { normalizarTags, validarLink } from "../../shared/texto";
+import { Referencia } from "./Referencia";
 
-/** Referência curta (só o necessário para exibir). */
-export interface Referencia {
-    codigo: string;
-    nome: string;
-}
+// Reexporta para quem ainda importa daqui (este módulo sai na tarefa B5).
+export type { Referencia };
 
 export interface DadosConhecimento {
     titulo: string;
@@ -27,32 +26,6 @@ export interface DadosConhecimento {
 }
 
 const M = MENSAGENS_DE_ERRO.CONHECIMENTO;
-
-/** Tags em minúsculas, sem "#", sem repetição. */
-export function normalizarTags(tags: unknown[] = []): string[] {
-    const limpas = tags
-        .map((t) =>
-            String(t ?? "")
-                .trim()
-                .replace(/^#+/, "")
-                .toLowerCase(),
-        )
-        .filter(Boolean);
-    return [...new Set(limpas)];
-}
-
-function validarLink(link: string): string {
-    let valido = false;
-    try {
-        valido = ["http:", "https:"].includes(new URL(link).protocol);
-    } catch {
-        valido = false;
-    }
-    if (!valido) {
-        throw new ErroValidacao(`Link inválido: ${link}. Use um endereço começando com https://.`, "LINK_CONHECIMENTO_INVALIDO");
-    }
-    return link;
-}
 
 /**
  * Item da Base de Inteligência (RF-080). Conteúdo em Markdown simples (decisão de 03/11/2026).
