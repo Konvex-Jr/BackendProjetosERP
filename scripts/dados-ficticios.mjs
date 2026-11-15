@@ -131,8 +131,24 @@ async function main() {
     const itensBiblioteca = [
         [tokenBia, { titulo: "Como pedir férias (fictício)", conteudo: "Passo a passo para todos.", tags: ["rh"], sigilo: "todos" }],
         [tokenInes, { titulo: "Metas da diretoria (fictício)", conteudo: "Só a gestão enxerga.", tags: ["metas"], sigilo: "gestao" }],
-        [tokenBia, { titulo: "Atas do site institucional (fictício)", conteudo: "Decisões da equipe do projeto.", sigilo: "projeto", codigoProjeto: projeto.codigo }],
-        [tokenBia, { titulo: "Referências de layout (fictício)", links: ["https://example.com/layout"], sigilo: "todos", codigoProjeto: projeto.codigo }],
+        [
+            tokenBia,
+            {
+                titulo: "Atas do site institucional (fictício)",
+                conteudo: "Decisões da equipe do projeto.",
+                sigilo: "projeto",
+                codigoProjeto: projeto.codigo,
+            },
+        ],
+        [
+            tokenBia,
+            {
+                titulo: "Referências de layout (fictício)",
+                links: ["https://example.com/layout"],
+                sigilo: "todos",
+                codigoProjeto: projeto.codigo,
+            },
+        ],
     ];
     let criados = 0;
     for (const [token, corpo] of itensBiblioteca) {

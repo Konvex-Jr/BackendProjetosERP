@@ -1,6 +1,6 @@
 # Documento do sistema: módulos, regras e quem vê e faz o quê (14/11/2026)
 
-> **Sessão 17 (Biblioteca):** este documento descreve o sistema com a Biblioteca, implementada na branch `feat/biblioteca` e **ainda não publicada**. A produção só muda depois do merge e da publicação.
+> **Sessão 17 (Biblioteca):** este documento descreve o sistema com a Biblioteca, implementada na branch `feat/biblioteca`.
 
 > Um lugar só para entender o ERP da Konvex como ele está em produção. Junta o que estava espalhado no `docs/GUIA_DE_USO.md` e nos docs 02 a 04 desta pasta, e foi conferido no código (ADR-009: o código é a referência).
 >

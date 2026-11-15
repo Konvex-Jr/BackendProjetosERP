@@ -20,12 +20,21 @@ test("excluir o projeto leva os itens da equipe (com anexos e arquivos) e solta 
     const projeto = await criarProjeto(factory, membro);
     const ref = { codigo: projeto.codigo, nome: projeto.nome };
     const repo = factory.criarBibliotecaRepository();
-    const equipe = await repo.criar(new ItemBiblioteca({ titulo: "Da equipe", sigilo: "projeto", projeto: ref, autor: { codigo: gerente.codigo, nome: gerente.nome } }));
-    const aberto = await repo.criar(new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor: { codigo: gerente.codigo, nome: gerente.nome } }));
-    const anexo = await new GerirAnexos(factory).enviar({ codigo: gerente.codigo, perfil: gerente.perfil }, DonoAnexo.BIBLIOTECA, equipe.codigo, {
-        nome: "ata.pdf",
-        conteudo: Buffer.from("%PDF-1.4"),
-    });
+    const equipe = await repo.criar(
+        new ItemBiblioteca({ titulo: "Da equipe", sigilo: "projeto", projeto: ref, autor: { codigo: gerente.codigo, nome: gerente.nome } }),
+    );
+    const aberto = await repo.criar(
+        new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor: { codigo: gerente.codigo, nome: gerente.nome } }),
+    );
+    const anexo = await new GerirAnexos(factory).enviar(
+        { codigo: gerente.codigo, perfil: gerente.perfil },
+        DonoAnexo.BIBLIOTECA,
+        equipe.codigo,
+        {
+            nome: "ata.pdf",
+            conteudo: Buffer.from("%PDF-1.4"),
+        },
+    );
     const armazenamento = factory.criarArmazenamentoAnexos();
     expect(await armazenamento.ler(anexo.arquivo)).not.toBeNull();
 

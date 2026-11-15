@@ -130,6 +130,8 @@ Recarregue sem cache (Ctrl+Shift+R) ou use uma janela anônima.
 O que mudou em cada sessão está em `claude/acompanhamento.md` (projeto da gestão) e na descrição de cada PR.
 
 ## 6. Voltar atrás, se algo grave falhar
+> **Atenção (depois da migração 012, sessão 17):** voltar só o código **não basta e quebra o sistema**. O código antigo seleciona `tarefas.iniciativa_codigo` (coluna removida) e os módulos antigos usam tabelas que a migração apagou. O rollback exige **os dois**: o checkout do código **e** a restauração do `.dump` do banco e do `anexos_*.tar.gz` feitos no passo 1 da publicação, **do mesmo horário** (comandos logo abaixo).
+
 ```bash
 cd /docker/erp-konvex
 git -C backend log --oneline -5          # achar o commit anterior
@@ -180,7 +182,7 @@ docker rm -f konvex-restauracao-db; docker network rm konvex-restauracao; rm -rf
 - Anote a data do teste no acompanhamento. Se algo falhar, o backup **não serve**: corrija o procedimento da seção 3 antes da próxima publicação.
 
 ## 9. Conferir anexos órfãos (de vez em quando)
-Lista registros sem arquivo, arquivos sem registro e anexos cujo dono foi apagado. **Só relata, não apaga nada.**
+Lista registros sem arquivo, arquivos sem registro e anexos cujo dono foi apagado. **Sem flag, só relata; com `--apagar-sem-registro` apaga os arquivos sem registro (exceto os modificados nos últimos 10 minutos).**
 ```bash
 docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
 ```
@@ -192,12 +194,14 @@ docker exec konvex-backend node dist/source/scripts/conferirAnexos.js
 A migração `012_biblioteca.sql` **apaga todos os dados** de Gestão (pastas e documentos), Base de Inteligência e Iniciativas, com as linhas de anexo deles (decisão do usuário em 14/11/2026). Os arquivos no disco não saem pela migração: o script tem a flag `--apagar-sem-registro` para removê-los. Anexos de capacitações não são tocados. Ordem, sem pular passo:
 1. **Backup** do banco (`pg_dump`) e da pasta `anexos/`, como na seção 3. Sem o backup, não publique: o descarte é irreversível.
 2. **Deploy** (seção 4). A migração 012 roda ao iniciar o backend.
-3. **Apagar os arquivos sem registro:**
+3. **Apagar os arquivos sem registro** (só depois de confirmar que a publicação está funcionando: depois deste passo, o rollback não recupera os arquivos apagados sem o `anexos_*.tar.gz`):
 ```bash
 docker exec konvex-backend node dist/source/scripts/conferirAnexos.js --apagar-sem-registro
 ```
    - O script mantém os arquivos alterados nos últimos 10 minutos (podem ser envios em andamento) e os lista como "recentes". Se aparecerem, rode de novo mais tarde.
 4. **Conferir:** `docker exec konvex-backend node dist/source/scripts/conferirAnexos.js` (sem a flag) tem que terminar com código 0 (`echo $?`).
+
+**Rollback:** depois da migração 012, voltar só o código quebra Tarefas e os módulos antigos. Restaure o checkout **e** o `.dump` + `anexos_*.tar.gz` do passo 1 (seção 6).
 
 Sem a flag, o script continua só relatando, como antes. Em máquina de desenvolvimento, rode `npm run clean` antes de `npm run build`: o `dist/` guarda `.js` velhos dos módulos que saíram.
 
