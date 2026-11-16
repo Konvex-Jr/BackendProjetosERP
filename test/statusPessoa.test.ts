@@ -5,10 +5,12 @@ import ObterPerfilPessoa from "../source/useCases/pessoas/ObterPerfilPessoa";
 import { criarContexto, criarProjeto } from "./fixtures";
 
 describe("Status de pessoa (RF-011, RN-01)", () => {
-    it("trainee está na EJ e entra em projetos, mas não tem acesso ao sistema", async () => {
+    it("trainee está na EJ, entra em projetos e tem acesso ao sistema", async () => {
         const { factory, membro, gerente } = await criarContexto();
-        const { usuario } = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.TRAINEE });
-        expect(usuario.ativo).toBe(false);
+        const novo = membro.copiar({ status: StatusPessoa.TRAINEE });
+        await factory.criarUsuarioRepository().editar(novo);
+        const usuario = (await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo))!;
+        expect(usuario.ativo).toBe(true);
         expect(usuario.naEj).toBe(true);
 
         const projeto = await criarProjeto(factory, gerente);
@@ -18,6 +20,13 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
             alocacao: 20,
         });
         expect(comTrainee.membros.map((m) => m.codigo)).toContain(membro.codigo);
+    });
+
+    it("ninguém volta a ser trainee", async () => {
+        const { factory, membro } = await criarContexto();
+        await expect(
+            new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.TRAINEE }),
+        ).rejects.toMatchObject({ codigo: "STATUS_TRAINEE_SO_NA_ENTRADA" });
     });
 
     it("a saída encerra as participações, mas o histórico continua no perfil (CT-012)", async () => {

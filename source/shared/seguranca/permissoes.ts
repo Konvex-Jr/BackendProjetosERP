@@ -1,4 +1,5 @@
 import PerfilUsuario from "../../domain/enum/PerfilUsuario";
+import StatusPessoa from "../../domain/enum/StatusPessoa";
 import { ErroNaoAutorizado } from "../erros/ErroNaoAutorizado";
 import { ErroProibido } from "../erros/ErroProibido";
 import { Permissao, permissoesDoPapel } from "./catalogoPermissoes";
@@ -16,6 +17,8 @@ export interface UsuarioAutenticado {
      * de alguém vale já na próxima chamada, sem esperar o token expirar.
      */
     perfil: PerfilUsuario | string;
+    /** Também lido do banco a cada requisição: trainee que vira Ativo vale já na próxima chamada. */
+    status?: StatusPessoa | string;
 }
 
 const MENSAGEM_PADRAO = "Você não tem permissão para fazer esta alteração.";
@@ -29,6 +32,18 @@ export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null
         throw new ErroNaoAutorizado();
     }
     return usuario;
+}
+
+/** Trainee (sessão 20): entra no sistema como membro, mas sem Biblioteca nem liderança. */
+export function ehTrainee(usuario: UsuarioAutenticado | undefined | null): boolean {
+    return !!usuario && usuario.status === StatusPessoa.TRAINEE;
+}
+
+/** 401 sem pessoa logada; 403 (com a mensagem informada) para trainee. */
+export function exigirNaoTrainee(usuario: UsuarioAutenticado | undefined | null, mensagem: string): UsuarioAutenticado {
+    const autenticado = exigirAutenticado(usuario);
+    if (ehTrainee(autenticado)) throw new ErroProibido(mensagem);
+    return autenticado;
 }
 
 /** Versão que não lança erro: serve para montar os booleanos das respostas (podeGerir, podeAlterar...). */

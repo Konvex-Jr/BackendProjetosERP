@@ -4,7 +4,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../shared/erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirNaoTrainee, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerItem, podeAlterarItem } from "../../shared/seguranca/regrasBiblioteca";
 import { RegrasTarefa } from "../../shared/seguranca/regrasTarefa";
@@ -106,6 +106,11 @@ export default class GerirAnexos {
         });
     }
 
+    /** Trainee (sessão 20) não usa a Biblioteca: 403 (e não 404) nos anexos dos itens dela. */
+    private semTraineeNaBiblioteca(usuario: UsuarioAutenticado, tipo: DonoAnexo): void {
+        if (tipo === DonoAnexo.BIBLIOTECA) exigirNaoTrainee(usuario, MENSAGENS_DE_ERRO.USUARIO.TRAINEE_SEM_BIBLIOTECA);
+    }
+
     /** Anexa um arquivo a um item da Biblioteca, a uma capacitação ou a uma tarefa. */
     async enviar(
         usuario: UsuarioAutenticado | null | undefined,
@@ -114,6 +119,7 @@ export default class GerirAnexos {
         arquivo: ArquivoRecebido,
     ): Promise<Anexo> {
         const autenticado = exigirAutenticado(usuario);
+        this.semTraineeNaBiblioteca(autenticado, tipo);
         const acesso = await this.acesso(autenticado, tipo, codigoDono);
         if (!acesso.podeAlterar) throw new ErroProibido(acesso.semPermissao);
         return this.gravar(this.novo(autenticado, tipo, codigoDono, arquivo), arquivo.conteudo);
@@ -127,6 +133,7 @@ export default class GerirAnexos {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
         if (!anexo) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
+        this.semTraineeNaBiblioteca(autenticado, anexo.donoTipo);
         // Sem acesso ao dono (ou dono apagado): responde como se o anexo não existisse.
         await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo).catch(() => {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
@@ -142,6 +149,7 @@ export default class GerirAnexos {
         const autenticado = exigirAutenticado(usuario);
         const anexo = await this.anexos.buscarPorCodigo(codigo);
         if (!anexo) throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
+        this.semTraineeNaBiblioteca(autenticado, anexo.donoTipo);
         const acesso = await this.acesso(autenticado, anexo.donoTipo, anexo.donoCodigo, anexo).catch(() => {
             throw new ErroNaoEncontrado(M.NAO_ENCONTRADO);
         });

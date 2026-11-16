@@ -2,7 +2,7 @@
 
 Endereço: https://erp.konvexjr.com.br. Entre com o e-mail da Konvex e a senha que a gestão passou. Troque a senha em **Meu perfil**.
 
-O que cada pessoa vê depende do papel: **diretor**, **gerente** ou **membro**. Trainees são cadastrados e entram em projetos, mas ainda não têm login.
+O que cada pessoa vê depende do papel: **diretor**, **gerente** ou **membro**. Trainees fazem login com o acesso de membro, sem a Biblioteca (seção **Trainee**).
 
 No celular, a barra de baixo mostra Dashboard, Tarefas, Projetos e Capacitações; o botão **Mais** abre o resto do menu.
 
@@ -52,7 +52,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
 
-**Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Trainee, Saiu…) e redefine senhas. Quando alguém sai, as participações são encerradas, mas o histórico fica.
+**Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
 
 **Biblioteca**: lê todos os itens, de qualquer sigilo, e usa o sigilo **Só gestão**. Liga um item a qualquer projeto. Edita e exclui qualquer item (por exemplo, para corrigir tags ou tirar algo repetido) e os anexos dele.
 
@@ -72,7 +72,42 @@ Tudo o que o gerente faz, mais:
 
 ---
 
+## Trainee
+
+Quem entra como trainee faz login como qualquer pessoa, com o acesso de **membro**:
+- Vê os projetos de que participa e as tarefas deles, as tarefas avulsas em que é responsável, o próprio perfil, a lista de pessoas, as capacitações e o Dashboard.
+- **Não vê a Biblioteca**: o item não aparece no menu, e abrir o endereço direto mostra erro de acesso.
+- **Não pode ser líder** de projeto.
+- A gestão cria a pessoa já como Trainee em **Pessoas**, **Nova pessoa**: escolhe o status **Trainee** e digita a **Senha inicial** (o perfil fica Membro, sem opção). Para trocar a senha depois, use **Redefinir senha** no menu da pessoa.
+- Quando ela vira **Ativo**, a Biblioteca aparece ao recarregar a página ou entrar de novo. Trainee é só a etapa de entrada: depois de mudar o status, **não dá para voltar** a Trainee.
+
+---
+
+## Projeto sigiloso
+
+Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confidencial).
+
+**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, escolha **Visibilidade: Sigiloso** e preencha **Quem mais pode ver o projeto**, além da equipe. A lista aceita só pessoas que têm login. Quem cria o projeto sempre o vê.
+
+**Quem vê o projeto inteiro** (ficha, tarefas, equipe e itens da Biblioteca ligados a ele):
+- os diretores;
+- quem criou o projeto;
+- quem está na lista de acesso;
+- a **equipe atual**. Quem sai da equipe perde o acesso (num projeto normal, o histórico continua visível).
+
+**Gerente que não está nessas listas** vê só o **resumo**: nome, situação, datas, quantas tarefas há (e quantas estão concluídas ou atrasadas), a equipe e a alocação de cada um. Não vê descrição, tarefas nem Biblioteca, e não edita nada do projeto.
+
+**Membro e trainee fora do projeto** não o veem: ele nem aparece na lista, e abrir o endereço direto mostra "projeto não encontrado".
+
+**Itens da Biblioteca** ligados a um projeto sigiloso somem para quem não vê o projeto inteiro, inclusive para a gestão.
+
+**Mudar a lista de acesso ou tirar o sigilo:** só os diretores e quem criou o projeto. Na ficha do projeto, clique em **Editar**, mude **Visibilidade** ou **Quem mais pode ver o projeto** e salve (por trás, o sistema usa `PUT /projetos/:codigo/acesso`). A aba **Visão geral** mostra a visibilidade e **Quem mais vê**. Quem perdeu o login sai da lista no primeiro salvamento.
+
+---
+
 ## Dúvidas comuns
+- **Projeto sigiloso sumiu da lista ou diz "não encontrado"**: você não está na equipe atual nem na lista de acesso. Peça a quem criou o projeto ou a um diretor.
+- **Sou trainee e não vejo a Biblioteca**: é assim mesmo; ela aparece quando a gestão mudar seu status para Ativo (recarregue a página ou entre de novo).
 - **"Você não tem acesso a este projeto"**: você não está (nem esteve) na equipe. Peça à gestão para incluir você.
 - **Não consigo concluir uma tarefa**: só o responsável, o líder e a gestão concluem. Peça para ser incluído como responsável.
 - **Esqueci a senha**: peça a um gerente ou diretor para redefinir.

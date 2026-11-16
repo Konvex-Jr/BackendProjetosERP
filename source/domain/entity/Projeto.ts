@@ -19,6 +19,12 @@ export interface DetalhesProjeto {
     tags?: string[];
     /** Líder do projeto (sessão 8b). Só vale se estiver na equipe atual; senão o projeto fica sem líder. */
     lider?: Usuario | null;
+    /** Projeto sigiloso (sessão 20): só diretor, criador, lista de acesso e equipe atual veem o projeto inteiro. */
+    sigiloso?: boolean;
+    /** Código de quem criou o projeto; mantém o acesso ao sigiloso. */
+    criadoPor?: string | null;
+    /** Códigos das pessoas com acesso ao projeto sigiloso, além da equipe. */
+    acesso?: string[];
 }
 
 /**
@@ -45,6 +51,9 @@ export default class Projeto {
     readonly area: Area | null;
     readonly tags: string[];
     readonly lider: Usuario | null;
+    readonly sigiloso: boolean;
+    readonly criadoPor: string | null;
+    readonly acesso: string[];
 
     /**
      * `membros` aceita pessoas (viram participações novas, sem alocação) ou participações completas.
@@ -76,6 +85,9 @@ export default class Projeto {
         this.tags = [...new Set((detalhes.tags ?? []).map((t) => String(t).trim()).filter(Boolean))];
         const codigoLider = detalhes.lider?.codigo;
         this.lider = codigoLider ? (this.membros.find((m) => m.codigo === codigoLider) ?? null) : null;
+        this.sigiloso = detalhes.sigiloso ?? false;
+        this.criadoPor = detalhes.criadoPor ?? null;
+        this.acesso = [...new Set(detalhes.acesso ?? [])];
 
         this.validar();
     }
@@ -123,6 +135,9 @@ export default class Projeto {
                 area: pick("area"),
                 tags: pick("tags"),
                 lider: pick("lider"),
+                sigiloso: pick("sigiloso"),
+                criadoPor: pick("criadoPor"),
+                acesso: pick("acesso"),
             },
         );
     }
@@ -146,6 +161,8 @@ export default class Projeto {
             area: this.area,
             tags: this.tags,
             lider: this.lider,
+            sigiloso: this.sigiloso,
+            acesso: this.acesso,
         };
     }
 

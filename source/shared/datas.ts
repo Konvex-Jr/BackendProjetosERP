@@ -16,3 +16,9 @@ export function diaNoFuso(instante: Date = new Date()): Date {
 export function hoje(): Date {
     return diaNoFuso(new Date());
 }
+
+/** Domingo da semana de `hoje` (semana de segunda a domingo), igual ao `fimDaSemana` do frontend. */
+export function fimDaSemana(hoje: Date): Date {
+    const diasAteDomingo = (7 - hoje.getUTCDay()) % 7;
+    return new Date(hoje.getTime() + diasAteDomingo * 86_400_000);
+}

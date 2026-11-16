@@ -1,6 +1,8 @@
 import Usuario, { DetalhesPessoa } from "../../domain/entity/Usuario";
 import Habilidade from "../../domain/entity/Habilidade";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
+import PerfilUsuario from "../../domain/enum/PerfilUsuario";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
 import TipoHabilidade from "../../domain/enum/TipoHabilidade";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
@@ -110,6 +112,13 @@ export async function resolverPerfilPessoa(
     }
 
     return detalhes;
+}
+
+/** Trainee (sessão 20) é sempre membro: 400 se o status for trainee e o perfil, outro. */
+export function exigirTraineeMembro(status: StatusPessoa | string, perfil: PerfilUsuario | string): void {
+    if (status === StatusPessoa.TRAINEE && perfil !== PerfilUsuario.MEMBRO) {
+        throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.TRAINEE_SO_MEMBRO, "TRAINEE_SO_MEMBRO");
+    }
 }
 
 export function lerStatusPessoa(valor: unknown): StatusPessoa | undefined {

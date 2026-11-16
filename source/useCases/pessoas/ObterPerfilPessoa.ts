@@ -1,10 +1,11 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
+import Projeto from "../../domain/entity/Projeto";
 import Usuario from "../../domain/entity/Usuario";
 import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
 import { MudancaArea, MudancaCargo } from "../../domain/interfaces/HistoricoPessoaRepositoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { participaOuParticipou, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
 
 export interface ProjetoNoPerfil {
     codigo: string;
@@ -15,6 +16,9 @@ export interface ProjetoNoPerfil {
     alocacao: number;
     dataEntrada: Date;
     dataSaida: Date | null;
+    sigiloso: boolean;
+    /** Sem acesso completo ao projeto: nome e datas aparecem, referência e função saem nulas. */
+    restrito: boolean;
 }
 
 export interface CapacitacaoNoPerfil {
@@ -41,6 +45,8 @@ export interface PerfilPessoa {
  * RF-013: perfil com projetos atuais e anteriores, habilidades, histórico e capacitações.
  * Projetos seguem a visibilidade (decisão de 30/10/2026): o membro que olha o perfil de outra
  * pessoa só vê os projetos de que ele mesmo participa ou participou.
+ * Projeto sigiloso: quem não tem acesso completo vê só o nome e as datas (item `restrito`), se a
+ * gestão ou a própria pessoa olha; o membro olhando outra pessoa não vê o projeto.
  */
 export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
@@ -51,20 +57,24 @@ export default class ObterPerfilPessoa {
 
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
         const veTudo = !quemPede || quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
-        const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => participaOuParticipou(quemPede.codigo, p));
+        const acessoDe = (projeto: Projeto) => (quemPede ? acessoAoProjeto(quemPede, projeto) : "completo");
+        const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => acessoDe(p) === "completo");
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
         for (const projeto of projetos) {
+            const restrito = acessoDe(projeto) !== "completo";
             for (const p of projeto.participacoes.filter((x) => x.usuario.codigo === codigo)) {
                 const item: ProjetoNoPerfil = {
                     codigo: projeto.codigo,
                     nome: projeto.nome,
-                    referencia: projeto.referencia,
+                    referencia: restrito ? null : projeto.referencia,
                     status: projeto.status,
-                    funcao: p.funcao,
+                    funcao: restrito ? null : p.funcao,
                     alocacao: p.alocacao,
                     dataEntrada: p.dataEntrada,
                     dataSaida: p.dataSaida,
+                    sigiloso: projeto.sigiloso,
+                    restrito,
                 };
                 (p.ativa ? projetosAtuais : projetosAnteriores).push(item);
             }

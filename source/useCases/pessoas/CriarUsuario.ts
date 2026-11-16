@@ -8,7 +8,7 @@ import { hoje } from "../../domain/entity/Participacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import { validarNovaSenha } from "../auth/AlterarSenha";
 import CriarUsuarioInput from "./CriarUsuarioInput";
 import CriarUsuarioOutput from "./CriarUsuarioOutput";
@@ -43,6 +43,8 @@ export default class CriarUsuario {
         if (input.status && !STATUS_NA_EJ.includes(input.status)) {
             throw new ErroValidacao("Uma pessoa nova entra como Ativa ou Trainee.", "STATUS_INICIAL_INVALIDO");
         }
+
+        exigirTraineeMembro(status, input.perfil);
 
         const detalhes = await resolverPerfilPessoa(this.repositoryFactory, input);
         const usuario = new Usuario(

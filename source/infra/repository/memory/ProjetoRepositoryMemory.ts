@@ -28,6 +28,14 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
         return this.projetos.filter((p) => p.participacoes.some((m) => m.usuario.codigo === codigoUsuario));
     }
 
+    async listarComAcesso(codigoUsuario: string): Promise<Projeto[]> {
+        return this.projetos.filter((p) => p.sigiloso && (p.criadoPor === codigoUsuario || p.acesso.includes(codigoUsuario)));
+    }
+
+    async listarSigilosos(): Promise<Projeto[]> {
+        return this.projetos.filter((p) => p.sigiloso);
+    }
+
     async buscarPorCodigo(codigo: string): Promise<Projeto | null> {
         return this.projetos.find((p) => p.codigo === codigo) ?? null;
     }
