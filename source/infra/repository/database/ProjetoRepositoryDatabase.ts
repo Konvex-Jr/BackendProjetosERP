@@ -6,6 +6,7 @@ import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { normalizarBusca } from "../../../shared/texto";
 import { carregarProjetos } from "./carregadores";
+import { validarColunas } from "../../../domain/entity/ColunaProjeto";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
     prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo`;
@@ -43,6 +44,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             );
             await this.gravarParticipacoes(conexao, projeto);
             await this.gravarAcesso(conexao, projeto);
+            await this.gravarColunas(conexao, projeto);
         });
         return projeto;
     }
@@ -145,6 +147,19 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
                 );
             }
             throw erro;
+        }
+    }
+
+    /** Grava as colunas do projeto novo, na ordem. Só na criação: depois, quem muda as colunas é o caso de uso das colunas. */
+    private async gravarColunas(conexao: ConexaoBanco, projeto: Projeto): Promise<void> {
+        validarColunas(projeto.colunas);
+        for (let ordem = 0; ordem < projeto.colunas.length; ordem++) {
+            const c = projeto.colunas[ordem];
+            await conexao.consultar(
+                `INSERT INTO colunas_projeto (codigo, projeto_codigo, nome, cor, ordem, papel)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [c.codigo, projeto.codigo, c.nome, c.cor, ordem, c.papel],
+            );
         }
     }
 

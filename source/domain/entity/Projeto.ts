@@ -94,7 +94,8 @@ export default class Projeto {
         this.sigiloso = detalhes.sigiloso ?? false;
         this.criadoPor = detalhes.criadoPor ?? null;
         this.acesso = [...new Set(detalhes.acesso ?? [])];
-        this.colunas = detalhes.colunas ?? colunasPadrao();
+        // Cópia, como tags e acesso; lista vazia (dado estranho) volta às quatro padrão, para a tarefa sempre ter coluna.
+        this.colunas = detalhes.colunas?.length ? [...detalhes.colunas] : colunasPadrao();
 
         this.validar();
     }

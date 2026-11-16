@@ -55,7 +55,15 @@ descrever("migração 014 sobre a 013", () => {
     });
 
     test("acrescenta sigilo e criador, libera o trainee como membro e tira a liderança dele", async () => {
-        expect(await aplicarMigracoes(pool, PASTA, silencio)).toEqual(["014_sigilo_trainee.sql"]);
+        const ate014 = mkdtempSync(path.join(tmpdir(), "migracoes-"));
+        try {
+            for (const arquivo of readdirSync(PASTA).filter((a) => a.endsWith(".sql") && a < "015")) {
+                copyFileSync(path.join(PASTA, arquivo), path.join(ate014, arquivo));
+            }
+            expect(await aplicarMigracoes(pool, ate014, silencio)).toEqual(["014_sigilo_trainee.sql"]);
+        } finally {
+            rmSync(ate014, { recursive: true, force: true });
+        }
 
         const p = (await pool.query("SELECT sigiloso, criado_por_codigo, lider_codigo FROM projetos WHERE codigo = $1", [projeto])).rows[0];
         expect(p).toEqual({ sigiloso: false, criado_por_codigo: null, lider_codigo: null });
@@ -65,6 +73,7 @@ descrever("migração 014 sobre a 013", () => {
     });
 
     test("o repositório grava e lê sigilo, criador e lista de acesso", async () => {
+        await aplicarMigracoes(pool, PASTA, silencio); // o repositório grava colunas (015)
         const conexao = PgConexao.criar(URL_TESTE!);
         try {
             const repo = new DatabaseRepositoryFactory(conexao).criarProjetoRepository();

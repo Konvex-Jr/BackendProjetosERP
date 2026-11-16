@@ -202,3 +202,19 @@ describe("Tarefa com coluna", () => {
         expect(tarefaDe(null).coluna).toBeNull();
     });
 });
+
+describe("Projeto: colunas recebidas", () => {
+    it("lista vazia volta às quatro padrão", () => {
+        const p = projetoPadrao([]);
+        expect(p.colunas.map((c) => c.nome)).toEqual(["A fazer", "Fazendo", "Revisando", "Concluído"]);
+        expect(tarefaDe(p).coluna?.nome).toBe("A fazer");
+    });
+
+    it("copia a lista recebida", () => {
+        const colunas = colunasPadrao();
+        const p = projetoPadrao(colunas);
+        colunas.pop();
+        expect(p.colunas).toHaveLength(4);
+        expect(p.colunas).not.toBe(colunas);
+    });
+});
