@@ -72,7 +72,41 @@ Tudo o que o gerente faz, mais:
 
 ---
 
+## Trainee
+
+Quem entra como trainee faz login como qualquer pessoa, com o acesso de **membro**:
+- Vê os projetos de que participa e as tarefas deles, as tarefas avulsas em que é responsável, o próprio perfil, a lista de pessoas, as capacitações e o Dashboard.
+- **Não vê a Biblioteca**: o item não aparece no menu, e abrir o endereço direto mostra erro de acesso.
+- **Não pode ser líder** de projeto.
+- A gestão cria a pessoa já como Trainee. Quando ela vira **Ativo**, a Biblioteca aparece na hora. Trainee é só a etapa de entrada: depois de mudar o status, **não dá para voltar** a Trainee.
+
+---
+
+## Projeto sigiloso
+
+Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confidencial).
+
+**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, marque **Projeto sigiloso** e escolha **quem mais pode ver**, além da equipe. A lista aceita só pessoas que têm login. Quem cria o projeto sempre o vê.
+
+**Quem vê o projeto inteiro** (ficha, tarefas, equipe e itens da Biblioteca ligados a ele):
+- os diretores;
+- quem criou o projeto;
+- quem está na lista de acesso;
+- a **equipe atual**. Quem sai da equipe perde o acesso (num projeto normal, o histórico continua visível).
+
+**Gerente que não está nessas listas** vê só o **resumo**: nome, situação, datas, quantas tarefas há (e quantas estão concluídas ou atrasadas), a equipe e a alocação de cada um. Não vê descrição, tarefas nem Biblioteca, e não edita nada do projeto.
+
+**Membro e trainee fora do projeto** não o veem: ele nem aparece na lista, e abrir o endereço direto mostra "projeto não encontrado".
+
+**Itens da Biblioteca** ligados a um projeto sigiloso somem para quem não vê o projeto inteiro, inclusive para a gestão.
+
+**Mudar a lista de acesso ou tirar o sigilo:** só os diretores e quem criou o projeto. Na ficha do projeto, edite o campo de acesso e salve (por trás, o sistema usa `PUT /projetos/:codigo/acesso`).
+
+---
+
 ## Dúvidas comuns
+- **Projeto sigiloso sumiu da lista ou diz "não encontrado"**: você não está na equipe atual nem na lista de acesso. Peça a quem criou o projeto ou a um diretor.
+- **Sou trainee e não vejo a Biblioteca**: é assim mesmo; ela aparece quando a gestão mudar seu status para Ativo.
 - **"Você não tem acesso a este projeto"**: você não está (nem esteve) na equipe. Peça à gestão para incluir você.
 - **Não consigo concluir uma tarefa**: só o responsável, o líder e a gestão concluem. Peça para ser incluído como responsável.
 - **Esqueci a senha**: peça a um gerente ou diretor para redefinir.

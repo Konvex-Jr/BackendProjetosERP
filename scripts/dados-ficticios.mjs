@@ -104,6 +104,9 @@ async function main() {
     const bia = await pessoa("Bia Membro", "bia@dev.konvex", "membro");
     const caio = await pessoa("Caio Membro", "caio@dev.konvex", "membro");
 
+    // Trainee com login (papel membro, sem Biblioteca).
+    const davi = await pessoa("Davi Trainee", "davi@dev.konvex", "membro", { status: "trainee" });
+
     const projetos = await exigir("GET", "/projetos", dir);
     let projeto = projetos.find((p) => p.nome === "Site institucional (fictício)");
     if (!projeto) {
@@ -145,6 +148,34 @@ async function main() {
             await enviarArquivo(`/tarefas/${tarefaComAnexo.codigo}/anexos`, tokenBiaTarefa, "requisitos.pdf", PDF_FICTICIO);
             console.log("Tarefa: anexo criado.");
         }
+    }
+
+    // Projeto sigiloso: Ines (gerente) na lista de acesso; Bia e Davi na equipe; Caio (membro fora) não o vê.
+    let sigiloso = projetos.find((p) => p.nome === "Proposta confidencial (fictício)");
+    if (!sigiloso) {
+        sigiloso = await exigir("POST", "/projetos", dir, {
+            nome: "Proposta confidencial (fictício)",
+            descricao: "Projeto sigiloso de exemplo.",
+            dataInicio: dia(-5),
+            dataFim: dia(60),
+            status: "em_execucao",
+            sigiloso: true,
+            acesso: [ines.codigo],
+        });
+        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev", alocacao: 20 });
+        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio", alocacao: 10 });
+        console.log("Projeto sigiloso (acesso: Inês; equipe: Bia e Davi) criado.");
+    }
+    if ((await exigir("GET", `/tarefas?codigoProjeto=${sigiloso.codigo}`, dir)).length === 0) {
+        await exigir("POST", "/tarefas", dir, {
+            codigoProjeto: sigiloso.codigo,
+            titulo: "Montar a proposta",
+            dataInicio: dia(-2),
+            dataFim: dia(15),
+            prioridade: "P2",
+            codigosResponsaveis: [davi.codigo],
+        });
+        console.log("Tarefa do trainee no projeto sigiloso criada.");
     }
 
     const caps = await exigir("GET", "/capacitacoes", dir);
@@ -217,7 +248,7 @@ async function main() {
     }
     if (criados) console.log(`Biblioteca: ${criados} item(ns) criado(s).`);
 
-    console.log(`Pronto. Contas fictícias: ines@, bia@ e caio@dev.konvex com a senha ${SENHA_FICTICIA}.`);
+    console.log(`Pronto. Contas fictícias: ines@, bia@, caio@ e davi@ (trainee) dev.konvex com a senha ${SENHA_FICTICIA}.`);
 }
 
 main().catch((erro) => {

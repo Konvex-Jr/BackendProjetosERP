@@ -17,7 +17,9 @@
 | Gerente | `MANAGER` | Gerência |
 | Membro | `MEMBER` | Demais membros ativos |
 
-"Gestão" = diretores e gerentes. Trainee é uma pessoa cadastrada (status `Trainee`), entra em projetos, mas **não tem login**. Não há cadastro público: a gestão cria as contas.
+"Gestão" = diretores e gerentes. Não há cadastro público: a gestão cria as contas.
+
+**Trainee** (status `Trainee`, sessão 20) **tem login**, sempre com o papel **membro** (`exigirTraineeMembro` em `useCases/pessoas/dadosPessoa.ts`: trainee com outro papel é 400 `TRAINEE_SO_MEMBRO`). Enxerga o que o membro enxerga, **menos a Biblioteca** (sem item no menu, `semTrainee` em `modulos/registro.ts`; as rotas da Biblioteca e dos anexos de item respondem 403, `exigirNaoTrainee` em `permissoes.ts`) e **não lidera** projeto (`PUT /projetos/:codigo/lider` responde 400 `TRAINEE_NAO_LIDERA`). O status vem do banco a cada requisição, então virar Ativo vale na chamada seguinte. Trainee é **só a etapa de entrada**: a pessoa nasce Trainee (ou Ativa) e ninguém volta a ser trainee; mudar o status **para** Trainee é 400 `STATUS_TRAINEE_SO_NA_ENTRADA` (`AlterarStatusPessoa`).
 
 ### Duas camadas de permissão
 1. **Ações do catálogo, por papel.** `source/shared/seguranca/catalogoPermissoes.ts` lista as ações (`projetos.editar`, `tarefas.atribuir`…) e o mapa `PERMISSOES_POR_PAPEL` diz quais cada papel tem. As rotas checam a ação, nunca o papel (`exigirPermissao` e `temPermissao` em `permissoes.ts`).
@@ -28,7 +30,7 @@
 
 | Arquivo | Decide |
 |---|---|
-| `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `exigirVerProjeto`, `projetosVisiveisPara`) |
+| `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `acessoAoProjeto`, `exigirVerProjeto`, `podeGerirAcesso`, `projetosVisiveisPara`) |
 | `regrasTarefa.ts` | Ver, organizar, mudar status e comentar em cada tarefa (`papelNoProjeto`, `regrasTarefa`) |
 | `regrasBiblioteca.ts` | Quem lê e quem altera um item da Biblioteca, e quem pode usar sigilo e projeto (`podeVerItem`, `podeAlterarItem`, `exigirPodeUsarSigiloEProjeto`) |
 | `regrasCapacitacao.ts` | Gestão de capacitações e acesso às avaliações (`podeGerirCapacitacoes`, `acessoAosFeedbacks`) |
@@ -36,7 +38,7 @@
 ### Detalhes que valem para tudo
 - O papel é lido do banco **a cada requisição**, não do token: mudar o papel de alguém vale na chamada seguinte (`UsuarioAutenticado` em `permissoes.ts`).
 - Papel desconhecido recebe lista vazia (na dúvida, nega: `permissoesDoPapel`).
-- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa avulsa de outra pessoa, anexo de item que ela não lê.
+- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa avulsa de outra pessoa, anexo de item que ela não lê, projeto sigiloso que ela não vê.
 - A API devolve booleanos por item (`podeAlterar`, `podeGerir`, `podeInscrever`…) e a tela obedece. O menu vem de `GET /auth/permissoes`, montado por `menuDoUsuario` em `source/modulos/registro.ts`; o `Layout` do frontend só abre telas que vieram no menu.
 - Login: 5 falhas bloqueiam aquele e-mail naquele IP, e 30 falhas bloqueiam o IP inteiro, por 15 minutos (429; `limiteTentativas.ts`, limites em `LoginUsuario.ts`). Sessão: JWT de 15 min + refresh de 7 dias.
 
@@ -47,6 +49,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 ### Pessoas (`/usuarios`, `/auth/*`, `/habilidades`)
 - A gestão cadastra, edita, muda o status e redefine a senha. Criar, editar ou promover **diretor** exige também `pessoas.gerirDiretores` (`exigirPodeGerirPerfil`).
 - Ninguém altera o próprio papel nem o próprio status, nem inativa a própria conta.
+- Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
 - Trocar área ou cargo grava histórico (`historico_areas`, `historico_cargos`).
 - Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre, bio e tecnologias (`PUT /auth/perfil`). E troca a própria senha.
@@ -62,6 +65,13 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - A gestão vê todos (`projetos.verTodos`). O membro vê só os projetos de que participa **ou participou**: quem saiu continua vendo o histórico.
 - A gestão cria e edita, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder (`projetos.editar`). Um líder por projeto, escolhido na equipe.
 - O sistema avisa quando a alocação de alguém passa de 100%.
+- **Projeto sigiloso (sessão 20).** Quem cria (`projetos.editar`) pode marcar `sigiloso: true` e já informar `acesso` (códigos de pessoas com login). Regra única em `acessoAoProjeto` (`visibilidadeProjetos.ts`):
+  - **Vê completo:** diretor (`projetos.verSigilosos`), quem criou o projeto, quem está na lista de acesso (`projeto_acesso`) e a **equipe atual**. Quem saiu da equipe **perde** o acesso (no projeto normal, ex-membro continua vendo).
+  - **Gerente fora:** vê só o **resumo** (`resumo: true`) em `GET /projetos` e `GET /projetos/:codigo`: nome, situação, datas, contagem de tarefas, equipe e alocação; nunca cliente, descrição nem tarefas. As demais rotas respondem 403 `PROJETO_SIGILOSO`. Na lista, filtro por pessoa, área e responsável não vale para o resumo, e a busca é só pelo nome.
+  - **Membro ou trainee fora:** 404, na lista e nas rotas do projeto.
+  - **Quem muda o sigilo e a lista de acesso:** diretor e quem criou (`podeGerirAcesso`; `PUT /projetos/:codigo/acesso` com `{ codigos }`; mudar `sigiloso` no `PUT /projetos/:codigo` por outra pessoa é 403 `SIGILO_SEM_PERMISSAO`). Gerente fora não edita nada do projeto.
+  - **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`, `regrasTarefa.ts`).
+  - **Biblioteca:** itens ligados a sigiloso que a pessoa não vê completo somem para todos os papéis, gestão inclusive, e ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
 
@@ -116,6 +126,8 @@ Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência 
 
 Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" aponta a ação do catálogo (`catalogoPermissoes.ts`) ou a regra em `source/shared/seguranca/` que decide.
 
+Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em todas as tabelas, com as exceções da tabela "Trainee" abaixo. Projetos sigilosos têm a tabela própria "Projeto sigiloso".
+
 ### Pessoas e configurações
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
@@ -130,9 +142,27 @@ Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" 
 ### Projetos
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
-| Ver projetos | todos | todos | os que participa ou participou | `projetos.verTodos` / `visibilidadeProjetos.ts` |
+| Ver projetos (normais) | todos | todos | os que participa ou participou | `projetos.verTodos` / `visibilidadeProjetos.ts` |
 | Criar, editar, mudar situação, montar equipe, escolher líder | ✅ | ✅ | ❌ | `projetos.editar` |
 | Excluir projeto | ✅ | ❌ | ❌ | `projetos.excluir` |
+
+### Projeto sigiloso
+| Ação | Diretor | Gerente | Membro / trainee | Código |
+|---|---|---|---|---|
+| Ver completo (ficha, tarefas, equipe, Biblioteca) | todos | se criou, está na lista de acesso ou na equipe atual | se está na lista de acesso ou na equipe atual (ex-membro: não) | `projetos.verSigilosos` / `acessoAoProjeto` |
+| Ver só o resumo (nome, situação, datas, contagem de tarefas, equipe e alocação) | ✅ | se é gerente fora (demais rotas: 403) | ❌ (404) | `acessoAoProjeto` = `resumo` / `ProjetoRoutes.paraResposta` |
+| Criar projeto sigiloso e definir a lista de acesso inicial | ✅ | ✅ | ❌ | `projetos.editar` (`POST /projetos`) |
+| Mudar sigilo e lista de acesso | todos | se criou o projeto | ❌ | `podeGerirAcesso` / `projetos.verSigilosos` |
+| Ver item da Biblioteca ligado ao sigiloso | só se vê completo | só se vê completo | trainee: sem Biblioteca; membro: só se vê completo | `regrasBiblioteca.ts` (sigiloso oculto) |
+
+### Trainee
+| Ação | Trainee | Código |
+|---|---|---|
+| Entrar no sistema | ✅ (papel membro) | `exigirTraineeMembro` (`dadosPessoa.ts`) |
+| Ver projetos da equipe e as tarefas deles, as próprias avulsas, o próprio perfil, a lista de pessoas, capacitações e o Dashboard | ✅ (como membro) | `participaOuParticipou`, `regrasTarefa()`; menu em `registro.ts` |
+| Biblioteca (menu, itens, anexos de item) | ❌ (403, sem item no menu) | `semTrainee` (`registro.ts`), `exigirNaoTrainee` (`BibliotecaRoutes`, `GerirAnexos`) |
+| Ser líder de projeto | ❌ (400 `TRAINEE_NAO_LIDERA`) | `PUT /projetos/:codigo/lider` |
+| Voltar a ser trainee depois de mudar de status | ❌ (400 `STATUS_TRAINEE_SO_NA_ENTRADA`) | `AlterarStatusPessoa` |
 
 ### Tarefas
 | Ação | Diretor | Gerente | Membro | Código |
