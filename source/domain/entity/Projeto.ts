@@ -6,6 +6,9 @@ import Area from "./Area";
 import Participacao from "./Participacao";
 import StatusProjeto, { STATUS_PROJETO_ATIVO } from "../enum/StatusProjeto";
 import PrioridadeProjeto from "../enum/PrioridadeProjeto";
+import StatusTarefa from "../enum/StatusTarefa";
+import { PapelColuna } from "../enum/ColunaProjeto";
+import ColunaProjeto, { colunasPadrao } from "./ColunaProjeto";
 
 /** Campos do projeto além de nome, descrição e período (RF-020). */
 export interface DetalhesProjeto {
@@ -25,6 +28,8 @@ export interface DetalhesProjeto {
     criadoPor?: string | null;
     /** Códigos das pessoas com acesso ao projeto sigiloso, além da equipe. */
     acesso?: string[];
+    /** Colunas do kanban, em ordem (sessão 21). Ausente = as quatro padrão. */
+    colunas?: ColunaProjeto[];
 }
 
 /**
@@ -54,6 +59,7 @@ export default class Projeto {
     readonly sigiloso: boolean;
     readonly criadoPor: string | null;
     readonly acesso: string[];
+    readonly colunas: ColunaProjeto[];
 
     /**
      * `membros` aceita pessoas (viram participações novas, sem alocação) ou participações completas.
@@ -88,6 +94,7 @@ export default class Projeto {
         this.sigiloso = detalhes.sigiloso ?? false;
         this.criadoPor = detalhes.criadoPor ?? null;
         this.acesso = [...new Set(detalhes.acesso ?? [])];
+        this.colunas = detalhes.colunas ?? colunasPadrao();
 
         this.validar();
     }
@@ -99,6 +106,28 @@ export default class Projeto {
 
     get ativo(): boolean {
         return STATUS_PROJETO_ATIVO.includes(this.status);
+    }
+
+    /** Coluna onde a tarefa nova entra; sem coluna `entrada` (dado estranho), a primeira. */
+    get colunaDeEntrada(): ColunaProjeto {
+        return this.colunas.find((c) => c.papel === PapelColuna.ENTRADA) ?? this.colunas[0];
+    }
+
+    /** Coluna das tarefas concluídas; sem coluna `concluida` (dado estranho), a última. */
+    get colunaConcluida(): ColunaProjeto {
+        return this.colunas.find((c) => c.papel === PapelColuna.CONCLUIDA) ?? this.colunas[this.colunas.length - 1];
+    }
+
+    /** Coluna que corresponde a um status, preferindo a coluna `atual` se ela já serve. */
+    colunaParaStatus(status: StatusTarefa, atual: ColunaProjeto | null = null): ColunaProjeto {
+        if (status === StatusTarefa.CONCLUIDA) return this.colunaConcluida;
+        if (status === StatusTarefa.PENDENTE) return this.colunaDeEntrada;
+        if (atual && atual.papel === PapelColuna.MEIO) return atual;
+        return this.colunas.find((c) => c.papel === PapelColuna.MEIO) ?? this.colunaDeEntrada;
+    }
+
+    comColunas(colunas: ColunaProjeto[]): Projeto {
+        return this.copiar({ colunas });
     }
 
     participacaoAtivaDe(codigoUsuario: string): Participacao | undefined {
@@ -138,6 +167,7 @@ export default class Projeto {
                 sigiloso: pick("sigiloso"),
                 criadoPor: pick("criadoPor"),
                 acesso: pick("acesso"),
+                colunas: pick("colunas"),
             },
         );
     }
@@ -163,6 +193,7 @@ export default class Projeto {
             lider: this.lider,
             sigiloso: this.sigiloso,
             acesso: this.acesso,
+            colunas: this.colunas.map((c) => c.toJSON()),
         };
     }
 

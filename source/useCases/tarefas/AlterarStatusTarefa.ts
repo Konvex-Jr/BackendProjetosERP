@@ -21,6 +21,7 @@ export default class AlterarStatusTarefa {
             concluida ? (jaConcluida ? t.dataConclusao : hoje) : null,
             concluida ? (jaConcluida ? t.concluidaPor : quem) : null,
         );
+        editada.exigirConclusaoCoerente();
         return this.tarefas.editar(editada);
     }
 }

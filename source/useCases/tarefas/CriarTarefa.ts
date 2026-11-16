@@ -27,24 +27,24 @@ export default class CriarTarefa {
                 throw new ErroValidacao(`${u.nome} não está na equipe do projeto.`, "RESPONSAVEL_FORA_DO_PROJETO");
             return u;
         });
-        return this.tarefas.criar(
-            new Tarefa(
-                projeto,
-                (input.titulo ?? "").trim(),
-                input.dataInicio,
-                input.dataFim,
-                undefined,
-                input.prioridade,
-                input.descricao ?? null,
-                null,
-                null,
-                responsaveis,
-                [],
-                undefined,
-                null,
-                input.categoria ?? null,
-                input.criadaPor ?? null,
-            ),
+        const tarefa = new Tarefa(
+            projeto,
+            (input.titulo ?? "").trim(),
+            input.dataInicio,
+            input.dataFim,
+            undefined,
+            input.prioridade,
+            input.descricao ?? null,
+            null,
+            null,
+            responsaveis,
+            [],
+            undefined,
+            null,
+            input.categoria ?? null,
+            input.criadaPor ?? null,
         );
+        tarefa.exigirConclusaoCoerente();
+        return this.tarefas.criar(tarefa);
     }
 }
