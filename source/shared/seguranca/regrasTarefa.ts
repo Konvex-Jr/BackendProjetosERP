@@ -12,8 +12,9 @@ import { acessoAoProjeto, participaOuParticipou } from "./visibilidadeProjetos";
  * - nenhum: só vê se for responsável ou tiver participado do projeto.
  *
  * Projeto sigiloso (sessão 20): quem não tem acesso completo ao projeto (`acessoAoProjeto`) não vê nem faz
- * nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso completo sempre vê; fora da
- * equipe atual (lista de acesso, criador) só lê: não comenta nem muda status.
+ * nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso completo sempre vê. A gestão com
+ * acesso completo (diretor, gerente da lista de acesso ou que criou) organiza como em qualquer projeto; quem não
+ * é da gestão e está fora da equipe atual (membro da lista de acesso) só lê: não comenta nem muda status.
  *
  * Tarefa avulsa (8c, sem projeto, com categoria):
  * - gestão (tarefas.atribuir): cria, edita, exclui, reatribui, conclui e comenta; vê todas;

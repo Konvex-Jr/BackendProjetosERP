@@ -71,7 +71,3 @@ export function exigirAcessoCompleto(usuario: UsuarioAutenticado | undefined | n
     if (acesso === "resumo") throw new ErroAplicacao(MENSAGENS_DE_ERRO.PROJETO.SIGILOSO, "PROJETO_SIGILOSO", 403);
     throw new ErroProibido("Você só pode ver os projetos de que participa.");
 }
-
-export function exigirVerProjeto(usuario: UsuarioAutenticado | undefined | null, projeto: ProjetoParaAcesso): void {
-    exigirAcessoCompleto(usuario, projeto);
-}

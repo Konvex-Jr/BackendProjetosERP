@@ -119,6 +119,14 @@ describe("Tarefas de projeto sigiloso", () => {
             }
         });
 
+        it.each(rotas)("%s %s: membro fora recebe o mesmo 404 da tarefa inexistente", async (metodo, caminho, corpo) => {
+            const inexistente = await chamar(metodo, caminho.replace("t-sig", "t-nao-existe"), fora, corpo());
+            const r = await chamar(metodo, caminho, fora, corpo());
+            expect(inexistente.status).toBe(404);
+            expect(r.status).toBe(404);
+            expect(r.corpo).toEqual(inexistente.corpo);
+        });
+
         it.each(rotas)("%s %s: gerente fora recebe 403", async (metodo, caminho, corpo) => {
             const r = await chamar(metodo, caminho, gerenteFora, corpo());
             expect(r.status).toBe(403);

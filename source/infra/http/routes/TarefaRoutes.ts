@@ -24,6 +24,7 @@ import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 
 const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const SO_GESTAO_AVULSA = "Só a gestão organiza tarefas avulsas.";
+const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
 
 /** Tarefas (de projeto e avulsas) e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b e 8c). */
 export default class TarefaRoutes implements ModelRoutes {
@@ -34,10 +35,14 @@ export default class TarefaRoutes implements ModelRoutes {
 
     private async carregar(usuario: UsuarioAutenticado, codigo: string): Promise<{ tarefa: Tarefa; regras: RegrasTarefa }> {
         const { tarefa, projeto, regras } = await carregarTarefa(this.factory, usuario, codigo);
-        // Projeto sigiloso: sem acesso completo, 404 (membro) ou 403 (gerente fora), como nas rotas do projeto.
-        if (projeto?.sigiloso && !regras.ver) exigirAcessoCompleto(usuario, projeto);
+        if (projeto?.sigiloso && !regras.ver) {
+            // Quem não vê nada do sigiloso recebe o mesmo 404 da tarefa inexistente: "Projeto não encontrado."
+            // revelaria que a tarefa existe. O gerente fora (resumo) recebe 403, como nas rotas do projeto.
+            if (acessoAoProjeto(usuario, projeto) === "nada") throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
+            exigirAcessoCompleto(usuario, projeto);
+        }
         // Avulsa de outra pessoa: para quem não pode ver, a tarefa "não existe".
-        if (tarefa.avulsa && !regras.ver) throw new ErroNaoEncontrado("Tarefa não encontrada.");
+        if (tarefa.avulsa && !regras.ver) throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
         return { tarefa, regras };
     }
 
