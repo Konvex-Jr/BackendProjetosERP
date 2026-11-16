@@ -62,6 +62,15 @@ export const MENSAGENS_DE_ERRO = {
             `Já existe uma coluna chamada "${nome}" neste projeto (maiúsculas e minúsculas contam como iguais).`,
         ENTRADA_UNICA: "O projeto deve ter exatamente uma coluna de entrada.",
         CONCLUIDA_UNICA: "O projeto deve ter exatamente uma coluna concluída.",
+        COLUNAS_INVALIDAS:
+            "As colunas (colunas) devem ser uma lista de objetos { codigo?, nome, cor, papel } e os destinos (destinos), se enviados, um objeto { codigoDaColunaExcluida: codigoDoDestino }.",
+        DE_OUTRO_PROJETO: (codigo: string) => `A coluna "${codigo}" não é uma coluna deste projeto.`,
+        CODIGO_REPETIDO: (codigo: string) => `A coluna "${codigo}" aparece mais de uma vez na lista.`,
+        DESTINO_OBRIGATORIO: (nome: string, tarefas: number) =>
+            `A coluna "${nome}" tem ${tarefas} ${tarefas === 1 ? "tarefa" : "tarefas"}: informe em destinos para qual coluna elas vão.`,
+        DESTINO_INVALIDO: (nome: string) => `O destino da coluna "${nome}" deve ser uma coluna do projeto que continua existindo.`,
+        QUADRO_MUDOU: "O quadro mudou enquanto você editava. Recarregue e tente de novo.",
+        SEM_PERMISSAO: "Só o líder do projeto e a gestão podem fazer isso.",
     },
 
     BIBLIOTECA: {

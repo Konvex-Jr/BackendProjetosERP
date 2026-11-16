@@ -5,6 +5,7 @@ import ProjetoRepositoryInterface from "../../domain/interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
+import ColunaProjetoRepositoryInterface from "../../domain/interfaces/ColunaProjetoRepositoryInterface";
 import ConexaoBanco from "../database/ConexaoBanco";
 import UsuarioRepositoryDatabase from "./database/UsuarioRepositoryDatabase";
 import SenioridadeRepositoryDatabase from "./database/SenioridadeRepositoryDatabase";
@@ -12,6 +13,7 @@ import ProjetoRepositoryDatabase from "./database/ProjetoRepositoryDatabase";
 import TarefaRepositoryDatabase from "./database/TarefaRepositoryDatabase";
 import CapacitacaoRepositoryDatabase from "./database/CapacitacaoRepositoryDatabase";
 import CapacitacaoFeedbackRepositoryDatabase from "./database/CapacitacaoFeedbackRepositoryDatabase";
+import ColunaProjetoRepositoryDatabase from "./database/ColunaProjetoRepositoryDatabase";
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
 import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabase";
@@ -48,6 +50,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarTarefaRepository(): TarefaRepositoryInterface {
         return new TarefaRepositoryDatabase(this.conexao);
+    }
+
+    criarColunaProjetoRepository(): ColunaProjetoRepositoryInterface {
+        return new ColunaProjetoRepositoryDatabase(this.conexao);
     }
 
     criarCapacitacaoRepository(): CapacitacaoRepositoryInterface {

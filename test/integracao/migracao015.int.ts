@@ -202,17 +202,21 @@ descrever("migração 015 sobre a 014", () => {
              VALUES (gen_random_uuid(), $1, $2, 'Velha', '2026-02-01', '2026-03-01', 'concluida', '2026-02-20')`,
             [projeto, concluida],
         );
+        // Derruba o check só durante este teste e devolve no fim (com a tarefa velha já fora), para não vazar para o banco.
         await pool.query("ALTER TABLE tarefas DROP CONSTRAINT tarefas_conclusao_coerente");
-        await pool.query("UPDATE tarefas SET status = 'pendente', data_conclusao = NULL WHERE titulo = 'Velha'");
-
         const conexao = PgConexao.criar(URL_TESTE!);
         try {
+            await pool.query("UPDATE tarefas SET status = 'pendente', data_conclusao = NULL WHERE titulo = 'Velha'");
             const lidas = await new DatabaseRepositoryFactory(conexao).criarTarefaRepository().listar();
             const velha = lidas.find((t) => t.titulo === "Velha")!;
             expect(velha.status).toBe("concluida");
             expect(velha.coluna?.nome).toBe("B");
         } finally {
             await conexao.encerrar();
+            await pool.query("DELETE FROM tarefas WHERE titulo = 'Velha'");
+            await pool.query(
+                "ALTER TABLE tarefas ADD CONSTRAINT tarefas_conclusao_coerente CHECK ((status = 'concluida') = (data_conclusao IS NOT NULL))",
+            );
         }
     });
 });

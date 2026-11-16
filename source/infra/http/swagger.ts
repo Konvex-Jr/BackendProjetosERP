@@ -457,6 +457,13 @@ const rotasFase1: Record<string, Record<string, object>> = {
             comCodigo(json),
         ),
     },
+    "/projetos/{codigo}/colunas": {
+        put: operation(
+            ["Projetos"],
+            "Gravar as colunas do quadro ({ colunas: [{ codigo?, nome, cor, papel }] na ordem, destinos?: { codigoDaColunaExcluida: codigoDoDestino } }; só o líder e a gestão; 2 a 12 colunas, uma entrada e uma concluida; 400 DESTINO_COLUNA_OBRIGATORIO, 409 QUADRO_MUDOU). Devolve as colunas gravadas. O projeto (GET /projetos e /projetos/{codigo}) traz `colunas`; o resumo do sigiloso não.",
+            comCodigo(json),
+        ),
+    },
     "/projetos/{codigo}/lider": {
         put: operation(["Projetos"], "Definir o líder ({ codigoUsuario } da equipe atual, ou null)", comCodigo(json)),
     },

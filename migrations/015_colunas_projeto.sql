@@ -17,6 +17,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_colunas_projeto_concluida ON colunas_proje
 CREATE UNIQUE INDEX IF NOT EXISTS idx_colunas_projeto_nome ON colunas_projeto (projeto_codigo, lower(nome));
 
 ALTER TABLE tarefas ADD COLUMN IF NOT EXISTS coluna_codigo UUID NULL;
+-- Apoia a chave estrangeira composta: excluir uma coluna não varre a tabela inteira de tarefas.
+CREATE INDEX IF NOT EXISTS idx_tarefas_coluna ON tarefas (coluna_codigo, projeto_codigo);
 
 -- Todo projeto sem colunas recebe as quatro padrão.
 INSERT INTO colunas_projeto (projeto_codigo, nome, cor, ordem, papel)
