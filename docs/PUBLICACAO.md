@@ -205,6 +205,22 @@ docker exec konvex-backend node dist/source/scripts/conferirAnexos.js --apagar-s
 
 Sem a flag, o script continua só relatando, como antes. Em máquina de desenvolvimento, rode `npm run clean` antes de `npm run build`: o `dist/` guarda `.js` velhos dos módulos que saíram.
 
+### Publicação da sessão 20 (projeto sigiloso e trainee com login): migração 014
+A migração `014_sigilo_trainee.sql` passa todo trainee a **membro**, tira a liderança dos projetos que ele liderava e **libera o login** com a senha que já estava no cadastro (era sorteada pela tela antiga, ninguém a conhece). Ordem:
+1. **Antes do deploy**, liste os trainees e os projetos que eles lideram, para avisar a gestão (cole a saída para o Claude):
+```bash
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT nome, email, perfil FROM usuarios WHERE status = 'trainee' ORDER BY nome;
+SELECT p.nome AS projeto, p.status, u.nome AS lider_trainee
+FROM projetos p JOIN usuarios u ON u.codigo = p.lider_codigo
+WHERE u.status = 'trainee' ORDER BY p.nome;
+SQL
+```
+2. **Backup** do banco e dos anexos (seção 3) e **deploy** (seção 4). A migração 014 roda ao iniciar o backend.
+3. **Depois do deploy**, a gestão redefine a senha de cada trainee da lista (tela **Pessoas**, menu da pessoa, **Redefinir senha**) e escolhe um novo líder nos projetos da segunda consulta (ficha do projeto, aba **Equipe**).
+
+**Rollback:** voltar o backend depois de existir o primeiro projeto sigiloso **vaza os detalhes dele**: o código antigo ignora o sigilo e mostra o projeto a todos os que o veriam como normal. O único caminho de volta é restaurar o `.dump` feito antes do deploy (seção 6), perdendo o que foi gravado depois, ou corrigir para frente. Voltar o backend exige voltar o frontend junto.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
