@@ -1,11 +1,19 @@
 import ColunaProjeto from "../entity/ColunaProjeto";
-import Tarefa from "../entity/Tarefa";
+import Usuario from "../entity/Usuario";
 
 /** Colunas do kanban de um projeto. A leitura vem junto com o projeto; aqui só a gravação do quadro. */
 export default interface ColunaProjetoRepositoryInterface {
     /**
-     * Troca as colunas do projeto pela lista (na ordem) e regrava coluna, status e conclusão das tarefas dadas.
-     * Uma transação: ou grava tudo ou nada. Coluna que sai com tarefa dentro (que não foi movida) = ErroConflito `QUADRO_MUDOU`.
+     * Troca as colunas do projeto pela lista (na ordem), move as tarefas das colunas removidas para o destino
+     * (`destinos`: código da removida, código do destino) e acerta status e conclusão de TODAS as tarefas do
+     * projeto pelo papel atual da coluna delas, na hora da gravação (o que outra pessoa moveu no meio do caminho
+     * também é acertado). Uma transação. Coluna removida que ainda tem tarefa = ErroConflito `QUADRO_MUDOU`.
      */
-    substituir(codigoProjeto: string, colunas: ColunaProjeto[], tarefas: Tarefa[]): Promise<void>;
+    substituir(
+        codigoProjeto: string,
+        colunas: ColunaProjeto[],
+        destinos: Map<string, string>,
+        hoje: Date,
+        quem: Usuario | null,
+    ): Promise<void>;
 }

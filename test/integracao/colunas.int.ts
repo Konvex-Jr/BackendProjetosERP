@@ -152,7 +152,9 @@ descrever("colunas do quadro contra PostgreSQL", () => {
             [projeto.codigo, r.codigo],
         );
         await expect(
-            factory.criarColunaProjetoRepository().substituir(projeto.codigo, [a, { ...f, nome: "Renomeada" } as ColunaProjeto, c], []),
+            factory
+                .criarColunaProjetoRepository()
+                .substituir(projeto.codigo, [a, { ...f, nome: "Renomeada" } as ColunaProjeto, c], new Map(), HOJE, pessoa),
         ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU" });
         const lido = await lerProjeto(projeto);
         expect(lido.colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Revisando", "Concluído"]);
@@ -172,5 +174,57 @@ descrever("colunas do quadro contra PostgreSQL", () => {
         expect(await factory.criarProjetoRepository().buscarPorCodigo(projeto.codigo)).toBeNull();
         expect((await pool.query("SELECT 1 FROM colunas_projeto WHERE projeto_codigo = $1", [projeto.codigo])).rowCount).toBe(0);
         expect(await factory.criarTarefaRepository().buscarPorCodigo(tarefa.codigo)).toBeNull();
+    });
+
+    const incoerencias = async () =>
+        (
+            await pool.query(
+                `SELECT count(*)::int AS n FROM tarefas t JOIN colunas_projeto c ON c.codigo = t.coluna_codigo
+                 WHERE (t.status = 'concluida') <> (c.papel = 'concluida')
+                    OR (t.status = 'concluida') <> (t.data_conclusao IS NOT NULL)
+                    OR (t.status <> 'concluida' AND t.concluida_por_codigo IS NOT NULL)`,
+            )
+        ).rows[0].n;
+
+    test("tarefa movida por SQL para a coluna que vira concluída depois da leitura termina concluída, com hoje e quem", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, a);
+        // O caso de uso leu as tarefas e viu esta em "A fazer"; antes da gravação alguém a move para "Revisando".
+        await pool.query("UPDATE tarefas SET coluna_codigo = $2, status = 'andamento' WHERE codigo = $1", [tarefa.codigo, r.codigo]);
+        await factory
+            .criarColunaProjetoRepository()
+            .substituir(
+                projeto.codigo,
+                [a, f, { ...r, papel: "concluida" } as ColunaProjeto, { ...c, papel: "meio" } as ColunaProjeto],
+                new Map(),
+                HOJE,
+                pessoa,
+            );
+        const lida = (await factory.criarTarefaRepository().buscarPorCodigo(tarefa.codigo))!;
+        expect(lida.coluna!.codigo).toBe(r.codigo);
+        expect(lida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lida.dataConclusao).toEqual(HOJE);
+        expect(lida.concluidaPor?.codigo).toBe(pessoa.codigo);
+        expect(await incoerencias()).toBe(0);
+    });
+
+    test("tarefa movida por SQL para fora da coluna removida não volta ao destino e fica coerente com a coluna dela", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const parada = await novaTarefa(projeto, r);
+        const movida = await novaTarefa(projeto, r);
+        // `movida` sai de "Revisando" para "Concluído" (só a coluna, por SQL) antes da gravação.
+        await pool.query("UPDATE tarefas SET coluna_codigo = $2 WHERE codigo = $1", [movida.codigo, c.codigo]);
+        await factory.criarColunaProjetoRepository().substituir(projeto.codigo, [a, f, c], new Map([[r.codigo, f.codigo]]), HOJE, pessoa);
+        const tarefas = factory.criarTarefaRepository();
+        const lidaParada = (await tarefas.buscarPorCodigo(parada.codigo))!;
+        expect(lidaParada.coluna!.codigo).toBe(f.codigo);
+        expect(lidaParada.status).toBe(StatusTarefa.ANDAMENTO);
+        const lidaMovida = (await tarefas.buscarPorCodigo(movida.codigo))!;
+        expect(lidaMovida.coluna!.codigo).toBe(c.codigo);
+        expect(lidaMovida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lidaMovida.dataConclusao).toEqual(HOJE);
+        expect(await incoerencias()).toBe(0);
     });
 });

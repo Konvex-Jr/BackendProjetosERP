@@ -1,8 +1,8 @@
 import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
-import Tarefa from "../../../domain/entity/Tarefa";
+import Usuario from "../../../domain/entity/Usuario";
 import ColunaProjetoRepositoryInterface from "../../../domain/interfaces/ColunaProjetoRepositoryInterface";
 import ConexaoBanco from "../../database/ConexaoBanco";
-import { dataParaSqlOuNulo } from "../../database/conversoes";
+import { dataParaSql } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
@@ -12,7 +12,13 @@ const VIOLACAO_DE_CHAVE_ESTRANGEIRA = "23503";
 export default class ColunaProjetoRepositoryDatabase implements ColunaProjetoRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
 
-    async substituir(codigoProjeto: string, colunas: ColunaProjeto[], tarefas: Tarefa[]): Promise<void> {
+    async substituir(
+        codigoProjeto: string,
+        colunas: ColunaProjeto[],
+        destinos: Map<string, string>,
+        hoje: Date,
+        quem: Usuario | null,
+    ): Promise<void> {
         await this.conexao.transacao(async (conexao) => {
             // Trava o projeto: dois quadros gravados ao mesmo tempo esperam um pelo outro.
             const projeto = await conexao.consultar("SELECT codigo FROM projetos WHERE codigo = $1 FOR UPDATE", [codigoProjeto]);
@@ -45,22 +51,29 @@ export default class ColunaProjetoRepositoryDatabase implements ColunaProjetoRep
                 }
             }
 
-            for (const t of tarefas) {
-                const gravadas = await conexao.consultar(
-                    `UPDATE tarefas SET coluna_codigo = $3, status = $4, data_conclusao = $5, concluida_por_codigo = $6
-                     WHERE codigo = $1 AND projeto_codigo = $2
-                     RETURNING codigo`,
-                    [
-                        t.codigo,
-                        codigoProjeto,
-                        t.coluna?.codigo ?? null,
-                        t.status,
-                        dataParaSqlOuNulo(t.dataConclusao),
-                        t.concluidaPor?.codigo ?? null,
-                    ],
-                );
-                if (gravadas.length === 0) throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
+            // Tarefas das colunas removidas vão para o destino. Só as que ainda estão lá na hora da gravação:
+            // a que alguém moveu para outra coluna no meio do caminho fica onde está.
+            for (const [removida, destino] of destinos) {
+                await conexao.consultar("UPDATE tarefas SET coluna_codigo = $3 WHERE projeto_codigo = $1 AND coluna_codigo = $2", [
+                    codigoProjeto,
+                    removida,
+                    destino,
+                ]);
             }
+
+            // Uma passagem por todas as tarefas do projeto, pelo papel atual da coluna de cada uma. Quem já estava
+            // concluída e continua numa coluna concluída mantém data e autor; quem entra recebe hoje e `quem`; quem sai perde os dois.
+            await conexao.consultar(
+                `UPDATE tarefas t
+                 SET status = (CASE c.papel WHEN 'entrada' THEN 'pendente' WHEN 'meio' THEN 'andamento' ELSE 'concluida' END)::status_tarefa,
+                     data_conclusao = CASE WHEN c.papel = 'concluida' THEN COALESCE(t.data_conclusao, $2::date) ELSE NULL END,
+                     concluida_por_codigo = CASE WHEN c.papel = 'concluida'
+                                                 THEN (CASE WHEN t.status = 'concluida' THEN t.concluida_por_codigo ELSE $3::uuid END)
+                                                 ELSE NULL END
+                 FROM colunas_projeto c
+                 WHERE c.codigo = t.coluna_codigo AND t.projeto_codigo = $1`,
+                [codigoProjeto, dataParaSql(hoje), quem?.codigo ?? null],
+            );
 
             const excluidas = antigas.filter((codigo) => !finais.has(codigo));
             if (excluidas.length === 0) return;

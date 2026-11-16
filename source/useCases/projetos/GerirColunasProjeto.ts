@@ -1,5 +1,4 @@
 import ColunaProjeto, { validarColunas } from "../../domain/entity/ColunaProjeto";
-import Tarefa from "../../domain/entity/Tarefa";
 import Usuario from "../../domain/entity/Usuario";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { hoje as hojeNoFuso } from "../../shared/datas";
@@ -19,7 +18,7 @@ const ehObjeto = (valor: unknown): valor is Record<string, unknown> => typeof va
 /**
  * Sessão 21: grava as colunas do quadro do projeto, na ordem enviada. Coluna com `codigo` é a mesma
  * (renomear, trocar cor, papel ou posição); sem `codigo` é nova; a que sumiu da lista é excluída, e as
- * tarefas dela vão para `destinos[codigo]`. Tarefa em coluna que mudou de papel acompanha o papel novo.
+ * tarefas dela vão para `destinos[codigo]`. Tarefa em coluna que mudou de papel acompanha o papel novo (feito no repositório).
  * Quem pode é decidido na rota.
  */
 export default class GerirColunasProjeto {
@@ -62,15 +61,11 @@ export default class GerirColunasProjeto {
         const hoje = input.hoje ?? hojeNoFuso();
         const finalPorCodigo = new Map(finais.map((c) => [c.codigo, c]));
         const tarefas = await this.factory.criarTarefaRepository().listarPorProjeto(input.codigoProjeto);
-        const regravar: Tarefa[] = [];
+        const destinosGravar = new Map<string, string>();
 
         for (const antiga of projeto.colunas) {
             const nelas = tarefas.filter((t) => t.coluna?.codigo === antiga.codigo);
-            const nova = finalPorCodigo.get(antiga.codigo);
-            if (nova) {
-                if (nova.papel !== antiga.papel) regravar.push(...nelas.map((t) => t.naColuna(nova, hoje, input.quem)));
-                continue;
-            }
+            if (finalPorCodigo.has(antiga.codigo)) continue;
             if (nelas.length === 0) continue;
             const pedido = destinos[antiga.codigo];
             if (pedido === undefined || pedido === null) {
@@ -83,11 +78,11 @@ export default class GerirColunasProjeto {
             if (!destino || !atuais.has(destino.codigo)) {
                 throw new ErroValidacao(MENSAGENS_DE_ERRO.COLUNA.DESTINO_INVALIDO(antiga.nome), "DESTINO_COLUNA_INVALIDO");
             }
-            regravar.push(...nelas.map((t) => t.naColuna(destino, hoje, input.quem)));
+            destinosGravar.set(antiga.codigo, destino.codigo);
         }
 
-        for (const tarefa of regravar) tarefa.exigirConclusaoCoerente();
-        await this.factory.criarColunaProjetoRepository().substituir(input.codigoProjeto, finais, regravar);
+        // Status e conclusão das tarefas são acertados pelo repositório, dentro da transação, pelo papel final de cada coluna.
+        await this.factory.criarColunaProjetoRepository().substituir(input.codigoProjeto, finais, destinosGravar, hoje, input.quem);
         return finais;
     }
 }
