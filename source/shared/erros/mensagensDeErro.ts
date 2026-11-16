@@ -64,6 +64,7 @@ export const MENSAGENS_DE_ERRO = {
         CONCLUIDA_UNICA: "O projeto deve ter exatamente uma coluna concluída.",
         COLUNAS_INVALIDAS:
             "As colunas (colunas) devem ser uma lista de objetos { codigo?, nome, cor, papel } e os destinos (destinos), se enviados, um objeto { codigoDaColunaExcluida: codigoDoDestino }.",
+        NAO_EXISTE_MAIS: "A coluna não existe mais neste projeto. Recarregue o quadro.",
         DE_OUTRO_PROJETO: (codigo: string) => `A coluna "${codigo}" não é uma coluna deste projeto.`,
         CODIGO_REPETIDO: (codigo: string) => `A coluna "${codigo}" aparece mais de uma vez na lista.`,
         DESTINO_OBRIGATORIO: (nome: string, tarefas: number) =>

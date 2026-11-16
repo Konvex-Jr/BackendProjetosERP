@@ -227,4 +227,70 @@ descrever("colunas do quadro contra PostgreSQL", () => {
         expect(lidaMovida.dataConclusao).toEqual(HOJE);
         expect(await incoerencias()).toBe(0);
     });
+
+    test("tarefa lida antes de o papel da coluna mudar: editar dá 409 QUADRO_MUDOU e nada é gravado", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, r);
+        const repo = factory.criarTarefaRepository();
+        const velha = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        // Antes da gravação, o quadro troca o papel de "Revisando" (meio) para concluída.
+        await gravar(projeto, [
+            entrada(a),
+            entrada(f),
+            { ...entrada(r), papel: "concluida" },
+            { ...entrada(projeto.colunas[3]), papel: "meio" },
+        ]);
+        await expect(repo.editar(velha.naColuna(r, HOJE, pessoa).comStatus(StatusTarefa.ANDAMENTO, null, null))).rejects.toMatchObject({
+            codigo: "QUADRO_MUDOU",
+        });
+        const lida = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        expect(lida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lida.coluna!.codigo).toBe(r.codigo);
+        expect(await incoerencias()).toBe(0);
+    });
+
+    test("tarefa nova na coluna que mudou de papel: criar dá 409 QUADRO_MUDOU", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        await gravar(projeto, [entrada(a), entrada(f), { ...entrada(r), papel: "concluida" }, { ...entrada(c), papel: "meio" }]);
+        const antes = (await pool.query("SELECT count(*)::int AS n FROM tarefas WHERE projeto_codigo = $1", [projeto.codigo])).rows[0].n;
+        await expect(
+            factory
+                .criarTarefaRepository()
+                .criar(
+                    new Tarefa(
+                        projeto,
+                        "Velha",
+                        inicio,
+                        fim,
+                        StatusTarefa.PENDENTE,
+                        undefined,
+                        null,
+                        null,
+                        null,
+                        [pessoa],
+                        [],
+                        undefined,
+                        null,
+                        null,
+                        null,
+                        r,
+                    ),
+                ),
+        ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU" });
+        const depois = (await pool.query("SELECT count(*)::int AS n FROM tarefas WHERE projeto_codigo = $1", [projeto.codigo])).rows[0].n;
+        expect(depois).toBe(antes);
+    });
+
+    test("coluna excluída no meio do caminho: editar dá 409 QUADRO_MUDOU, não erro de chave estrangeira", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, a);
+        const repo = factory.criarTarefaRepository();
+        const velha = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        await gravar(projeto, [entrada(a), entrada(f), entrada(c)]);
+        await expect(repo.editar(velha.naColuna(r, HOJE, pessoa))).rejects.toMatchObject({ codigo: "QUADRO_MUDOU", codigoHttp: 409 });
+        expect((await repo.buscarPorCodigo(tarefa.codigo))!.coluna!.codigo).toBe(a.codigo);
+    });
 });

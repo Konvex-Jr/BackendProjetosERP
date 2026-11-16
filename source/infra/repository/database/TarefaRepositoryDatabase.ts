@@ -8,6 +8,8 @@ import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { ErroConflito } from "../../../shared/erros/ErroConflito";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
@@ -29,6 +31,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async criar(tarefa: Tarefa): Promise<Tarefa> {
         await this.conexao.transacao(async (conexao) => {
+            await this.travarColuna(conexao, tarefa);
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
@@ -113,6 +116,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async editar(tarefa: Tarefa): Promise<Tarefa> {
         await this.conexao.transacao(async (conexao) => {
+            await this.travarColuna(conexao, tarefa);
             const linhas = await conexao.consultar(
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
@@ -158,6 +162,19 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async excluirPorProjeto(codigoProjeto: string): Promise<void> {
         await this.conexao.consultar("DELETE FROM tarefas WHERE projeto_codigo = $1", [codigoProjeto]);
+    }
+
+    /**
+     * Trava a coluna da tarefa (FOR SHARE) e confere que o papel dela ainda é o que o caso de uso viu.
+     * A gravação do quadro reescreve as colunas na própria transação: ou espera esta tarefa, ou esta
+     * espera ela, e a tarefa nunca grava um status que o papel da coluna não sustenta mais.
+     */
+    private async travarColuna(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
+        if (!tarefa.coluna) return;
+        const linhas = await conexao.consultar("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [tarefa.coluna.codigo]);
+        if (linhas.length === 0 || linhas[0].papel !== tarefa.coluna.papel) {
+            throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
+        }
     }
 
     private async gravarRelacionamentos(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {

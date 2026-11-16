@@ -12,5 +12,7 @@ export default interface CriarTarefaInput {
     prioridade?: PrioridadeTarefa;
     descricao?: string | null;
     codigosResponsaveis?: string[];
+    /** Só tarefa de projeto: coluna do quadro onde a tarefa nasce (padrão: a de entrada). */
+    codigoColuna?: string | null;
     criadaPor?: Usuario | null;
 }

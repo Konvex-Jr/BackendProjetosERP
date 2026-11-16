@@ -5,7 +5,10 @@ import ItemChecklistTarefa from "../../domain/entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
+import { colunaDoProjeto } from "./colunaDoProjeto";
 
 export default class EditarTarefa {
     private readonly tarefas;
@@ -39,7 +42,16 @@ export default class EditarTarefa {
             if (await this.criaCiclo(input.codigo, dependencia.codigo))
                 throw new ErroValidacao("A dependência criaria um ciclo.", "DEPENDENCIA_CIRCULAR");
         }
-        const concluida = input.status === "concluida";
+        if (!projeto && input.codigoColuna) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
+        }
+        // Com coluna, ela vale; sem, o status escolhe a coluna. Sem projeto, segue só o status.
+        let coluna = null;
+        if (projeto) {
+            if (input.codigoColuna) coluna = colunaDoProjeto(projeto, input.codigoColuna);
+            else if (Object.values(StatusTarefa).includes(input.status)) coluna = projeto.colunaParaStatus(input.status, atual.coluna);
+        }
+        const concluida = coluna ? coluna.papel === PapelColuna.CONCLUIDA : input.status === "concluida";
         const checklist =
             input.checklist === undefined
                 ? atual.checklist
@@ -64,9 +76,7 @@ export default class EditarTarefa {
             // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
             categoria,
             atual.criadaPor,
-            atual.projeto && Object.values(StatusTarefa).includes(input.status)
-                ? atual.projeto.colunaParaStatus(input.status, atual.coluna)
-                : null,
+            coluna,
         );
         editada.exigirConclusaoCoerente();
         return this.tarefas.editar(editada);

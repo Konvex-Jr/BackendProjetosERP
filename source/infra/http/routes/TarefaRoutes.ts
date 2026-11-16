@@ -11,6 +11,7 @@ import ListarTarefas from "../../../useCases/tarefas/ListarTarefas";
 import CriarTarefa from "../../../useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../../useCases/tarefas/EditarTarefa";
 import AlterarStatusTarefa from "../../../useCases/tarefas/AlterarStatusTarefa";
+import MoverTarefa from "../../../useCases/tarefas/MoverTarefa";
 import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
@@ -126,6 +127,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataInicio: new Date(body.dataInicio),
                     dataFim: new Date(body.dataFim),
                     prioridade: body.prioridade as PrioridadeTarefa,
+                    codigoColuna: body.codigoColuna ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis,
                     criadaPor: await this.usuarioAtual(usuario),
@@ -144,6 +146,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataFim: new Date(body.dataFim),
                     status: body.status as StatusTarefa,
                     prioridade: body.prioridade as PrioridadeTarefa,
+                    codigoColuna: body.codigoColuna ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
                     codigoDependencia: body.codigoDependencia ?? null,
@@ -173,6 +176,17 @@ export default class TarefaRoutes implements ModelRoutes {
                     hoje(),
                     await this.usuarioAtual(usuario),
                 ),
+            );
+        });
+
+        this.http.route("patch", "/tarefas/:codigo/coluna", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body.user);
+            const { regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.mudarStatus) {
+                throw new ErroProibido("Você só pode concluir ou reabrir tarefas em que é responsável.");
+            }
+            return this.comAnexosDe(
+                await new MoverTarefa(this.factory).execute(params.codigo, body.codigoColuna, hoje(), await this.usuarioAtual(usuario)),
             );
         });
 

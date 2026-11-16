@@ -2,7 +2,11 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Tarefa from "../../domain/entity/Tarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { PapelColuna } from "../../domain/enum/ColunaProjeto";
+import { hoje } from "../../shared/datas";
 import CriarTarefaInput from "./CriarTarefaInput";
+import { colunaDoProjeto } from "./colunaDoProjeto";
 
 export default class CriarTarefa {
     private readonly tarefas;
@@ -19,6 +23,11 @@ export default class CriarTarefa {
             projeto = await this.projetos.buscarPorCodigo(input.codigoProjeto);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
         }
+        if (!projeto && input.codigoColuna) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
+        }
+        const coluna = projeto ? (input.codigoColuna ? colunaDoProjeto(projeto, input.codigoColuna) : projeto.colunaDeEntrada) : null;
+        const nasceConcluida = coluna?.papel === PapelColuna.CONCLUIDA;
         const todos = await this.usuarios.listar();
         const responsaveis = [...new Set(input.codigosResponsaveis ?? [])].map((c) => {
             const u = todos.find((x) => x.codigo === c && x.ativo);
@@ -35,14 +44,15 @@ export default class CriarTarefa {
             undefined,
             input.prioridade,
             input.descricao ?? null,
-            null,
+            nasceConcluida ? hoje() : null,
             null,
             responsaveis,
             [],
             undefined,
-            null,
+            nasceConcluida ? (input.criadaPor ?? null) : null,
             input.categoria ?? null,
             input.criadaPor ?? null,
+            coluna,
         );
         tarefa.exigirConclusaoCoerente();
         return this.tarefas.criar(tarefa);
