@@ -221,6 +221,48 @@ SQL
 
 **Rollback:** voltar o backend depois de existir o primeiro projeto sigiloso **vaza os detalhes dele**: o código antigo ignora o sigilo e mostra o projeto a todos os que o veriam como normal. O único caminho de volta é restaurar o `.dump` feito antes do deploy (seção 6), perdendo o que foi gravado depois, ou corrigir para frente. Voltar o backend exige voltar o frontend junto.
 
+### Publicação da sessão 21 (quadro por etapa): migração 015
+A migração `015_colunas_projeto.sql` cria as colunas por projeto, dá as quatro padrão a todo projeto existente (A fazer, Fazendo, Revisando, Concluído), coloca cada tarefa de projeto na coluna do seu status e acrescenta uma regra no banco (tarefa de projeto tem coluna; concluída tem data de conclusão). O status, a data e quem concluiu não mudam. Publicar **backend e frontend juntos**; o quadro por semana sai do projeto.
+
+**Parte 1, preparar (backup, antes de qualquer pull):**
+```bash
+cd /docker/erp-konvex
+mkdir -p /root/backup-konvex
+DATA=$(date +%F_%H%M)
+ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+[ -d anexos ] && tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos && ls -lh /root/backup-konvex/anexos_$DATA.tar.gz
+```
+Confira que os dois arquivos não estão vazios e anote o horário (`$DATA`).
+
+**Parte 2, atualizar e construir (ainda sem derrubar nada):**
+```bash
+cd /docker/erp-konvex
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+git -C backend status --short && git -C frontend status --short   # têm que sair vazios
+docker compose build backend frontend
+```
+Se o build falhar, o sistema segue no ar com a versão antiga.
+
+**Parte 3, subir (a migração 015 roda ao iniciar o backend):**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 015_colunas_projeto.sql` e `API disponível na porta 5001`. Se aparecer `Banco já está atualizado.` sem a 015, o PR ainda não foi mergeado.
+
+**Parte 4, conferir:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT count(*) AS projetos_sem_coluna FROM projetos p WHERE NOT EXISTS (SELECT 1 FROM colunas_projeto c WHERE c.projeto_codigo = p.codigo);
+SELECT count(*) AS tarefas_de_projeto_sem_coluna FROM tarefas WHERE projeto_codigo IS NOT NULL AND coluna_codigo IS NULL;
+SQL
+```
+As duas contagens têm que ser `0`. No navegador, abra um projeto: o quadro mostra as quatro colunas e as tarefas concluídas estão em Concluído.
+
+**Rollback:** depois da migração 015, o backend anterior **não consegue criar tarefa de projeto** (a regra nova do banco exige coluna). Voltar só o código não basta. O caminho de volta é restaurar o `.dump` feito na Parte 1 (seção 6), perdendo o que foi gravado depois, e voltar **backend e frontend juntos**; ou corrigir para frente.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

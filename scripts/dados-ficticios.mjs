@@ -137,6 +137,54 @@ async function main() {
         console.log("Projeto, equipe e tarefas criados.");
     }
 
+    // Colunas do quadro (sessão 21): 5 etapas no projeto principal e tarefas espalhadas por elas.
+    // Reaproveita os códigos das colunas padrão; se o projeto já tem "Em teste", não mexe.
+    const detalhe = await exigir("GET", `/projetos/${projeto.codigo}`, dir);
+    if (!detalhe.colunas.some((c) => c.nome === "Em teste")) {
+        const existente = (nome) => detalhe.colunas.find((c) => c.nome === nome);
+        await exigir("PUT", `/projetos/${projeto.codigo}/colunas`, dir, {
+            colunas: [
+                { codigo: existente("A fazer")?.codigo, nome: "A fazer", cor: "cinza", papel: "entrada" },
+                { codigo: existente("Fazendo")?.codigo, nome: "Fazendo", cor: "azul", papel: "meio" },
+                { nome: "Em teste", cor: "roxo", papel: "meio" },
+                { codigo: existente("Revisando")?.codigo, nome: "Revisando", cor: "amarelo", papel: "meio" },
+                { codigo: existente("Concluído")?.codigo, nome: "Concluído", cor: "verde", papel: "concluida" },
+            ],
+            destinos: {},
+        });
+        console.log("Projeto: colunas do quadro personalizadas (5).");
+    }
+    const colunasDoProjeto = (await exigir("GET", `/projetos/${projeto.codigo}`, dir)).colunas;
+    const tarefasDoProjeto = await exigir("GET", `/tarefas?codigoProjeto=${projeto.codigo}`, dir);
+    for (const [titulo, ini, fim, quem] of [
+        ["Testar o formulário de contato", -3, 6, caio],
+        ["Revisar os textos", -4, 4, bia],
+    ]) {
+        if (tarefasDoProjeto.some((t) => t.titulo === titulo)) continue;
+        tarefasDoProjeto.push(
+            await exigir("POST", "/tarefas", dir, {
+                codigoProjeto: projeto.codigo,
+                titulo,
+                dataInicio: dia(ini),
+                dataFim: dia(fim),
+                prioridade: "P2",
+                codigosResponsaveis: [quem.codigo],
+            }),
+        );
+    }
+    const etapaDaTarefa = {
+        "Publicar primeira versão": "A fazer",
+        "Protótipo das telas": "Fazendo",
+        "Testar o formulário de contato": "Em teste",
+        "Revisar os textos": "Revisando",
+        "Levantar requisitos": "Concluído",
+    };
+    for (const t of tarefasDoProjeto) {
+        const coluna = colunasDoProjeto.find((c) => c.nome === etapaDaTarefa[t.titulo]);
+        if (!coluna || t.coluna?.codigo === coluna.codigo) continue;
+        await exigir("PATCH", `/tarefas/${t.codigo}/coluna`, dir, { codigoColuna: coluna.codigo });
+    }
+
     // Anexo numa tarefa do projeto (Bia é responsável e da equipe); reaproveita se a tarefa já tem.
     const tarefaComAnexo = (await exigir("GET", `/tarefas?codigoProjeto=${projeto.codigo}`, dir)).find(
         (t) => t.titulo === "Levantar requisitos",
