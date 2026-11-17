@@ -11,6 +11,7 @@ import HistoricoPessoaRepositoryInterface from "./HistoricoPessoaRepositoryInter
 import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
 import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
 import BibliotecaRepositoryInterface from "./BibliotecaRepositoryInterface";
+import ColunaProjetoRepositoryInterface from "./ColunaProjetoRepositoryInterface";
 import AnexoRepositoryInterface from "./AnexoRepositoryInterface";
 import ArmazenamentoAnexosInterface from "./ArmazenamentoAnexosInterface";
 
@@ -28,6 +29,7 @@ export default interface RepositoryFactoryInterface {
     criarSenioridadeRepository(): SenioridadeRepositoryInterface;
     criarProjetoRepository(): ProjetoRepositoryInterface;
     criarTarefaRepository(): TarefaRepositoryInterface;
+    criarColunaProjetoRepository(): ColunaProjetoRepositoryInterface;
     criarCapacitacaoRepository(): CapacitacaoRepositoryInterface;
     criarCapacitacaoFeedbackRepository(): CapacitacaoFeedbackRepositoryInterface;
     criarAreaRepository(): AreaRepositoryInterface;

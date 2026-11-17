@@ -78,6 +78,14 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 ### Tarefas (`/tarefas`)
 Toda tarefa tem **projeto** ou **categoria** (Inovação, Capacitação, Execução). Sem projeto, ela é "avulsa". Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna). O acompanhamento de inovação é feito com tarefas avulsas de categoria Inovação, que continuam só da gestão.
 
+**Quadro por etapa (sessão 21).** O quadro do projeto é por etapa, não por semana. Cada projeto tem de 2 a 12 colunas (tabela `colunas_projeto`, migração 015); projeto novo nasce com A fazer, Fazendo, Revisando e Concluído.
+- Cada coluna tem nome (1 a 40 caracteres, sem repetir no projeto, sem diferenciar maiúsculas), cor (`cinza`, `azul`, `verde`, `amarelo`, `laranja`, `vermelho`, `roxo`, `rosa`) e papel: `entrada` (onde caem as tarefas novas), `meio` ou `concluida`. Exatamente uma `entrada` e uma `concluida`, em colunas diferentes; a concluída não precisa ser a última.
+- **O status da tarefa de projeto vem sempre do papel da coluna:** `entrada` = `pendente`, `meio` = `andamento`, `concluida` = `concluida`. Progresso, burndown e indicadores seguem usando o status. Entrar na coluna concluída grava a data de conclusão (hoje) e quem moveu; sair apaga os dois. Tarefa avulsa não tem coluna.
+- `PUT /projetos/:codigo/colunas` grava a lista inteira numa transação: `{ colunas: [{ codigo?, nome, cor, papel }], destinos: { "<coluna excluída>": "<coluna de destino>" } }`. Coluna excluída com tarefas exige destino; as tarefas movidas, ou de coluna cujo papel mudou, têm status e conclusão recalculados. Erros 400 dizem o campo e a coluna. Coluna enviada com código que não está mais no projeto (outra pessoa a excluiu), ou tarefa que caiu numa coluna excluída durante a gravação: 409 `QUADRO_MUDOU`, e a tela recarrega o quadro.
+- `PATCH /tarefas/:codigo/coluna` move a tarefa (`{ codigoColuna }`); coluna de outro projeto ou tarefa avulsa dá 400. `PATCH /tarefas/:codigo/status` segue existindo: em tarefa de projeto, `concluida` vai para a coluna concluída, `pendente` para a de entrada e `andamento` para a primeira coluna `meio` (ou fica onde está, se já está numa); se o projeto não tem coluna `meio`, `andamento` cai na coluna de entrada (e a tarefa fica `pendente`). Mover exige a mesma permissão de concluir ou reabrir (responsável, líder ou gestão); sem ela, 403.
+- A tela Tarefas (todos os projetos e avulsas) segue por semana, com um selo da etapa no cartão. O prazo da tarefa não depende da coluna.
+- Regras: `source/useCases/projetos/GerirColunasProjeto.ts`, `source/useCases/tarefas/MoverTarefa.ts`, `regrasTarefa.ts`.
+
 Tarefa de projeto, pelo papel da pessoa no projeto (`papelNoProjeto`):
 | Papel no projeto | Pode |
 |---|---|
@@ -175,6 +183,9 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Criar tarefa em projeto | ✅ | ✅ | se é da equipe atual (fica responsável) | `tarefas.gerirTodas` / `papelNoProjeto` |
 | Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto | `regrasTarefa().organizar` |
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
+| Mover tarefa de projeto entre as colunas | ✅ | ✅ | se é líder, ou participante e responsável (mesma regra de concluir e reabrir) | `PATCH /tarefas/:codigo/coluna` / `regrasTarefa().mudarStatus` |
+| Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
+| Ver as colunas do projeto | todas | todas (sigiloso fora: não vê) | dos projetos que vê por completo | acesso completo (`acessoAoProjeto`) |
 | Comentar em tarefa de projeto | ✅ | ✅ | se é da equipe atual | `regrasTarefa().comentar` |
 | Ver e baixar anexo de tarefa | ✅ | ✅ | se vê a tarefa (senão 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
 | Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual (avulsa: se é responsável) | `regrasTarefa().comentar` / `GerirAnexos.acesso` |

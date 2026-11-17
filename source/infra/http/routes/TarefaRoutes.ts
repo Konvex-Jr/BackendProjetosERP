@@ -11,10 +11,12 @@ import ListarTarefas from "../../../useCases/tarefas/ListarTarefas";
 import CriarTarefa from "../../../useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../../useCases/tarefas/EditarTarefa";
 import AlterarStatusTarefa from "../../../useCases/tarefas/AlterarStatusTarefa";
+import MoverTarefa from "../../../useCases/tarefas/MoverTarefa";
 import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
 import { papelNoProjeto, podeAtribuirAvulsas, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
@@ -126,6 +128,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataInicio: new Date(body.dataInicio),
                     dataFim: new Date(body.dataFim),
                     prioridade: body.prioridade as PrioridadeTarefa,
+                    codigoColuna: body.codigoColuna ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis,
                     criadaPor: await this.usuarioAtual(usuario),
@@ -144,6 +147,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataFim: new Date(body.dataFim),
                     status: body.status as StatusTarefa,
                     prioridade: body.prioridade as PrioridadeTarefa,
+                    codigoColuna: body.codigoColuna ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
                     codigoDependencia: body.codigoDependencia ?? null,
@@ -173,6 +177,17 @@ export default class TarefaRoutes implements ModelRoutes {
                     hoje(),
                     await this.usuarioAtual(usuario),
                 ),
+            );
+        });
+
+        this.http.route("patch", "/tarefas/:codigo/coluna", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body.user);
+            const { regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.mudarStatus) {
+                throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_MOVER);
+            }
+            return this.comAnexosDe(
+                await new MoverTarefa(this.factory).execute(params.codigo, body.codigoColuna, hoje(), await this.usuarioAtual(usuario)),
             );
         });
 

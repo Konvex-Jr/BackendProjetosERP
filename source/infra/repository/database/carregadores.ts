@@ -11,6 +11,7 @@ import Area from "../../../domain/entity/Area";
 import Cargo from "../../../domain/entity/Cargo";
 import Habilidade from "../../../domain/entity/Habilidade";
 import Participacao from "../../../domain/entity/Participacao";
+import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
 
 /**
  * Funções compartilhadas pelos repositórios em banco para montar pessoas e projetos.
@@ -99,7 +100,7 @@ export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[])
 
 /**
  * Projetos com área, equipe (todas as participações, inclusive encerradas), responsável e líder.
- * São três consultas no total, seja um projeto ou cem: projetos, participações e pessoas.
+ * São poucas consultas no total, seja um projeto ou cem: projetos, participações, acesso, colunas e pessoas.
  */
 export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Projeto>> {
     const projetos = new Map<string, Projeto>();
@@ -130,6 +131,15 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
 
     const acessos = await conexao.consultar(
         `SELECT projeto_codigo, usuario_codigo FROM projeto_acesso WHERE projeto_codigo = ANY($1::uuid[]) ORDER BY usuario_codigo`,
+        [lista],
+    );
+
+    // Lidas como estão no banco: nenhuma regra do conjunto de colunas roda ao ler.
+    const colunas = await conexao.consultar(
+        `SELECT codigo, projeto_codigo, nome, cor, papel
+         FROM colunas_projeto
+         WHERE projeto_codigo = ANY($1::uuid[])
+         ORDER BY projeto_codigo, ordem`,
         [lista],
     );
 
@@ -180,6 +190,9 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                     sigiloso: linha.sigiloso,
                     criadoPor: linha.criado_por_codigo,
                     acesso: acessos.filter((a) => a.projeto_codigo === linha.codigo).map((a) => a.usuario_codigo),
+                    colunas: colunas
+                        .filter((c) => c.projeto_codigo === linha.codigo)
+                        .map((c) => new ColunaProjeto(c.nome, c.cor, c.papel, c.codigo)),
                 },
             ),
         );

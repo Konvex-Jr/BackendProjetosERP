@@ -1,0 +1,346 @@
+/**
+ * Integração do quadro de colunas contra PostgreSQL de verdade (sessão 21).
+ * Uso: DATABASE_URL_TESTE=postgresql://... npm run test:integracao
+ * ATENÇÃO: apaga e recria o schema "public" do banco informado.
+ */
+import { Pool } from "pg";
+import { aplicarMigracoes } from "../../source/infra/database/migracoes";
+import PgConexao from "../../source/infra/database/PgConexao";
+import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRepositoryFactory";
+import Usuario from "../../source/domain/entity/Usuario";
+import SenioridadeUsuario from "../../source/domain/entity/SenioridadeUsuario";
+import Projeto from "../../source/domain/entity/Projeto";
+import Tarefa from "../../source/domain/entity/Tarefa";
+import ColunaProjeto from "../../source/domain/entity/ColunaProjeto";
+import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import StatusTarefa from "../../source/domain/enum/StatusTarefa";
+import { PapelColuna } from "../../source/domain/enum/ColunaProjeto";
+import GerirColunasProjeto, { EntradaColuna } from "../../source/useCases/projetos/GerirColunasProjeto";
+import ExcluirProjeto from "../../source/useCases/projetos/ExcluirProjeto";
+
+const URL_TESTE = process.env.DATABASE_URL_TESTE;
+const descrever = URL_TESTE ? describe : describe.skip;
+const inicio = new Date("2026-10-12T00:00:00.000Z");
+const fim = new Date("2026-10-30T00:00:00.000Z");
+const HOJE = new Date("2026-11-16T00:00:00.000Z");
+
+descrever("colunas do quadro contra PostgreSQL", () => {
+    let pool: Pool;
+    let conexao: PgConexao;
+    let factory: DatabaseRepositoryFactory;
+    let pessoa: Usuario;
+
+    const entrada = (c: ColunaProjeto): EntradaColuna => ({ codigo: c.codigo, nome: c.nome, cor: c.cor, papel: c.papel });
+
+    async function novoProjeto(): Promise<Projeto> {
+        return factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Projeto", "Descrição", inicio, fim, undefined, [pessoa], crypto.randomUUID()));
+    }
+    async function novaTarefa(projeto: Projeto, coluna: ColunaProjeto): Promise<Tarefa> {
+        // Nasce na entrada e vai para a coluna pelo domínio, que registra data e autor se for a concluída.
+        const base = new Tarefa(
+            projeto,
+            "Tarefa",
+            inicio,
+            fim,
+            StatusTarefa.PENDENTE,
+            undefined,
+            null,
+            null,
+            null,
+            [pessoa],
+            [],
+            undefined,
+            null,
+            null,
+            null,
+            projeto.colunaDeEntrada,
+        );
+        return factory.criarTarefaRepository().criar(base.naColuna(coluna, inicio, pessoa));
+    }
+    const gravar = (projeto: Projeto, colunas: EntradaColuna[], destinos?: Record<string, string>) =>
+        new GerirColunasProjeto(factory).execute({ codigoProjeto: projeto.codigo, colunas, destinos, hoje: HOJE, quem: pessoa });
+    const lerProjeto = async (projeto: Projeto) => (await factory.criarProjetoRepository().buscarPorCodigo(projeto.codigo))!;
+
+    beforeAll(async () => {
+        pool = new Pool({ connectionString: URL_TESTE });
+        await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+        await aplicarMigracoes(pool);
+        conexao = PgConexao.criar(URL_TESTE!);
+        factory = new DatabaseRepositoryFactory(conexao);
+        pessoa = new Usuario(
+            "Pessoa",
+            "pessoa@teste.com",
+            PerfilUsuario.MEMBRO,
+            true,
+            "hash",
+            new SenioridadeUsuario("pleno", "Pleno", 75),
+        );
+        await factory.criarUsuarioRepository().criar(pessoa);
+    }, 60000);
+
+    afterAll(async () => {
+        await conexao?.encerrar();
+        await pool?.end();
+    });
+
+    test("um PUT troca os nomes de duas colunas e a entrada com a concluída", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        // Nomes A<->B (Fazendo <-> Revisando), papéis entrada<->concluida, tudo numa gravação só.
+        const gravadas = await gravar(projeto, [
+            { ...entrada(a), papel: "concluida" },
+            { ...entrada(f), nome: r.nome },
+            { ...entrada(r), nome: f.nome },
+            { ...entrada(c), papel: "entrada" },
+        ]);
+        expect(gravadas.map((x) => [x.nome, x.papel])).toEqual([
+            ["A fazer", "concluida"],
+            ["Revisando", "meio"],
+            ["Fazendo", "meio"],
+            ["Concluído", "entrada"],
+        ]);
+        const lido = await lerProjeto(projeto);
+        expect(lido.colunas.map((x) => [x.codigo, x.nome, x.papel])).toEqual(gravadas.map((x) => [x.codigo, x.nome, x.papel]));
+    });
+
+    test("trocar a coluna concluída deixa status e coluna coerentes em todas as tarefas", async () => {
+        const projeto = await novoProjeto();
+        const [, f, r, c] = projeto.colunas;
+        await novaTarefa(projeto, c);
+        await novaTarefa(projeto, r);
+        await novaTarefa(projeto, f);
+        await gravar(
+            projeto,
+            projeto.colunas.map((x) => ({
+                ...entrada(x),
+                papel: x.nome === "Concluído" ? "meio" : x.nome === "Revisando" ? "concluida" : x.papel,
+            })),
+        );
+        const incoerentes = await pool.query(
+            `SELECT count(*)::int AS n FROM tarefas t JOIN colunas_projeto c ON c.codigo = t.coluna_codigo
+             WHERE (t.status = 'concluida') <> (c.papel = 'concluida')`,
+        );
+        expect(incoerentes.rows[0].n).toBe(0);
+        const tarefas = await factory.criarTarefaRepository().listarPorProjeto(projeto.codigo);
+        const concluidas = tarefas.filter((t) => t.status === StatusTarefa.CONCLUIDA);
+        expect(concluidas).toHaveLength(1);
+        expect(concluidas[0].coluna!.nome).toBe("Revisando");
+        expect(concluidas[0].dataConclusao).toEqual(HOJE);
+    });
+
+    test("excluir coluna com tarefa move para o destino; coluna nova entra na ordem", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, r);
+        const gravadas = await gravar(projeto, [entrada(a), { nome: "Testando", cor: "roxo", papel: "meio" }, entrada(f), entrada(c)], {
+            [r.codigo]: f.codigo,
+        });
+        expect(gravadas.map((x) => x.nome)).toEqual(["A fazer", "Testando", "Fazendo", "Concluído"]);
+        const lida = (await factory.criarTarefaRepository().buscarPorCodigo(tarefa.codigo))!;
+        expect(lida.coluna!.codigo).toBe(f.codigo);
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["A fazer", "Testando", "Fazendo", "Concluído"]);
+    });
+
+    test("tarefa que cai na coluna excluída no meio do caminho: 409 QUADRO_MUDOU e nada muda", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        // Simula a corrida: o caso de uso viu a coluna vazia, mas uma tarefa entrou nela antes da gravação.
+        await pool.query(
+            `INSERT INTO tarefas (codigo, projeto_codigo, coluna_codigo, titulo, data_inicio, data_fim, status)
+             VALUES (gen_random_uuid(), $1, $2, 'Nova', '2026-10-12', '2026-10-30', 'andamento')`,
+            [projeto.codigo, r.codigo],
+        );
+        await expect(
+            factory
+                .criarColunaProjetoRepository()
+                .substituir(projeto.codigo, [a, { ...f, nome: "Renomeada" } as ColunaProjeto, c], new Map(), HOJE, pessoa),
+        ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU" });
+        const lido = await lerProjeto(projeto);
+        expect(lido.colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Revisando", "Concluído"]);
+    });
+
+    test("coluna excluída por outra pessoa no meio do caminho: 409 QUADRO_MUDOU e ela não volta com o código antigo", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const repo = factory.criarColunaProjetoRepository();
+        // O primeiro PUT exclui "Revisando"; o segundo foi montado antes e ainda manda o código dela, sem marcá-la como nova.
+        await repo.substituir(projeto.codigo, [a, f, c], new Map(), HOJE, pessoa, new Set());
+        await expect(
+            repo.substituir(projeto.codigo, [a, f, { ...r, nome: "Revisão" } as ColunaProjeto, c], new Map(), HOJE, pessoa, new Set()),
+        ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU", codigoHttp: 409 });
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Concluído"]);
+
+        // Coluna nova (código que o caso de uso marcou como novo) continua entrando.
+        const nova = new ColunaProjeto("Testes", "rosa", PapelColuna.MEIO);
+        await repo.substituir(projeto.codigo, [a, f, nova, c], new Map(), HOJE, pessoa, new Set([nova.codigo]));
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Testes", "Concluído"]);
+    });
+
+    test("criar tarefa e gravar o quadro ao mesmo tempo não dá deadlock", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const criar = await pool.connect();
+        try {
+            // Como o CriarTarefa: trava a coluna com FOR SHARE e depois insere (a chave estrangeira pega FOR KEY SHARE no projeto).
+            await criar.query("BEGIN");
+            await criar.query("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [a.codigo]);
+            const gravar = factory
+                .criarColunaProjetoRepository()
+                .substituir(projeto.codigo, [{ ...a, nome: "Entrada" } as ColunaProjeto, f, r, c], new Map(), HOJE, pessoa);
+            // Espera a gravação do quadro ficar presa na trava da coluna.
+            for (let i = 0; i < 100; i++) {
+                const presas = await pool.query(
+                    "SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE 'UPDATE colunas_projeto%'",
+                );
+                if (presas.rowCount) break;
+                await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            await criar.query(
+                `INSERT INTO tarefas (codigo, projeto_codigo, coluna_codigo, titulo, data_inicio, data_fim, status)
+                 VALUES (gen_random_uuid(), $1, $2, 'Concorrente', '2026-10-12', '2026-10-30', 'pendente')`,
+                [projeto.codigo, a.codigo],
+            );
+            await criar.query("COMMIT");
+            await gravar;
+        } finally {
+            criar.release();
+        }
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["Entrada", "Fazendo", "Revisando", "Concluído"]);
+    });
+
+    test("excluir o projeto depois de personalizar as colunas funciona", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, , c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, f);
+        await gravar(projeto, [
+            { ...entrada(c), papel: "concluida" },
+            { nome: "Nova", cor: "rosa", papel: "meio" },
+            entrada(f),
+            entrada(a),
+        ]);
+        await new ExcluirProjeto(factory).execute(projeto.codigo);
+        expect(await factory.criarProjetoRepository().buscarPorCodigo(projeto.codigo)).toBeNull();
+        expect((await pool.query("SELECT 1 FROM colunas_projeto WHERE projeto_codigo = $1", [projeto.codigo])).rowCount).toBe(0);
+        expect(await factory.criarTarefaRepository().buscarPorCodigo(tarefa.codigo)).toBeNull();
+    });
+
+    const incoerencias = async () =>
+        (
+            await pool.query(
+                `SELECT count(*)::int AS n FROM tarefas t JOIN colunas_projeto c ON c.codigo = t.coluna_codigo
+                 WHERE (t.status = 'concluida') <> (c.papel = 'concluida')
+                    OR (t.status = 'concluida') <> (t.data_conclusao IS NOT NULL)
+                    OR (t.status <> 'concluida' AND t.concluida_por_codigo IS NOT NULL)`,
+            )
+        ).rows[0].n;
+
+    test("tarefa movida por SQL para a coluna que vira concluída depois da leitura termina concluída, com hoje e quem", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, a);
+        // O caso de uso leu as tarefas e viu esta em "A fazer"; antes da gravação alguém a move para "Revisando".
+        await pool.query("UPDATE tarefas SET coluna_codigo = $2, status = 'andamento' WHERE codigo = $1", [tarefa.codigo, r.codigo]);
+        await factory
+            .criarColunaProjetoRepository()
+            .substituir(
+                projeto.codigo,
+                [a, f, { ...r, papel: "concluida" } as ColunaProjeto, { ...c, papel: "meio" } as ColunaProjeto],
+                new Map(),
+                HOJE,
+                pessoa,
+            );
+        const lida = (await factory.criarTarefaRepository().buscarPorCodigo(tarefa.codigo))!;
+        expect(lida.coluna!.codigo).toBe(r.codigo);
+        expect(lida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lida.dataConclusao).toEqual(HOJE);
+        expect(lida.concluidaPor?.codigo).toBe(pessoa.codigo);
+        expect(await incoerencias()).toBe(0);
+    });
+
+    test("tarefa movida por SQL para fora da coluna removida não volta ao destino e fica coerente com a coluna dela", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const parada = await novaTarefa(projeto, r);
+        const movida = await novaTarefa(projeto, r);
+        // `movida` sai de "Revisando" para "Concluído" (só a coluna, por SQL) antes da gravação.
+        await pool.query("UPDATE tarefas SET coluna_codigo = $2 WHERE codigo = $1", [movida.codigo, c.codigo]);
+        await factory.criarColunaProjetoRepository().substituir(projeto.codigo, [a, f, c], new Map([[r.codigo, f.codigo]]), HOJE, pessoa);
+        const tarefas = factory.criarTarefaRepository();
+        const lidaParada = (await tarefas.buscarPorCodigo(parada.codigo))!;
+        expect(lidaParada.coluna!.codigo).toBe(f.codigo);
+        expect(lidaParada.status).toBe(StatusTarefa.ANDAMENTO);
+        const lidaMovida = (await tarefas.buscarPorCodigo(movida.codigo))!;
+        expect(lidaMovida.coluna!.codigo).toBe(c.codigo);
+        expect(lidaMovida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lidaMovida.dataConclusao).toEqual(HOJE);
+        expect(await incoerencias()).toBe(0);
+    });
+
+    test("tarefa lida antes de o papel da coluna mudar: editar dá 409 QUADRO_MUDOU e nada é gravado", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, r);
+        const repo = factory.criarTarefaRepository();
+        const velha = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        // Antes da gravação, o quadro troca o papel de "Revisando" (meio) para concluída.
+        await gravar(projeto, [
+            entrada(a),
+            entrada(f),
+            { ...entrada(r), papel: "concluida" },
+            { ...entrada(projeto.colunas[3]), papel: "meio" },
+        ]);
+        await expect(repo.editar(velha.naColuna(r, HOJE, pessoa).comStatus(StatusTarefa.ANDAMENTO, null, null))).rejects.toMatchObject({
+            codigo: "QUADRO_MUDOU",
+        });
+        const lida = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        expect(lida.status).toBe(StatusTarefa.CONCLUIDA);
+        expect(lida.coluna!.codigo).toBe(r.codigo);
+        expect(await incoerencias()).toBe(0);
+    });
+
+    test("tarefa nova na coluna que mudou de papel: criar dá 409 QUADRO_MUDOU", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        await gravar(projeto, [entrada(a), entrada(f), { ...entrada(r), papel: "concluida" }, { ...entrada(c), papel: "meio" }]);
+        const antes = (await pool.query("SELECT count(*)::int AS n FROM tarefas WHERE projeto_codigo = $1", [projeto.codigo])).rows[0].n;
+        await expect(
+            factory
+                .criarTarefaRepository()
+                .criar(
+                    new Tarefa(
+                        projeto,
+                        "Velha",
+                        inicio,
+                        fim,
+                        StatusTarefa.PENDENTE,
+                        undefined,
+                        null,
+                        null,
+                        null,
+                        [pessoa],
+                        [],
+                        undefined,
+                        null,
+                        null,
+                        null,
+                        r,
+                    ),
+                ),
+        ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU" });
+        const depois = (await pool.query("SELECT count(*)::int AS n FROM tarefas WHERE projeto_codigo = $1", [projeto.codigo])).rows[0].n;
+        expect(depois).toBe(antes);
+    });
+
+    test("coluna excluída no meio do caminho: editar dá 409 QUADRO_MUDOU, não erro de chave estrangeira", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const tarefa = await novaTarefa(projeto, a);
+        const repo = factory.criarTarefaRepository();
+        const velha = (await repo.buscarPorCodigo(tarefa.codigo))!;
+        await gravar(projeto, [entrada(a), entrada(f), entrada(c)]);
+        await expect(repo.editar(velha.naColuna(r, HOJE, pessoa))).rejects.toMatchObject({ codigo: "QUADRO_MUDOU", codigoHttp: 409 });
+        expect((await repo.buscarPorCodigo(tarefa.codigo))!.coluna!.codigo).toBe(a.codigo);
+    });
+});

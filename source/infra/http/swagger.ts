@@ -132,6 +132,12 @@ const swaggerSpecification = {
                     descricao: { type: "string", nullable: true },
                     codigosResponsaveis: { type: "array", items: { type: "string" } },
                     codigoDependencia: { type: "string", nullable: true },
+                    codigoColuna: {
+                        type: "string",
+                        nullable: true,
+                        description:
+                            "Só tarefa de projeto: coluna do quadro. Ao criar, o padrão é a de entrada; ao editar, vale mais que `status`. A resposta traz `coluna` ({ codigo, nome, cor, papel }; nulo na avulsa).",
+                    },
                     checklist: {
                         type: "array",
                         items: {
@@ -264,6 +270,20 @@ const swaggerSpecification = {
                     properties: { status: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
                 }),
             }),
+        },
+        "/tarefas/{codigo}/coluna": {
+            patch: operation(
+                ["Tarefas"],
+                "Mover a tarefa para uma coluna do quadro do projeto (mesma permissão do status; o status vem do papel da coluna; 400 COLUNA_DE_OUTRO_PROJETO, 400 TAREFA_AVULSA_SEM_COLUNA)",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["codigoColuna"],
+                        properties: { codigoColuna: { type: "string" } },
+                    }),
+                },
+            ),
         },
         "/capacitacoes/opcoes": {
             get: operation(["Capacitações"], "Tipos com rótulo e se a pessoa pode gerir (gestão)"),
@@ -454,6 +474,13 @@ const rotasFase1: Record<string, Record<string, object>> = {
         put: operation(
             ["Projetos"],
             "Definir a lista de acesso do projeto sigiloso ({ codigos }; só o diretor e quem criou; 404 para membro fora, 400 ACESSO_PESSOA_SEM_LOGIN)",
+            comCodigo(json),
+        ),
+    },
+    "/projetos/{codigo}/colunas": {
+        put: operation(
+            ["Projetos"],
+            "Gravar as colunas do quadro ({ colunas: [{ codigo?, nome, cor, papel }] na ordem, destinos?: { codigoDaColunaExcluida: codigoDoDestino } }; só o líder e a gestão; 2 a 12 colunas, uma entrada e uma concluida; 400 DESTINO_COLUNA_OBRIGATORIO, 409 QUADRO_MUDOU). Devolve as colunas gravadas. O projeto (GET /projetos e /projetos/{codigo}) traz `colunas`; o resumo do sigiloso não.",
             comCodigo(json),
         ),
     },

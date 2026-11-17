@@ -26,6 +26,8 @@ import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
+import GerirColunasProjeto from "../../../useCases/projetos/GerirColunasProjeto";
+import { papelNoProjeto } from "../../../shared/seguranca/regrasTarefa";
 import DefinirAcessoProjeto from "../../../useCases/projetos/DefinirAcessoProjeto";
 
 function lerDetalhes(body: any): EntradaDetalhesProjeto {
@@ -176,6 +178,20 @@ export default class ProjetoRoutes implements ModelRoutes {
             const projeto = await this.carregarParaEscrita(usuario, params.codigo);
             if (!podeGerirAcesso(usuario, projeto)) throw new ErroProibido(MENSAGENS_DE_ERRO.PROJETO.ACESSO_SEM_PERMISSAO);
             return new DefinirAcessoProjeto(f).execute({ codigoProjeto: params.codigo, codigos: body.codigos });
+        });
+
+        // Colunas do quadro (sessão 21): o líder e a gestão. `destinos` diz para onde vão as tarefas das colunas excluídas.
+        this.http.route("put", "/projetos/:codigo/colunas", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body?.user);
+            const projeto = await this.carregarParaEscrita(usuario, params.codigo);
+            const papel = papelNoProjeto(usuario, projeto);
+            if (papel !== "gestao" && papel !== "lider") throw new ErroProibido(MENSAGENS_DE_ERRO.COLUNA.SEM_PERMISSAO);
+            return new GerirColunasProjeto(f).execute({
+                codigoProjeto: params.codigo,
+                colunas: body.colunas,
+                destinos: body.destinos,
+                quem: await f.criarUsuarioRepository().buscarPorCodigo(usuario.codigo),
+            });
         });
 
         // Equipe (PR-06)

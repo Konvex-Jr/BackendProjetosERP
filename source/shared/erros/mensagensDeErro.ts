@@ -46,6 +46,32 @@ export const MENSAGENS_DE_ERRO = {
         TITULO_OBRIGATORIO: "O título da tarefa é obrigatório.",
         PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
+        AVULSA_SEM_COLUNA: "Tarefa avulsa não tem coluna: só tarefa de projeto vai para uma coluna do kanban.",
+        SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
+    },
+
+    COLUNA: {
+        NOME_INVALIDO: (nome: string) =>
+            nome
+                ? `O nome da coluna "${nome}" deve ter de 1 a 40 caracteres.`
+                : "O nome da coluna é obrigatório e deve ter de 1 a 40 caracteres.",
+        COR_INVALIDA: (nome: string) =>
+            `A cor da coluna "${nome}" é inválida. Use cinza, azul, verde, amarelo, laranja, vermelho, roxo ou rosa.`,
+        PAPEL_INVALIDO: (nome: string) => `O papel da coluna "${nome}" é inválido. Use entrada, meio ou concluida.`,
+        QUANTIDADE_INVALIDA: (quantidade: number) => `O projeto deve ter de 2 a 12 colunas (recebeu ${quantidade}).`,
+        NOME_REPETIDO: (nome: string) =>
+            `Já existe uma coluna chamada "${nome}" neste projeto (maiúsculas e minúsculas contam como iguais).`,
+        ENTRADA_UNICA: "O projeto deve ter exatamente uma coluna de entrada.",
+        CONCLUIDA_UNICA: "O projeto deve ter exatamente uma coluna concluída.",
+        COLUNAS_INVALIDAS:
+            "As colunas (colunas) devem ser uma lista de objetos { codigo?, nome, cor, papel } e os destinos (destinos), se enviados, um objeto { codigoDaColunaExcluida: codigoDoDestino }.",
+        NAO_EXISTE_MAIS: "A coluna não existe mais neste projeto. Recarregue o quadro.",
+        CODIGO_REPETIDO: (codigo: string) => `A coluna "${codigo}" aparece mais de uma vez na lista.`,
+        DESTINO_OBRIGATORIO: (nome: string, tarefas: number) =>
+            `A coluna "${nome}" tem ${tarefas} ${tarefas === 1 ? "tarefa" : "tarefas"}: informe em destinos para qual coluna elas vão.`,
+        DESTINO_INVALIDO: (nome: string) => `O destino da coluna "${nome}" deve ser uma coluna do projeto que continua existindo.`,
+        QUADRO_MUDOU: "O quadro mudou enquanto você editava. Recarregue e tente de novo.",
+        SEM_PERMISSAO: "Só o líder do projeto e a gestão podem fazer isso.",
     },
 
     BIBLIOTECA: {

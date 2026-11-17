@@ -1,10 +1,14 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/entity/Tarefa";
+import StatusTarefa from "../../domain/enum/StatusTarefa";
 import ItemChecklistTarefa from "../../domain/entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
+import { colunaDoProjeto } from "./colunaDoProjeto";
 
 export default class EditarTarefa {
     private readonly tarefas;
@@ -38,7 +42,16 @@ export default class EditarTarefa {
             if (await this.criaCiclo(input.codigo, dependencia.codigo))
                 throw new ErroValidacao("A dependência criaria um ciclo.", "DEPENDENCIA_CIRCULAR");
         }
-        const concluida = input.status === "concluida";
+        if (!projeto && input.codigoColuna) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
+        }
+        // Com coluna, ela vale; sem, o status escolhe a coluna. Sem projeto, segue só o status.
+        let coluna = null;
+        if (projeto) {
+            if (input.codigoColuna) coluna = colunaDoProjeto(projeto, input.codigoColuna);
+            else if (Object.values(StatusTarefa).includes(input.status)) coluna = projeto.colunaParaStatus(input.status, atual.coluna);
+        }
+        const concluida = coluna ? coluna.papel === PapelColuna.CONCLUIDA : input.status === "concluida";
         const checklist =
             input.checklist === undefined
                 ? atual.checklist
@@ -46,26 +59,27 @@ export default class EditarTarefa {
 
         const categoria = atual.projeto ? null : (input.categoria ?? atual.categoria);
 
-        return this.tarefas.editar(
-            new Tarefa(
-                atual.projeto,
-                input.titulo,
-                input.dataInicio,
-                input.dataFim,
-                input.status,
-                input.prioridade,
-                input.descricao ?? null,
-                concluida ? (atual.dataConclusao ?? hoje()) : null,
-                dependencia,
-                responsaveis,
-                checklist,
-                atual.codigo,
-                concluida ? (atual.dataConclusao ? atual.concluidaPor : (input.quem ?? null)) : null,
-                // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
-                categoria,
-                atual.criadaPor,
-            ),
+        const editada = new Tarefa(
+            atual.projeto,
+            input.titulo,
+            input.dataInicio,
+            input.dataFim,
+            input.status,
+            input.prioridade,
+            input.descricao ?? null,
+            concluida ? (atual.dataConclusao ?? hoje()) : null,
+            dependencia,
+            responsaveis,
+            checklist,
+            atual.codigo,
+            concluida ? (atual.dataConclusao ? atual.concluidaPor : (input.quem ?? null)) : null,
+            // Tarefa avulsa pode trocar de categoria; não vira tarefa de projeto (nem o contrário).
+            categoria,
+            atual.criadaPor,
+            coluna,
         );
+        editada.exigirConclusaoCoerente();
+        return this.tarefas.editar(editada);
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {
         let atual = await this.tarefas.buscarPorCodigo(codigoPredecessora);

@@ -8,11 +8,13 @@ import ConexaoBanco from "../../database/ConexaoBanco";
 import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 import { carregarProjetos, carregarUsuarios } from "./carregadores";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { ErroConflito } from "../../../shared/erros/ErroConflito";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
            status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo,
-           categoria, criada_por_codigo
+           categoria, criada_por_codigo, coluna_codigo
     FROM tarefas
 `;
 
@@ -29,11 +31,12 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async criar(tarefa: Tarefa): Promise<Tarefa> {
         await this.conexao.transacao(async (conexao) => {
+            await this.travarColuna(conexao, tarefa);
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
-                                      concluida_por_codigo, categoria, criada_por_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                                      concluida_por_codigo, categoria, criada_por_codigo, coluna_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                 [
                     tarefa.codigo,
                     tarefa.projeto?.codigo ?? null,
@@ -48,6 +51,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.categoria,
                     tarefa.criadaPor?.codigo ?? null,
+                    tarefa.coluna?.codigo ?? null,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -112,11 +116,12 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async editar(tarefa: Tarefa): Promise<Tarefa> {
         await this.conexao.transacao(async (conexao) => {
+            await this.travarColuna(conexao, tarefa);
             const linhas = await conexao.consultar(
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
                      status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
-                     concluida_por_codigo = $10, categoria = $11
+                     concluida_por_codigo = $10, categoria = $11, coluna_codigo = $12
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -131,6 +136,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.categoria,
+                    tarefa.coluna?.codigo ?? null,
                 ],
             );
 
@@ -156,6 +162,19 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
     async excluirPorProjeto(codigoProjeto: string): Promise<void> {
         await this.conexao.consultar("DELETE FROM tarefas WHERE projeto_codigo = $1", [codigoProjeto]);
+    }
+
+    /**
+     * Trava a coluna da tarefa (FOR SHARE) e confere que o papel dela ainda é o que o caso de uso viu.
+     * A gravação do quadro reescreve as colunas na própria transação: ou espera esta tarefa, ou esta
+     * espera ela, e a tarefa nunca grava um status que o papel da coluna não sustenta mais.
+     */
+    private async travarColuna(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
+        if (!tarefa.coluna) return;
+        const linhas = await conexao.consultar("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [tarefa.coluna.codigo]);
+        if (linhas.length === 0 || linhas[0].papel !== tarefa.coluna.papel) {
+            throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
+        }
     }
 
     private async gravarRelacionamentos(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
@@ -244,8 +263,12 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 .filter((i) => i.tarefa_codigo === codigo)
                 .map((i) => new ItemChecklistTarefa(i.texto, i.feito, i.codigo));
 
+            const projeto = linha.projeto_codigo ? projetos.get(linha.projeto_codigo)! : null;
+            // Coluna não achada (dado estranho): o construtor cai na coluna que corresponde ao status.
+            const coluna = projeto?.colunas.find((c) => c.codigo === linha.coluna_codigo) ?? null;
+
             const tarefa = new Tarefa(
-                linha.projeto_codigo ? projetos.get(linha.projeto_codigo)! : null,
+                projeto,
                 linha.titulo,
                 linha.data_inicio,
                 linha.data_fim,
@@ -260,6 +283,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 linha.concluida_por_codigo ? (usuarios.get(linha.concluida_por_codigo) ?? null) : null,
                 linha.categoria ?? null,
                 linha.criada_por_codigo ? (usuarios.get(linha.criada_por_codigo) ?? null) : null,
+                coluna,
             );
 
             construidas.set(codigo, tarefa);

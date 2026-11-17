@@ -5,6 +5,8 @@ import ProjetoRepositoryInterface from "../../domain/interfaces/ProjetoRepositor
 import TarefaRepositoryInterface from "../../domain/interfaces/TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "../../domain/interfaces/CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "../../domain/interfaces/CapacitacaoFeedbackRepositoryInterface";
+import ColunaProjetoRepositoryInterface from "../../domain/interfaces/ColunaProjetoRepositoryInterface";
+import ColunaProjetoRepositoryMemory from "./memory/ColunaProjetoRepositoryMemory";
 import UsuarioRepositoryMemory from "./memory/UsuarioRepositoryMemory";
 import SenioridadeRepositoryMemory from "./memory/SenioridadeRepositoryMemory";
 import ProjetoRepositoryMemory from "./memory/ProjetoRepositoryMemory";
@@ -32,6 +34,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly senioridadeRepository: SenioridadeRepositoryInterface;
     private readonly projetoRepository: ProjetoRepositoryInterface;
     private readonly tarefaRepository: TarefaRepositoryInterface;
+    private readonly colunaProjetoRepository: ColunaProjetoRepositoryInterface;
     private readonly capacitacaoRepository: CapacitacaoRepositoryInterface;
     private readonly capacitacaoFeedbackRepository: CapacitacaoFeedbackRepositoryInterface;
 
@@ -40,6 +43,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         this.senioridadeRepository = new SenioridadeRepositoryMemory();
         this.projetoRepository = new ProjetoRepositoryMemory();
         this.tarefaRepository = new TarefaRepositoryMemory();
+        this.colunaProjetoRepository = new ColunaProjetoRepositoryMemory(this.projetoRepository, this.tarefaRepository);
         this.capacitacaoRepository = new CapacitacaoRepositoryMemory();
         this.capacitacaoFeedbackRepository = new CapacitacaoFeedbackRepositoryMemory();
     }
@@ -58,6 +62,10 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarTarefaRepository(): TarefaRepositoryInterface {
         return this.tarefaRepository;
+    }
+
+    criarColunaProjetoRepository(): ColunaProjetoRepositoryInterface {
+        return this.colunaProjetoRepository;
     }
 
     criarCapacitacaoRepository(): CapacitacaoRepositoryInterface {

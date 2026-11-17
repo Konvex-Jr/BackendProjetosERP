@@ -25,11 +25,14 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Tarefas**: abre em "Minhas tarefas" (de projetos e avulsas). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois.
-- Arraste o cartão entre as colunas (ou mude a situação no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
+- Na tela Tarefas o quadro é por **semana**: cada cartão mostra um selo com a **etapa** da tarefa (A fazer, Fazendo...). Arraste o cartão para a coluna **Concluído** (ou use Concluir/Reabrir no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
 - **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
-**Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban, lista e cronograma), Visão geral e Equipe.
+**Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
+- **Kanban por etapa**: as colunas são as etapas do trabalho daquele projeto (por padrão, A fazer, Fazendo, Revisando e Concluído). Cada cartão mostra o prazo, mas o prazo não depende da coluna.
+- **Mover uma tarefa**: arraste o cartão para outra coluna, ou use **Mover para...** no menu do cartão (no celular, o menu é o caminho). Você move as tarefas em que é responsável; o líder move qualquer uma. No modal da tarefa, o campo **Etapa** faz o mesmo. Entrar na coluna marcada como concluída conta a tarefa como concluída; sair dela a reabre.
+- **Editar colunas** (botão acima do quadro, só para o líder e a gestão): crie, renomeie, mude a cor, reordene com os botões subir e descer, e exclua colunas, de 2 a 12 por projeto. Marque qual coluna é a de **entrada** (onde caem as tarefas novas) e qual é a **concluída**; cada uma existe uma só vez. Ao excluir uma coluna que tem tarefas, o sistema pergunta para qual coluna elas vão. Ao trocar a coluna concluída, o sistema avisa quantas tarefas passam a contar como concluídas e quantas voltam a abertas.
 
 **Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar ou abrir o material (PDF e imagem abrem numa janela do sistema) e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
 
