@@ -222,7 +222,7 @@ SQL
 **Rollback:** voltar o backend depois de existir o primeiro projeto sigiloso **vaza os detalhes dele**: o código antigo ignora o sigilo e mostra o projeto a todos os que o veriam como normal. O único caminho de volta é restaurar o `.dump` feito antes do deploy (seção 6), perdendo o que foi gravado depois, ou corrigir para frente. Voltar o backend exige voltar o frontend junto.
 
 ### Publicação da sessão 21 (quadro por etapa): migração 015
-A migração `015_colunas_projeto.sql` cria as colunas por projeto, dá as quatro padrão a todo projeto existente (A fazer, Fazendo, Revisando, Concluído), coloca cada tarefa de projeto na coluna do seu status e acrescenta uma regra no banco (tarefa de projeto tem coluna; concluída tem data de conclusão). O status, a data e quem concluiu não mudam. Publicar **backend e frontend juntos**; o quadro por semana sai do projeto.
+A migração `015_colunas_projeto.sql` cria as colunas por projeto, dá as quatro padrão a todo projeto existente (A fazer, Fazendo, Revisando, Concluído), coloca cada tarefa de projeto na coluna do seu status e acrescenta uma regra no banco (tarefa de projeto tem coluna; concluída tem data de conclusão). O status não muda. A migração também acerta linhas incoerentes: tarefa concluída sem data de conclusão recebe o prazo (`data_fim`) como data de conclusão; tarefa não concluída perde a data de conclusão e quem concluiu, se tinha. Publicar **backend e frontend juntos**; o quadro por semana sai do projeto.
 
 **Parte 1, preparar (backup, antes de qualquer pull):**
 ```bash
