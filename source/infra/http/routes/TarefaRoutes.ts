@@ -16,6 +16,7 @@ import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
 import { papelNoProjeto, podeAtribuirAvulsas, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
@@ -183,7 +184,7 @@ export default class TarefaRoutes implements ModelRoutes {
             const usuario = exigirAutenticado(body.user);
             const { regras } = await this.carregar(usuario, params.codigo);
             if (!regras.mudarStatus) {
-                throw new ErroProibido("Você só pode concluir ou reabrir tarefas em que é responsável.");
+                throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_MOVER);
             }
             return this.comAnexosDe(
                 await new MoverTarefa(this.factory).execute(params.codigo, body.codigoColuna, hoje(), await this.usuarioAtual(usuario)),

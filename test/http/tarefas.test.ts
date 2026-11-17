@@ -128,7 +128,9 @@ describe("Tarefas pela API", () => {
             expect(feita.status).toBe(200);
             expect(feita.corpo.coluna).toMatchObject({ nome: "Revisando", cor: "amarelo" });
             expect(feita.corpo.status).toBe("andamento");
-            expect((await mover(ctx.membro, "tarefa-teste", revisando.codigo)).status).toBe(403);
+            const negado = await mover(ctx.membro, "tarefa-teste", revisando.codigo);
+            expect(negado.status).toBe(403);
+            expect(negado.corpo.message).toBe("Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.");
         });
 
         it("líder e gestão movem tarefa de outro", async () => {

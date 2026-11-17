@@ -47,6 +47,7 @@ export const MENSAGENS_DE_ERRO = {
         PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
         AVULSA_SEM_COLUNA: "Tarefa avulsa não tem coluna: só tarefa de projeto vai para uma coluna do kanban.",
+        SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 
     COLUNA: {
