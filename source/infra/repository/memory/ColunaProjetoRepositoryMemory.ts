@@ -25,9 +25,14 @@ export default class ColunaProjetoRepositoryMemory implements ColunaProjetoRepos
         destinos: Map<string, string>,
         hoje: Date,
         quem: Usuario | null,
+        novas: ReadonlySet<string> = new Set(),
     ): Promise<void> {
         const projeto = await this.projetos.buscarPorCodigo(codigoProjeto);
         if (!projeto) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
+        // Como no banco: coluna que não é nova tem de estar entre as atuais do projeto.
+        if (colunas.some((c) => !novas.has(c.codigo) && !projeto.colunas.some((atual) => atual.codigo === c.codigo))) {
+            throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
+        }
         const novo = projeto.comColunas(colunas);
 
         const atuais = await this.tarefas.listarPorProjeto(codigoProjeto);

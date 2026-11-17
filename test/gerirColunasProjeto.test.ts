@@ -169,13 +169,25 @@ describe("GerirColunasProjeto", () => {
         expect(await erro(executar([a, { ...f, papel: "x" }, c]))).toBe("PAPEL_COLUNA_INVALIDO");
     });
 
-    it("código de coluna de outro projeto: COLUNA_DE_OUTRO_PROJETO", async () => {
+    it("código que não é texto: COLUNAS_INVALIDAS", async () => {
+        const [a, f, , c] = atuais();
+        expect(await erro(executar([a, { ...f, codigo: 7 }, c]))).toBe("COLUNAS_INVALIDAS");
+    });
+
+    it("código que não está mais nas colunas do projeto (excluída por outra pessoa, ou de outro projeto): 409 QUADRO_MUDOU", async () => {
         const outro = await ctx.factory
             .criarProjetoRepository()
             .criar(new Projeto("Outro", "Descrição", dataInicio, dataFim, undefined, [ctx.membro], "proj-2"));
-        const [a, , , c] = atuais();
-        expect(await erro(executar([a, entrada(outro.colunas[1]), c]))).toBe("COLUNA_DE_OUTRO_PROJETO");
-        expect(await erro(executar([a, { ...entrada(outro.colunas[1]), codigo: 7 }, c]))).toBe("COLUNA_DE_OUTRO_PROJETO");
+        const [a, f, r, c] = atuais();
+        // Outra pessoa excluiu "Revisando"; quem editava ainda manda o código dela.
+        await executar([a, f, c]);
+        for (const lista of [
+            [a, f, r, c],
+            [a, entrada(outro.colunas[1]), c],
+        ]) {
+            await expect(executar(lista)).rejects.toMatchObject({ codigo: "QUADRO_MUDOU", codigoHttp: 409 });
+        }
+        expect((await projetoGravado()).colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Concluído"]);
     });
 
     it("entrada que não é lista, item que não é objeto ou destinos que não é objeto: COLUNAS_INVALIDAS", async () => {

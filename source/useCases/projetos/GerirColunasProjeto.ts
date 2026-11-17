@@ -2,6 +2,7 @@ import ColunaProjeto, { validarColunas } from "../../domain/entity/ColunaProjeto
 import Usuario from "../../domain/entity/Usuario";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { hoje as hojeNoFuso } from "../../shared/datas";
+import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
@@ -42,19 +43,24 @@ export default class GerirColunasProjeto {
 
         const atuais = new Map(projeto.colunas.map((c) => [c.codigo, c]));
         const usados = new Set<string>();
+        const novas = new Set<string>();
         const finais = entradas.map((e) => {
             let codigo: string | undefined;
             if (e.codigo !== undefined && e.codigo !== null) {
-                codigo = typeof e.codigo === "string" ? e.codigo : undefined;
-                if (codigo === undefined || !atuais.has(codigo)) {
-                    throw new ErroValidacao(MENSAGENS_DE_ERRO.COLUNA.DE_OUTRO_PROJETO(String(e.codigo)), "COLUNA_DE_OUTRO_PROJETO");
+                if (typeof e.codigo !== "string") {
+                    throw new ErroValidacao(MENSAGENS_DE_ERRO.COLUNA.COLUNAS_INVALIDAS, "COLUNAS_INVALIDAS");
                 }
+                codigo = e.codigo;
+                // Código que não é de uma coluna atual: quase sempre outra pessoa excluiu a coluna enquanto esta editava.
+                if (!atuais.has(codigo)) throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
                 if (usados.has(codigo)) {
                     throw new ErroValidacao(MENSAGENS_DE_ERRO.COLUNA.CODIGO_REPETIDO(codigo), "COLUNAS_INVALIDAS");
                 }
                 usados.add(codigo);
             }
-            return new ColunaProjeto(e.nome as string, e.cor as any, e.papel as any, codigo);
+            const coluna = new ColunaProjeto(e.nome as string, e.cor as any, e.papel as any, codigo);
+            if (codigo === undefined) novas.add(coluna.codigo);
+            return coluna;
         });
         validarColunas(finais);
 
@@ -82,7 +88,7 @@ export default class GerirColunasProjeto {
         }
 
         // Status e conclusão das tarefas são acertados pelo repositório, dentro da transação, pelo papel final de cada coluna.
-        await this.factory.criarColunaProjetoRepository().substituir(input.codigoProjeto, finais, destinosGravar, hoje, input.quem);
+        await this.factory.criarColunaProjetoRepository().substituir(input.codigoProjeto, finais, destinosGravar, hoje, input.quem, novas);
         return finais;
     }
 }

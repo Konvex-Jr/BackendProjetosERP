@@ -65,7 +65,6 @@ export const MENSAGENS_DE_ERRO = {
         COLUNAS_INVALIDAS:
             "As colunas (colunas) devem ser uma lista de objetos { codigo?, nome, cor, papel } e os destinos (destinos), se enviados, um objeto { codigoDaColunaExcluida: codigoDoDestino }.",
         NAO_EXISTE_MAIS: "A coluna não existe mais neste projeto. Recarregue o quadro.",
-        DE_OUTRO_PROJETO: (codigo: string) => `A coluna "${codigo}" não é uma coluna deste projeto.`,
         CODIGO_REPETIDO: (codigo: string) => `A coluna "${codigo}" aparece mais de uma vez na lista.`,
         DESTINO_OBRIGATORIO: (nome: string, tarefas: number) =>
             `A coluna "${nome}" tem ${tarefas} ${tarefas === 1 ? "tarefa" : "tarefas"}: informe em destinos para qual coluna elas vão.`,

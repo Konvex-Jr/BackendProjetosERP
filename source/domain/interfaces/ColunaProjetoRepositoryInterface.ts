@@ -8,6 +8,8 @@ export default interface ColunaProjetoRepositoryInterface {
      * (`destinos`: código da removida, código do destino) e acerta status e conclusão de TODAS as tarefas do
      * projeto pelo papel atual da coluna delas, na hora da gravação (o que outra pessoa moveu no meio do caminho
      * também é acertado). Uma transação. Coluna removida que ainda tem tarefa = ErroConflito `QUADRO_MUDOU`.
+     * `novas`: códigos das colunas que ainda não existem. Qualquer outra coluna da lista tem de estar entre as atuais
+     * do projeto na hora da gravação; se não estiver (outra pessoa a excluiu), também `QUADRO_MUDOU`.
      */
     substituir(
         codigoProjeto: string,
@@ -15,5 +17,6 @@ export default interface ColunaProjetoRepositoryInterface {
         destinos: Map<string, string>,
         hoje: Date,
         quem: Usuario | null,
+        novas?: ReadonlySet<string>,
     ): Promise<void>;
 }

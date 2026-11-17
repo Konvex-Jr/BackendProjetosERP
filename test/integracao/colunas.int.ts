@@ -14,6 +14,7 @@ import Tarefa from "../../source/domain/entity/Tarefa";
 import ColunaProjeto from "../../source/domain/entity/ColunaProjeto";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
+import { PapelColuna } from "../../source/domain/enum/ColunaProjeto";
 import GerirColunasProjeto, { EntradaColuna } from "../../source/useCases/projetos/GerirColunasProjeto";
 import ExcluirProjeto from "../../source/useCases/projetos/ExcluirProjeto";
 
@@ -158,6 +159,55 @@ descrever("colunas do quadro contra PostgreSQL", () => {
         ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU" });
         const lido = await lerProjeto(projeto);
         expect(lido.colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Revisando", "Concluído"]);
+    });
+
+    test("coluna excluída por outra pessoa no meio do caminho: 409 QUADRO_MUDOU e ela não volta com o código antigo", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const repo = factory.criarColunaProjetoRepository();
+        // O primeiro PUT exclui "Revisando"; o segundo foi montado antes e ainda manda o código dela, sem marcá-la como nova.
+        await repo.substituir(projeto.codigo, [a, f, c], new Map(), HOJE, pessoa, new Set());
+        await expect(
+            repo.substituir(projeto.codigo, [a, f, { ...r, nome: "Revisão" } as ColunaProjeto, c], new Map(), HOJE, pessoa, new Set()),
+        ).rejects.toMatchObject({ codigo: "QUADRO_MUDOU", codigoHttp: 409 });
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Concluído"]);
+
+        // Coluna nova (código que o caso de uso marcou como novo) continua entrando.
+        const nova = new ColunaProjeto("Testes", "rosa", PapelColuna.MEIO);
+        await repo.substituir(projeto.codigo, [a, f, nova, c], new Map(), HOJE, pessoa, new Set([nova.codigo]));
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["A fazer", "Fazendo", "Testes", "Concluído"]);
+    });
+
+    test("criar tarefa e gravar o quadro ao mesmo tempo não dá deadlock", async () => {
+        const projeto = await novoProjeto();
+        const [a, f, r, c] = projeto.colunas;
+        const criar = await pool.connect();
+        try {
+            // Como o CriarTarefa: trava a coluna com FOR SHARE e depois insere (a chave estrangeira pega FOR KEY SHARE no projeto).
+            await criar.query("BEGIN");
+            await criar.query("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [a.codigo]);
+            const gravar = factory
+                .criarColunaProjetoRepository()
+                .substituir(projeto.codigo, [{ ...a, nome: "Entrada" } as ColunaProjeto, f, r, c], new Map(), HOJE, pessoa);
+            // Espera a gravação do quadro ficar presa na trava da coluna.
+            for (let i = 0; i < 100; i++) {
+                const presas = await pool.query(
+                    "SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE 'UPDATE colunas_projeto%'",
+                );
+                if (presas.rowCount) break;
+                await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            await criar.query(
+                `INSERT INTO tarefas (codigo, projeto_codigo, coluna_codigo, titulo, data_inicio, data_fim, status)
+                 VALUES (gen_random_uuid(), $1, $2, 'Concorrente', '2026-10-12', '2026-10-30', 'pendente')`,
+                [projeto.codigo, a.codigo],
+            );
+            await criar.query("COMMIT");
+            await gravar;
+        } finally {
+            criar.release();
+        }
+        expect((await lerProjeto(projeto)).colunas.map((x) => x.nome)).toEqual(["Entrada", "Fazendo", "Revisando", "Concluído"]);
     });
 
     test("excluir o projeto depois de personalizar as colunas funciona", async () => {

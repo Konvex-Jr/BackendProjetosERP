@@ -18,15 +18,23 @@ export default class ColunaProjetoRepositoryDatabase implements ColunaProjetoRep
         destinos: Map<string, string>,
         hoje: Date,
         quem: Usuario | null,
+        novas: ReadonlySet<string> = new Set(),
     ): Promise<void> {
         await this.conexao.transacao(async (conexao) => {
-            // Trava o projeto: dois quadros gravados ao mesmo tempo esperam um pelo outro.
-            const projeto = await conexao.consultar("SELECT codigo FROM projetos WHERE codigo = $1 FOR UPDATE", [codigoProjeto]);
+            // Trava o projeto: dois quadros gravados ao mesmo tempo esperam um pelo outro. NO KEY UPDATE (e não UPDATE)
+            // não briga com o FOR KEY SHARE que a chave estrangeira de uma tarefa nova pega no projeto: sem isso,
+            // criar tarefa (que trava a coluna com FOR SHARE) e gravar o quadro ao mesmo tempo podiam dar deadlock.
+            const projeto = await conexao.consultar("SELECT codigo FROM projetos WHERE codigo = $1 FOR NO KEY UPDATE", [codigoProjeto]);
             if (projeto.length === 0) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
 
             const antigas = (await conexao.consultar("SELECT codigo FROM colunas_projeto WHERE projeto_codigo = $1", [codigoProjeto])).map(
                 (l) => l.codigo as string,
             );
+            // Coluna que não é nova tem de existir agora, com o projeto travado: se outro quadro a excluiu depois
+            // da leitura, ela não pode voltar com o código antigo.
+            if (colunas.some((c) => !novas.has(c.codigo) && !antigas.includes(c.codigo))) {
+                throw new ErroConflito(MENSAGENS_DE_ERRO.COLUNA.QUADRO_MUDOU, "QUADRO_MUDOU");
+            }
             const finais = new Set(colunas.map((c) => c.codigo));
 
             // Os índices únicos de papel e de nome barram trocas diretas (A vira B e B vira A): primeiro todas
