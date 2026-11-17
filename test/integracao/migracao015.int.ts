@@ -128,7 +128,7 @@ descrever("migração 015 sobre a 014", () => {
         expect(await contagens()).toBe(antes.get("contagens"));
     });
 
-    test("o banco recusa tarefa sem coluna, com coluna de outro projeto, entrada repetida e nome repetido", async () => {
+    test("o banco recusa tarefa sem coluna, com coluna de outro projeto, entrada repetida, nome repetido e nome vazio", async () => {
         const inserir = (projeto: string, coluna: string | null) =>
             pool.query(
                 `INSERT INTO tarefas (codigo, projeto_codigo, coluna_codigo, titulo, data_inicio, data_fim, status)
@@ -150,6 +150,11 @@ descrever("migração 015 sobre a 014", () => {
                 projetoA,
             ]),
         ).rejects.toThrow(/idx_colunas_projeto_nome/);
+        await expect(
+            pool.query("INSERT INTO colunas_projeto (projeto_codigo, nome, cor, ordem, papel) VALUES ($1, '   ', 'rosa', 9, 'meio')", [
+                projetoA,
+            ]),
+        ).rejects.toThrow(/colunas_projeto_nome_preenchido/);
     });
 
     test("o repositório grava as colunas ao criar o projeto e a tarefa fica na coluna dele", async () => {

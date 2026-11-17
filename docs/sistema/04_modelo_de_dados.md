@@ -18,7 +18,7 @@
 | `projetos` | nome, descricao, datas, status, area, lider_codigo, prioridade, progresso, campos de cliente (reservados) | Ativos = Em andamento, Atenção, Bloqueado |
 | `projeto_membros` | projeto, usuario, funcao, alocacao, data_entrada/saida | Membro vê só projetos de que participa ou participou |
 | `tarefas` | projeto **ou** categoria (Inovação, Capacitação, Execução), titulo, datas, status, prioridade, concluida_por, criada_por, coluna_codigo | De projeto: sempre numa coluna do próprio projeto (FK composta `coluna_codigo + projeto_codigo`, NO ACTION, com índice `idx_tarefas_coluna` nas duas colunas; avulsa fica sem). Checks: coluna só com projeto; `status = 'concluida'` se e só se há `data_conclusao` (migração 015) |
-| `colunas_projeto` | projeto_codigo, nome (até 40), cor (8 da paleta), ordem, papel (`entrada`, `meio`, `concluida`) | Kanban do projeto (migração 015). Uma `entrada` e uma `concluida` por projeto, nome único sem diferenciar maiúsculas; some com o projeto. O status da tarefa vem do papel da coluna |
+| `colunas_projeto` | projeto_codigo, nome (até 40), cor (8 da paleta), ordem, papel (`entrada`, `meio`, `concluida`) | Kanban do projeto (migração 015). Uma `entrada` e uma `concluida` por projeto, nome único sem diferenciar maiúsculas e nunca vazio (check `colunas_projeto_nome_preenchido`); some com o projeto. O status da tarefa vem do papel da coluna |
 | `tarefa_responsaveis`, `tarefa_checklist_itens`, `tarefa_comentarios` | | |
 
 ## Biblioteca e Anexos

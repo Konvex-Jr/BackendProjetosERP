@@ -64,6 +64,10 @@ BEGIN
         ALTER TABLE tarefas ADD CONSTRAINT tarefas_coluna_com_projeto
             CHECK ((projeto_codigo IS NULL) = (coluna_codigo IS NULL));
     END IF;
+    -- Nome nunca vazio: ler a coluna não pode encontrar o que o domínio recusaria ao gravar.
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'colunas_projeto_nome_preenchido') THEN
+        ALTER TABLE colunas_projeto ADD CONSTRAINT colunas_projeto_nome_preenchido CHECK (btrim(nome) <> '');
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tarefas_conclusao_coerente') THEN
         ALTER TABLE tarefas ADD CONSTRAINT tarefas_conclusao_coerente
             CHECK ((status = 'concluida') = (data_conclusao IS NOT NULL));
