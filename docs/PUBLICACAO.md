@@ -299,7 +299,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/pe
 curl -sI https://erp.konvexjr.com.br/api/fotos/00000000-0000-4000-8000-000000000000.webp | head -1   # 404
 docker exec konvex-backend node dist/source/scripts/conferirAnexos.js; echo "código $?"   # 0 (ignora a pasta fotos/)
 ```
-No navegador, entre, abra **Meu perfil**, envie uma foto e confira que ela aparece no topo. Depois copie o endereço da imagem (botão direito, copiar endereço da imagem) e teste de fora, sem login:
+No navegador, entre, clique no seu avatar no topo (abre o perfil), envie uma foto e confira que ela aparece no topo. Se der, repita num iPhone (lá a foto sai em JPEG e o servidor converte para WebP). Depois copie o endereço da imagem (botão direito, copiar endereço da imagem) e teste de fora, sem login:
 ```bash
 curl -sI "https://erp.konvexjr.com.br/api/fotos/<ARQUIVO>.webp" | head -1   # 200
 ```
