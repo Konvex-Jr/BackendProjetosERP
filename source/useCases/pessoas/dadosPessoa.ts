@@ -1,9 +1,7 @@
 import { DetalhesPessoa } from "../../domain/entity/Usuario";
-import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
-import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 /** Campos do perfil como chegam na API (todos opcionais; ausente = não alterar). */
@@ -15,14 +13,15 @@ export interface EntradaPerfilPessoa {
     githubUrl?: string | null;
     curso?: string | null;
     semestre?: number | null;
-    codigoArea?: string | null;
-    codigoCargo?: string | null;
     dataEntrada?: Date | null;
     bio?: string | null;
 }
 
-/** Converte a entrada da API em DetalhesPessoa, conferindo se área e cargo existem. */
-export async function resolverPerfilPessoa(factory: RepositoryFactoryInterface, entrada: EntradaPerfilPessoa): Promise<DetalhesPessoa> {
+/**
+ * Converte a entrada da API em DetalhesPessoa. Área e cargo não vêm mais daqui: são períodos
+ * (sessão 23a); `codigoArea` e `codigoCargo` enviados por tela antiga são ignorados.
+ */
+export function resolverPerfilPessoa(entrada: EntradaPerfilPessoa): DetalhesPessoa {
     const detalhes: DetalhesPessoa = {};
     const copiar = [
         "nomeExibicao",
@@ -37,26 +36,6 @@ export async function resolverPerfilPessoa(factory: RepositoryFactoryInterface, 
     ] as const;
     for (const campo of copiar) {
         if (entrada[campo] !== undefined) (detalhes as any)[campo] = entrada[campo];
-    }
-
-    if (entrada.codigoArea !== undefined) {
-        if (entrada.codigoArea) {
-            const area = await factory.criarAreaRepository().buscarPorCodigo(entrada.codigoArea);
-            if (!area) throw new ErroNaoEncontrado("Área não encontrada.");
-            detalhes.area = area;
-        } else {
-            detalhes.area = null;
-        }
-    }
-
-    if (entrada.codigoCargo !== undefined) {
-        if (entrada.codigoCargo) {
-            const cargo = await factory.criarCargoRepository().buscarPorCodigo(entrada.codigoCargo);
-            if (!cargo) throw new ErroNaoEncontrado("Cargo não encontrado.");
-            detalhes.cargo = cargo;
-        } else {
-            detalhes.cargo = null;
-        }
     }
 
     return detalhes;

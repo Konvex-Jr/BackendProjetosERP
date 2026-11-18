@@ -48,6 +48,7 @@ export const MENSAGENS_DE_ERRO = {
         FIM_NAO_DEPOIS_DO_INICIO: "O fim do período na área deve ser depois do início.",
         SOBREPOSTO: (inicio: string, fim: string | null) =>
             `Já existe um período nesta área que se sobrepõe a este (de ${inicio} ${fim ? `até ${fim}` : "em aberto"}).`,
+        SOBREPOSTO_SEM_DATAS: "Já existe um período nesta área que se sobrepõe a este.",
         AREA_INATIVA: "A área informada está inativa.",
         CARGO_INATIVO: "O cargo informado está inativo.",
         PESSOA_FORA_DA_EJ: "Só pessoas Ativas ou Trainees têm período em aberto; informe a data de fim.",

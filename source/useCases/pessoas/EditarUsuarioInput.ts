@@ -8,7 +8,4 @@ export default interface EditarUsuarioInput extends EntradaPerfilPessoa {
     email?: string;
     perfil?: PerfilUsuario;
     senioridade?: SenioridadeUsuario | null;
-    /** Data em que a mudança de cargo ou área passa a valer (padrão: hoje). */
-    dataVigencia?: Date | null;
-    codigoAutor?: string | null;
 }

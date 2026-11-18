@@ -7,7 +7,6 @@ import StatusProjeto from "../../../domain/enum/StatusProjeto";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
 import Area from "../../../domain/entity/Area";
-import Cargo from "../../../domain/entity/Cargo";
 import Participacao from "../../../domain/entity/Participacao";
 import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
 
@@ -18,7 +17,7 @@ import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
  */
 
 /**
- * SELECT base de pessoa, já com senioridade, área e cargo.
+ * SELECT base de pessoa, já com senioridade. As áreas atuais vêm dos períodos (preencherAreasAtuais).
  */
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
@@ -27,13 +26,9 @@ export const SELECT_USUARIO = `
            s.codigo AS senioridade_codigo,
            s.nome AS senioridade_nome,
            s.valor_hora AS senioridade_valor_hora,
-           s.ordem AS senioridade_ordem,
-           a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo AS area_pai_codigo, a.ativa AS area_ativa,
-           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo, c.lidera_area AS cargo_lidera_area
+           s.ordem AS senioridade_ordem
     FROM usuarios u
     LEFT JOIN senioridades s ON s.codigo = u.senioridade_codigo
-    LEFT JOIN areas a ON a.codigo = u.area_codigo
-    LEFT JOIN cargos c ON c.codigo = u.cargo_codigo
 `;
 
 function unicos(codigos: string[]): string[] {
@@ -65,8 +60,6 @@ export function usuarioDeLinha(linha: any): Usuario {
         githubUrl: linha.github_url,
         curso: linha.curso,
         semestre: linha.semestre,
-        area: areaDeLinha(linha),
-        cargo: linha.cargo_codigo ? new Cargo(linha.cargo_nome, linha.cargo_ativo, linha.cargo_codigo, linha.cargo_lidera_area) : null,
         dataEntrada: linha.data_entrada,
         dataSaida: linha.data_saida,
         bio: linha.bio,

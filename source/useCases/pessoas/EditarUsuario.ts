@@ -1,6 +1,5 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Usuario from "../../domain/entity/Usuario";
-import { hoje } from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
@@ -9,8 +8,8 @@ import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
 /**
- * RF-010 e RF-014: edita a pessoa. Mudança de cargo ou de área gera um registro
- * no histórico, sem apagar o anterior (RN-02). O status muda em AlterarStatusPessoa.
+ * RF-010: edita a pessoa. O status muda em AlterarStatusPessoa; área e cargo, nos períodos
+ * (sessão 23a), e não aqui.
  */
 export default class EditarUsuario {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
@@ -39,7 +38,7 @@ export default class EditarUsuario {
 
         exigirTraineeMembro(atual.status, input.perfil ?? atual.perfil);
 
-        const detalhes = await resolverPerfilPessoa(this.factory, input);
+        const detalhes = resolverPerfilPessoa(input);
         const editado = atual.copiar({
             nome: input.nome !== undefined ? String(input.nome).trim() : undefined,
             email,
@@ -48,27 +47,6 @@ export default class EditarUsuario {
             ...detalhes,
         });
         await usuarios.editar(editado);
-
-        const historico = this.factory.criarHistoricoPessoaRepository();
-        const dataVigencia = input.dataVigencia ?? hoje();
-        if ((atual.cargo?.codigo ?? null) !== (editado.cargo?.codigo ?? null)) {
-            await historico.registrarCargo({
-                codigoUsuario: editado.codigo,
-                cargoAnterior: atual.cargo,
-                cargoNovo: editado.cargo,
-                dataVigencia,
-                codigoRegistradoPor: input.codigoAutor ?? null,
-            });
-        }
-        if ((atual.area?.codigo ?? null) !== (editado.area?.codigo ?? null)) {
-            await historico.registrarArea({
-                codigoUsuario: editado.codigo,
-                areaAnterior: atual.area,
-                areaNova: editado.area,
-                dataVigencia,
-                codigoRegistradoPor: input.codigoAutor ?? null,
-            });
-        }
         return editado;
     }
 }

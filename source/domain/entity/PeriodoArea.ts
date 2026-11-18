@@ -42,6 +42,31 @@ export default class PeriodoArea {
         this.validar();
     }
 
+    /**
+     * Monta o período lido do banco sem as regras de data: elas valem ao gravar, não ao ler.
+     * Um fim gravado por encerrarAbertosDe pode ficar no dia seguinte a hoje (início + 1 dia),
+     * e a leitura não pode falhar por isso.
+     */
+    static carregar(
+        codigoUsuario: string,
+        area: Area,
+        cargo: Cargo | null,
+        inicio: Date,
+        fim: Date | null,
+        codigoRegistradoPor: string | null,
+        codigo: string,
+    ): PeriodoArea {
+        return Object.assign(Object.create(PeriodoArea.prototype) as PeriodoArea, {
+            codigo,
+            codigoUsuario,
+            area,
+            cargo,
+            inicio,
+            fim,
+            codigoRegistradoPor,
+        });
+    }
+
     get aberto(): boolean {
         return this.fim === null;
     }
@@ -77,6 +102,14 @@ export function sobrepoe(a: Intervalo, b: Intervalo): boolean {
 
 const formatar = (d: Date) => d.toISOString().slice(0, 10).split("-").reverse().join("/");
 
+/** Erro de período sobreposto, citando as datas do conflito (sem ele, a mensagem genérica). */
+export function erroSobreposicao(conflito: Intervalo | null): ErroValidacao {
+    const mensagem = conflito
+        ? M.SOBREPOSTO(formatar(conflito.inicio), conflito.fim ? formatar(conflito.fim) : null)
+        : M.SOBREPOSTO_SEM_DATAS;
+    return new ErroValidacao(mensagem, "PERIODO_SOBREPOSTO");
+}
+
 /**
  * Regras que dependem de outros períodos e da pessoa. `anterior` é a versão gravada do período
  * em edição (null se novo): área/cargo inativos só barram quando mudam.
@@ -88,12 +121,7 @@ export function validarNovoPeriodo(
     pessoa: { status: StatusPessoa; dataSaida: Date | null },
 ): void {
     const conflito = outros.find((o) => o.codigo !== periodo.codigo && o.area.codigo === periodo.area.codigo && sobrepoe(o, periodo));
-    if (conflito) {
-        throw new ErroValidacao(
-            M.SOBREPOSTO(formatar(conflito.inicio), conflito.fim ? formatar(conflito.fim) : null),
-            "PERIODO_SOBREPOSTO",
-        );
-    }
+    if (conflito) throw erroSobreposicao(conflito);
     if (!periodo.area.ativa && periodo.area.codigo !== anterior?.area.codigo) throw new ErroValidacao(M.AREA_INATIVA, "AREA_INATIVA");
     if (periodo.cargo && !periodo.cargo.ativo && periodo.cargo.codigo !== anterior?.cargo?.codigo) {
         throw new ErroValidacao(M.CARGO_INATIVO, "CARGO_INATIVO");
