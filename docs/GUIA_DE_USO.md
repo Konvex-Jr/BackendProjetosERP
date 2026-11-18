@@ -47,10 +47,13 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - **Ver sem baixar:** clique no nome de um PDF ou de uma imagem (PNG, JPG, WEBP, GIF) para abri-lo numa janela do sistema, com o botão **Baixar**; Esc fecha. Word, Excel, PowerPoint, OpenDocument, CSV, TXT, MD e ZIP só baixam. No celular, o PDF é baixado em vez de abrir na janela.
 - **Ver e baixar mais rápido:** ao passar o mouse, focar ou tocar no nome de um PDF ou imagem de até 5 MB, o sistema já começa a buscar o arquivo. Os arquivos ficam guardados só na memória da aba por 10 minutos (até 50 MB no total): nada vai para o disco do seu aparelho, e tudo some ao sair ou trocar de conta. Arquivos maiores que 1 MB mostram uma barra de progresso.
 - **Clipe:** nas listas da Biblioteca e nos cartões de tarefa, o clipe com número mostra quantos arquivos o item tem.
-- **Foto e links:** em **Meu perfil**, clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa. GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.
 - **No perfil:** em **Meu perfil** e no perfil de outras pessoas, a seção **Itens na Biblioteca** lista o que a pessoa cadastrou (só o que você pode ler); clique para abrir a ficha.
 - Na ficha de cada projeto, a aba **Biblioteca** mostra os itens ligados a ele que você pode ver.
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas avulsas de Inovação.
+
+**Meu perfil** (no menu): seus dados de contato e apresentação (telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio), troca de senha e a sua foto.
+- **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
+- **Links**: GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.
 
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
 
