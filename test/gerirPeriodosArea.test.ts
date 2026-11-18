@@ -129,4 +129,34 @@ describe("GerirPeriodosArea", () => {
             codigo: "INICIO_NO_FUTURO",
         });
     });
+
+    test("período encerrado de área desativada: corrige as datas, mas não reabre", async () => {
+        const { factory, gerir, membro, gerente, projetos } = await contexto();
+        const p = await gerir.criar(
+            membro.codigo,
+            { codigoArea: projetos.codigo, inicio: dia("2025-01-01"), fim: dia("2025-06-01") },
+            gerente.codigo,
+        );
+        await factory.criarAreaRepository().editar(new Area(projetos.nome, null, false, projetos.codigo));
+        const corrigido = await gerir.editar(membro.codigo, p.codigo, {
+            codigoArea: projetos.codigo,
+            inicio: dia("2025-02-01"),
+            fim: dia("2025-06-01"),
+        });
+        expect(corrigido.inicio).toEqual(dia("2025-02-01"));
+        await expect(
+            gerir.editar(membro.codigo, p.codigo, { codigoArea: projetos.codigo, inicio: dia("2025-02-01"), fim: null }),
+        ).rejects.toMatchObject({ codigo: "AREA_INATIVA_NAO_REABRE" });
+    });
+
+    test("saída da EJ com data no futuro: 400 SAIDA_NO_FUTURO", async () => {
+        const { factory, membro } = await contexto();
+        await expect(
+            new AlterarStatusPessoa(factory).execute({
+                codigo: membro.codigo,
+                status: StatusPessoa.ALUMNI,
+                dataSaida: new Date(hoje().getTime() + 86_400_000),
+            }),
+        ).rejects.toMatchObject({ codigo: "SAIDA_NO_FUTURO" });
+    });
 });

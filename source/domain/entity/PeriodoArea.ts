@@ -123,6 +123,10 @@ export function validarNovoPeriodo(
     const conflito = outros.find((o) => o.codigo !== periodo.codigo && o.area.codigo === periodo.area.codigo && sobrepoe(o, periodo));
     if (conflito) throw erroSobreposicao(conflito);
     if (!periodo.area.ativa && periodo.area.codigo !== anterior?.area.codigo) throw new ErroValidacao(M.AREA_INATIVA, "AREA_INATIVA");
+    // Área desativada: o período antigo pode ter as datas corrigidas, mas não volta a ficar aberto.
+    if (!periodo.area.ativa && periodo.aberto && anterior && !anterior.aberto) {
+        throw new ErroValidacao(M.AREA_INATIVA_NAO_REABRE, "AREA_INATIVA_NAO_REABRE");
+    }
     if (periodo.cargo && !periodo.cargo.ativo && periodo.cargo.codigo !== anterior?.cargo?.codigo) {
         throw new ErroValidacao(M.CARGO_INATIVO, "CARGO_INATIVO");
     }

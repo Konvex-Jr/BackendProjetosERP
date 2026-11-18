@@ -20,6 +20,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     USUARIO: {
+        SAIDA_NO_FUTURO: "A data de saída (dataSaida) não pode ser no futuro.",
         NAO_ENCONTRADO: "Usuário não encontrado.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
         TRAINEE_SO_MEMBRO: "Trainee tem sempre o perfil de membro: troque o perfil para membro ou o status para ativo.",
@@ -50,6 +51,8 @@ export const MENSAGENS_DE_ERRO = {
             `Já existe um período nesta área que se sobrepõe a este (de ${inicio} ${fim ? `até ${fim}` : "em aberto"}).`,
         SOBREPOSTO_SEM_DATAS: "Já existe um período nesta área que se sobrepõe a este.",
         AREA_INATIVA: "A área informada está inativa.",
+        AREA_INATIVA_NAO_REABRE: "A área deste período está inativa: o período não pode ser reaberto. Informe a data de fim.",
+        AREA_OBRIGATORIA: "Informe a área do período (campo codigoArea).",
         CARGO_INATIVO: "O cargo informado está inativo.",
         PESSOA_FORA_DA_EJ: "Só pessoas Ativas ou Trainees têm período em aberto; informe a data de fim.",
         FIM_DEPOIS_DA_SAIDA: "O fim do período na área não pode ser depois da saída da pessoa.",

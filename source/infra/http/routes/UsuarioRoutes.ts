@@ -25,6 +25,7 @@ import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../.
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
+import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** Lê a senioridade enviada como objeto ({ codigo }) ou como texto (codigoSenioridade). */
@@ -34,9 +35,16 @@ function lerSenioridade(body: any): SenioridadeUsuario | null {
 }
 
 /** Campos do perfil presentes no corpo; ausentes ficam undefined (não alteram). */
+function lerCodigoArea(valor: unknown): string {
+    if (typeof valor !== "string" || !valor.trim()) {
+        throw new ErroValidacao(MENSAGENS_DE_ERRO.PERIODO.AREA_OBRIGATORIA, "CAMPO_OBRIGATORIO");
+    }
+    return valor.trim();
+}
+
 function lerPeriodo(body: any): PeriodoAreaEntrada {
     return {
-        codigoArea: String(body?.codigoArea ?? ""),
+        codigoArea: lerCodigoArea(body?.codigoArea),
         codigoCargo: body?.codigoCargo ? String(body.codigoCargo) : null,
         inicio: lerDataObrigatoria(body?.inicio, "inicio"),
         fim: lerData(body?.fim, "fim"),

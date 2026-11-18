@@ -46,6 +46,10 @@ export default class AlterarStatusPessoa {
         }
 
         const saindo = STATUS_DE_SAIDA.includes(input.status);
+        // Saída no futuro deixaria os períodos nas áreas com fim no futuro (e travaria a edição deles).
+        if (saindo && input.dataSaida && input.dataSaida.getTime() > hoje().getTime()) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.SAIDA_NO_FUTURO, "SAIDA_NO_FUTURO");
+        }
         const dataSaida = saindo ? (input.dataSaida ?? atual.dataSaida ?? hoje()) : null;
         const usuario = atual.copiar({ status: input.status, dataSaida });
         await usuarios.editar(usuario);

@@ -317,6 +317,8 @@ SELECT u.nome, c.nome AS cargo FROM usuarios u JOIN cargos c ON c.codigo = u.car
 SELECT nome FROM cargos WHERE unaccent(lower(nome)) ~ '^(gerente|diretor)';
 SQL
 ```
+Atenção: a carga dá a cada pessoa a área atual desde a data de entrada na EJ; passagens anteriores por outras áreas registradas em `historico_areas` não viram períodos, e essas tabelas são apagadas. O `.dump` da Parte 1 é a única cópia desse histórico: guarde-o até a gestão lançar os períodos antigos.
+
 A primeira lista mostra quem tem cargo e não tem área: o cargo dessas pessoas não vira período (período exige área); a gestão lança depois. A segunda mostra os cargos que vão ficar marcados como "Lidera a área".
 
 **Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`).

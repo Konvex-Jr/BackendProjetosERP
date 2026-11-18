@@ -70,6 +70,14 @@ describe("Períodos por área (HTTP)", () => {
         expect(semInicio.status).toBe(400);
     });
 
+    it("sem área: 400 CAMPO_OBRIGATORIO, não 404", async () => {
+        for (const codigoArea of [undefined, null, ""]) {
+            const r = await servidor.chamar("post", caminho(ctx.membro), { usuario: ctx.gerente, corpo: corpo({ codigoArea }) });
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("CAMPO_OBRIGATORIO");
+        }
+    });
+
     it("gerente não mexe nos períodos de um diretor: 403", async () => {
         const r = await servidor.chamar("post", caminho(diretora), { usuario: ctx.gerente, corpo: corpo() });
         expect(r.status).toBe(403);
