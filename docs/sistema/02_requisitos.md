@@ -10,7 +10,7 @@ Diretor (ADMIN), gerente (MANAGER) e membro (MEMBER). "Gestão" = diretores e ge
 ## Regras por módulo
 | Módulo | Regras |
 |---|---|
-| Pessoas | Gestão cria, edita e muda status; ninguém é excluído. Troca de área/cargo gera histórico. Perfil (GitHub, calendário, tecnologias) visível a todos os logados |
+| Pessoas | Gestão cria, edita e muda status; ninguém é excluído. Troca de área/cargo gera histórico. Perfil (foto, GitHub, LinkedIn, calendário) visível a todos os logados; cada pessoa troca a própria foto |
 | Projetos | Gestão cria e edita; um líder por projeto; membro vê só os projetos de que participa ou participou |
 | Tarefas | De projeto ou avulsas (Inovação, Capacitação, Execução). Participantes do projeto criam (ficam responsáveis), concluem/reabrem as suas e comentam; gestão organiza tudo |
 | Biblioteca | Item com texto, links, anexos, tags, projeto opcional e sigilo (Todos / Só gestão / Equipe de um projeto). Todos cadastram; autor ou gestão alteram; leitura pelo sigilo |

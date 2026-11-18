@@ -46,14 +46,17 @@
 
 Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações do catálogo e itens de menu). Ordem do menu: Dashboard, Tarefas, Projetos, Capacitações, Biblioteca, Visão Estratégica, Simular precificação, Pessoas, Configurações, Meu perfil.
 
-### Pessoas (`/usuarios`, `/auth/*`, `/habilidades`)
+### Pessoas (`/usuarios`, `/auth/*`, `/fotos`)
 - A gestão cadastra, edita, muda o status e redefine a senha. Criar, editar ou promover **diretor** exige também `pessoas.gerirDiretores` (`exigirPodeGerirPerfil`).
 - Ninguém altera o próprio papel nem o próprio status, nem inativa a própria conta.
 - Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
 - Trocar área ou cargo grava histórico (`historico_areas`, `historico_cargos`).
-- Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre, bio e tecnologias (`PUT /auth/perfil`). E troca a própria senha.
-- Todos os logados consultam a lista de pessoas e os perfis (links e tecnologias visíveis). No perfil de outra pessoa, o membro vê só os projetos que os dois compartilham (`ObterPerfilPessoa`).
+- Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio (`PUT /auth/perfil`). E troca a própria senha e a própria foto.
+- **Foto de perfil:** cada pessoa envia, troca e remove a própria foto (`PUT` e `DELETE /auth/foto`). O navegador recorta em quadrado e manda WebP 256×256; o backend aceita só WebP (confere a assinatura) de até 300 KB. O arquivo fica em `anexos/fotos/` com nome UUID e é servido em `GET /fotos/:arquivo`, **sem login** (nome impossível de adivinhar, cache longo). Trocar ou remover apaga o arquivo antigo; inativar a pessoa não mexe na foto (ninguém é excluído). Onde aparecem as iniciais, aparece a foto, se houver.
+- **Links do perfil:** GitHub, LinkedIn e calendário aparecem como cartões com o logo oficial (calendário do Google com o logo do Google Agenda; outro calendário, ícone genérico).
+- **Tecnologias saíram** (18/11, migração 016): sem tabelas, sem campo e sem tela. Se o corpo do `PUT /auth/perfil` ainda trouxer `tecnologias`, é ignorado.
+- Todos os logados consultam a lista de pessoas e os perfis (links e foto visíveis). No perfil de outra pessoa, o membro vê só os projetos que os dois compartilham (`ObterPerfilPessoa`).
 - O perfil mostra projetos atuais e anteriores, histórico de área e cargo, capacitações e horas cumpridas (só com presença marcada).
 
 ### Configurações (`/areas`, `/cargos`, `/senioridades`)
@@ -141,7 +144,9 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 |---|---|---|---|---|
 | Ver lista de pessoas e perfis | ✅ | ✅ | ✅ | só login (`UsuarioRoutes`) |
 | Ver projetos no perfil de outra pessoa | todos | todos | só os em comum | `projetos.verTodos` + `participaOuParticipou` |
-| Editar o próprio contato, tecnologias e senha | ✅ | ✅ | ✅ | só login (`/auth/perfil`, `/auth/senha`) |
+| Editar o próprio contato e senha | ✅ | ✅ | ✅ | só login (`/auth/perfil`, `/auth/senha`) |
+| Enviar, trocar e remover a própria foto | ✅ | ✅ | ✅ | só login (`/auth/foto`) |
+| Ver a foto de qualquer pessoa | ✅ (endereço público) | ✅ | ✅ | `GET /fotos/:arquivo`, sem login |
 | Cadastrar, editar, mudar status, redefinir senha de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
 | O mesmo para diretores (ou promover a diretor) | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
 | Alterar o próprio papel ou status | ❌ | ❌ | ❌ | `UsuarioRoutes` (checagem explícita) |
@@ -235,6 +240,11 @@ Gestão (documentos), Base de Inteligência e Iniciativas guardavam o mesmo tipo
 - **Área Inovação perdeu o direito especial** de criar. Tarefa avulsa continua só da gestão.
 - **Tarefas** perderam a ligação com iniciativa.
 - Spec: `docs/superpowers/specs/2026-11-14-biblioteca-design.md`.
+
+## 4.1. Registro da sessão 22 (foto e links do perfil)
+
+A pessoa passou a ter **foto de perfil** (no lugar do campo `avatar_url`) e os links do perfil ganharam cartões com logo. As **tecnologias** (tabelas `habilidades` e `usuario_habilidades`) saíram do sistema: a migração 016 apaga esses dados, que só voltam do backup anterior à publicação. A foto não cria ação nova no catálogo de permissões (basta estar logado).
+- Spec: `docs/superpowers/specs/2026-11-18-perfil-design.md`.
 
 ## 5. O que ainda não existe
 Homologação, auditoria (quem mudou o quê), LGPD e retenção, precificação pela API, Google Calendar, e-mails, busca global, Board Tático, CRM. Ver o `.konvex/roteiro.md` (fases 6 e 7).

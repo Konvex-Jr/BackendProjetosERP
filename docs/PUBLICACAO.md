@@ -263,6 +263,49 @@ As duas contagens têm que ser `0`. No navegador, abra um projeto: o quadro most
 
 **Rollback:** depois da migração 015, o backend anterior **não consegue criar tarefa de projeto** (a regra nova do banco exige coluna). Voltar só o código não basta. O caminho de volta é restaurar o `.dump` feito na Parte 1 (seção 6), perdendo o que foi gravado depois, e voltar **backend e frontend juntos**; ou corrigir para frente.
 
+### Publicação da sessão 22 (foto de perfil e fim das tecnologias): migração 016
+A migração `016_foto_sem_habilidades.sql` troca a coluna `usuarios.avatar_url` por `usuarios.foto` e **apaga as tabelas `habilidades` e `usuario_habilidades`** (as tecnologias saem do sistema; os dados só voltam do backup). As fotos ficam em `anexos/fotos/`, dentro da pasta `anexos`, que o backup já cobre. Publicar **backend e frontend juntos**.
+
+**Parte 1, preparar (backup, antes de qualquer pull):**
+```bash
+cd /docker/erp-konvex
+mkdir -p /root/backup-konvex
+DATA=$(date +%F_%H%M)
+ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+[ -d anexos ] && tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos && ls -lh /root/backup-konvex/anexos_$DATA.tar.gz
+```
+Confira que os dois arquivos não estão vazios e anote o horário (`$DATA`).
+
+**Parte 2, atualizar e construir (ainda sem derrubar nada):**
+```bash
+cd /docker/erp-konvex
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+git -C backend status --short && git -C frontend status --short   # têm que sair vazios
+docker compose build backend frontend
+```
+Se o build falhar, o sistema segue no ar com a versão antiga.
+
+**Parte 3, subir (a migração 016 roda ao iniciar o backend):**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 016_foto_sem_habilidades.sql` e `API disponível na porta 5001`. Se aparecer `Banco já está atualizado.` sem a 016, o PR ainda não foi mergeado.
+
+**Parte 4, conferir:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+curl -sI https://erp.konvexjr.com.br/api/fotos/00000000-0000-4000-8000-000000000000.webp | head -1   # 404
+docker exec konvex-backend node dist/source/scripts/conferirAnexos.js; echo "código $?"   # 0 (ignora a pasta fotos/)
+```
+No navegador, entre, abra **Meu perfil**, envie uma foto e confira que ela aparece no topo. Depois copie o endereço da imagem (botão direito, copiar endereço da imagem) e teste de fora, sem login:
+```bash
+curl -sI "https://erp.konvexjr.com.br/api/fotos/<ARQUIVO>.webp" | head -1   # 200
+```
+
+**Rollback:** voltar só o backend depois da 016 quebra o perfil (a coluna `avatar_url` e as tabelas de tecnologias não existem mais). O caminho de volta é restaurar o `.dump` feito na Parte 1 (seção 6), perdendo o que foi gravado depois, e voltar **backend e frontend juntos**. As fotos enviadas ficam em `anexos/fotos/` e não atrapalham.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

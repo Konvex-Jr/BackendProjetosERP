@@ -36,7 +36,7 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 | Módulo | Faz | Rotas |
 |---|---|---|
 | auth | Login, refresh, logout, perfil próprio, troca de senha, menu e permissões | `/auth/*` |
-| pessoas | Pessoas, status, áreas/cargos (com histórico), tecnologias | `/usuarios`, `/habilidades` |
+| pessoas | Pessoas, status, áreas/cargos (com histórico), foto de perfil | `/usuarios`, `/auth/foto`, `/fotos` |
 | config | Áreas (hierárquicas), cargos, senioridades | `/areas`, `/cargos`, `/senioridades` |
 | projetos | Projetos, equipe com alocação, líder | `/projetos` |
 | tarefas | Tarefas de projeto e avulsas, kanban, comentários | `/tarefas` |
