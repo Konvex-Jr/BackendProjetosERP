@@ -9,7 +9,7 @@ UPDATE cargos SET lidera_area = TRUE WHERE unaccent(lower(nome)) ~ '^(gerente|di
 
 CREATE TABLE IF NOT EXISTS periodos_area (
     codigo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_codigo UUID NOT NULL REFERENCES usuarios(codigo) ON DELETE CASCADE,
+    usuario_codigo UUID NOT NULL REFERENCES usuarios(codigo) ON DELETE RESTRICT,
     area_codigo UUID NOT NULL REFERENCES areas(codigo) ON DELETE RESTRICT,
     cargo_codigo UUID REFERENCES cargos(codigo) ON DELETE RESTRICT,
     inicio DATE NOT NULL,

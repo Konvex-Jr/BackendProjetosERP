@@ -84,6 +84,15 @@ descrever("migração 017 sobre a 016", () => {
         await inserirPessoa("Duda", "ativo", null, cargos.assessor, null, null);
         await inserirPessoa("Edu", "inativo", areas.projetos, null, "2025-05-05", "2025-05-05");
 
+        await inserirPessoa("Fabi", "ativo", areas.projetos, null, null, null);
+        await inserirPessoa("Gabi", "alumni", areas.projetos, null, null, null);
+        await inserirPessoa("Hugo", "ativo", areas.inovacao, null, null, null);
+        await pool.query(
+            `INSERT INTO historico_areas (usuario_codigo, area_anterior_codigo, area_nova_codigo, data_vigencia) VALUES
+             ($1, NULL, $3, '2025-02-15'), ($1, $3, $2, '2025-09-20'), ($1, $2, $3, '2025-06-01')`,
+            [pessoas.Hugo, areas.projetos, areas.inovacao],
+        );
+
         await aplicarMigracoes(pool, PASTA, silencio);
     }, 60000);
 
@@ -98,6 +107,17 @@ descrever("migração 017 sobre a 016", () => {
         expect(await periodos("Caio")).toEqual([{ area: "Projetos", cargo: "Assessor", inicio: "2024-02-01", fim: "2025-12-15" }]);
         expect(await periodos("Duda")).toEqual([]);
         expect(await periodos("Edu")).toEqual([{ area: "Projetos", cargo: null, inicio: "2025-05-04", fim: "2025-05-05" }]);
+    });
+
+    test("sem data de entrada nem histórico o início é hoje; alumni sem saída termina hoje", async () => {
+        const hoje = (await pool.query("SELECT to_char(CURRENT_DATE, 'YYYY-MM-DD') AS d, to_char(CURRENT_DATE - 1, 'YYYY-MM-DD') AS ontem"))
+            .rows[0];
+        expect(await periodos("Fabi")).toEqual([{ area: "Projetos", cargo: null, inicio: hoje.d, fim: null }]);
+        expect(await periodos("Gabi")).toEqual([{ area: "Projetos", cargo: null, inicio: hoje.ontem, fim: hoje.d }]);
+    });
+
+    test("com vários registros no histórico, o início é a data mais recente da área atual", async () => {
+        expect(await periodos("Hugo")).toEqual([{ area: "Inovação", cargo: null, inicio: "2025-06-01", fim: null }]);
     });
 
     test("cargos de gerência e direção passam a liderar a área", async () => {
