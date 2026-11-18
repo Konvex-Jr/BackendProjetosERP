@@ -47,6 +47,12 @@ O perfil hoje é só texto: avatar com iniciais, links do LinkedIn, GitHub e cal
 - **Front, onde aparece:** o componente `Av` (`components/Ui.jsx`: equipes em Projetos e Projeto, responsáveis no `CartaoTarefa`), o avatar do topo (`components/Layout.jsx`), o avatar grande do perfil (`Perfil.jsx`) e qualquer outro lugar que mostre iniciais. Sem foto, ou se a imagem falhar ao carregar: iniciais, como hoje. Imagem com `alt` = nome, `loading="lazy"` nas listas.
 - **Depois de trocar a foto:** a tela atualiza na hora para a própria pessoa (topo, perfil e listas), sem recarregar a página.
 
+### Acesso ao perfil pelo avatar do topo (usuário, 18/11)
+
+- **"Meu perfil" sai do menu lateral.** O perfil abre só pelo avatar do canto superior direito (a rota `/perfil` continua existindo, e o perfil de outra pessoa segue em `/perfil/:codigo`).
+- **Deixar claro que é clicável:** o bloco do topo (nome, papel e avatar) vira um único botão de verdade (`<button>`, funciona com Tab e Enter), com `title` e `aria-label` "Meu perfil". Ao passar o mouse ou focar: o avatar cresce de leve e ganha um anel laranja, com transição curta (cerca de 150 ms); respeita `prefers-reduced-motion` (sem crescer, só o anel).
+- No celular (375 px), onde o nome some, o avatar sozinho é o botão, com área de toque de pelo menos 40 px.
+
 ### Links com logo
 
 - No perfil (o próprio e o de outra pessoa), GitHub, LinkedIn e calendário viram cartões: logo, nome do serviço e o link encurtado; abrem em nova aba (`rel="noreferrer"`). Sem link, o cartão não aparece; sem nenhum, a seção some (no próprio perfil, um convite para preencher).
