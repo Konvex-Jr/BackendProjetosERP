@@ -5,7 +5,7 @@ import { violacaoDeUnicidade } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
-const SELECT = "SELECT codigo, nome, ativo FROM cargos";
+const SELECT = "SELECT codigo, nome, ativo, lidera_area FROM cargos";
 
 export default class CargoRepositoryDatabase implements CargoRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
@@ -21,15 +21,21 @@ export default class CargoRepositoryDatabase implements CargoRepositoryInterface
     }
 
     async criar(cargo: Cargo): Promise<Cargo> {
-        await this.executar("INSERT INTO cargos (codigo, nome, ativo) VALUES ($1, $2, $3)", [cargo.codigo, cargo.nome, cargo.ativo]);
+        await this.executar("INSERT INTO cargos (codigo, nome, ativo, lidera_area) VALUES ($1, $2, $3, $4)", [
+            cargo.codigo,
+            cargo.nome,
+            cargo.ativo,
+            cargo.lideraArea,
+        ]);
         return cargo;
     }
 
     async editar(cargo: Cargo): Promise<Cargo> {
-        const linhas = await this.executar("UPDATE cargos SET nome = $2, ativo = $3 WHERE codigo = $1 RETURNING codigo", [
+        const linhas = await this.executar("UPDATE cargos SET nome = $2, ativo = $3, lidera_area = $4 WHERE codigo = $1 RETURNING codigo", [
             cargo.codigo,
             cargo.nome,
             cargo.ativo,
+            cargo.lideraArea,
         ]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Cargo não encontrado.");
         return cargo;
@@ -46,5 +52,5 @@ export default class CargoRepositoryDatabase implements CargoRepositoryInterface
 }
 
 function paraEntidade(linha: any): Cargo {
-    return new Cargo(linha.nome, linha.ativo, linha.codigo);
+    return new Cargo(linha.nome, linha.ativo, linha.codigo, linha.lidera_area);
 }

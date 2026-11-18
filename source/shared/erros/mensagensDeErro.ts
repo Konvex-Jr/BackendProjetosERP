@@ -42,6 +42,18 @@ export const MENSAGENS_DE_ERRO = {
                 : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
     },
 
+    PERIODO: {
+        INICIO_NO_FUTURO: "O início do período na área não pode ser no futuro.",
+        FIM_NO_FUTURO: "O fim do período na área não pode ser no futuro.",
+        FIM_NAO_DEPOIS_DO_INICIO: "O fim do período na área deve ser depois do início.",
+        SOBREPOSTO: (inicio: string, fim: string | null) =>
+            `Já existe um período nesta área que se sobrepõe a este (de ${inicio} ${fim ? `até ${fim}` : "em aberto"}).`,
+        AREA_INATIVA: "A área informada está inativa.",
+        CARGO_INATIVO: "O cargo informado está inativo.",
+        PESSOA_FORA_DA_EJ: "Só pessoas Ativas ou Trainees têm período em aberto; informe a data de fim.",
+        FIM_DEPOIS_DA_SAIDA: "O fim do período na área não pode ser depois da saída da pessoa.",
+    },
+
     TAREFA: {
         TITULO_OBRIGATORIO: "O título da tarefa é obrigatório.",
         PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",

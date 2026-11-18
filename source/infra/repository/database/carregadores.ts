@@ -29,7 +29,7 @@ export const SELECT_USUARIO = `
            s.valor_hora AS senioridade_valor_hora,
            s.ordem AS senioridade_ordem,
            a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo AS area_pai_codigo, a.ativa AS area_ativa,
-           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo
+           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo, c.lidera_area AS cargo_lidera_area
     FROM usuarios u
     LEFT JOIN senioridades s ON s.codigo = u.senioridade_codigo
     LEFT JOIN areas a ON a.codigo = u.area_codigo
@@ -66,7 +66,7 @@ export function usuarioDeLinha(linha: any): Usuario {
         curso: linha.curso,
         semestre: linha.semestre,
         area: areaDeLinha(linha),
-        cargo: linha.cargo_codigo ? new Cargo(linha.cargo_nome, linha.cargo_ativo, linha.cargo_codigo) : null,
+        cargo: linha.cargo_codigo ? new Cargo(linha.cargo_nome, linha.cargo_ativo, linha.cargo_codigo, linha.cargo_lidera_area) : null,
         dataEntrada: linha.data_entrada,
         dataSaida: linha.data_saida,
         bio: linha.bio,

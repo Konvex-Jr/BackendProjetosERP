@@ -37,11 +37,11 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("get", "/cargos", true, async () => f.criarCargoRepository().listar());
         this.http.route("post", "/cargos", true, async (_p: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
-            return new SalvarCargo(f).execute({ nome: body.nome, ativo: body.ativo });
+            return new SalvarCargo(f).execute({ nome: body.nome, ativo: body.ativo, lideraArea: body.lideraArea });
         });
         this.http.route("put", "/cargos/:codigo", true, async (params: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
-            return new SalvarCargo(f).execute({ codigo: params.codigo, nome: body.nome, ativo: body.ativo });
+            return new SalvarCargo(f).execute({ codigo: params.codigo, nome: body.nome, ativo: body.ativo, lideraArea: body.lideraArea });
         });
 
         this.http.route("post", "/senioridades", true, async (_p: any, body: any) => {
