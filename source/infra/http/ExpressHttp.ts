@@ -107,7 +107,7 @@ export default class ExpressHttp implements Http {
                     const grande = erro.type === "entity.too.large";
                     res.status(grande ? 413 : 400).json({
                         message: grande ? opcoes.mensagemLimite : "Não foi possível receber o arquivo.",
-                        codigo: grande ? "ANEXO_GRANDE_DEMAIS" : "ANEXO_INVALIDO",
+                        codigo: grande ? (opcoes.codigoLimite ?? "ANEXO_GRANDE_DEMAIS") : "ANEXO_INVALIDO",
                     });
                     return;
                 }

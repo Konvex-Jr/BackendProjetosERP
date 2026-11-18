@@ -116,6 +116,8 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
         expect((await r.json()).codigo).toBe("FOTO_FORMATO_INVALIDO");
         const grande = await enviar(webp(301 * 1024));
         expect(grande.status).toBe(413);
-        expect((await grande.json()).message).toBe("A foto pode ter até 300 KB.");
+        const corpo = await grande.json();
+        expect(corpo.message).toBe("A foto pode ter até 300 KB.");
+        expect(corpo.codigo).toBe("FOTO_GRANDE_DEMAIS");
     });
 });

@@ -6,7 +6,7 @@ export interface OpcoesRota {
      * cabeçalho X-Nome-Arquivo (codificado com encodeURIComponent). O callback recebe
      * `body.arquivo = { nome, conteudo }` e `body.user`.
      */
-    arquivo?: { limiteBytes: number; mensagemLimite: string };
+    arquivo?: { limiteBytes: number; mensagemLimite: string; codigoLimite?: string };
 }
 
 /**

@@ -138,6 +138,7 @@ export const MENSAGENS_DE_ERRO = {
         FORMATO_INVALIDO: "A foto tem que ser uma imagem WebP.",
         GRANDE_DEMAIS: "A foto pode ter até 300 KB.",
         NOME_INVALIDO: "Nome de foto inválido.",
+        NAO_ENCONTRADA: "Foto não encontrada.",
     },
 
     GERAL: {

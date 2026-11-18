@@ -443,7 +443,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
         delete: operation(["Autenticação"], "Remover a própria foto"),
     },
     "/fotos/{arquivo}": {
-        get: operation(["Autenticação"], "Foto de perfil (pública; nome UUID.webp; 404 se não existe)", {
+        get: operation(["Usuários"], "Foto de perfil (pública; nome UUID.webp; 404 se não existe)", {
             security: [],
             parameters: [{ name: "arquivo", in: "path", required: true, schema: { type: "string" } }],
         }),

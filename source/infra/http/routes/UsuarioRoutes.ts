@@ -119,7 +119,13 @@ export default class UsuarioRoutes implements ModelRoutes {
             "/auth/foto",
             true,
             async (_p: any, body: any) => new GerirFotoPerfil(f).trocar(exigirAutenticado(body.user).codigo, body.arquivo.conteudo),
-            { arquivo: { limiteBytes: TAMANHO_MAXIMO_FOTO, mensagemLimite: MENSAGENS_DE_ERRO.FOTO.GRANDE_DEMAIS } },
+            {
+                arquivo: {
+                    limiteBytes: TAMANHO_MAXIMO_FOTO,
+                    mensagemLimite: MENSAGENS_DE_ERRO.FOTO.GRANDE_DEMAIS,
+                    codigoLimite: "FOTO_GRANDE_DEMAIS",
+                },
+            },
         );
 
         this.http.route("delete", "/auth/foto", true, async (_p: any, body: any) => {
@@ -129,7 +135,7 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("get", "/fotos/:arquivo", false, async (params: any) => {
             const aberta = await f.criarArmazenamentoFotos().abrir(String(params.arquivo));
-            if (!aberta) throw new ErroNaoEncontrado("Foto não encontrada.");
+            if (!aberta) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.FOTO.NAO_ENCONTRADA);
             return new RespostaArquivo(params.arquivo, "image/webp", aberta.fluxo, aberta.tamanho, { publica: true });
         });
 
