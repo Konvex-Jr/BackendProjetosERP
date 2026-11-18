@@ -37,8 +37,8 @@ O perfil hoje é só texto: avatar com iniciais, links do LinkedIn, GitHub e cal
 ### Foto
 
 - **Quem troca:** só a própria pessoa, para si (todos os papéis, trainee inclusive). Ações: enviar/trocar e remover a própria foto.
-- **Recorte e tamanho no navegador:** a pessoa escolhe o arquivo (JPEG, PNG ou WebP, até 5 MB), vê o recorte quadrado (arrastar e zoom) e confirma. O front gera **256×256 WebP** num `canvas` e envia só esse resultado. (Chamada do Claude: canvas apaga metadados como EXIF/GPS.)
-- **Backend confere** que o corpo é WebP de verdade (assinatura `RIFF....WEBP`) e tem no máximo 300 KB; senão 400 com mensagem dizendo o que está errado. Sem biblioteca de imagem no backend (chamada do Claude: o front já reencoda; a proteção no back é a assinatura, o tamanho e os cabeçalhos ao servir).
+- **Recorte e tamanho no navegador:** a pessoa escolhe o arquivo (JPEG, PNG ou WebP, até 5 MB), vê o recorte quadrado (arrastar e zoom) e confirma. O front gera **256×256** num `canvas` e envia só esse resultado: WebP, ou JPEG onde o navegador não gera WebP pelo canvas (Safari e todo navegador do iPhone devolvem PNG).
+- **Backend converte (usuário, 18/11, depois da revisão final):** aceita JPEG, PNG ou WebP pela assinatura (nada de SVG, GIF, TIFF), até 300 KB, e regrava sempre em **WebP 256×256** com `sharp` (recorte central; teto de 4096×4096 pixels na entrada). Isso tira metadados (EXIF/GPS) e garante WebP no disco. Arquivo que não decodifica: 400 `FOTO_FORMATO_INVALIDO`. Descartadas: aceitar e guardar JPEG como veio (dois formatos no disco e no CHECK) e deixar o iPhone sem foto.
 - **Banco:** a migração 016 apaga a coluna `usuarios.avatar_url` (o front nunca gravou nela; só aceitava texto livre via API, o que deixava qualquer URL externa virar avatar) e cria `usuarios.foto TEXT NULL` com o nome do arquivo (`<uuid>.webp`, com CHECK no formato).
 - **Disco:** `ANEXOS_DIR/fotos/<uuid>.webp` (na VPS, dentro de `anexos/`: entra no `tar` do backup sem mexer no compose). A `conferirAnexos` precisa ignorar a subpasta `fotos/` (ou conferi-la à parte); nunca apagá-la.
 - **Troca:** grava o arquivo novo, atualiza o banco, depois apaga o antigo. Remover: limpa o banco e apaga o arquivo. Ninguém é excluído do sistema: o `DELETE /usuarios/:codigo` só inativa (ADR-006), e o registro fica, com a foto (usuário, 18/11).
@@ -80,7 +80,7 @@ Sem ação nova no catálogo de permissões (a própria foto só exige login).
 
 ## Testes esperados
 
-- Back, unidade: assinatura WebP, limite de 300 KB, nome de arquivo inválido, troca apaga a antiga, remover.
+- Back, unidade: JPEG, PNG e WebP gravados como WebP 256×256, GIF/SVG/corrompido recusados, limite de 300 KB, nome de arquivo inválido, troca apaga a antiga, remover.
 - Back, integração: migração 016 (tabelas somem, coluna `foto` com CHECK), `GET /fotos` com cabeçalhos certos e 404, perfil sem `habilidades`.
 - Front: helper de recorte (cálculo do quadrado), escolha do logo do calendário, `Av` com e sem foto (cai nas iniciais se a imagem falhar).
 - E2E: enviar foto pela tela, ver no topo e numa equipe; trocar de conta na mesma aba e conferir que o topo mostra a foto da pessoa nova.
@@ -89,4 +89,4 @@ Sem ação nova no catálogo de permissões (a própria foto só exige login).
 
 - Como recortar (biblioteca pequena tipo `react-easy-crop` ou recorte próprio com canvas); deve funcionar com toque no celular (375 px).
 - Nome e lugar dos casos de uso (provável `GerirFotoPerfil` em `useCases/pessoas/`) e da interface de armazenamento (reaproveitar o padrão de `ArmazenamentoAnexosDisco`).
-- Formato exato do envio (corpo cru `image/webp`, como os anexos, ou outro).
+- Formato exato do envio (corpo cru `image/webp` ou `image/jpeg`, como os anexos).
