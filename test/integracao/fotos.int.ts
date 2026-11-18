@@ -120,4 +120,15 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
         expect(corpo.message).toBe("A foto pode ter até 300 KB.");
         expect(corpo.codigo).toBe("FOTO_GRANDE_DEMAIS");
     });
+
+    test("editar com leitura antiga não volta a foto (corrida com PUT /auth/foto)", async () => {
+        const repo = new DatabaseRepositoryFactory(conexao).criarUsuarioRepository();
+        const [{ codigo }] = (await pool.query("SELECT codigo FROM usuarios WHERE email = 'diretora@teste.com'")).rows;
+        const antiga = await repo.buscarPorCodigo(codigo);
+        expect((await enviar(webp())).status).toBe(200);
+        const nova = (await pool.query("SELECT foto FROM usuarios WHERE codigo = $1", [codigo])).rows[0].foto;
+        expect(nova).not.toBe(antiga!.foto);
+        await repo.editar(antiga!);
+        expect((await pool.query("SELECT foto FROM usuarios WHERE codigo = $1", [codigo])).rows[0].foto).toBe(nova);
+    });
 });

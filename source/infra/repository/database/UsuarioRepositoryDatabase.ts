@@ -12,6 +12,12 @@ const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, sta
     nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
     area_codigo, cargo_codigo, data_entrada, data_saida, bio, calendario_url, github_url`;
 
+// No UPDATE do editar a foto fica de fora: só o definirFoto grava essa coluna. Senão uma edição
+// que leu a pessoa antes de um PUT /auth/foto escreveria de volta a foto antiga, já apagada do disco.
+const LISTA_COLUNAS = COLUNAS.split(",").map((c) => c.trim());
+const POSICAO_FOTO = LISTA_COLUNAS.indexOf("foto");
+const COLUNAS_EDITAR = LISTA_COLUNAS.filter((_, i) => i !== POSICAO_FOTO);
+
 function valores(usuario: Usuario): unknown[] {
     return [
         usuario.nome,
@@ -95,11 +101,11 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         try {
             await this.conexao.transacao(async (conexao) => {
                 const linhas = await conexao.consultar(
-                    `UPDATE usuarios SET (${COLUNAS}) =
-                        ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+                    `UPDATE usuarios SET (${COLUNAS_EDITAR.join(", ")}) =
+                        (${COLUNAS_EDITAR.map((_, i) => `$${i + 2}`).join(", ")})
                      WHERE codigo = $1
                      RETURNING codigo`,
-                    [usuario.codigo, ...valores(usuario)],
+                    [usuario.codigo, ...valores(usuario).filter((_, i) => i !== POSICAO_FOTO)],
                 );
                 if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
             });
