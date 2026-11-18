@@ -76,3 +76,10 @@ describe("apagar arquivos sem registro (--apagar-sem-registro)", () => {
         expect(readdirSync(pasta)).toEqual(["LEIA.txt"]);
     });
 });
+
+describe("conferência ignora a subpasta de fotos (sessão 22)", () => {
+    it("a entrada 'fotos' da pasta dos anexos não aparece em semRegistro", () => {
+        const r = conferirAnexos([], ["fotos", A], new Set());
+        expect(r.semRegistro).toEqual([A]);
+    });
+});

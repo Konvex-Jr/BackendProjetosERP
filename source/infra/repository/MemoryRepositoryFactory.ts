@@ -16,6 +16,7 @@ import CapacitacaoFeedbackRepositoryMemory from "./memory/CapacitacaoFeedbackRep
 import BibliotecaRepositoryMemory from "./memory/BibliotecaRepositoryMemory";
 import AnexoRepositoryMemory from "./memory/AnexoRepositoryMemory";
 import ArmazenamentoAnexosMemoria from "../arquivos/ArmazenamentoAnexosMemoria";
+import ArmazenamentoFotosMemoria from "../arquivos/ArmazenamentoFotosMemoria";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
 import HistoricoPessoaRepositoryMemory from "./memory/HistoricoPessoaRepositoryMemory";
@@ -91,6 +92,13 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarArmazenamentoAnexos() {
         return this.armazenamentoAnexos;
+    }
+
+    /** Público para os testes conferirem quais fotos foram gravadas ou apagadas. */
+    readonly armazenamentoFotos = new ArmazenamentoFotosMemoria();
+
+    criarArmazenamentoFotos() {
+        return this.armazenamentoFotos;
     }
 
     criarBibliotecaRepository() {

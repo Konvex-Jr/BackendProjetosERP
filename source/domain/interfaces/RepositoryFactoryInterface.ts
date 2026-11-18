@@ -13,6 +13,7 @@ import BibliotecaRepositoryInterface from "./BibliotecaRepositoryInterface";
 import ColunaProjetoRepositoryInterface from "./ColunaProjetoRepositoryInterface";
 import AnexoRepositoryInterface from "./AnexoRepositoryInterface";
 import ArmazenamentoAnexosInterface from "./ArmazenamentoAnexosInterface";
+import ArmazenamentoFotosInterface from "./ArmazenamentoFotosInterface";
 
 /**
  * Ponto único de onde os casos de uso pegam os repositórios. Há duas implementações:
@@ -40,4 +41,5 @@ export default interface RepositoryFactoryInterface {
     criarAnexoRepository(): AnexoRepositoryInterface;
     /** Bytes dos anexos (disco em produção, memória nos testes). */
     criarArmazenamentoAnexos(): ArmazenamentoAnexosInterface;
+    criarArmazenamentoFotos(): ArmazenamentoFotosInterface;
 }

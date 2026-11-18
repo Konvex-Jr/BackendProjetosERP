@@ -119,4 +119,17 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         ]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
     }
+
+    async definirFoto(codigo: string, foto: string | null): Promise<string | null> {
+        // O SELECT ... FOR UPDATE trava a linha e lê a foto anterior no mesmo comando.
+        const linhas = await this.conexao.consultar(
+            `UPDATE usuarios u SET foto = $2
+             FROM (SELECT foto FROM usuarios WHERE codigo = $1 FOR UPDATE) antes
+             WHERE u.codigo = $1
+             RETURNING antes.foto AS anterior`,
+            [codigo, foto],
+        );
+        if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
+        return linhas[0].anterior ?? null;
+    }
 }

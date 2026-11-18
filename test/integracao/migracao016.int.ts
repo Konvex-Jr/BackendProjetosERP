@@ -7,6 +7,8 @@ import { readFileSync } from "fs";
 import path from "path";
 import { Pool } from "pg";
 import { aplicarMigracoes } from "../../source/infra/database/migracoes";
+import PgConexao from "../../source/infra/database/PgConexao";
+import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRepositoryFactory";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -41,6 +43,25 @@ descrever("migração 016", () => {
     test("foto aceita só nome de arquivo UUID.webp", async () => {
         await expect(pool.query("UPDATE usuarios SET foto = 'x.png'")).rejects.toThrow(/usuarios_foto_formato/);
         await pool.query("UPDATE usuarios SET foto = '0b6f5c8e-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp'");
+    });
+
+    test("definirFoto grava e devolve a foto anterior", async () => {
+        const conexao = PgConexao.criar(URL_TESTE!);
+        try {
+            const repo = new DatabaseRepositoryFactory(conexao).criarUsuarioRepository();
+            const codigo = (await pool.query("SELECT codigo FROM usuarios LIMIT 1")).rows[0].codigo;
+            const a = "1b6f5c8e-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp";
+            const b = "2b6f5c8e-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp";
+            await pool.query("UPDATE usuarios SET foto = NULL");
+            expect(await repo.definirFoto(codigo, a)).toBeNull();
+            expect(await repo.definirFoto(codigo, b)).toBe(a);
+            expect((await pool.query("SELECT foto FROM usuarios WHERE codigo = $1", [codigo])).rows[0].foto).toBe(b);
+            expect(await repo.definirFoto(codigo, null)).toBe(b);
+            expect((await pool.query("SELECT foto FROM usuarios WHERE codigo = $1", [codigo])).rows[0].foto).toBeNull();
+            await expect(repo.definirFoto("00000000-0000-4000-8000-000000000000", a)).rejects.toThrow("Usuário não encontrado.");
+        } finally {
+            await conexao.encerrar();
+        }
     });
 
     test("rodar a migração de novo não falha", async () => {

@@ -22,6 +22,7 @@ import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepos
 import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
 import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
+import ArmazenamentoFotosDisco from "../arquivos/ArmazenamentoFotosDisco";
 
 /**
  * Repositórios em PostgreSQL (produção e testes de integração). Cada chamada cria um repositório
@@ -90,6 +91,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
     criarArmazenamentoAnexos() {
         // Os bytes ficam no disco (ANEXOS_DIR), não no banco; o banco guarda só o registro do anexo.
         return new ArmazenamentoAnexosDisco();
+    }
+
+    criarArmazenamentoFotos() {
+        return new ArmazenamentoFotosDisco();
     }
 
     criarRefreshTokenRepository() {

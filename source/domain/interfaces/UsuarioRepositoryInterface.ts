@@ -18,4 +18,6 @@ export default interface UsuarioRepositoryInterface {
     editar(usuario: Usuario): Promise<Usuario>;
     /** Muda o status para Inativo. Pessoas nunca são excluídas (ADR-006). */
     desativar(codigo: string): Promise<void>;
+    /** Grava a foto (ou `null`, para remover) e devolve a foto anterior. Só a rota de foto usa. */
+    definirFoto(codigo: string, foto: string | null): Promise<string | null>;
 }
