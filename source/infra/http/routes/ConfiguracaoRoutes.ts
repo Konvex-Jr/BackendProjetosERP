@@ -5,7 +5,7 @@ import SalvarArea from "../../../useCases/config/SalvarArea";
 import SalvarCargo from "../../../useCases/config/SalvarCargo";
 import SalvarSenioridade from "../../../useCases/config/SalvarSenioridade";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
-import { lerInteiro } from "../../../shared/entradas";
+import { lerBooleano, lerInteiro } from "../../../shared/entradas";
 
 const SO_DIRETOR = "Somente diretores configuram áreas, cargos e senioridades.";
 
@@ -37,11 +37,20 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("get", "/cargos", true, async () => f.criarCargoRepository().listar());
         this.http.route("post", "/cargos", true, async (_p: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
-            return new SalvarCargo(f).execute({ nome: body.nome, ativo: body.ativo, lideraArea: body.lideraArea });
+            return new SalvarCargo(f).execute({
+                nome: body.nome,
+                ativo: body.ativo,
+                lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
+            });
         });
         this.http.route("put", "/cargos/:codigo", true, async (params: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
-            return new SalvarCargo(f).execute({ codigo: params.codigo, nome: body.nome, ativo: body.ativo, lideraArea: body.lideraArea });
+            return new SalvarCargo(f).execute({
+                codigo: params.codigo,
+                nome: body.nome,
+                ativo: body.ativo,
+                lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
+            });
         });
 
         this.http.route("post", "/senioridades", true, async (_p: any, body: any) => {

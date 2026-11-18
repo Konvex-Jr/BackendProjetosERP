@@ -2,6 +2,8 @@ import Area from "../source/domain/entity/Area";
 import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea, { sobrepoe, validarNovoPeriodo } from "../source/domain/entity/PeriodoArea";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
+import SalvarCargo from "../source/useCases/config/SalvarCargo";
+import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import { hoje } from "../source/shared/datas";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -51,6 +53,14 @@ describe("sobrepoe (semiaberto, nulo = infinito)", () => {
     });
     it("contido sobrepõe", () => {
         expect(sobrepoe(a, { inicio: dia("2026-05-15"), fim: dia("2026-05-20") })).toBe(true);
+    });
+    it("fechado que termina antes do outro começar não sobrepõe", () => {
+        expect(sobrepoe({ inicio: dia("2026-01-01"), fim: dia("2026-02-01") }, { inicio: dia("2026-03-01"), fim: dia("2026-04-01") })).toBe(
+            false,
+        );
+    });
+    it("aberto contra fechado que começa depois sobrepõe", () => {
+        expect(sobrepoe({ inicio: dia("2026-01-01"), fim: null }, { inicio: dia("2026-03-01"), fim: dia("2026-04-01") })).toBe(true);
     });
     it("aberto com aberto sobrepõe", () => {
         expect(sobrepoe({ inicio: dia("2026-01-01"), fim: null }, { inicio: dia("2026-02-01"), fim: null })).toBe(true);
@@ -102,4 +112,25 @@ describe("validarNovoPeriodo", () => {
 describe("Cargo.lideraArea", () => {
     it("padrão false", () => expect(new Cargo("Diretor").lideraArea).toBe(false));
     it("true quando passado", () => expect(new Cargo("Diretor", true, undefined, true).lideraArea).toBe(true));
+});
+
+describe("SalvarCargo e lideraArea", () => {
+    it("criar grava lideraArea e a memória guarda", async () => {
+        const factory = new MemoryRepositoryFactory();
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
+        expect((await factory.criarCargoRepository().buscarPorCodigo(criado.codigo))?.lideraArea).toBe(true);
+    });
+    it("editar sem lideraArea mantém o valor atual", async () => {
+        const factory = new MemoryRepositoryFactory();
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
+        const editado = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Líder 2" });
+        expect(editado.lideraArea).toBe(true);
+        expect((await factory.criarCargoRepository().buscarPorCodigo(criado.codigo))?.lideraArea).toBe(true);
+    });
+    it("editar com lideraArea false desliga", async () => {
+        const factory = new MemoryRepositoryFactory();
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
+        const editado = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Líder", lideraArea: false });
+        expect(editado.lideraArea).toBe(false);
+    });
 });
