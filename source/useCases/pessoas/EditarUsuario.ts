@@ -39,7 +39,7 @@ export default class EditarUsuario {
 
         exigirTraineeMembro(atual.status, input.perfil ?? atual.perfil);
 
-        const detalhes = await resolverPerfilPessoa(this.factory, input, atual);
+        const detalhes = await resolverPerfilPessoa(this.factory, input);
         const editado = atual.copiar({
             nome: input.nome !== undefined ? String(input.nome).trim() : undefined,
             email,

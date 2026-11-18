@@ -396,18 +396,10 @@ descrever("fase 1 contra PostgreSQL", () => {
         const perfil = await chamar("PUT", "/auth/perfil", bia.token, {
             calendarioUrl: "https://cal.com/bia",
             githubUrl: "https://github.com/bia",
-            tecnologias: ["React", "react", "Docker"],
         });
         expect(perfil.status).toBe(200);
-        await chamar("PUT", "/auth/perfil", caio.token, { tecnologias: ["DOCKER"] });
         const visto = (await chamar("GET", `/usuarios/${bia.codigo}/perfil`, caio.token)).corpo.usuario;
         expect(visto).toMatchObject({ calendarioUrl: "https://cal.com/bia", githubUrl: "https://github.com/bia" });
-        expect(visto.habilidades.map((h: any) => h.nome)).toEqual(["Docker", "React"]);
-        expect((await chamar("GET", "/habilidades?tipo=tecnologia", caio.token)).corpo.map((h: any) => h.nome)).toEqual([
-            "Docker",
-            "React",
-        ]);
-
         expect((await chamar("DELETE", `/capacitacoes/${cod}`, dir)).status).toBe(200);
         expect((await pool.query("SELECT count(*)::int AS n FROM capacitacao_feedbacks")).rows[0].n).toBe(0);
     }, 60000);

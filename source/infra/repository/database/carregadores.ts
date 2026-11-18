@@ -6,10 +6,8 @@ import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
 import StatusProjeto from "../../../domain/enum/StatusProjeto";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
-import TipoHabilidade from "../../../domain/enum/TipoHabilidade";
 import Area from "../../../domain/entity/Area";
 import Cargo from "../../../domain/entity/Cargo";
-import Habilidade from "../../../domain/entity/Habilidade";
 import Participacao from "../../../domain/entity/Participacao";
 import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
 
@@ -20,25 +18,18 @@ import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
  */
 
 /**
- * SELECT base de pessoa, já com senioridade, área, cargo e habilidades. As habilidades vêm
- * agregadas em JSON por subconsulta, para não repetir a linha da pessoa a cada habilidade.
+ * SELECT base de pessoa, já com senioridade, área e cargo.
  */
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
-           u.nome_exibicao, u.avatar_url, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.semestre,
+           u.nome_exibicao, u.foto, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.semestre,
            u.data_entrada, u.data_saida, u.bio,
            s.codigo AS senioridade_codigo,
            s.nome AS senioridade_nome,
            s.valor_hora AS senioridade_valor_hora,
            s.ordem AS senioridade_ordem,
            a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo AS area_pai_codigo, a.ativa AS area_ativa,
-           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo,
-           COALESCE((
-               SELECT json_agg(json_build_object('codigo', h.codigo, 'nome', h.nome, 'tipo', h.tipo) ORDER BY h.tipo, h.nome)
-               FROM usuario_habilidades uh
-               JOIN habilidades h ON h.codigo = uh.habilidade_codigo
-               WHERE uh.usuario_codigo = u.codigo
-           ), '[]'::json) AS habilidades
+           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo
     FROM usuarios u
     LEFT JOIN senioridades s ON s.codigo = u.senioridade_codigo
     LEFT JOIN areas a ON a.codigo = u.area_codigo
@@ -67,7 +58,7 @@ export function usuarioDeLinha(linha: any): Usuario {
     return new Usuario(linha.nome, linha.email, linha.perfil as PerfilUsuario, linha.ativo, linha.senha_hash, senioridade, linha.codigo, {
         status: (linha.status as StatusPessoa) ?? undefined,
         nomeExibicao: linha.nome_exibicao,
-        avatarUrl: linha.avatar_url,
+        foto: linha.foto,
         telefone: linha.telefone,
         linkedinUrl: linha.linkedin_url,
         calendarioUrl: linha.calendario_url,
@@ -79,7 +70,6 @@ export function usuarioDeLinha(linha: any): Usuario {
         dataEntrada: linha.data_entrada,
         dataSaida: linha.data_saida,
         bio: linha.bio,
-        habilidades: (linha.habilidades ?? []).map((h: any) => new Habilidade(h.nome, h.tipo as TipoHabilidade, h.codigo)),
     });
 }
 

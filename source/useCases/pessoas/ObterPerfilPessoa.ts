@@ -42,7 +42,7 @@ export interface PerfilPessoa {
 }
 
 /**
- * RF-013: perfil com projetos atuais e anteriores, habilidades, histórico e capacitações.
+ * RF-013: perfil com projetos atuais e anteriores, histórico e capacitações.
  * Projetos seguem a visibilidade (decisão de 30/10/2026): o membro que olha o perfil de outra
  * pessoa só vê os projetos de que ele mesmo participa ou participou.
  * Projeto sigiloso: quem não tem acesso completo vê só o nome e as datas (item `restrito`), se a

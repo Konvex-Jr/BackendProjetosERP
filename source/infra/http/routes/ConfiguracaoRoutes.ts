@@ -52,11 +52,5 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
             return new SalvarSenioridade(f).execute({ codigo: params.codigo, nome: body.nome, ordem: lerInteiro(body.ordem, "ordem") });
         });
-
-        // `?tipo=tecnologia` traz só as tecnologias (sugestões do perfil, sessão 13).
-        this.http.route("get", "/habilidades", true, async (_p: any, _b: any, query: any) => {
-            const todas = await f.criarHabilidadeRepository().listar();
-            return query?.tipo ? todas.filter((h) => h.tipo === query.tipo) : todas;
-        });
     }
 }

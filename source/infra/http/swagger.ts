@@ -439,7 +439,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/perfil": {
         put: operation(
             ["Autenticação"],
-            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, tecnologias[], curso, semestre, bio)",
+            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, curso, semestre, bio)",
             json,
         ),
     },
@@ -462,7 +462,6 @@ const rotasFase1: Record<string, Record<string, object>> = {
     },
     "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
-    "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas (?tipo=tecnologia filtra)") },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {
         put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }),

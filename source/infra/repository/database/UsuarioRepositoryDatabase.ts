@@ -9,7 +9,7 @@ import { normalizarBusca } from "../../../shared/texto";
 import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
-    nome_exibicao, avatar_url, telefone, linkedin_url, curso, semestre,
+    nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
     area_codigo, cargo_codigo, data_entrada, data_saida, bio, calendario_url, github_url`;
 
 function valores(usuario: Usuario): unknown[] {
@@ -22,7 +22,7 @@ function valores(usuario: Usuario): unknown[] {
         usuario.senha,
         usuario.status,
         usuario.nomeExibicao,
-        usuario.avatarUrl,
+        usuario.foto,
         usuario.telefone,
         usuario.linkedinUrl,
         usuario.curso,
@@ -51,7 +51,6 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
             );
             // E-mail repetido não lança erro aqui: devolve null e o caso de uso (CriarUsuario) avisa.
             if (linhas.length === 0) return null;
-            await this.gravarHabilidades(conexao, usuario);
             return usuario;
         });
     }
@@ -103,8 +102,6 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
                     [usuario.codigo, ...valores(usuario)],
                 );
                 if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
-                await conexao.consultar("DELETE FROM usuario_habilidades WHERE usuario_codigo = $1", [usuario.codigo]);
-                await this.gravarHabilidades(conexao, usuario);
             });
         } catch (erro) {
             if (violacaoDeUnicidade(erro)) {
@@ -121,15 +118,5 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
             StatusPessoa.INATIVO,
         ]);
         if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
-    }
-
-    private async gravarHabilidades(conexao: ConexaoBanco, usuario: Usuario): Promise<void> {
-        if (usuario.habilidades.length === 0) return;
-        await conexao.consultar(
-            `INSERT INTO usuario_habilidades (usuario_codigo, habilidade_codigo)
-             SELECT $1::uuid, unnest($2::uuid[])
-             ON CONFLICT DO NOTHING`,
-            [usuario.codigo, usuario.habilidades.map((h) => h.codigo)],
-        );
     }
 }

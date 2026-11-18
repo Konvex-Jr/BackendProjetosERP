@@ -18,7 +18,6 @@ import AnexoRepositoryMemory from "./memory/AnexoRepositoryMemory";
 import ArmazenamentoAnexosMemoria from "../arquivos/ArmazenamentoAnexosMemoria";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
-import HabilidadeRepositoryMemory from "./memory/HabilidadeRepositoryMemory";
 import HistoricoPessoaRepositoryMemory from "./memory/HistoricoPessoaRepositoryMemory";
 import RefreshTokenRepositoryMemory from "./memory/RefreshTokenRepositoryMemory";
 import ComentarioTarefaRepositoryMemory from "./memory/ComentarioTarefaRepositoryMemory";
@@ -78,7 +77,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
-    private readonly habilidadeRepository = new HabilidadeRepositoryMemory();
     private readonly historicoPessoaRepository = new HistoricoPessoaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
@@ -105,10 +103,6 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarCargoRepository() {
         return this.cargoRepository;
-    }
-
-    criarHabilidadeRepository() {
-        return this.habilidadeRepository;
     }
 
     criarHistoricoPessoaRepository() {

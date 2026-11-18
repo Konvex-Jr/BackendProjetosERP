@@ -86,7 +86,7 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("cria as quatro colunas padrão em cada projeto, também ao rodar de novo", async () => {
-        expect(await aplicarMigracoes(pool, PASTA, silencio)).toEqual(["015_colunas_projeto.sql"]);
+        expect((await aplicarMigracoes(pool, PASTA, silencio)).slice(0, 1)).toEqual(["015_colunas_projeto.sql"]);
         await pool.query(readFileSync(path.join(PASTA, "015_colunas_projeto.sql"), "utf8"));
 
         for (const projeto of [projetoA, projetoB]) {

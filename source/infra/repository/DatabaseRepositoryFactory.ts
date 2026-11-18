@@ -16,7 +16,6 @@ import CapacitacaoFeedbackRepositoryDatabase from "./database/CapacitacaoFeedbac
 import ColunaProjetoRepositoryDatabase from "./database/ColunaProjetoRepositoryDatabase";
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
-import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabase";
 import HistoricoPessoaRepositoryDatabase from "./database/HistoricoPessoaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
@@ -70,10 +69,6 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarCargoRepository() {
         return new CargoRepositoryDatabase(this.conexao);
-    }
-
-    criarHabilidadeRepository() {
-        return new HabilidadeRepositoryDatabase(this.conexao);
     }
 
     criarHistoricoPessoaRepository() {

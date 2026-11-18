@@ -6,13 +6,13 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import SenioridadeUsuario from "./SenioridadeUsuario";
 import Area from "./Area";
 import Cargo from "./Cargo";
-import Habilidade from "./Habilidade";
 
 /** Campos do perfil da pessoa além dos dados de acesso (RF-010). */
 export interface DetalhesPessoa {
     status?: StatusPessoa;
     nomeExibicao?: string | null;
-    avatarUrl?: string | null;
+    /** Nome do arquivo WebP da foto; só a rota de foto grava (nunca vem da edição do perfil). */
+    foto?: string | null;
     telefone?: string | null;
     linkedinUrl?: string | null;
     /** Link do calendário (Google Agenda, Calendly…) e do GitHub (sessão 13). */
@@ -25,7 +25,6 @@ export interface DetalhesPessoa {
     dataEntrada?: Date | null;
     dataSaida?: Date | null;
     bio?: string | null;
-    habilidades?: Habilidade[];
 }
 
 const URL_VALIDA = /^https?:\/\/\S+$/i;
@@ -48,7 +47,7 @@ export default class Usuario {
     readonly senha: string;
     readonly status: StatusPessoa;
     readonly nomeExibicao: string | null;
-    readonly avatarUrl: string | null;
+    readonly foto: string | null;
     readonly telefone: string | null;
     readonly linkedinUrl: string | null;
     readonly calendarioUrl: string | null;
@@ -60,7 +59,6 @@ export default class Usuario {
     readonly dataEntrada: Date | null;
     readonly dataSaida: Date | null;
     readonly bio: string | null;
-    readonly habilidades: Habilidade[];
 
     constructor(
         nome: string,
@@ -83,7 +81,7 @@ export default class Usuario {
         this.ativo = STATUS_COM_ACESSO.includes(this.status);
         this.naEj = STATUS_NA_EJ.includes(this.status);
         this.nomeExibicao = textoOuNulo(detalhes.nomeExibicao);
-        this.avatarUrl = textoOuNulo(detalhes.avatarUrl);
+        this.foto = textoOuNulo(detalhes.foto);
         this.telefone = textoOuNulo(detalhes.telefone);
         this.linkedinUrl = textoOuNulo(detalhes.linkedinUrl);
         this.calendarioUrl = textoOuNulo(detalhes.calendarioUrl);
@@ -98,7 +96,6 @@ export default class Usuario {
         this.dataEntrada = detalhes.dataEntrada ?? null;
         this.dataSaida = detalhes.dataSaida ?? null;
         this.bio = textoOuNulo(detalhes.bio);
-        this.habilidades = detalhes.habilidades ?? [];
 
         this.validar();
     }
@@ -120,7 +117,7 @@ export default class Usuario {
         return new Usuario(pick("nome"), pick("email"), pick("perfil"), this.ativo, pick("senha"), pick("senioridade"), this.codigo, {
             status: pick("status"),
             nomeExibicao: pick("nomeExibicao"),
-            avatarUrl: pick("avatarUrl"),
+            foto: pick("foto"),
             telefone: pick("telefone"),
             linkedinUrl: pick("linkedinUrl"),
             calendarioUrl: pick("calendarioUrl"),
@@ -132,7 +129,6 @@ export default class Usuario {
             dataEntrada: pick("dataEntrada"),
             dataSaida: pick("dataSaida"),
             bio: pick("bio"),
-            habilidades: pick("habilidades"),
         });
     }
 
@@ -147,7 +143,7 @@ export default class Usuario {
             naEj: this.naEj,
             status: this.status,
             nomeExibicao: this.nomeExibicao,
-            avatarUrl: this.avatarUrl,
+            foto: this.foto,
             telefone: this.telefone,
             linkedinUrl: this.linkedinUrl,
             calendarioUrl: this.calendarioUrl,
@@ -159,7 +155,6 @@ export default class Usuario {
             dataEntrada: this.dataEntrada,
             dataSaida: this.dataSaida,
             bio: this.bio,
-            habilidades: this.habilidades,
         };
     }
 
@@ -195,7 +190,6 @@ export default class Usuario {
         }
 
         for (const [campo, valor] of [
-            ["do avatar", this.avatarUrl],
             ["do LinkedIn", this.linkedinUrl],
             ["do calendário", this.calendarioUrl],
             ["do GitHub", this.githubUrl],

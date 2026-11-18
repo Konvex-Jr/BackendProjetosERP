@@ -30,7 +30,6 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
     const texto = (campo: string) => (body[campo] === undefined ? undefined : body[campo]);
     return {
         nomeExibicao: texto("nomeExibicao"),
-        avatarUrl: texto("avatarUrl"),
         telefone: texto("telefone"),
         linkedinUrl: texto("linkedinUrl"),
         calendarioUrl: texto("calendarioUrl"),
@@ -46,8 +45,6 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         codigoCargo: texto("codigoCargo"),
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
         bio: texto("bio"),
-        habilidades: body.habilidades,
-        tecnologias: body.tecnologias,
     };
 }
 
@@ -96,7 +93,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
-            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio, tecnologias } = lerPerfil(body);
+            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio } = lerPerfil(body);
             return new EditarUsuario(f).execute({
                 codigo: eu.codigo,
                 nomeExibicao,
@@ -107,7 +104,6 @@ export default class UsuarioRoutes implements ModelRoutes {
                 curso,
                 semestre,
                 bio,
-                tecnologias,
                 codigoAutor: eu.codigo,
             });
         });

@@ -6,7 +6,6 @@ import CapacitacaoRepositoryInterface from "./CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "./CapacitacaoFeedbackRepositoryInterface";
 import AreaRepositoryInterface from "./AreaRepositoryInterface";
 import CargoRepositoryInterface from "./CargoRepositoryInterface";
-import HabilidadeRepositoryInterface from "./HabilidadeRepositoryInterface";
 import HistoricoPessoaRepositoryInterface from "./HistoricoPessoaRepositoryInterface";
 import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
 import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
@@ -34,7 +33,6 @@ export default interface RepositoryFactoryInterface {
     criarCapacitacaoFeedbackRepository(): CapacitacaoFeedbackRepositoryInterface;
     criarAreaRepository(): AreaRepositoryInterface;
     criarCargoRepository(): CargoRepositoryInterface;
-    criarHabilidadeRepository(): HabilidadeRepositoryInterface;
     criarHistoricoPessoaRepository(): HistoricoPessoaRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
