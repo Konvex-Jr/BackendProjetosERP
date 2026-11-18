@@ -4,6 +4,7 @@
  * ATENÇÃO: apaga e recria o schema "public" do banco informado.
  */
 import { Pool } from "pg";
+import sharp from "sharp";
 import { hash } from "bcrypt";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
@@ -18,7 +19,11 @@ import Router from "../../source/infra/http/Router";
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
 
-const webp = (extra = 10) => Buffer.concat([Buffer.from("RIFF"), Buffer.from([1, 2, 3, 4]), Buffer.from("WEBP"), Buffer.alloc(extra, 7)]);
+// Imagem de verdade: o servidor decodifica e regrava a foto (sharp).
+const imagem = (formato: "jpeg" | "png" | "webp" | "gif") =>
+    sharp({ create: { width: 300, height: 200, channels: 3, background: "#ff6a33" } })
+        .toFormat(formato)
+        .toBuffer();
 
 descrever("rotas da foto de perfil contra PostgreSQL", () => {
     let pool: Pool;
@@ -29,10 +34,10 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
     let pasta = "";
     const anexosAntes = process.env.ANEXOS_DIR;
 
-    const enviar = (corpo: Buffer, comToken = true) =>
+    const enviar = (corpo: Buffer, comToken = true, tipo = "image/webp") =>
         fetch(`${base}/auth/foto`, {
             method: "PUT",
-            headers: { "Content-Type": "image/webp", ...(comToken ? { "access-token": token } : {}) },
+            headers: { "Content-Type": tipo, ...(comToken ? { "access-token": token } : {}) },
             body: new Uint8Array(corpo),
         });
 
@@ -71,8 +76,8 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
     });
 
     test("fluxo: enviar, servir sem login, aparecer em /auth/me, remover", async () => {
-        const bytes = webp(50);
-        const r = await enviar(bytes);
+        // JPEG (o que o Safari manda) entra e sai WebP 256x256.
+        const r = await enviar(await imagem("jpeg"), true, "image/jpeg");
         expect(r.status).toBe(200);
         const { foto } = await r.json();
         expect(foto).toMatch(/\.webp$/);
@@ -84,7 +89,8 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
         expect(g.headers.get("cross-origin-resource-policy")).toBe("same-site");
         expect(g.headers.get("x-content-type-options")).toBe("nosniff");
         expect(g.headers.get("content-disposition")).toMatch(/^inline/);
-        expect(Buffer.from(await g.arrayBuffer()).equals(bytes)).toBe(true);
+        const servida = await sharp(Buffer.from(await g.arrayBuffer())).metadata();
+        expect([servida.format, servida.width, servida.height]).toEqual(["webp", 256, 256]);
 
         const me = await fetch(`${base}/auth/me`, { headers: { "access-token": token } });
         expect((await me.json()).foto).toBe(foto);
@@ -106,15 +112,14 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
     });
 
     test("PUT /auth/foto exige login", async () => {
-        expect((await enviar(webp(), false)).status).toBe(401);
+        expect((await enviar(await imagem("webp"), false)).status).toBe(401);
     });
 
-    test("PUT /auth/foto recusa PNG (400) e mais de 300 KB (413)", async () => {
-        const png = Buffer.concat([Buffer.from([0x89]), Buffer.from("PNG\r\n\x1a\n"), Buffer.alloc(30)]);
-        const r = await enviar(png);
+    test("PUT /auth/foto recusa GIF (400) e mais de 300 KB (413)", async () => {
+        const r = await enviar(await imagem("gif"), true, "image/gif");
         expect(r.status).toBe(400);
         expect((await r.json()).codigo).toBe("FOTO_FORMATO_INVALIDO");
-        const grande = await enviar(webp(301 * 1024));
+        const grande = await enviar(Buffer.alloc(301 * 1024));
         expect(grande.status).toBe(413);
         const corpo = await grande.json();
         expect(corpo.message).toBe("A foto pode ter até 300 KB.");
@@ -125,7 +130,7 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
         const repo = new DatabaseRepositoryFactory(conexao).criarUsuarioRepository();
         const [{ codigo }] = (await pool.query("SELECT codigo FROM usuarios WHERE email = 'diretora@teste.com'")).rows;
         const antiga = await repo.buscarPorCodigo(codigo);
-        expect((await enviar(webp())).status).toBe(200);
+        expect((await enviar(await imagem("webp"))).status).toBe(200);
         const nova = (await pool.query("SELECT foto FROM usuarios WHERE codigo = $1", [codigo])).rows[0].foto;
         expect(nova).not.toBe(antiga!.foto);
         await repo.editar(antiga!);

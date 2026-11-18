@@ -3,30 +3,29 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { converterFoto, formatoDaFoto } from "../../shared/foto";
 
 export const TAMANHO_MAXIMO_FOTO = 300 * 1024;
-
-/** Assinatura WebP: "RIFF", 4 bytes de tamanho, "WEBP". */
-function ehWebp(conteudo: Buffer): boolean {
-    return conteudo.length >= 12 && conteudo.toString("latin1", 0, 4) === "RIFF" && conteudo.toString("latin1", 8, 12) === "WEBP";
-}
 
 export default class GerirFotoPerfil {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
     async trocar(codigoUsuario: string, conteudo: Buffer): Promise<{ foto: string }> {
-        if (!Buffer.isBuffer(conteudo) || !ehWebp(conteudo)) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.FOTO.FORMATO_INVALIDO, "FOTO_FORMATO_INVALIDO");
-        }
+        const formatoInvalido = () => new ErroValidacao(MENSAGENS_DE_ERRO.FOTO.FORMATO_INVALIDO, "FOTO_FORMATO_INVALIDO");
+        if (!Buffer.isBuffer(conteudo) || !formatoDaFoto(conteudo)) throw formatoInvalido();
         if (conteudo.length > TAMANHO_MAXIMO_FOTO) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.FOTO.GRANDE_DEMAIS, "FOTO_GRANDE_DEMAIS");
         }
+        // Arquivo com assinatura certa mas corrompido (ou grande demais em pixels): 400, nunca 500.
+        const webp = await converterFoto(conteudo).catch(() => {
+            throw formatoInvalido();
+        });
         const usuarios = this.factory.criarUsuarioRepository();
         if (!(await usuarios.buscarPorCodigo(codigoUsuario))) throw new ErroNaoEncontrado("Usuário não encontrado.");
 
         const armazenamento = this.factory.criarArmazenamentoFotos();
         const foto = `${uuidv4()}.webp`;
-        await armazenamento.salvar(foto, conteudo);
+        await armazenamento.salvar(foto, webp);
         let antiga: string | null;
         try {
             antiga = await usuarios.definirFoto(codigoUsuario, foto);

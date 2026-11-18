@@ -112,7 +112,8 @@ export default class UsuarioRoutes implements ModelRoutes {
             });
         });
 
-        // Foto de perfil: WebP 256x256 já reduzido no navegador (até 300 KB). A leitura é pública:
+        // Foto de perfil: JPEG, PNG ou WebP já recortado no navegador (até 300 KB); o servidor
+        // regrava em WebP 256x256. A leitura é pública:
         // o nome do arquivo é um UUID, e a tela precisa dela em <img>, que não manda o token.
         this.http.route(
             "put",
