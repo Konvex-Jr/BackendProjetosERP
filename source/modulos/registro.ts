@@ -74,9 +74,8 @@ export const MODULOS: Modulo[] = [
         rotas: [UsuarioRoutes],
         permissoes: [Permissao.PESSOAS_GERIR, Permissao.PESSOAS_GERIR_DIRETORES],
         menu: [
+            // "Meu perfil" saiu do menu na sessão 22: abre pelo avatar do topo (/perfil, de todos; outra pessoa em /perfil/:codigo).
             { chave: "usuarios", rotulo: "Pessoas", caminho: "/usuarios", ordem: 80, permissao: Permissao.PESSOAS_GERIR },
-            // O próprio perfil (dados, projetos, senha) é de todos; o de outra pessoa abre em /perfil/:codigo.
-            { chave: "perfil", rotulo: "Meu perfil", caminho: "/perfil", ordem: 95 },
         ],
     },
     {

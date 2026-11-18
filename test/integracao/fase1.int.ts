@@ -86,7 +86,9 @@ descrever("fase 1 contra PostgreSQL", () => {
 
         const perms = await chamar("GET", "/auth/permissoes", dir);
         expect(perms.status).toBe(200);
-        expect(perms.corpo.menu.map((m: any) => m.chave)).toEqual(expect.arrayContaining(["configuracoes", "usuarios", "perfil"]));
+        expect(perms.corpo.menu.map((m: any) => m.chave)).toEqual(expect.arrayContaining(["configuracoes", "usuarios"]));
+        // "Meu perfil" abre pelo avatar do topo (sessão 22), fora do menu.
+        expect(perms.corpo.menu.map((m: any) => m.chave)).not.toContain("perfil");
 
         // Configurações
         const area = await chamar("POST", "/areas", dir, { nome: "Inovação" });
