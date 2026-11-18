@@ -6,11 +6,16 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 export default class SalvarCargo {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(input: { codigo?: string; nome: string; ativo?: boolean }): Promise<Cargo> {
+    async execute(input: { codigo?: string; nome: string; ativo?: boolean; lideraArea?: boolean }): Promise<Cargo> {
         const repo = this.factory.criarCargoRepository();
         const atual = input.codigo ? await repo.buscarPorCodigo(input.codigo) : null;
         if (input.codigo && !atual) throw new ErroNaoEncontrado("Cargo não encontrado.");
-        const cargo = new Cargo(input.nome, input.ativo ?? atual?.ativo ?? true, atual?.codigo);
+        const cargo = new Cargo(
+            input.nome,
+            input.ativo ?? atual?.ativo ?? true,
+            atual?.codigo,
+            input.lideraArea ?? atual?.lideraArea ?? false,
+        );
         return atual ? repo.editar(cargo) : repo.criar(cargo);
     }
 }

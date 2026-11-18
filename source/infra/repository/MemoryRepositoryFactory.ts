@@ -19,7 +19,7 @@ import ArmazenamentoAnexosMemoria from "../arquivos/ArmazenamentoAnexosMemoria";
 import ArmazenamentoFotosMemoria from "../arquivos/ArmazenamentoFotosMemoria";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
-import HistoricoPessoaRepositoryMemory from "./memory/HistoricoPessoaRepositoryMemory";
+import PeriodoAreaRepositoryMemory from "./memory/PeriodoAreaRepositoryMemory";
 import RefreshTokenRepositoryMemory from "./memory/RefreshTokenRepositoryMemory";
 import ComentarioTarefaRepositoryMemory from "./memory/ComentarioTarefaRepositoryMemory";
 
@@ -78,7 +78,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
-    private readonly historicoPessoaRepository = new HistoricoPessoaRepositoryMemory();
+    private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly bibliotecaRepository = new BibliotecaRepositoryMemory();
@@ -113,8 +113,8 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         return this.cargoRepository;
     }
 
-    criarHistoricoPessoaRepository() {
-        return this.historicoPessoaRepository;
+    criarPeriodoAreaRepository() {
+        return this.periodoAreaRepository;
     }
 
     criarComentarioTarefaRepository() {

@@ -28,7 +28,6 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
         const busca = normalizarBusca(filtro.busca);
         return this.usuarios
             .filter((u) => !filtro.status?.length || filtro.status.includes(u.status))
-            .filter((u) => !filtro.codigoArea || u.area?.codigo === filtro.codigoArea)
             .filter((u) => !busca || normalizarBusca(`${u.nome} ${u.nomeExibicao ?? ""} ${u.email}`).includes(busca))
             .sort((a, b) => a.nome.localeCompare(b.nome));
     }

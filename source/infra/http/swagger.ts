@@ -430,6 +430,9 @@ const comCodigo = (extra: object = {}) => ({ parameters: [codigo], ...extra });
 const participacao = {
     parameters: [codigo, { name: "codigoParticipacao", in: "path", required: true, schema: { type: "string" } }],
 };
+const periodo = {
+    parameters: [codigo, { name: "codigoPeriodo", in: "path", required: true, schema: { type: "string" } }],
+};
 const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/refresh": { post: operation(["Autenticação"], "Renovar a sessão com o refresh token", { security: [], ...json }) },
     "/auth/logout": { post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token)", { security: [], ...json }) },
@@ -462,7 +465,21 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/usuarios/{codigo}": {
         get: operation(["Usuários"], "Consultar pessoa", comCodigo()),
     },
-    "/usuarios/{codigo}/perfil": { get: operation(["Usuários"], "Perfil: projetos, histórico e capacitações (RF-013)", comCodigo()) },
+    "/usuarios/{codigo}/perfil": {
+        get: operation(["Usuários"], "Perfil: projetos, períodos nas áreas, capacitações e podeGerirPeriodos (RF-013)", comCodigo()),
+    },
+    "/usuarios/{codigo}/periodos": {
+        get: operation(["Usuários"], "Períodos da pessoa nas áreas (abertos primeiro; todos os logados)", comCodigo()),
+        post: operation(
+            ["Usuários"],
+            "Lançar período: { codigoArea, codigoCargo?, inicio, fim? } (gestores; 400 PERIODO_SOBREPOSTO)",
+            comCodigo(json),
+        ),
+    },
+    "/usuarios/{codigo}/periodos/{codigoPeriodo}": {
+        put: operation(["Usuários"], "Corrigir período: área, cargo e datas (gestores)", { ...periodo, ...json }),
+        delete: operation(["Usuários"], "Excluir período (gestores)", periodo),
+    },
     "/usuarios/{codigo}/status": {
         patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)),
     },

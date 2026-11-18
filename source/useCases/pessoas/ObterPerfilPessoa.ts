@@ -2,10 +2,11 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Projeto from "../../domain/entity/Projeto";
 import Usuario from "../../domain/entity/Usuario";
 import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
-import { MudancaArea, MudancaCargo } from "../../domain/interfaces/HistoricoPessoaRepositoryInterface";
+import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import { comAreasAtuais } from "./areasAtuais";
 
 export interface ProjetoNoPerfil {
     codigo: string;
@@ -36,13 +37,14 @@ export interface PerfilPessoa {
     usuario: Usuario;
     projetosAtuais: ProjetoNoPerfil[];
     projetosAnteriores: ProjetoNoPerfil[];
-    historico: { cargos: MudancaCargo[]; areas: MudancaArea[] };
+    /** Trajetória nas áreas: todos os períodos, abertos primeiro (sessão 23a). */
+    periodos: PeriodoArea[];
     capacitacoes: { proximas: CapacitacaoNoPerfil[]; realizadas: CapacitacaoNoPerfil[]; horasCumpridas: number };
     alocacao: ResumoAlocacao;
 }
 
 /**
- * RF-013: perfil com projetos atuais e anteriores, histórico e capacitações.
+ * RF-013: perfil com projetos atuais e anteriores, períodos nas áreas e capacitações.
  * Projetos seguem a visibilidade (decisão de 30/10/2026): o membro que olha o perfil de outra
  * pessoa só vê os projetos de que ele mesmo participa ou participou.
  * Projeto sigiloso: quem não tem acesso completo vê só o nome e as datas (item `restrito`), se a
@@ -52,8 +54,9 @@ export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
     async execute(codigo: string, quemPede?: UsuarioAutenticado | null): Promise<PerfilPessoa> {
-        const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(codigo);
-        if (!usuario) throw new ErroNaoEncontrado("Pessoa não encontrada.");
+        const lido = await this.factory.criarUsuarioRepository().buscarPorCodigo(codigo);
+        if (!lido) throw new ErroNaoEncontrado("Pessoa não encontrada.");
+        const usuario = await comAreasAtuais(this.factory, lido);
 
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
         const veTudo = !quemPede || quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
@@ -81,11 +84,7 @@ export default class ObterPerfilPessoa {
         }
         projetosAnteriores.sort((a, b) => (b.dataSaida?.getTime() ?? 0) - (a.dataSaida?.getTime() ?? 0));
 
-        const historicoRepo = this.factory.criarHistoricoPessoaRepository();
-        const historico = {
-            cargos: await historicoRepo.listarCargos(codigo),
-            areas: await historicoRepo.listarAreas(codigo),
-        };
+        const periodos = await this.factory.criarPeriodoAreaRepository().listarDe(codigo);
 
         const agora = Date.now();
         let horasCumpridas = 0;
@@ -114,7 +113,7 @@ export default class ObterPerfilPessoa {
             usuario,
             projetosAtuais,
             projetosAnteriores,
-            historico,
+            periodos,
             capacitacoes: { proximas, realizadas, horasCumpridas },
             // O total considera todos os projetos (o alerta de 100% vale igual); a lista, só os visíveis.
             alocacao: { ...calcularAlocacao(todosOsProjetos, codigo), projetos: calcularAlocacao(projetos, codigo).projetos },

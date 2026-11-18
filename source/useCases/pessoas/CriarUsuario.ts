@@ -46,7 +46,7 @@ export default class CriarUsuario {
 
         exigirTraineeMembro(status, input.perfil);
 
-        const detalhes = await resolverPerfilPessoa(this.repositoryFactory, input);
+        const detalhes = resolverPerfilPessoa(input);
         const usuario = new Usuario(
             String(input.nome ?? "").trim(),
             email,
@@ -62,28 +62,7 @@ export default class CriarUsuario {
         if (!criado) {
             throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
         }
-
-        // O cargo e a área iniciais abrem o histórico da pessoa (RF-014).
-        const historico = this.repositoryFactory.criarHistoricoPessoaRepository();
-        const dataVigencia = usuario.dataEntrada ?? hoje();
-        if (usuario.cargo) {
-            await historico.registrarCargo({
-                codigoUsuario: usuario.codigo,
-                cargoAnterior: null,
-                cargoNovo: usuario.cargo,
-                dataVigencia,
-                codigoRegistradoPor: input.codigoAutor ?? null,
-            });
-        }
-        if (usuario.area) {
-            await historico.registrarArea({
-                codigoUsuario: usuario.codigo,
-                areaAnterior: null,
-                areaNova: usuario.area,
-                dataVigencia,
-                codigoRegistradoPor: input.codigoAutor ?? null,
-            });
-        }
+        // Área e cargo são períodos, abertos depois pela gestão (sessão 23a): a pessoa nasce sem áreas.
         return usuario;
     }
 }

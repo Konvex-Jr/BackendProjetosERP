@@ -1,10 +1,9 @@
 import Usuario from "../entity/Usuario";
 import StatusPessoa from "../enum/StatusPessoa";
 
-/** Filtros da lista de pessoas (RF-016). */
+/** Filtros da lista de pessoas (RF-016). A área atual é filtrada em ListarUsuarios, depois de ler os períodos. */
 export interface FiltroPessoas {
     status?: StatusPessoa[];
-    codigoArea?: string;
     busca?: string;
 }
 

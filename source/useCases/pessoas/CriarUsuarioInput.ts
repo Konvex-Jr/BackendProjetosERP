@@ -13,6 +13,4 @@ export default interface CriarUsuarioInput extends EntradaPerfilPessoa {
     ativo?: boolean;
     /** Ativo ou Trainee (padrão: Ativo). */
     status?: StatusPessoa;
-    /** Quem está cadastrando, para o histórico de cargo e área. */
-    codigoAutor?: string | null;
 }

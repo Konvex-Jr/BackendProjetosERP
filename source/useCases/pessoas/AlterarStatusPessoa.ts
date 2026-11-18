@@ -21,6 +21,8 @@ export interface AlterarStatusPessoaInput {
 export interface AlterarStatusPessoaOutput {
     usuario: Usuario;
     participacoesEncerradas: number;
+    /** Períodos em aberto nas áreas que a saída encerrou (sempre, com a data de saída). */
+    periodosEncerrados: number;
 }
 
 /**
@@ -44,16 +46,23 @@ export default class AlterarStatusPessoa {
         }
 
         const saindo = STATUS_DE_SAIDA.includes(input.status);
+        // Saída no futuro deixaria os períodos nas áreas com fim no futuro (e travaria a edição deles).
+        if (saindo && input.dataSaida && input.dataSaida.getTime() > hoje().getTime()) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.SAIDA_NO_FUTURO, "SAIDA_NO_FUTURO");
+        }
         const dataSaida = saindo ? (input.dataSaida ?? atual.dataSaida ?? hoje()) : null;
         const usuario = atual.copiar({ status: input.status, dataSaida });
         await usuarios.editar(usuario);
 
         let participacoesEncerradas = 0;
+        let periodosEncerrados = 0;
         // Quem fica sem acesso (saída) tem as sessões encerradas na hora.
         if (!usuario.ativo) {
             await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
         }
         if (saindo) {
+            // Quem sai deixa as áreas na data de saída, mesmo mantendo as participações (spec 23, seção 5.2).
+            periodosEncerrados = await this.factory.criarPeriodoAreaRepository().encerrarAbertosDe(usuario.codigo, dataSaida!);
             if (input.encerrarParticipacoes !== false) {
                 const projetos = this.factory.criarProjetoRepository();
                 for (const projeto of await projetos.listarPorMembro(usuario.codigo)) {
@@ -71,6 +80,6 @@ export default class AlterarStatusPessoa {
                 }
             }
         }
-        return { usuario, participacoesEncerradas };
+        return { usuario, participacoesEncerradas, periodosEncerrados };
     }
 }

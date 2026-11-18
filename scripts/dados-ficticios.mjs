@@ -107,6 +107,56 @@ async function main() {
     // Trainee com login (papel membro, sem Biblioteca).
     const davi = await pessoa("Davi Trainee", "davi@dev.konvex", "membro", { status: "trainee" });
 
+    // Áreas, cargos e períodos (sessão 23a). Bia fica em duas áreas e tem um período antigo encerrado.
+    const areasExistentes = await exigir("GET", "/areas", dir);
+    async function area(nome, pai = null) {
+        const achada = areasExistentes.find((a) => a.nome === nome);
+        if (achada) return achada;
+        const criada = await exigir("POST", "/areas", dir, { nome, codigoAreaPai: pai?.codigo ?? null });
+        areasExistentes.push(criada);
+        return criada;
+    }
+    const cargosExistentes = await exigir("GET", "/cargos", dir);
+    async function cargo(nome, lideraArea) {
+        const achado = cargosExistentes.find((c) => c.nome === nome);
+        if (achado) return achado;
+        const criado = await exigir("POST", "/cargos", dir, { nome, lideraArea });
+        cargosExistentes.push(criado);
+        return criado;
+    }
+    const areaProjetos = await area("Projetos");
+    const areaInovacao = await area("Inovação", areaProjetos);
+    const areaExecucao = await area("Execução", areaProjetos);
+    const areaCapacitacao = await area("Capacitação", areaProjetos);
+    const assessor = await cargo("Assessor", false);
+    const gerente = await cargo("Gerente", true);
+    await cargo("Diretor", true);
+    const periodosFicticios = [
+        [ines, [[areaProjetos, gerente, -300, null]]],
+        [
+            bia,
+            [
+                [areaExecucao, assessor, -200, null],
+                [areaInovacao, gerente, -60, null],
+                [areaCapacitacao, assessor, -400, -200],
+            ],
+        ],
+        [caio, [[areaExecucao, assessor, -120, null]]],
+        [davi, [[areaCapacitacao, null, -10, null]]],
+    ];
+    for (const [quem, lista] of periodosFicticios) {
+        if ((await exigir("GET", `/usuarios/${quem.codigo}/periodos`, dir)).length) continue;
+        for (const [a, c, ini, fim] of lista) {
+            await exigir("POST", `/usuarios/${quem.codigo}/periodos`, dir, {
+                codigoArea: a.codigo,
+                codigoCargo: c?.codigo ?? null,
+                inicio: dia(ini),
+                fim: fim === null ? null : dia(fim),
+            });
+        }
+        console.log(`Períodos de ${quem.nome} lançados.`);
+    }
+
     const projetos = await exigir("GET", "/projetos", dir);
     let projeto = projetos.find((p) => p.nome === "Site institucional (fictício)");
     if (!projeto) {

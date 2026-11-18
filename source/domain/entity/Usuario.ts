@@ -7,6 +7,14 @@ import SenioridadeUsuario from "./SenioridadeUsuario";
 import Area from "./Area";
 import Cargo from "./Cargo";
 
+/** Área em que a pessoa está agora: um período em aberto (spec 23, seção 5). */
+export interface AreaAtual {
+    area: Area;
+    cargo: Cargo | null;
+    inicio: Date;
+    codigoPeriodo: string;
+}
+
 /** Campos do perfil da pessoa além dos dados de acesso (RF-010). */
 export interface DetalhesPessoa {
     status?: StatusPessoa;
@@ -20,8 +28,8 @@ export interface DetalhesPessoa {
     githubUrl?: string | null;
     curso?: string | null;
     semestre?: number | null;
-    area?: Area | null;
-    cargo?: Cargo | null;
+    /** Vem dos períodos (preencherAreasAtuais); a pessoa não grava área nem cargo. */
+    areas?: AreaAtual[];
     dataEntrada?: Date | null;
     dataSaida?: Date | null;
     bio?: string | null;
@@ -54,8 +62,7 @@ export default class Usuario {
     readonly githubUrl: string | null;
     readonly curso: string | null;
     readonly semestre: number | null;
-    readonly area: Area | null;
-    readonly cargo: Cargo | null;
+    readonly areas: AreaAtual[];
     readonly dataEntrada: Date | null;
     readonly dataSaida: Date | null;
     readonly bio: string | null;
@@ -91,8 +98,7 @@ export default class Usuario {
             detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
                 ? null
                 : Number(detalhes.semestre);
-        this.area = detalhes.area ?? null;
-        this.cargo = detalhes.cargo ?? null;
+        this.areas = detalhes.areas ?? [];
         this.dataEntrada = detalhes.dataEntrada ?? null;
         this.dataSaida = detalhes.dataSaida ?? null;
         this.bio = textoOuNulo(detalhes.bio);
@@ -124,8 +130,7 @@ export default class Usuario {
             githubUrl: pick("githubUrl"),
             curso: pick("curso"),
             semestre: pick("semestre"),
-            area: pick("area"),
-            cargo: pick("cargo"),
+            areas: pick("areas"),
             dataEntrada: pick("dataEntrada"),
             dataSaida: pick("dataSaida"),
             bio: pick("bio"),
@@ -150,8 +155,7 @@ export default class Usuario {
             githubUrl: this.githubUrl,
             curso: this.curso,
             semestre: this.semestre,
-            area: this.area,
-            cargo: this.cargo,
+            areas: this.areas,
             dataEntrada: this.dataEntrada,
             dataSaida: this.dataSaida,
             bio: this.bio,

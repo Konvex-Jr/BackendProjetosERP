@@ -10,7 +10,7 @@ import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
     nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
-    area_codigo, cargo_codigo, data_entrada, data_saida, bio, calendario_url, github_url`;
+    data_entrada, data_saida, bio, calendario_url, github_url`;
 
 // No UPDATE do editar a foto fica de fora: só o definirFoto grava essa coluna. Senão uma edição
 // que leu a pessoa antes de um PUT /auth/foto escreveria de volta a foto antiga, já apagada do disco.
@@ -33,8 +33,6 @@ function valores(usuario: Usuario): unknown[] {
         usuario.linkedinUrl,
         usuario.curso,
         usuario.semestre,
-        usuario.area?.codigo ?? null,
-        usuario.cargo?.codigo ?? null,
         dataParaSqlOuNulo(usuario.dataEntrada),
         dataParaSqlOuNulo(usuario.dataSaida),
         usuario.bio,
@@ -50,7 +48,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         return this.conexao.transacao(async (conexao) => {
             const linhas = await conexao.consultar(
                 `INSERT INTO usuarios (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
                  ON CONFLICT DO NOTHING
                  RETURNING codigo`,
                 [usuario.codigo, ...valores(usuario)],
@@ -67,10 +65,6 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         if (filtro.status?.length) {
             parametros.push(filtro.status);
             condicoes.push(`u.status = ANY($${parametros.length}::status_pessoa[])`);
-        }
-        if (filtro.codigoArea) {
-            parametros.push(filtro.codigoArea);
-            condicoes.push(`u.area_codigo = $${parametros.length}`);
         }
         const busca = normalizarBusca(filtro.busca);
         if (busca) {
