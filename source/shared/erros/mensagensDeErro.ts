@@ -134,6 +134,13 @@ export const MENSAGENS_DE_ERRO = {
         SO_OS_PROPRIOS: "Você só pode excluir os arquivos que enviou.",
     },
 
+    FOTO: {
+        FORMATO_INVALIDO: "A foto tem que ser uma imagem JPEG, PNG ou WebP.",
+        GRANDE_DEMAIS: "A foto pode ter até 300 KB.",
+        NOME_INVALIDO: "Nome de foto inválido.",
+        NAO_ENCONTRADA: "Foto não encontrada.",
+    },
+
     GERAL: {
         ERRO_INTERNO: "Ocorreu um erro interno.",
         RECURSO_NAO_ENCONTRADO: "Recurso não encontrado.",

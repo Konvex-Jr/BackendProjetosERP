@@ -6,5 +6,7 @@ export default class RespostaArquivo {
         readonly conteudo: Buffer | NodeJS.ReadableStream,
         /** Bytes do arquivo; vira o Content-Length (o fluxo não sabe o próprio tamanho). */
         readonly tamanho: number,
+        /** `{ publica: true }`: abre no navegador (inline) e fica em cache público; sem ele, é download privado. */
+        readonly exibicao?: { publica: true },
     ) {}
 }

@@ -436,10 +436,26 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
+    "/auth/foto": {
+        put: operation(
+            ["Autenticação"],
+            "Trocar a própria foto (corpo cru JPEG, PNG ou WebP, até 300 KB; gravada como WebP 256x256; devolve { foto })",
+            {
+                requestBody: { required: true, content: { "image/*": { schema: { type: "string", format: "binary" } } } },
+            },
+        ),
+        delete: operation(["Autenticação"], "Remover a própria foto"),
+    },
+    "/fotos/{arquivo}": {
+        get: operation(["Usuários"], "Foto de perfil (pública; nome UUID.webp; 404 se não existe)", {
+            security: [],
+            parameters: [{ name: "arquivo", in: "path", required: true, schema: { type: "string" } }],
+        }),
+    },
     "/auth/perfil": {
         put: operation(
             ["Autenticação"],
-            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, tecnologias[], curso, semestre, bio)",
+            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, curso, semestre, bio)",
             json,
         ),
     },
@@ -462,7 +478,6 @@ const rotasFase1: Record<string, Record<string, object>> = {
     },
     "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
-    "/habilidades": { get: operation(["Configurações"], "Listar habilidades e tecnologias cadastradas (?tipo=tecnologia filtra)") },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {
         put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }),

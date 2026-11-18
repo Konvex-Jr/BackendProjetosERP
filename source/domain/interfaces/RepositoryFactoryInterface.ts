@@ -6,7 +6,6 @@ import CapacitacaoRepositoryInterface from "./CapacitacaoRepositoryInterface";
 import CapacitacaoFeedbackRepositoryInterface from "./CapacitacaoFeedbackRepositoryInterface";
 import AreaRepositoryInterface from "./AreaRepositoryInterface";
 import CargoRepositoryInterface from "./CargoRepositoryInterface";
-import HabilidadeRepositoryInterface from "./HabilidadeRepositoryInterface";
 import HistoricoPessoaRepositoryInterface from "./HistoricoPessoaRepositoryInterface";
 import RefreshTokenRepositoryInterface from "./RefreshTokenRepositoryInterface";
 import ComentarioTarefaRepositoryInterface from "./ComentarioTarefaRepositoryInterface";
@@ -14,6 +13,7 @@ import BibliotecaRepositoryInterface from "./BibliotecaRepositoryInterface";
 import ColunaProjetoRepositoryInterface from "./ColunaProjetoRepositoryInterface";
 import AnexoRepositoryInterface from "./AnexoRepositoryInterface";
 import ArmazenamentoAnexosInterface from "./ArmazenamentoAnexosInterface";
+import ArmazenamentoFotosInterface from "./ArmazenamentoFotosInterface";
 
 /**
  * Ponto único de onde os casos de uso pegam os repositórios. Há duas implementações:
@@ -34,7 +34,6 @@ export default interface RepositoryFactoryInterface {
     criarCapacitacaoFeedbackRepository(): CapacitacaoFeedbackRepositoryInterface;
     criarAreaRepository(): AreaRepositoryInterface;
     criarCargoRepository(): CargoRepositoryInterface;
-    criarHabilidadeRepository(): HabilidadeRepositoryInterface;
     criarHistoricoPessoaRepository(): HistoricoPessoaRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
@@ -42,4 +41,5 @@ export default interface RepositoryFactoryInterface {
     criarAnexoRepository(): AnexoRepositoryInterface;
     /** Bytes dos anexos (disco em produção, memória nos testes). */
     criarArmazenamentoAnexos(): ArmazenamentoAnexosInterface;
+    criarArmazenamentoFotos(): ArmazenamentoFotosInterface;
 }

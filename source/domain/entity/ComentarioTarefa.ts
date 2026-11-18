@@ -28,7 +28,7 @@ export default class ComentarioTarefa {
                 codigo: this.autor.codigo,
                 nome: this.autor.nome,
                 nomeExibicao: this.autor.nomeExibicao,
-                avatarUrl: this.autor.avatarUrl,
+                foto: this.autor.foto,
             },
             texto: this.texto,
             criadoEm: this.criadoEm,

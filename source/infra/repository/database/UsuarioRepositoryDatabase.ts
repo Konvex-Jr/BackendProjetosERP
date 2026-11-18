@@ -9,8 +9,14 @@ import { normalizarBusca } from "../../../shared/texto";
 import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
-    nome_exibicao, avatar_url, telefone, linkedin_url, curso, semestre,
+    nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
     area_codigo, cargo_codigo, data_entrada, data_saida, bio, calendario_url, github_url`;
+
+// No UPDATE do editar a foto fica de fora: só o definirFoto grava essa coluna. Senão uma edição
+// que leu a pessoa antes de um PUT /auth/foto escreveria de volta a foto antiga, já apagada do disco.
+const LISTA_COLUNAS = COLUNAS.split(",").map((c) => c.trim());
+const POSICAO_FOTO = LISTA_COLUNAS.indexOf("foto");
+const COLUNAS_EDITAR = LISTA_COLUNAS.filter((_, i) => i !== POSICAO_FOTO);
 
 function valores(usuario: Usuario): unknown[] {
     return [
@@ -22,7 +28,7 @@ function valores(usuario: Usuario): unknown[] {
         usuario.senha,
         usuario.status,
         usuario.nomeExibicao,
-        usuario.avatarUrl,
+        usuario.foto,
         usuario.telefone,
         usuario.linkedinUrl,
         usuario.curso,
@@ -51,7 +57,6 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
             );
             // E-mail repetido não lança erro aqui: devolve null e o caso de uso (CriarUsuario) avisa.
             if (linhas.length === 0) return null;
-            await this.gravarHabilidades(conexao, usuario);
             return usuario;
         });
     }
@@ -96,15 +101,13 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         try {
             await this.conexao.transacao(async (conexao) => {
                 const linhas = await conexao.consultar(
-                    `UPDATE usuarios SET (${COLUNAS}) =
-                        ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+                    `UPDATE usuarios SET (${COLUNAS_EDITAR.join(", ")}) =
+                        (${COLUNAS_EDITAR.map((_, i) => `$${i + 2}`).join(", ")})
                      WHERE codigo = $1
                      RETURNING codigo`,
-                    [usuario.codigo, ...valores(usuario)],
+                    [usuario.codigo, ...valores(usuario).filter((_, i) => i !== POSICAO_FOTO)],
                 );
                 if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
-                await conexao.consultar("DELETE FROM usuario_habilidades WHERE usuario_codigo = $1", [usuario.codigo]);
-                await this.gravarHabilidades(conexao, usuario);
             });
         } catch (erro) {
             if (violacaoDeUnicidade(erro)) {
@@ -123,13 +126,16 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
     }
 
-    private async gravarHabilidades(conexao: ConexaoBanco, usuario: Usuario): Promise<void> {
-        if (usuario.habilidades.length === 0) return;
-        await conexao.consultar(
-            `INSERT INTO usuario_habilidades (usuario_codigo, habilidade_codigo)
-             SELECT $1::uuid, unnest($2::uuid[])
-             ON CONFLICT DO NOTHING`,
-            [usuario.codigo, usuario.habilidades.map((h) => h.codigo)],
+    async definirFoto(codigo: string, foto: string | null): Promise<string | null> {
+        // O SELECT ... FOR UPDATE trava a linha e lê a foto anterior no mesmo comando.
+        const linhas = await this.conexao.consultar(
+            `UPDATE usuarios u SET foto = $2
+             FROM (SELECT foto FROM usuarios WHERE codigo = $1 FOR UPDATE) antes
+             WHERE u.codigo = $1
+             RETURNING antes.foto AS anterior`,
+            [codigo, foto],
         );
+        if (linhas.length === 0) throw new ErroNaoEncontrado("Usuário não encontrado.");
+        return linhas[0].anterior ?? null;
     }
 }

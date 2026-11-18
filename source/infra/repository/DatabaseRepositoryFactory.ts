@@ -16,13 +16,13 @@ import CapacitacaoFeedbackRepositoryDatabase from "./database/CapacitacaoFeedbac
 import ColunaProjetoRepositoryDatabase from "./database/ColunaProjetoRepositoryDatabase";
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
-import HabilidadeRepositoryDatabase from "./database/HabilidadeRepositoryDatabase";
 import HistoricoPessoaRepositoryDatabase from "./database/HistoricoPessoaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
 import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
+import ArmazenamentoFotosDisco from "../arquivos/ArmazenamentoFotosDisco";
 
 /**
  * Repositórios em PostgreSQL (produção e testes de integração). Cada chamada cria um repositório
@@ -72,10 +72,6 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new CargoRepositoryDatabase(this.conexao);
     }
 
-    criarHabilidadeRepository() {
-        return new HabilidadeRepositoryDatabase(this.conexao);
-    }
-
     criarHistoricoPessoaRepository() {
         return new HistoricoPessoaRepositoryDatabase(this.conexao);
     }
@@ -95,6 +91,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
     criarArmazenamentoAnexos() {
         // Os bytes ficam no disco (ANEXOS_DIR), não no banco; o banco guarda só o registro do anexo.
         return new ArmazenamentoAnexosDisco();
+    }
+
+    criarArmazenamentoFotos() {
+        return new ArmazenamentoFotosDisco();
     }
 
     criarRefreshTokenRepository() {

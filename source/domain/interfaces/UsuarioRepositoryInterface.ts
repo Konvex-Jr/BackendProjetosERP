@@ -14,8 +14,10 @@ export default interface UsuarioRepositoryInterface {
     listar(filtro?: FiltroPessoas): Promise<Usuario[]>;
     buscarPorCodigo(codigo: string): Promise<Usuario | null>;
     buscarPorEmail(email: string): Promise<Usuario | null>;
-    /** Grava todos os campos da pessoa, inclusive habilidades. */
+    /** Grava todos os campos da pessoa. */
     editar(usuario: Usuario): Promise<Usuario>;
     /** Muda o status para Inativo. Pessoas nunca são excluídas (ADR-006). */
     desativar(codigo: string): Promise<void>;
+    /** Grava a foto (ou `null`, para remover) e devolve a foto anterior. Só a rota de foto usa. */
+    definirFoto(codigo: string, foto: string | null): Promise<string | null>;
 }

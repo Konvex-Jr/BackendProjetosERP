@@ -70,4 +70,12 @@ export default class UsuarioRepositoryMemory implements UsuarioRepositoryInterfa
 
         this.usuarios[indice] = this.usuarios[indice].copiar({ status: StatusPessoa.INATIVO });
     }
+
+    async definirFoto(codigo: string, foto: string | null): Promise<string | null> {
+        const indice = this.usuarios.findIndex((u) => u.codigo === codigo);
+        if (indice === -1) throw new ErroNaoEncontrado("Usuário não encontrado.");
+        const anterior = this.usuarios[indice].foto;
+        this.usuarios[indice] = this.usuarios[indice].copiar({ foto });
+        return anterior;
+    }
 }

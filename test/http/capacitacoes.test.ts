@@ -205,7 +205,7 @@ describe("Perfil completo", () => {
     });
     afterEach(async () => servidor.fechar());
 
-    it("a pessoa coloca calendário, GitHub e tecnologias (lista que cresce, sem duplicar) e outro membro vê", async () => {
+    it("a pessoa coloca calendário e GitHub e outro membro vê; tecnologias e avatarUrl no corpo são ignorados", async () => {
         const ruim = await servidor.chamar("put", "/auth/perfil", { usuario: ctx.membro, corpo: { githubUrl: "github.com/ana" } });
         expect([ruim.status, ruim.corpo.message]).toEqual([400, "O link do GitHub deve começar com http:// ou https://."]);
 
@@ -214,33 +214,27 @@ describe("Perfil completo", () => {
             corpo: {
                 calendarioUrl: "https://calendar.google.com/ana",
                 githubUrl: "https://github.com/ana",
-                tecnologias: ["React", "TypeScript", "react"],
+                telefone: "11999990000",
+                tecnologias: ["React"],
+                habilidades: ["Liderança"],
+                avatarUrl: "https://x",
             },
         });
         expect(r.status).toBe(200);
-        expect(r.corpo.habilidades.map((h: any) => [h.nome, h.tipo])).toEqual([
-            ["React", "tecnologia"],
-            ["TypeScript", "tecnologia"],
-        ]);
-
-        // Outro membro escolhe uma existente com outra grafia e cria uma nova.
-        await servidor.chamar("put", "/auth/perfil", { usuario: ctx.gerente, corpo: { tecnologias: ["typescript", "Node.js"] } });
-        const sugestoes = await servidor.chamar("get", "/habilidades?tipo=tecnologia", { usuario: ctx.membro });
-        expect(sugestoes.corpo.map((h: any) => h.nome).sort()).toEqual(["Node.js", "React", "TypeScript"]);
+        expect(r.corpo).toMatchObject({ telefone: "11999990000", foto: null });
+        expect(r.corpo).not.toHaveProperty("avatarUrl");
+        expect(r.corpo).not.toHaveProperty("habilidades");
 
         const visto = await servidor.chamar("get", "/usuarios/usr-ana/perfil", { usuario: ctx.gerente });
         expect(visto.corpo.usuario).toMatchObject({
             calendarioUrl: "https://calendar.google.com/ana",
             githubUrl: "https://github.com/ana",
+            foto: null,
         });
-        expect(
-            (await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente })).corpo.find((u: any) => u.codigo === "usr-ana")
-                .habilidades,
-        ).toHaveLength(2);
+        const lista = (await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente })).corpo.find((u: any) => u.codigo === "usr-ana");
+        expect(lista.foto).toBeNull();
+        expect(lista).not.toHaveProperty("habilidades");
 
-        // Trocar as tecnologias não apaga as habilidades.
-        await servidor.chamar("put", "/usuarios/usr-ana", { usuario: ctx.gerente, corpo: { habilidades: ["Liderança"] } });
-        const final = await servidor.chamar("put", "/auth/perfil", { usuario: ctx.membro, corpo: { tecnologias: ["Python"] } });
-        expect(final.corpo.habilidades.map((h: any) => h.nome).sort()).toEqual(["Liderança", "Python"]);
+        expect((await servidor.chamar("get", "/habilidades", { usuario: ctx.membro })).status).toBe(404);
     });
 });

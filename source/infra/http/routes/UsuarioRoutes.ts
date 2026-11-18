@@ -12,10 +12,14 @@ import CriarUsuario from "../../../useCases/pessoas/CriarUsuario";
 import EditarUsuario from "../../../useCases/pessoas/EditarUsuario";
 import ListarUsuarios from "../../../useCases/pessoas/ListarUsuarios";
 import AlterarStatusPessoa from "../../../useCases/pessoas/AlterarStatusPessoa";
+import GerirFotoPerfil, { TAMANHO_MAXIMO_FOTO } from "../../../useCases/pessoas/GerirFotoPerfil";
+import RespostaArquivo from "../RespostaArquivo";
+import RespostaSemConteudo from "../RespostaSemConteudo";
 import ObterPerfilPessoa from "../../../useCases/pessoas/ObterPerfilPessoa";
 import { EntradaPerfilPessoa, lerStatusPessoa } from "../../../useCases/pessoas/dadosPessoa";
 import { exigirAutenticado, exigirPodeGerirPerfil } from "../../../shared/seguranca/permissoes";
 import { lerData, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
+import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
@@ -30,7 +34,6 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
     const texto = (campo: string) => (body[campo] === undefined ? undefined : body[campo]);
     return {
         nomeExibicao: texto("nomeExibicao"),
-        avatarUrl: texto("avatarUrl"),
         telefone: texto("telefone"),
         linkedinUrl: texto("linkedinUrl"),
         calendarioUrl: texto("calendarioUrl"),
@@ -46,8 +49,6 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         codigoCargo: texto("codigoCargo"),
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
         bio: texto("bio"),
-        habilidades: body.habilidades,
-        tecnologias: body.tecnologias,
     };
 }
 
@@ -96,7 +97,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
-            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio, tecnologias } = lerPerfil(body);
+            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio } = lerPerfil(body);
             return new EditarUsuario(f).execute({
                 codigo: eu.codigo,
                 nomeExibicao,
@@ -107,9 +108,36 @@ export default class UsuarioRoutes implements ModelRoutes {
                 curso,
                 semestre,
                 bio,
-                tecnologias,
                 codigoAutor: eu.codigo,
             });
+        });
+
+        // Foto de perfil: JPEG, PNG ou WebP já recortado no navegador (até 300 KB); o servidor
+        // regrava em WebP 256x256. A leitura é pública:
+        // o nome do arquivo é um UUID, e a tela precisa dela em <img>, que não manda o token.
+        this.http.route(
+            "put",
+            "/auth/foto",
+            true,
+            async (_p: any, body: any) => new GerirFotoPerfil(f).trocar(exigirAutenticado(body.user).codigo, body.arquivo.conteudo),
+            {
+                arquivo: {
+                    limiteBytes: TAMANHO_MAXIMO_FOTO,
+                    mensagemLimite: MENSAGENS_DE_ERRO.FOTO.GRANDE_DEMAIS,
+                    codigoLimite: "FOTO_GRANDE_DEMAIS",
+                },
+            },
+        );
+
+        this.http.route("delete", "/auth/foto", true, async (_p: any, body: any) => {
+            await new GerirFotoPerfil(f).remover(exigirAutenticado(body.user).codigo);
+            return new RespostaSemConteudo();
+        });
+
+        this.http.route("get", "/fotos/:arquivo", false, async (params: any) => {
+            const aberta = await f.criarArmazenamentoFotos().abrir(String(params.arquivo));
+            if (!aberta) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.FOTO.NAO_ENCONTRADA);
+            return new RespostaArquivo(params.arquivo, "image/webp", aberta.fluxo, aberta.tamanho, { publica: true });
         });
 
         // Pessoas: todos os autenticados consultam; só gestores alteram (matriz de permissões).

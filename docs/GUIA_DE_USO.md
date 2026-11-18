@@ -51,6 +51,10 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Na ficha de cada projeto, a aba **Biblioteca** mostra os itens ligados a ele que você pode ver.
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas avulsas de Inovação.
 
+**Meu perfil** (no menu): seus dados de contato e apresentação (telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio), troca de senha e a sua foto.
+- **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
+- **Links**: GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.
+
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
 
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
