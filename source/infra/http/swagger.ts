@@ -436,6 +436,18 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
+    "/auth/foto": {
+        put: operation(["Autenticação"], "Trocar a própria foto (corpo cru image/webp, até 300 KB; devolve { foto })", {
+            requestBody: { required: true, content: { "image/webp": { schema: { type: "string", format: "binary" } } } },
+        }),
+        delete: operation(["Autenticação"], "Remover a própria foto"),
+    },
+    "/fotos/{arquivo}": {
+        get: operation(["Autenticação"], "Foto de perfil (pública; nome UUID.webp; 404 se não existe)", {
+            security: [],
+            parameters: [{ name: "arquivo", in: "path", required: true, schema: { type: "string" } }],
+        }),
+    },
     "/auth/perfil": {
         put: operation(
             ["Autenticação"],

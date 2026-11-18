@@ -5,7 +5,7 @@ import ArmazenamentoFotosInterface from "../../domain/interfaces/ArmazenamentoFo
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { pastaDosAnexos } from "./ArmazenamentoAnexosDisco";
-import { NOME_FOTO } from "../../useCases/pessoas/GerirFotoPerfil";
+import { NOME_FOTO } from "../../shared/foto";
 
 /** Pasta das fotos: uma subpasta dentro da pasta dos anexos (entra no mesmo backup). */
 export function pastaDasFotos(): string {

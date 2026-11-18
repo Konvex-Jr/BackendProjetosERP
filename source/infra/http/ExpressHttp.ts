@@ -137,8 +137,15 @@ export default class ExpressHttp implements Http {
                         res.setHeader("Content-Type", result.tipoMime);
                         res.setHeader("Content-Length", String(result.tamanho));
                         res.setHeader("X-Content-Type-Options", "nosniff");
-                        res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
-                        res.setHeader("Cache-Control", "private, no-store");
+                        if (result.exibicao?.publica) {
+                            // Foto de perfil: o nome é um UUID sem dados de pessoa e o arquivo nunca muda.
+                            res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
+                            res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+                            res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+                        } else {
+                            res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(result.nome)}`);
+                            res.setHeader("Cache-Control", "private, no-store");
+                        }
                     } catch (erro) {
                         // O arquivo já foi aberto: fecha para não vazar o descritor.
                         if (!Buffer.isBuffer(result.conteudo)) (result.conteudo as any).destroy?.();

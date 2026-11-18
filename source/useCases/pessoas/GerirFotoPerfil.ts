@@ -4,9 +4,6 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
-/** Nome da foto no disco e no banco: UUID v4 minúsculo + .webp. */
-export const NOME_FOTO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;
-
 export const TAMANHO_MAXIMO_FOTO = 300 * 1024;
 
 /** Assinatura WebP: "RIFF", 4 bytes de tamanho, "WEBP". */

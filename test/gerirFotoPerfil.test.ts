@@ -1,5 +1,6 @@
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
-import GerirFotoPerfil, { NOME_FOTO } from "../source/useCases/pessoas/GerirFotoPerfil";
+import GerirFotoPerfil from "../source/useCases/pessoas/GerirFotoPerfil";
+import { NOME_FOTO } from "../source/shared/foto";
 import AlterarStatusPessoa from "../source/useCases/pessoas/AlterarStatusPessoa";
 import { criarContexto } from "./fixtures";
 
@@ -54,6 +55,22 @@ describe("foto de perfil (sessão 22)", () => {
         await expect(caso.trocar(membro.codigo, webp())).rejects.toThrow("banco fora");
         expect([...factory.armazenamentoFotos.arquivos.keys()]).toEqual([antiga]);
         expect((await repo.buscarPorCodigo(membro.codigo))!.foto).toBe(antiga);
+    });
+
+    it("se apagar a foto antiga falha, a troca vale e avisa no console", async () => {
+        const { factory, membro } = await criarContexto();
+        const caso = new GerirFotoPerfil(factory);
+        const { foto: antiga } = await caso.trocar(membro.codigo, webp());
+        const aviso = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+        jest.spyOn(factory.armazenamentoFotos, "excluir").mockRejectedValueOnce(new Error("disco cheio"));
+        try {
+            const { foto } = await caso.trocar(membro.codigo, webp());
+            expect(foto).not.toBe(antiga);
+            expect((await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo))!.foto).toBe(foto);
+            expect(aviso).toHaveBeenCalledTimes(1);
+        } finally {
+            aviso.mockRestore();
+        }
     });
 
     it("remover limpa a foto e apaga o arquivo; sem foto não falha", async () => {
