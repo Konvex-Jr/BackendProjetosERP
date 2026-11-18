@@ -51,17 +51,22 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - Ninguém altera o próprio papel nem o próprio status, nem inativa a própria conta.
 - Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
-- Trocar área ou cargo grava histórico (`historico_areas`, `historico_cargos`).
+- **Áreas e cargos por período** (sessão 23a, migração 017): a pessoa pode estar em várias áreas ao mesmo tempo, cada uma com um cargo opcional e um período `[início, fim)` (fim vazio = atual). A pessoa não grava mais área nem cargo; as "áreas atuais" (`areas` na resposta) são os períodos em aberto. Se uma tela antiga ainda mandar `codigoArea` ou `codigoCargo` no `PUT /usuarios/:codigo`, os campos são ignorados.
+  - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`). Todos os logados leem.
+  - Regras (400 com código): nenhuma data no futuro (`INICIO_NO_FUTURO`, `FIM_NO_FUTURO`); fim depois do início (`FIM_NAO_DEPOIS_DO_INICIO`); dois períodos da mesma pessoa na mesma área não se sobrepõem (`PERIODO_SOBREPOSTO`, garantido também pelo banco em gravações simultâneas); só área e cargo ativos ao escolher (`AREA_INATIVA`, `CARGO_INATIVO`; corrigir só as datas de um período antigo com área desativada continua permitido); período em aberto só para quem está na EJ (`PESSOA_FORA_DA_EJ`); fim não passa da saída da pessoa (`FIM_DEPOIS_DA_SAIDA`).
+  - Quem sai da EJ (Alumni ou Inativo) tem os períodos em aberto **sempre** encerrados na data de saída, mesmo quando a gestão escolhe manter as participações nos projetos. Quem volta a Ativo não reabre nada: a gestão lança um período novo.
 - Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio (`PUT /auth/perfil`). E troca a própria senha e a própria foto.
 - **Foto de perfil:** cada pessoa envia, troca e remove a própria foto (`PUT` e `DELETE /auth/foto`). O navegador recorta em quadrado e manda 256×256 em WebP (ou JPEG no Safari e no iPhone); o backend aceita JPEG, PNG ou WebP (confere a assinatura) de até 300 KB e regrava sempre em WebP 256×256 (`sharp`), sem metadados. O arquivo fica em `anexos/fotos/` com nome UUID e é servido em `GET /fotos/:arquivo`, **sem login** (nome impossível de adivinhar, cache longo). Trocar ou remover apaga o arquivo antigo; inativar a pessoa não mexe na foto (ninguém é excluído). Onde aparecem as iniciais, aparece a foto, se houver.
 - **Links do perfil:** GitHub, LinkedIn e calendário aparecem como cartões com o logo oficial (calendário do Google com o logo do Google Agenda; outro calendário, ícone genérico).
 - **Tecnologias saíram** (18/11, migração 016): sem tabelas, sem campo e sem tela. Se o corpo do `PUT /auth/perfil` ainda trouxer `tecnologias`, é ignorado.
 - Todos os logados consultam a lista de pessoas e os perfis (links e foto visíveis). No perfil de outra pessoa, o membro vê só os projetos que os dois compartilham (`ObterPerfilPessoa`).
-- O perfil mostra projetos atuais e anteriores, histórico de área e cargo, capacitações e horas cumpridas (só com presença marcada).
+- O perfil mostra projetos atuais e anteriores, os períodos nas áreas (abertos primeiro), capacitações e horas cumpridas (só com presença marcada). A resposta traz `podeGerirPeriodos` para a tela mostrar os botões.
 
 ### Configurações (`/areas`, `/cargos`, `/senioridades`)
 - Só o diretor cria e edita áreas (hierárquicas, com subáreas), cargos e senioridades (`configuracoes.editar`). Todos os logados leem as listas (servem aos formulários).
 - A área **Inovação** não dá mais nenhum direito especial (desde a sessão 17). É só uma área como as outras.
+- Cargo tem a marca **"Lidera a área"** (`lideraArea`, desde a 23a). A migração 017 marcou os cargos cujo nome começa com "Gerente" ou "Diretor"; o diretor confere em Configurações.
+- **Liderança de área (regra provisória; as lideranças da EJ vão decidir a definitiva, 18/11/2026):** lidera uma área quem tem o papel diretor do sistema, ou um período em aberto com cargo que lidera nessa área ou em alguma acima dela (subindo pela área pai). Fica toda em `source/shared/seguranca/liderancaArea.ts`. Na 23a ela só existe e é testada; quem a usa é a 23b (projeto geral e projetos internos).
 - `valor_hora` da senioridade ainda é 0: a precificação pela API espera a diretoria definir as taxas.
 
 ### Projetos (`/projetos`)
@@ -150,6 +155,9 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | Cadastrar, editar, mudar status, redefinir senha de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
 | O mesmo para diretores (ou promover a diretor) | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
 | Alterar o próprio papel ou status | ❌ | ❌ | ❌ | `UsuarioRoutes` (checagem explícita) |
+| Ver os períodos nas áreas de qualquer pessoa | ✅ | ✅ | ✅ | só login (`GET /usuarios/:codigo/periodos`) |
+| Lançar, corrigir e excluir períodos de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
+| O mesmo nos períodos de diretores | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
 | Criar e editar áreas, cargos, senioridades | ✅ | ❌ | ❌ | `configuracoes.editar` |
 
 ### Projetos
@@ -245,6 +253,11 @@ Gestão (documentos), Base de Inteligência e Iniciativas guardavam o mesmo tipo
 
 A pessoa passou a ter **foto de perfil** (no lugar do campo `avatar_url`) e os links do perfil ganharam cartões com logo. As **tecnologias** (tabelas `habilidades` e `usuario_habilidades`) saíram do sistema: a migração 016 apaga esses dados, que só voltam do backup anterior à publicação. A foto não cria ação nova no catálogo de permissões (basta estar logado).
 - Spec: `docs/superpowers/specs/2026-11-18-perfil-design.md`.
+
+## 4.2. Registro da sessão 23a (áreas por período)
+
+`usuarios.area_codigo`, `usuarios.cargo_codigo`, `historico_areas` e `historico_cargos` viraram a tabela `periodos_area` (migração 017, com a carga do que existia). A regra de liderança por área é provisória e não muda nenhuma permissão na 23a.
+- Spec: `docs/superpowers/specs/2026-11-18-areas-design.md`.
 
 ## 5. O que ainda não existe
 Homologação, auditoria (quem mudou o quê), LGPD e retenção, precificação pela API, Google Calendar, e-mails, busca global, Board Tático, CRM. Ver o `.konvex/roteiro.md` (fases 6 e 7).

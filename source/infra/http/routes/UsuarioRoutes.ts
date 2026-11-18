@@ -16,13 +16,15 @@ import GerirFotoPerfil, { TAMANHO_MAXIMO_FOTO } from "../../../useCases/pessoas/
 import RespostaArquivo from "../RespostaArquivo";
 import RespostaSemConteudo from "../RespostaSemConteudo";
 import ObterPerfilPessoa from "../../../useCases/pessoas/ObterPerfilPessoa";
+import GerirPeriodosArea, { PeriodoAreaEntrada } from "../../../useCases/pessoas/GerirPeriodosArea";
 import { comAreasAtuais } from "../../../useCases/pessoas/areasAtuais";
 import Usuario from "../../../domain/entity/Usuario";
 import { EntradaPerfilPessoa, lerStatusPessoa } from "../../../useCases/pessoas/dadosPessoa";
 import { exigirAutenticado, exigirPodeGerirPerfil } from "../../../shared/seguranca/permissoes";
-import { lerData, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
+import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
+import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
 /** Lê a senioridade enviada como objeto ({ codigo }) ou como texto (codigoSenioridade). */
@@ -32,6 +34,15 @@ function lerSenioridade(body: any): SenioridadeUsuario | null {
 }
 
 /** Campos do perfil presentes no corpo; ausentes ficam undefined (não alteram). */
+function lerPeriodo(body: any): PeriodoAreaEntrada {
+    return {
+        codigoArea: String(body?.codigoArea ?? ""),
+        codigoCargo: body?.codigoCargo ? String(body.codigoCargo) : null,
+        inicio: lerDataObrigatoria(body?.inicio, "inicio"),
+        fim: lerData(body?.fim, "fim"),
+    };
+}
+
 function lerPerfil(body: any): EntradaPerfilPessoa {
     const texto = (campo: string) => (body[campo] === undefined ? undefined : body[campo]);
     return {
@@ -50,6 +61,17 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
         bio: texto("bio"),
     };
+}
+
+/** A pessoa logada pode gerir o perfil (e os períodos) de alguém com este papel? */
+function podeGerirPerfilDe(usuario: any, perfilDoAlvo: PerfilUsuario | string): boolean {
+    try {
+        exigirPodeGerirPerfil(usuario, perfilDoAlvo, perfilDoAlvo);
+        return true;
+    } catch (erro) {
+        if (erro instanceof ErroAplicacao) return false;
+        throw erro;
+    }
 }
 
 /** Rotas de sessão (RF-001) e de pessoas (RF-010 a RF-016). */
@@ -160,9 +182,35 @@ export default class UsuarioRoutes implements ModelRoutes {
             this.responderPessoa(await this.buscarAlvo(params.codigo)),
         );
 
-        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) =>
-            new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user)),
-        );
+        this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) => {
+            const perfil = await new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user));
+            return { ...perfil, podeGerirPeriodos: podeGerirPerfilDe(body.user, perfil.usuario.perfil) };
+        });
+
+        // Períodos por área (sessão 23a): todos os logados leem, como o perfil; só a gestão grava.
+        this.http.route("get", "/usuarios/:codigo/periodos", true, async (params: any, body: any) => {
+            exigirAutenticado(body.user);
+            return new GerirPeriodosArea(f).listar(params.codigo);
+        });
+
+        this.http.route("post", "/usuarios/:codigo/periodos", true, async (params: any, body: any) => {
+            const alvo = await this.buscarAlvo(params.codigo);
+            const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            return new GerirPeriodosArea(f).criar(alvo.codigo, lerPeriodo(body), gestor.codigo);
+        });
+
+        this.http.route("put", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
+            const alvo = await this.buscarAlvo(params.codigo);
+            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, lerPeriodo(body));
+        });
+
+        this.http.route("delete", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
+            const alvo = await this.buscarAlvo(params.codigo);
+            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            await new GerirPeriodosArea(f).excluir(alvo.codigo, params.codigoPeriodo);
+            return new RespostaSemConteudo();
+        });
 
         this.http.route("get", "/senioridades", true, async () => f.criarSenioridadeRepository().listar());
 

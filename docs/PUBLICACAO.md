@@ -306,6 +306,40 @@ curl -sI "https://erp.konvexjr.com.br/api/fotos/<ARQUIVO>.webp" | head -1   # 20
 
 **Rollback:** voltar só o backend depois da 016 quebra o perfil (a coluna `avatar_url` e as tabelas de tecnologias não existem mais). O caminho de volta é restaurar o `.dump` feito na Parte 1 (seção 6), perdendo o que foi gravado depois, e voltar **backend e frontend juntos**. As fotos enviadas ficam em `anexos/fotos/` e não atrapalham.
 
+### Publicação da sessão 23a (áreas por período): migração 017
+A migração `017_periodos_area.sql` cria a tabela `periodos_area`, carrega nela a área e o cargo atuais de cada pessoa e o histórico antigo, marca como "lidera a área" os cargos que começam com "Gerente" ou "Diretor" e **apaga `usuarios.area_codigo`, `usuarios.cargo_codigo`, `historico_areas` e `historico_cargos`**. Publicar **backend e frontend juntos**.
+
+**Parte 0, consultar antes (anote a saída):**
+```bash
+cd /docker/erp-konvex
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT u.nome, c.nome AS cargo FROM usuarios u JOIN cargos c ON c.codigo = u.cargo_codigo WHERE u.area_codigo IS NULL;
+SELECT nome FROM cargos WHERE unaccent(lower(nome)) ~ '^(gerente|diretor)';
+SQL
+```
+A primeira lista mostra quem tem cargo e não tem área: o cargo dessas pessoas não vira período (período exige área); a gestão lança depois. A segunda mostra os cargos que vão ficar marcados como "Lidera a área".
+
+**Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`).
+
+**Parte 2, atualizar e construir:** igual à Parte 2 da sessão 22.
+
+**Parte 3, subir:**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 017_periodos_area.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes            # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/usuarios/x/periodos       # 401
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT count(*) FROM periodos_area WHERE fim IS NULL;"'
+```
+O total de períodos em aberto deve ser próximo do número de pessoas Ativas e Trainees com área antes da publicação. Depois, no navegador: **Configurações › Cargos** (conferir "Lidera a área") e o perfil de algumas pessoas (seção "Áreas e cargos"); a gestão lança os períodos antigos com as datas reais.
+
+**Rollback:** a 017 apaga colunas e tabelas antigas. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
