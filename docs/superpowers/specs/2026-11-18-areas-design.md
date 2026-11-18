@@ -60,10 +60,10 @@ O usuário pediu um misto de A e C e depois chegou ao modelo escolhido: **projet
 - `cargos.lidera_area BOOLEAN NOT NULL DEFAULT FALSE`. Na migração, marcar como `TRUE` os cargos cujo nome começa com "Gerente" ou "Diretor" (sem diferenciar maiúsculas e acentos); a gestão confere em Configurações.
 - Tabela `periodos_area`:
   - `codigo UUID PK`, `usuario_codigo` (FK usuarios, RESTRICT), `area_codigo` (FK areas, RESTRICT), `cargo_codigo` (FK cargos, RESTRICT, **nulo permitido**: pessoa na área sem cargo definido), `inicio DATE NOT NULL`, `fim DATE NULL`, `registrado_por`, `registrado_em`.
-  - `CHECK (fim IS NULL OR fim >= inicio)`.
+  - `CHECK (fim IS NULL OR fim > inicio)` (com `[inicio, fim)`, fim igual ao início seria período vazio).
   - `fim` é o dia em que a pessoa **saiu** da área (intervalo `[inicio, fim)`): trocar de cargo na mesma área = encerrar o período no dia X e abrir outro começando em X (**chamada minha**).
   - Sem sobreposição de períodos da **mesma pessoa na mesma área**: `EXCLUDE USING gist (usuario_codigo WITH =, area_codigo WITH =, daterange(inicio, fim, '[)') WITH &&)` (extensão `btree_gist`). O código confere antes e devolve 400 legível; a constraint é a rede de segurança para gravações simultâneas.
-- Carga inicial: para cada pessoa com `area_codigo`, um período aberto com a área e o `cargo_codigo` atuais; início = `data_entrada`, ou a data de criação da conta se não houver. Pessoa fora da EJ (status Alumni ou Inativo, `STATUS_DE_SAIDA`) com área: período fechado em `data_saida`; sem `data_saida`, fechado no próprio início (período de um dia, para a gestão corrigir) (**chamada minha**).
+- Carga inicial: para cada pessoa com `area_codigo`, um período aberto com a área e o `cargo_codigo` atuais; início = `data_entrada`; sem ela, a última data do `historico_areas` para essa área; sem as duas, hoje (a tabela `usuarios` não guarda data de criação). Pessoa fora da EJ (status Alumni ou Inativo, `STATUS_DE_SAIDA`) com área: período fechado em `data_saida` (sem ela, hoje); se o início não for anterior ao fim, o início passa a ser o dia anterior ao fim (**chamada minha**; a gestão corrige).
 - Pessoa com cargo e sem área: não há período possível; o cargo se perde. A publicação lista essas pessoas **antes** do deploy (seção 7).
 - Saem: `usuarios.area_codigo`, `usuarios.cargo_codigo`, `historico_areas`, `historico_cargos`.
 
@@ -79,7 +79,7 @@ O usuário pediu um misto de A e C e depois chegou ao modelo escolhido: **projet
 - Só pessoa na EJ (`STATUS_NA_EJ`) pode ter período **aberto**; para quem saiu, só períodos encerrados até a data de saída (`PESSOA_FORA_DA_EJ`, `FIM_DEPOIS_DA_SAIDA`). O início pode ser anterior à data de entrada (a data de entrada também pode estar errada e ser corrigida depois) (**chamada minha**).
 - `lideraArea` e "áreas atuais" também exigem a pessoa na EJ (defesa contra dado incoerente).
 - Trainee: pode ter períodos como qualquer pessoa.
-- Só a gestão (`pessoas.editar`) cria, edita, encerra e exclui períodos. Erros 400 dizem o campo: `INICIO_NO_FUTURO`, `FIM_NO_FUTURO`, `FIM_ANTES_DO_INICIO`, `PERIODO_SOBREPOSTO` (com o período em conflito), `AREA_INATIVA`, `CARGO_INATIVO`.
+- Só a gestão (`exigirPodeGerirPerfil`: `pessoas.gerir`, e `pessoas.gerirDiretores` se a pessoa é diretor) cria, edita, encerra e exclui períodos. Erros 400 dizem o campo: `INICIO_NO_FUTURO`, `FIM_NO_FUTURO`, `FIM_NAO_DEPOIS_DO_INICIO`, `PERIODO_SOBREPOSTO` (com o período em conflito), `AREA_INATIVA`, `CARGO_INATIVO`.
 - Quem lê a trajetória: o mesmo de hoje para o histórico no perfil (`ObterPerfilPessoa`).
 
 ### 5.3 Liderança (regra provisória, isolada)
@@ -97,7 +97,7 @@ Arquivo `source/shared/seguranca/liderancaArea.ts`:
 - `DELETE /usuarios/:codigo/periodos/:codigoPeriodo` (lançamento errado).
 - Criar e editar pessoa deixam de receber `codigoArea` e `codigoCargo` (campo enviado é ignorado; **chamada minha**, para não quebrar tela antiga em cache durante a publicação). A resposta da pessoa traz `areas: [{ area, cargo, inicio }]` (atuais) no lugar de `area` e `cargo`.
 - Perfil: `historico` vira `periodos` (todos).
-- Configurações: cargo ganha `liderarArea` no corpo e na resposta.
+- Configurações: cargo ganha `lideraArea` (booleano) no corpo e na resposta.
 - Repositório novo `PeriodoAreaRepository` (interface + memória + banco + factories).
 
 ### 5.5 Frontend
