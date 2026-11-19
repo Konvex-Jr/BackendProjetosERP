@@ -16,6 +16,7 @@ import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import DificuldadeTarefa from "../../source/domain/enum/DificuldadeTarefa";
 import Cargo from "../../source/domain/entity/Cargo";
+import CriarTarefa from "../../source/useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../source/useCases/tarefas/EditarTarefa";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
@@ -79,6 +80,54 @@ descrever("tarefas contra PostgreSQL", () => {
         });
         expect(editada.titulo).toBe("Tarefa editada");
         expect(editada.responsaveis.map((r) => r.codigo)).toEqual([pessoa.codigo]);
+    });
+
+    test("checklist: responsável do item grava e lê; marcar na hora; PUT não desfaz a marcação", async () => {
+        const inicio = new Date("2026-10-12T00:00:00.000Z");
+        const fim = new Date("2026-10-30T00:00:00.000Z");
+        const pessoa = new Usuario(
+            "Item",
+            `item-${crypto.randomUUID()}@teste.com`,
+            PerfilUsuario.MEMBRO,
+            true,
+            "hash",
+            new SenioridadeUsuario("pleno", "Pleno", 75),
+        );
+        await factory.criarUsuarioRepository().criar(pessoa);
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Projeto Item", "Descrição", inicio, fim, undefined, [pessoa], crypto.randomUUID()));
+        const tarefas = factory.criarTarefaRepository();
+        const criada = await new CriarTarefa(factory).execute({
+            codigoProjeto: projeto.codigo,
+            titulo: "Com itens",
+            dataInicio: inicio,
+            dataFim: fim,
+            codigosResponsaveis: [pessoa.codigo],
+            checklist: [
+                { texto: "Meu", feito: false, codigoResponsavel: pessoa.codigo },
+                { texto: "De ninguém", feito: true },
+            ],
+        });
+        const lida = (await tarefas.buscarPorCodigo(criada.codigo))!;
+        expect(lida.checklist.map((i) => [i.texto, i.feito, i.responsavel?.codigo ?? null])).toEqual([
+            ["Meu", false, pessoa.codigo],
+            ["De ninguém", true, null],
+        ]);
+        expect(await tarefas.marcarItem(criada.codigo, lida.checklist[0].codigo, true)).toBe(true);
+        expect(await tarefas.marcarItem(criada.codigo, crypto.randomUUID(), true)).toBe(false);
+        const editada = await new EditarTarefa(factory).execute({
+            codigo: criada.codigo,
+            titulo: "Com itens",
+            dataInicio: inicio,
+            dataFim: fim,
+            status: StatusTarefa.PENDENTE,
+            prioridade: PrioridadeTarefa.P2,
+            codigosResponsaveis: [pessoa.codigo],
+            checklist: lida.checklist.map((i) => ({ codigo: i.codigo, texto: i.texto, feito: false, codigoResponsavel: pessoa.codigo })),
+        });
+        expect(editada.checklist.map((i) => i.feito)).toEqual([true, true]);
+        expect((await tarefas.buscarPorCodigo(criada.codigo))!.checklist.map((i) => i.feito)).toEqual([true, true]);
     });
 
     test("dificuldade da tarefa, horas por nível e teto do cargo gravam e leem", async () => {

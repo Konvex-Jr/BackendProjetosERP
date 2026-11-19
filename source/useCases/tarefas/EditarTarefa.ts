@@ -1,13 +1,13 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/entity/Tarefa";
 import StatusTarefa from "../../domain/enum/StatusTarefa";
-import ItemChecklistTarefa from "../../domain/entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
 import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
 import { colunaDoProjeto } from "./colunaDoProjeto";
+import { limparResponsaveisQueSairam, montarChecklist } from "./montarChecklist";
 
 export default class EditarTarefa {
     private readonly tarefas;
@@ -51,10 +51,11 @@ export default class EditarTarefa {
         if (codigoColuna) coluna = colunaDoProjeto(projeto, codigoColuna);
         else if (Object.values(StatusTarefa).includes(status)) coluna = projeto.colunaParaStatus(status, atual.coluna);
         const concluida = coluna ? coluna.papel === PapelColuna.CONCLUIDA : status === "concluida";
+        const sairam = new Set([...jaEram].filter((c) => !responsaveis.some((r) => r.codigo === c)));
         const checklist =
             input.checklist === undefined
-                ? atual.checklist
-                : input.checklist.map((item) => new ItemChecklistTarefa(item.texto, item.feito, item.codigo));
+                ? limparResponsaveisQueSairam(atual.checklist, responsaveis)
+                : montarChecklist(input.checklist, { responsaveis, sairam, atuais: atual.checklist });
 
         const editada = new Tarefa(
             atual.projeto,

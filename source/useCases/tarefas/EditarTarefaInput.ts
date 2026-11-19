@@ -30,5 +30,8 @@ export default interface EditarTarefaInput {
 export interface EditarTarefaChecklistInput {
     codigo?: string;
     texto: string;
-    feito: boolean;
+    /** Só vale ao criar. Ao editar, o `feito` de item que já existe vem do banco e item novo nasce não feito. */
+    feito?: boolean;
+    /** Ausente em item que já existe mantém o responsável; null tira. Tem que ser responsável da tarefa. */
+    codigoResponsavel?: string | null;
 }

@@ -2,6 +2,7 @@ import EditarTarefa from "../source/useCases/tarefas/EditarTarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarTarefa, dataInicio, dataFim } from "./fixtures";
+import Projeto from "../source/domain/entity/Projeto";
 
 test("edita os dados de uma tarefa existente", async () => {
     const { factory, membro } = await criarContexto();
@@ -102,5 +103,87 @@ describe("dificuldade na edição", () => {
 
     it("valor inválido: 400 DIFICULDADE_INVALIDA", async () => {
         await expect(editar({ dificuldade: "enorme" })).rejects.toMatchObject({ codigo: "DIFICULDADE_INVALIDA" });
+    });
+});
+
+describe("checklist na edição (sessão 24b)", () => {
+    const preparar = async () => {
+        const { factory, membro, gerente } = await criarContexto();
+        const tarefa = await criarTarefa(factory, membro);
+        // O gerente entra na equipe e na tarefa para poder ser responsável de itens.
+        const projeto = (await factory.criarProjetoRepository().buscarPorCodigo(tarefa.projeto.codigo))!;
+        await factory
+            .criarProjetoRepository()
+            .editar(
+                new Projeto(
+                    projeto.nome,
+                    projeto.descricao,
+                    projeto.dataInicio,
+                    projeto.dataFim,
+                    undefined,
+                    [membro, gerente],
+                    projeto.codigo,
+                ),
+            );
+        const editar = (extra: object) =>
+            new EditarTarefa(factory).execute({
+                codigo: tarefa.codigo,
+                titulo: "Tarefa",
+                dataInicio,
+                dataFim,
+                status: StatusTarefa.PENDENTE,
+                prioridade: PrioridadeTarefa.P2,
+                codigosResponsaveis: [membro.codigo, gerente.codigo],
+                ...extra,
+            } as never);
+        return { factory, membro, gerente, tarefa, editar };
+    };
+
+    it("responsável do item fora da tarefa: 400 RESPONSAVEL_ITEM_FORA_DA_TAREFA", async () => {
+        const { membro, gerente, editar } = await preparar();
+        await expect(
+            editar({ codigosResponsaveis: [membro.codigo], checklist: [{ texto: "A", feito: false, codigoResponsavel: gerente.codigo }] }),
+        ).rejects.toMatchObject({ codigo: "RESPONSAVEL_ITEM_FORA_DA_TAREFA" });
+    });
+
+    it("grava o responsável do item", async () => {
+        const { gerente, editar } = await preparar();
+        const r = await editar({ checklist: [{ texto: "A", feito: false, codigoResponsavel: gerente.codigo }] });
+        expect(r.checklist[0].responsavel?.codigo).toBe(gerente.codigo);
+    });
+
+    it("tirar o responsável da tarefa limpa os itens dele, sem erro", async () => {
+        const { membro, gerente, editar } = await preparar();
+        const com = await editar({ checklist: [{ texto: "A", feito: false, codigoResponsavel: gerente.codigo }] });
+        const item = com.checklist[0];
+        const sem = await editar({
+            codigosResponsaveis: [membro.codigo],
+            checklist: [{ codigo: item.codigo, texto: "A", feito: false, codigoResponsavel: gerente.codigo }],
+        });
+        expect(sem.checklist).toHaveLength(1);
+        expect(sem.checklist[0].responsavel).toBeNull();
+    });
+
+    it("sem checklist no corpo, tirar o responsável também limpa os itens", async () => {
+        const { membro, gerente, editar } = await preparar();
+        await editar({ checklist: [{ texto: "A", feito: false, codigoResponsavel: gerente.codigo }] });
+        const sem = await editar({ codigosResponsaveis: [membro.codigo] });
+        expect(sem.checklist[0].responsavel).toBeNull();
+    });
+
+    it("item que já existe feito no banco continua feito mesmo com feito false no corpo", async () => {
+        const { factory, tarefa, editar } = await preparar();
+        const criada = await editar({ checklist: [{ texto: "A", feito: false }] });
+        await factory.criarTarefaRepository().marcarItem(tarefa.codigo, criada.checklist[0].codigo, true);
+        const r = await editar({ checklist: [{ codigo: criada.checklist[0].codigo, texto: "A editado", feito: false }] });
+        expect(r.checklist[0].feito).toBe(true);
+        expect(r.checklist[0].texto).toBe("A editado");
+    });
+
+    it("item novo com feito true no corpo nasce não feito; código desconhecido vira novo", async () => {
+        const { editar } = await preparar();
+        const r = await editar({ checklist: [{ codigo: "inventado", texto: "N", feito: true }] });
+        expect(r.checklist[0].feito).toBe(false);
+        expect(r.checklist[0].codigo).not.toBe("inventado");
     });
 });

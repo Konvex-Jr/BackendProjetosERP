@@ -153,7 +153,16 @@ const swaggerSpecification = {
                             properties: {
                                 codigo: { type: "string", format: "uuid" },
                                 texto: { type: "string", maxLength: 300 },
-                                feito: { type: "boolean" },
+                                feito: {
+                                    type: "boolean",
+                                    description: "Só vale ao criar; ao editar, o feito de item que já existe vem do banco.",
+                                },
+                                codigoResponsavel: {
+                                    type: "string",
+                                    format: "uuid",
+                                    nullable: true,
+                                    description: "Um dos responsáveis da tarefa (400 RESPONSAVEL_ITEM_FORA_DA_TAREFA).",
+                                },
                             },
                         },
                     },
@@ -304,6 +313,23 @@ const swaggerSpecification = {
                         type: "object",
                         required: ["codigoColuna"],
                         properties: { codigoColuna: { type: "string" } },
+                    }),
+                },
+            ),
+        },
+        "/tarefas/{codigo}/checklist/{item}": {
+            patch: operation(
+                ["Tarefas"],
+                "Marcar ou desmarcar um item do checklist na hora (quem muda a situação ou edita a tarefa; 404 item que não é da tarefa; 400 FEITO_INVALIDO). Devolve a tarefa com `avisosOcupacao`",
+                {
+                    parameters: [
+                        { $ref: "#/components/parameters/codigo" },
+                        { name: "item", in: "path", required: true, schema: { type: "string" } },
+                    ],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["feito"],
+                        properties: { feito: { type: "boolean" } },
                     }),
                 },
             ),

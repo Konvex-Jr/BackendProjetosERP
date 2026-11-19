@@ -83,6 +83,10 @@ export const MENSAGENS_DE_ERRO = {
         TAREFA_NAO_CONCLUIDA: "Só tarefas concluídas têm data de conclusão para corrigir.",
         DATA_CONCLUSAO_FUTURA: "A data de conclusão (dataConclusao) não pode ser no futuro.",
         DATA_CONCLUSAO_ANTES_DO_INICIO: "A data de conclusão (dataConclusao) não pode ser anterior ao início da tarefa.",
+        RESPONSAVEL_ITEM_INVALIDO: "O responsável do item (codigoResponsavel) deve ser o código de uma pessoa ativa.",
+        RESPONSAVEL_ITEM_FORA_DA_TAREFA: "O responsável do item (codigoResponsavel) precisa ser um dos responsáveis pela tarefa.",
+        FEITO_INVALIDO: "O campo feito deve ser verdadeiro ou falso.",
+        ITEM_NAO_ENCONTRADO: "Item do checklist não encontrado.",
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 

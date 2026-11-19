@@ -181,6 +181,28 @@ export default class Tarefa {
         }
     }
 
+    /** Cópia com outro checklist, mantendo o resto. */
+    comChecklist(checklist: ItemChecklistTarefa[]): Tarefa {
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            this.status,
+            this.prioridade,
+            this.descricao,
+            this.dataConclusao,
+            this.dependeDe,
+            this.responsaveis,
+            checklist,
+            this.codigo,
+            this.concluidaPor,
+            this.criadaPor,
+            this.coluna,
+            this.dificuldade,
+        );
+    }
+
     /** Cópia sem a predecessora (quando ela é excluída). */
     semDependencia(): Tarefa {
         return new Tarefa(

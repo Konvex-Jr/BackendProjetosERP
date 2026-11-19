@@ -1,21 +1,25 @@
 import { v4 as uuid } from "uuid";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import Usuario from "./Usuario";
 
 export default class ItemChecklistTarefa {
     readonly codigo: string;
     readonly texto: string;
     readonly feito: boolean;
+    /** Quem cuida do item; um dos responsáveis da tarefa (conferido ao criar e editar, nunca ao carregar). */
+    readonly responsavel: Usuario | null;
 
-    constructor(texto: string, feito: boolean = false, codigo?: string) {
+    constructor(texto: string, feito: boolean = false, codigo?: string, responsavel: Usuario | null = null) {
         this.codigo = codigo ?? uuid();
         this.texto = texto;
         this.feito = feito;
+        this.responsavel = responsavel;
 
         this.validar();
     }
 
     private validar(): void {
-        if (!this.texto.trim()) {
+        if (typeof this.texto !== "string" || !this.texto.trim()) {
             throw new ErroValidacao("O texto do item do checklist é obrigatório.", "TEXTO_CHECKLIST_OBRIGATORIO");
         }
 

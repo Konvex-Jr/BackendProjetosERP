@@ -299,6 +299,25 @@ describe("Tarefas pela API", () => {
             expect(r.corpo.codigo).toBe("DATA_CONCLUSAO_FUTURA");
         });
 
+        it("PUT do gerente com dataConclusao de amanhã: 400 DATA_CONCLUSAO_FUTURA", async () => {
+            const codigo = await concluida();
+            const amanha = new Date(hojeNoFuso().getTime() + 86_400_000).toISOString().slice(0, 10);
+            const r = await servidor.chamar("put", `/tarefas/${codigo}`, {
+                usuario: ctx.gerente,
+                corpo: {
+                    titulo: "Tarefa de Teste",
+                    dataInicio: "2026-10-12T12:00:00.000Z",
+                    dataFim: "2026-10-30T12:00:00.000Z",
+                    prioridade: "P2",
+                    status: "concluida",
+                    dataConclusao: amanha,
+                    codigosResponsaveis: [colega.codigo],
+                },
+            });
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("DATA_CONCLUSAO_FUTURA");
+        });
+
         it("sem dataConclusao: 400 citando o campo", async () => {
             const codigo = await concluida();
             const r = await corrigir(colega, codigo, undefined);
@@ -335,6 +354,123 @@ describe("Tarefas pela API", () => {
             });
             expect(reabre.status).toBe(200);
             expect(reabre.corpo.dataConclusao).toBeNull();
+        });
+    });
+
+    describe("sessão 24b: checklist", () => {
+        const criarComItens = async () =>
+            (
+                await servidor.chamar("post", "/tarefas", {
+                    usuario: ctx.gerente,
+                    corpo: corpo({
+                        codigosResponsaveis: [ctx.membro.codigo],
+                        checklist: [
+                            { texto: "Primeiro", feito: true, codigoResponsavel: ctx.membro.codigo },
+                            { texto: "Segundo", feito: false },
+                        ],
+                    }),
+                })
+            ).corpo;
+        const marcar = (usuario: Usuario, tarefa: string, item: string, feito: unknown = true) =>
+            servidor.chamar("patch", `/tarefas/${tarefa}/checklist/${item}`, { usuario, corpo: { feito } });
+
+        it("POST aceita checklist com responsável e devolve o responsável no item", async () => {
+            const t = await criarComItens();
+            expect(t.checklist.map((i: any) => i.texto)).toEqual(["Primeiro", "Segundo"]);
+            expect(t.checklist[0].feito).toBe(true);
+            expect(t.checklist[0].responsavel.codigo).toBe(ctx.membro.codigo);
+            expect(t.checklist[1].responsavel).toBeNull();
+        });
+
+        it("responsável do item fora da tarefa: 400 RESPONSAVEL_ITEM_FORA_DA_TAREFA", async () => {
+            const r = await servidor.chamar("post", "/tarefas", {
+                usuario: ctx.gerente,
+                corpo: corpo({
+                    codigosResponsaveis: [ctx.membro.codigo],
+                    checklist: [{ texto: "A", feito: false, codigoResponsavel: colega.codigo }],
+                }),
+            });
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("RESPONSAVEL_ITEM_FORA_DA_TAREFA");
+        });
+
+        it("codigoResponsavel que não é código de pessoa: 400, nunca 500", async () => {
+            const r = await servidor.chamar("post", "/tarefas", {
+                usuario: ctx.gerente,
+                corpo: corpo({ codigosResponsaveis: [ctx.membro.codigo], checklist: [{ texto: "A", codigoResponsavel: "lixo" }] }),
+            });
+            expect(r.status).toBe(400);
+            expect(r.corpo.message).toContain("codigoResponsavel");
+        });
+
+        it("responsável participante marca e desmarca; vale o banco", async () => {
+            const t = await criarComItens();
+            const r = await marcar(ctx.membro, t.codigo, t.checklist[1].codigo, true);
+            expect(r.status).toBe(200);
+            expect(r.corpo.checklist[1].feito).toBe(true);
+            const volta = await marcar(ctx.membro, t.codigo, t.checklist[1].codigo, false);
+            expect(volta.corpo.checklist[1].feito).toBe(false);
+        });
+
+        it("participante que não é responsável nem criador: 403; gerente marca", async () => {
+            const t = await criarComItens();
+            expect((await marcar(colega, t.codigo, t.checklist[1].codigo)).status).toBe(403);
+            expect((await marcar(ctx.gerente, t.codigo, t.checklist[1].codigo)).status).toBe(200);
+        });
+
+        it("item de outra tarefa ou código que não é UUID: 404; feito que não é booleano: 400", async () => {
+            const t = await criarComItens();
+            expect((await marcar(ctx.membro, t.codigo, "nao-existe")).status).toBe(404);
+            const r = await marcar(ctx.membro, t.codigo, t.checklist[1].codigo, "sim");
+            expect(r.status).toBe(400);
+            expect(r.corpo.message).toContain("feito");
+        });
+
+        it("PUT com a janela antiga não desfaz a marcação feita por outra pessoa", async () => {
+            const t = await criarComItens();
+            await marcar(ctx.membro, t.codigo, t.checklist[1].codigo, true);
+            const r = await servidor.chamar("put", `/tarefas/${t.codigo}`, {
+                usuario: ctx.gerente,
+                corpo: {
+                    titulo: t.titulo,
+                    dataInicio: "2026-10-12T12:00:00.000Z",
+                    dataFim: "2026-10-16T12:00:00.000Z",
+                    status: t.status,
+                    prioridade: t.prioridade,
+                    codigosResponsaveis: [ctx.membro.codigo],
+                    checklist: t.checklist.map((i: any) => ({
+                        codigo: i.codigo,
+                        texto: i.texto,
+                        feito: false,
+                        codigoResponsavel: i.responsavel?.codigo ?? null,
+                    })),
+                },
+            });
+            expect(r.status).toBe(200);
+            expect(r.corpo.checklist.map((i: any) => i.feito)).toEqual([true, true]);
+        });
+
+        it("tirar o responsável da tarefa deixa os itens dele sem responsável, sem 400", async () => {
+            const t = await criarComItens();
+            const r = await servidor.chamar("put", `/tarefas/${t.codigo}`, {
+                usuario: ctx.gerente,
+                corpo: {
+                    titulo: t.titulo,
+                    dataInicio: "2026-10-12T12:00:00.000Z",
+                    dataFim: "2026-10-16T12:00:00.000Z",
+                    status: t.status,
+                    prioridade: t.prioridade,
+                    codigosResponsaveis: [colega.codigo],
+                    checklist: t.checklist.map((i: any) => ({
+                        codigo: i.codigo,
+                        texto: i.texto,
+                        feito: i.feito,
+                        codigoResponsavel: i.responsavel?.codigo ?? null,
+                    })),
+                },
+            });
+            expect(r.status).toBe(200);
+            expect(r.corpo.checklist.map((i: any) => i.responsavel)).toEqual([null, null]);
         });
     });
 });
