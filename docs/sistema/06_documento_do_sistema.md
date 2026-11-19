@@ -52,7 +52,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
 - **Áreas e cargos por período** (sessão 23a, migração 017): a pessoa pode estar em várias áreas ao mesmo tempo, cada uma com um cargo opcional e um período `[início, fim)` (fim vazio = atual). A pessoa não grava mais área nem cargo; as "áreas atuais" (`areas` na resposta) são os períodos em aberto. Se uma tela antiga ainda mandar `codigoArea` ou `codigoCargo` no `PUT /usuarios/:codigo`, os campos são ignorados.
-  - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`). Todos os logados leem.
+  - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`; ninguém altera os próprios períodos, exceto o diretor). Todos os logados leem.
   - Regras (400 com código): nenhuma data no futuro (`INICIO_NO_FUTURO`, `FIM_NO_FUTURO`); fim depois do início (`FIM_NAO_DEPOIS_DO_INICIO`); dois períodos da mesma pessoa na mesma área não se sobrepõem (`PERIODO_SOBREPOSTO`, garantido também pelo banco em gravações simultâneas); só área e cargo ativos ao escolher (`AREA_INATIVA`, `CARGO_INATIVO`; corrigir só as datas de um período antigo com área desativada continua permitido); período em aberto só para quem está na EJ (`PESSOA_FORA_DA_EJ`); fim não passa da saída da pessoa (`FIM_DEPOIS_DA_SAIDA`).
   - Quem sai da EJ (Alumni ou Inativo) tem os períodos em aberto **sempre** encerrados na data de saída, mesmo quando a gestão escolhe manter as participações nos projetos. Quem volta a Ativo não reabre nada: a gestão lança um período novo.
 - Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio (`PUT /auth/perfil`). E troca a própria senha e a própria foto.
@@ -160,6 +160,7 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | Ver os períodos nas áreas de qualquer pessoa | ✅ | ✅ | ✅ | só login (`GET /usuarios/:codigo/periodos`) |
 | Lançar, corrigir e excluir períodos de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
 | O mesmo nos períodos de diretores | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
+| Alterar os próprios períodos | ✅ | ❌ | ❌ | `exigirPodeGerirPeriodosDe` (403 `PERIODO.PROPRIO`) |
 | Criar e editar áreas, cargos, senioridades | ✅ | ❌ | ❌ | `configuracoes.editar` |
 
 ### Projetos

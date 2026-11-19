@@ -71,10 +71,18 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
     };
 }
 
-/** A pessoa logada pode gerir o perfil (e os períodos) de alguém com este papel? */
-function podeGerirPerfilDe(usuario: any, perfilDoAlvo: PerfilUsuario | string): boolean {
+/** Períodos de área: ninguém altera os próprios, exceto o diretor. Devolve quem gere. */
+function exigirPodeGerirPeriodosDe(usuario: any, alvo: { codigo: string; perfil: PerfilUsuario | string }) {
+    const gestor = exigirPodeGerirPerfil(usuario, alvo.perfil, alvo.perfil);
+    if (gestor.codigo === alvo.codigo && gestor.perfil !== PerfilUsuario.DIRETOR) {
+        throw new ErroProibido(MENSAGENS_DE_ERRO.PERIODO.PROPRIO);
+    }
+    return gestor;
+}
+
+function podeGerirPeriodosDe(usuario: any, alvo: { codigo: string; perfil: PerfilUsuario | string }): boolean {
     try {
-        exigirPodeGerirPerfil(usuario, perfilDoAlvo, perfilDoAlvo);
+        exigirPodeGerirPeriodosDe(usuario, alvo);
         return true;
     } catch (erro) {
         if (erro instanceof ErroAplicacao) return false;
@@ -192,7 +200,7 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) => {
             const perfil = await new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user));
-            return { ...perfil, podeGerirPeriodos: podeGerirPerfilDe(body.user, perfil.usuario.perfil) };
+            return { ...perfil, podeGerirPeriodos: podeGerirPeriodosDe(body.user, perfil.usuario) };
         });
 
         // Períodos por área (sessão 23a): todos os logados leem, como o perfil; só a gestão grava.
@@ -203,19 +211,19 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("post", "/usuarios/:codigo/periodos", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            const gestor = exigirPodeGerirPeriodosDe(body.user, alvo);
             return new GerirPeriodosArea(f).criar(alvo.codigo, lerPeriodo(body), gestor.codigo);
         });
 
         this.http.route("put", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            exigirPodeGerirPeriodosDe(body.user, alvo);
             return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, lerPeriodo(body));
         });
 
         this.http.route("delete", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            exigirPodeGerirPeriodosDe(body.user, alvo);
             await new GerirPeriodosArea(f).excluir(alvo.codigo, params.codigoPeriodo);
             return new RespostaSemConteudo();
         });

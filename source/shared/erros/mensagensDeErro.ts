@@ -49,6 +49,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     PERIODO: {
+        PROPRIO: "Você não pode alterar os próprios períodos de área.",
         INICIO_NO_FUTURO: "O início do período na área não pode ser no futuro.",
         FIM_NO_FUTURO: "O fim do período na área não pode ser no futuro.",
         FIM_NAO_DEPOIS_DO_INICIO: "O fim do período na área deve ser depois do início.",
