@@ -207,4 +207,58 @@ describe("Tarefas pela API", () => {
             expect(r.status).toBe(404);
         });
     });
+    describe("sessão 24b: quem criou edita e exclui a própria tarefa", () => {
+        const criarPor = async (usuario: Usuario, extra: object = {}) =>
+            (await servidor.chamar("post", "/tarefas", { usuario, corpo: corpo({ prioridade: "P3", ...extra }) })).corpo;
+        const editar = (usuario: Usuario, tarefa: any, extra: object = {}) =>
+            servidor.chamar("put", `/tarefas/${tarefa.codigo}`, {
+                usuario,
+                corpo: {
+                    titulo: tarefa.titulo,
+                    dataInicio: "2026-10-12T12:00:00.000Z",
+                    dataFim: "2026-10-16T12:00:00.000Z",
+                    status: tarefa.status,
+                    prioridade: tarefa.prioridade,
+                    ...extra,
+                },
+            });
+
+        it("criador muda a prioridade", async () => {
+            const t = await criarPor(colega);
+            const r = await editar(colega, t, { prioridade: "P1", codigosResponsaveis: [colega.codigo] });
+            expect(r.status).toBe(200);
+            expect(r.corpo.prioridade).toBe("P1");
+        });
+
+        it("criador não troca os responsáveis: a lista enviada é ignorada", async () => {
+            const t = await criarPor(colega);
+            const r = await editar(colega, t, { codigosResponsaveis: [ctx.membro.codigo] });
+            expect(r.status).toBe(200);
+            expect(r.corpo.responsaveis.map((x: any) => x.codigo)).toEqual([colega.codigo]);
+        });
+
+        it("criador que não é responsável não conclui pelo PUT", async () => {
+            const t = await criarPor(colega);
+            // A gestão passa a tarefa para outra pessoa; o criador deixa de ser responsável.
+            await editar(ctx.gerente, t, { codigosResponsaveis: [ctx.membro.codigo] });
+            const r = await editar(colega, t, { status: "concluida", prioridade: "P1" });
+            expect(r.status).toBe(200);
+            expect(r.corpo.prioridade).toBe("P1");
+            expect(r.corpo.status).toBe(t.status);
+        });
+
+        it("criador exclui a própria tarefa; outro participante não exclui a alheia", async () => {
+            const t = await criarPor(colega);
+            expect((await servidor.chamar("delete", `/tarefas/${t.codigo}`, { usuario: ctx.membro })).status).toBe(403);
+            expect((await servidor.chamar("delete", `/tarefas/${t.codigo}`, { usuario: colega })).status).toBe(200);
+        });
+
+        it("criador que saiu da equipe: PUT 403", async () => {
+            const t = await criarPor(colega);
+            const projeto = (await ctx.factory.criarProjetoRepository().buscarPorCodigo("proj-time"))!;
+            const part = projeto.participacaoAtivaDe(colega.codigo)!;
+            await servidor.chamar("post", `/projetos/proj-time/membros/${part.codigo}/encerrar`, { usuario: ctx.gerente, corpo: {} });
+            expect((await editar(colega, t, { prioridade: "P1" })).status).toBe(403);
+        });
+    });
 });

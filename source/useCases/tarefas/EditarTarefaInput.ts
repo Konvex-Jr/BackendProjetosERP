@@ -15,6 +15,10 @@ export default interface EditarTarefaInput {
     /** Ausente mantém a atual; null limpa. */
     dificuldade?: DificuldadeTarefa | null;
     codigosResponsaveis: string[];
+    /** Verdadeiro: ignora `codigosResponsaveis` e mantém os atuais (quem edita sem organizar). */
+    manterResponsaveis?: boolean;
+    /** Verdadeiro: ignora status e coluna e mantém a situação atual (quem edita sem poder mudar status). */
+    manterSituacao?: boolean;
     codigoDependencia?: string | null;
     checklist?: EditarTarefaChecklistInput[];
     /** Quem está editando; vira `concluidaPor` se a edição concluir a tarefa. */

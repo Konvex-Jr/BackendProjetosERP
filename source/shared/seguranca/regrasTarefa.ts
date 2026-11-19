@@ -8,7 +8,8 @@ import { acessoAoProjeto } from "./visibilidadeProjetos";
  *
  * Tarefa de projeto (8b), pelo papel no projeto:
  * - gestao (tarefas.gerirTodas) e lider: tudo;
- * - participante (equipe atual): cria (fica como responsável), conclui/reabre as suas, comenta;
+ * - participante (equipe atual): cria (fica como responsável), conclui/reabre as suas, comenta; se criou a tarefa,
+ *   também a edita e exclui (`editar`, sessão 24b), sem trocar responsáveis nem situação (isso é de `organizar` e `mudarStatus`);
  * - nenhum: só vê se for responsável ou tiver participado do projeto.
  *
  * Projeto sigiloso (sessão 20): quem não tem acesso completo ao projeto (`acessoAoProjeto`) não vê nem faz
@@ -25,6 +26,8 @@ export type PapelProjeto = "gestao" | "lider" | "participante" | "nenhum";
 export interface RegrasTarefa {
     ver: boolean;
     organizar: boolean;
+    /** Edita e exclui: quem organiza, ou o participante da equipe atual que criou a tarefa (24b). */
+    editar: boolean;
     mudarStatus: boolean;
     comentar: boolean;
 }
@@ -51,7 +54,7 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
     const responsavel = tarefa.responsaveis.some((r) => r.codigo === usuario.codigo);
 
     if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") {
-        return { ver: false, organizar: false, mudarStatus: false, comentar: false };
+        return { ver: false, organizar: false, editar: false, mudarStatus: false, comentar: false };
     }
     const papel = papelNoProjeto(usuario, projeto);
     const organizar = papel === "gestao" || papel === "lider";
@@ -61,6 +64,7 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
     return {
         ver: organizar || responsavel || verProjeto,
         organizar,
+        editar: organizar || (papel === "participante" && tarefa.criadaPor?.codigo === usuario.codigo),
         mudarStatus: organizar || (papel === "participante" && responsavel),
         // Comentar exige estar na equipe atual: quem só participou no passado continua lendo, mas não comenta.
         comentar: papel !== "nenhum",

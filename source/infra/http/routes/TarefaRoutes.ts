@@ -54,9 +54,10 @@ export default class TarefaRoutes implements ModelRoutes {
         return { tarefa, regras };
     }
 
-    private async exigirOrganizar(usuario: UsuarioAutenticado, codigo: string) {
+    /** Editar e excluir: quem organiza ou o participante que criou a tarefa (sessão 24b). */
+    private async exigirEditar(usuario: UsuarioAutenticado, codigo: string) {
         const r = await this.carregar(usuario, codigo);
-        if (!r.regras.organizar) throw new ErroProibido(SO_QUEM_ORGANIZA);
+        if (!r.regras.editar) throw new ErroProibido(SO_QUEM_ORGANIZA);
         return r;
     }
 
@@ -149,7 +150,7 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("put", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            const { tarefa: antes } = await this.exigirOrganizar(usuario, params.codigo);
+            const { tarefa: antes, regras } = await this.exigirEditar(usuario, params.codigo);
             return this.comAvisos(
                 antes,
                 await new EditarTarefa(this.factory).execute({
@@ -163,6 +164,8 @@ export default class TarefaRoutes implements ModelRoutes {
                     dificuldade: lerDificuldade(body.dificuldade),
                     descricao: body.descricao ?? null,
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
+                    manterResponsaveis: !regras.organizar,
+                    manterSituacao: !regras.mudarStatus,
                     codigoDependencia: body.codigoDependencia ?? null,
                     checklist: Array.isArray(body.checklist)
                         ? body.checklist.map((item: any) => ({
@@ -207,7 +210,7 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("delete", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            await this.exigirOrganizar(usuario, params.codigo);
+            await this.exigirEditar(usuario, params.codigo);
             return new ExcluirTarefa(this.factory).execute(params.codigo);
         });
 

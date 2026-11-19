@@ -31,7 +31,7 @@
 | Arquivo | Decide |
 |---|---|
 | `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `acessoAoProjeto`, `exigirAcessoCompleto`, `podeGerirAcesso`, `projetosVisiveisPara`) |
-| `regrasTarefa.ts` | Ver, organizar, mudar status e comentar em cada tarefa (`papelNoProjeto`, `regrasTarefa`) |
+| `regrasTarefa.ts` | Ver, organizar, editar, mudar status e comentar em cada tarefa (`papelNoProjeto`, `regrasTarefa`) |
 | `regrasBiblioteca.ts` | Quem lê e quem altera um item da Biblioteca, e quem pode usar sigilo e projeto (`podeVerItem`, `podeAlterarItem`, `exigirPodeUsarSigiloEProjeto`) |
 | `regrasCapacitacao.ts` | Gestão de capacitações e acesso às avaliações (`podeGerirCapacitacoes`, `acessoAosFeedbacks`) |
 
@@ -198,6 +198,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Ver tarefas de projeto | todas | todas | dos seus projetos (atuais e anteriores; no geral, se tem ou teve período na área ou lidera a área) e as que é responsável | `projetos.verTodos` + `regrasTarefa().ver` (`acessoAoProjeto`) |
 | Criar tarefa (sempre num projeto; sem projeto: 400 `PROJETO_OBRIGATORIO`) | ✅ | ✅ | se é da equipe atual (fica responsável); se é líder, para qualquer pessoa da equipe | `tarefas.gerirTodas` / `papelNoProjeto` |
 | Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto (no geral: se tem cargo que lidera a área) | `regrasTarefa().organizar` / `Projeto.ehLider` |
+| Editar e excluir a tarefa que criou (sem trocar responsáveis nem situação) | ✅ | ✅ | se é da equipe atual e criou a tarefa | `regrasTarefa().editar` |
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
 | Mover tarefa de projeto entre as colunas | ✅ | ✅ | se é líder, ou participante e responsável (mesma regra de concluir e reabrir) | `PATCH /tarefas/:codigo/coluna` / `regrasTarefa().mudarStatus` |
 | Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto (no geral: se lidera a área) | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
