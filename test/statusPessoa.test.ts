@@ -38,7 +38,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         expect(resultado.participacoesEncerradas).toBe(1);
         expect(resultado.usuario.dataSaida).not.toBeNull();
 
-        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo);
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, { codigo: membro.codigo, perfil: membro.perfil });
         expect(perfil.projetosAtuais).toHaveLength(0);
         expect(perfil.projetosAnteriores).toHaveLength(1);
         expect(await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo)).not.toBeNull();
@@ -62,7 +62,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         expect(resultado.periodosEncerrados).toBe(1);
         expect(resultado.participacoesEncerradas).toBe(0);
         expect((await periodos.listarDe(membro.codigo))[0].fim).toEqual(saida);
-        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo);
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, { codigo: membro.codigo, perfil: membro.perfil });
         expect(perfil.projetosAtuais).toHaveLength(1);
     });
 

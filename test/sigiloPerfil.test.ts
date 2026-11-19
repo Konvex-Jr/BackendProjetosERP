@@ -104,7 +104,8 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         expect(perfil.ocupacao.horas).toBeGreaterThan(0);
         expect(perfil.ocupacao.itens.every((i) => i.tipo === "outras")).toBe(true);
         expect(JSON.stringify(perfil.ocupacao)).not.toContain("Secreta");
-        const completo = await new ObterPerfilPessoa(factory).execute(outro.codigo);
+        // A própria pessoa (está no projeto) vê a linha da tarefa.
+        const completo = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(outro));
         expect(completo.ocupacao.itens.map((i) => i.tipo)).toContain("tarefa");
         expect(completo.ocupacao.horas).toBe(perfil.ocupacao.horas);
         expect(completo.ocupacao.percentual).toBe(perfil.ocupacao.percentual);

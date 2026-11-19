@@ -8,7 +8,6 @@ import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { comAreasAtuais } from "./areasAtuais";
 
 export interface ProjetoNoPerfil {
@@ -58,14 +57,14 @@ export interface PerfilPessoa {
 export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(codigo: string, quemPede?: UsuarioAutenticado | null): Promise<PerfilPessoa> {
+    async execute(codigo: string, quemPede: UsuarioAutenticado): Promise<PerfilPessoa> {
         const lido = await this.factory.criarUsuarioRepository().buscarPorCodigo(codigo);
         if (!lido) throw new ErroNaoEncontrado("Pessoa não encontrada.");
         const usuario = await comAreasAtuais(this.factory, lido);
 
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
-        const veTudo = !quemPede || quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
-        const acessoDe = (projeto: Projeto) => (quemPede ? acessoAoProjeto(quemPede, projeto) : "completo");
+        const veTudo = quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
+        const acessoDe = (projeto: Projeto) => acessoAoProjeto(quemPede, projeto);
         const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => acessoDe(p) === "completo");
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
@@ -122,11 +121,7 @@ export default class ObterPerfilPessoa {
             periodos,
             capacitacoes: { proximas, realizadas, horasCumpridas },
             // As horas contam tudo; os itens seguem o acesso de quem lê (projeto sem acesso vira "outras").
-            ocupacao: await new ConsultarOcupacao(this.factory).dePessoa(
-                quemPede ?? { codigo: lido.codigo, perfil: PerfilUsuario.DIRETOR },
-                codigo,
-                segundaDaSemana(hoje()),
-            ),
+            ocupacao: await new ConsultarOcupacao(this.factory).dePessoa(quemPede, codigo, segundaDaSemana(hoje())),
         };
     }
 }
