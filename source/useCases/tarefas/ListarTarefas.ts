@@ -4,8 +4,6 @@ import Tarefa from "../../domain/entity/Tarefa";
 export interface FiltroTarefas {
     codigoProjeto?: string;
     codigoResponsavel?: string;
-    /** Categoria da tarefa avulsa, ou "avulsas" para todas as avulsas. */
-    categoria?: string;
     status?: string;
 }
 
@@ -22,7 +20,6 @@ export default class ListarTarefas {
         return lista.filter(
             (t) =>
                 (!filtro.codigoResponsavel || t.responsaveis.some((r) => r.codigo === filtro.codigoResponsavel)) &&
-                (!filtro.categoria || (filtro.categoria === "avulsas" ? t.avulsa : t.categoria === filtro.categoria)) &&
                 (!filtro.status || t.status === filtro.status),
         );
     }

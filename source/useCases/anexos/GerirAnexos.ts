@@ -42,10 +42,10 @@ export default class GerirAnexos {
     }
 
     /** Tarefa que a pessoa vê, com as regras dela; inexistente ou invisível: 404 (o mesmo para os dois casos). */
-    private async tarefaVisivel(usuario: UsuarioAutenticado, codigo: string): Promise<{ avulsa: boolean; regras: RegrasTarefa }> {
-        const { tarefa, regras } = await carregarTarefa(this.factory, usuario, codigo);
+    private async tarefaVisivel(usuario: UsuarioAutenticado, codigo: string): Promise<{ regras: RegrasTarefa }> {
+        const { regras } = await carregarTarefa(this.factory, usuario, codigo);
         if (!regras.ver) throw new ErroNaoEncontrado("Tarefa não encontrada.");
-        return { avulsa: tarefa.avulsa, regras };
+        return { regras };
     }
 
     /** Na tarefa, exclui quem enviou o anexo (mesmo que tenha saído da equipe, se ainda vê a tarefa) ou quem organiza. */
@@ -70,11 +70,11 @@ export default class GerirAnexos {
             return { podeAlterar: podeGerirCapacitacoes(usuario), semPermissao: M.SEM_PERMISSAO_CAPACITACAO };
         }
         if (tipo === DonoAnexo.TAREFA) {
-            const { avulsa, regras } = await this.tarefaVisivel(usuario, codigo);
+            const { regras } = await this.tarefaVisivel(usuario, codigo);
             if (anexo) return { podeAlterar: this.podeExcluirDaTarefa(usuario, regras, anexo), semPermissao: M.SO_OS_PROPRIOS };
             return {
                 podeAlterar: regras.comentar,
-                semPermissao: avulsa ? M.SEM_PERMISSAO_TAREFA_AVULSA : M.SEM_PERMISSAO_TAREFA_PROJETO,
+                semPermissao: M.SEM_PERMISSAO_TAREFA_PROJETO,
             };
         }
         // Dono de módulo que saiu (sessão 17) ou desconhecido: como se o anexo não existisse.

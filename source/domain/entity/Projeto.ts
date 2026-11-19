@@ -9,6 +9,7 @@ import PrioridadeProjeto from "../enum/PrioridadeProjeto";
 import StatusTarefa from "../enum/StatusTarefa";
 import { PapelColuna } from "../enum/ColunaProjeto";
 import ColunaProjeto, { colunasPadrao } from "./ColunaProjeto";
+import TipoProjeto from "../enum/TipoProjeto";
 
 /** Campos do projeto além de nome, descrição e período (RF-020). */
 export interface DetalhesProjeto {
@@ -30,6 +31,12 @@ export interface DetalhesProjeto {
     acesso?: string[];
     /** Colunas do kanban, em ordem (sessão 21). Ausente = as quatro padrão. */
     colunas?: ColunaProjeto[];
+    /** Cliente (padrão) ou interno (sessão 23b); o interno exige área. */
+    tipo?: TipoProjeto;
+    /** Projeto geral da área: um por área, criado pelo sistema, fixo e interno. */
+    geralDaArea?: boolean;
+    /** Líderes da área do projeto interno (calculado a cada leitura, nunca gravado). */
+    lideresDaArea?: string[];
 }
 
 /**
@@ -60,6 +67,9 @@ export default class Projeto {
     readonly criadoPor: string | null;
     readonly acesso: string[];
     readonly colunas: ColunaProjeto[];
+    readonly tipo: TipoProjeto;
+    readonly geralDaArea: boolean;
+    readonly lideresDaArea: string[];
 
     /**
      * `membros` aceita pessoas (viram participações novas, sem alocação) ou participações completas.
@@ -96,6 +106,9 @@ export default class Projeto {
         this.acesso = [...new Set(detalhes.acesso ?? [])];
         // Cópia, como tags e acesso; lista vazia (dado estranho) volta às quatro padrão, para a tarefa sempre ter coluna.
         this.colunas = detalhes.colunas?.length ? [...detalhes.colunas] : colunasPadrao();
+        this.tipo = detalhes.tipo ?? TipoProjeto.CLIENTE;
+        this.geralDaArea = detalhes.geralDaArea ?? false;
+        this.lideresDaArea = [...new Set(detalhes.lideresDaArea ?? [])];
 
         this.validar();
     }
@@ -129,6 +142,11 @@ export default class Projeto {
 
     comColunas(colunas: ColunaProjeto[]): Projeto {
         return this.copiar({ colunas });
+    }
+
+    /** Líder cadastrado ou, no projeto interno, líder da área. */
+    ehLider(codigoUsuario: string): boolean {
+        return this.lider?.codigo === codigoUsuario || this.lideresDaArea.includes(codigoUsuario);
     }
 
     participacaoAtivaDe(codigoUsuario: string): Participacao | undefined {
@@ -169,6 +187,9 @@ export default class Projeto {
                 criadoPor: pick("criadoPor"),
                 acesso: pick("acesso"),
                 colunas: pick("colunas"),
+                tipo: pick("tipo"),
+                geralDaArea: pick("geralDaArea"),
+                lideresDaArea: pick("lideresDaArea"),
             },
         );
     }
@@ -195,6 +216,9 @@ export default class Projeto {
             sigiloso: this.sigiloso,
             acesso: this.acesso,
             colunas: this.colunas.map((c) => c.toJSON()),
+            tipo: this.tipo,
+            geralDaArea: this.geralDaArea,
+            lideresDaArea: this.lideresDaArea,
         };
     }
 
@@ -234,6 +258,18 @@ export default class Projeto {
 
         if (this.referencia && this.referencia.length > 30) {
             throw new ErroValidacao("O código do projeto deve ter até 30 caracteres.", "REFERENCIA_LONGA");
+        }
+
+        if (this.tipo === TipoProjeto.INTERNO && !this.area) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.AREA_OBRIGATORIA_INTERNO, "AREA_OBRIGATORIA_INTERNO");
+        }
+
+        if (this.geralDaArea && this.sigiloso) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.GERAL_SIGILOSO, "GERAL_SIGILOSO");
+        }
+
+        if (this.geralDaArea && this.tipo !== TipoProjeto.INTERNO) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.GERAL_INTERNO, "GERAL_INTERNO");
         }
 
         const ativos = this.participacoes.filter((p) => p.ativa).map((p) => p.usuario.codigo);

@@ -134,38 +134,6 @@ describe("Anexos nas tarefas", () => {
         expect((await listar(colega, TAREFA)).corpo).toHaveLength(1);
     });
 
-    it("avulsa: responsável anexa; gestão anexa e exclui; outro membro recebe 404", async () => {
-        const criada = await servidor.chamar("post", "/tarefas", {
-            usuario: ctx.gerente,
-            corpo: {
-                categoria: "inovacao",
-                titulo: "Pesquisar ferramentas",
-                dataInicio: "2026-11-02T12:00:00.000Z",
-                dataFim: "2026-11-06T12:00:00.000Z",
-                prioridade: "P2",
-                codigosResponsaveis: [colega.codigo],
-            },
-        });
-        expect(criada.status).toBe(200);
-        const avulsa = criada.corpo.codigo;
-
-        const doResponsavel = await enviar(colega, avulsa, "r.pdf");
-        expect(doResponsavel.status).toBe(200);
-        const daGestao = await enviar(ctx.gerente, avulsa, "g.pdf");
-        expect(daGestao.status).toBe(200);
-
-        expect((await listar(colega, avulsa)).corpo.map((a: any) => a.podeExcluir)).toEqual([true, false]);
-        expect((await excluir(colega, daGestao.corpo.codigo)).status).toBe(403);
-
-        expect((await enviar(lider, avulsa)).status).toBe(404);
-        expect((await listar(lider, avulsa)).status).toBe(404);
-        expect((await baixar(lider, doResponsavel.corpo.codigo)).status).toBe(404);
-        expect((await excluir(lider, doResponsavel.corpo.codigo)).status).toBe(404);
-
-        expect((await excluir(ctx.gerente, doResponsavel.corpo.codigo)).status).toBe(200);
-        expect((await excluir(ctx.gerente, daGestao.corpo.codigo)).status).toBe(200);
-    });
-
     it("tarefa inexistente ou código mal formado: 404, não 500", async () => {
         for (const codigo of ["7d0f8a8e-1111-4c2b-9a51-000000000000", "nao-e-uuid"]) {
             expect((await enviar(colega, codigo)).status).toBe(404);

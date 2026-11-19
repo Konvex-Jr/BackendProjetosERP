@@ -54,7 +54,6 @@ descrever("colunas do quadro contra PostgreSQL", () => {
             undefined,
             null,
             null,
-            null,
             projeto.colunaDeEntrada,
         );
         return factory.criarTarefaRepository().criar(base.naColuna(coluna, inicio, pessoa));
@@ -322,7 +321,6 @@ descrever("colunas do quadro contra PostgreSQL", () => {
                         [pessoa],
                         [],
                         undefined,
-                        null,
                         null,
                         null,
                         r,

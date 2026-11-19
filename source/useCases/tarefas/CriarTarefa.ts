@@ -1,8 +1,8 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/entity/Tarefa";
+import Projeto from "../../domain/entity/Projeto";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
 import CriarTarefaInput from "./CriarTarefaInput";
@@ -18,13 +18,10 @@ export default class CriarTarefa {
         this.usuarios = factory.criarUsuarioRepository();
     }
     async execute(input: CriarTarefaInput): Promise<Tarefa> {
-        let projeto = null;
+        let projeto: Projeto | null = null;
         if (input.codigoProjeto) {
             projeto = await this.projetos.buscarPorCodigo(input.codigoProjeto);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
-        }
-        if (!projeto && input.codigoColuna) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
         }
         const coluna = projeto ? (input.codigoColuna ? colunaDoProjeto(projeto, input.codigoColuna) : projeto.colunaDeEntrada) : null;
         const nasceConcluida = coluna?.papel === PapelColuna.CONCLUIDA;
@@ -37,7 +34,8 @@ export default class CriarTarefa {
             return u;
         });
         const tarefa = new Tarefa(
-            projeto,
+            // Sem projeto, o construtor recusa com PROJETO_OBRIGATORIO.
+            projeto as Projeto,
             (input.titulo ?? "").trim(),
             input.dataInicio,
             input.dataFim,
@@ -50,7 +48,6 @@ export default class CriarTarefa {
             [],
             undefined,
             nasceConcluida ? (input.criadaPor ?? null) : null,
-            input.categoria ?? null,
             input.criadaPor ?? null,
             coluna,
         );

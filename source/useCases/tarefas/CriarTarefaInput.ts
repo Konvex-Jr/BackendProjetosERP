@@ -1,18 +1,15 @@
 import PrioridadeTarefa from "../../domain/enum/PrioridadeTarefa";
-import CategoriaTarefa from "../../domain/enum/CategoriaTarefa";
 import Usuario from "../../domain/entity/Usuario";
 export default interface CriarTarefaInput {
-    /** Tarefa de projeto. Informe projeto OU categoria (sessão 8c). */
+    /** Obrigatório: toda tarefa tem projeto (sem ele, PROJETO_OBRIGATORIO). */
     codigoProjeto?: string | null;
-    /** Tarefa avulsa: inovacao, capacitacao ou execucao. */
-    categoria?: CategoriaTarefa | null;
     titulo: string;
     dataInicio: Date;
     dataFim: Date;
     prioridade?: PrioridadeTarefa;
     descricao?: string | null;
     codigosResponsaveis?: string[];
-    /** Só tarefa de projeto: coluna do quadro onde a tarefa nasce (padrão: a de entrada). */
+    /** Coluna do quadro onde a tarefa nasce (padrão: a de entrada). */
     codigoColuna?: string | null;
     criadaPor?: Usuario | null;
 }

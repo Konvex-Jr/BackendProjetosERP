@@ -152,22 +152,11 @@ describe("Tarefas pela API", () => {
             expect((await mover(colega, "tarefa-teste", undefined)).status).toBe(400);
         });
 
-        it("GET /tarefas traz coluna na de projeto, null na avulsa, e não repete projeto.colunas", async () => {
-            const avulsa = await servidor.chamar("post", "/tarefas", {
-                usuario: ctx.gerente,
-                corpo: {
-                    categoria: "inovacao",
-                    titulo: "Avulsa",
-                    dataInicio: "2026-10-12T12:00:00.000Z",
-                    dataFim: "2026-10-16T12:00:00.000Z",
-                },
-            });
-            expect(avulsa.status).toBe(200);
+        it("GET /tarefas traz a coluna e não repete projeto.colunas", async () => {
             const lista = (await servidor.chamar("get", "/tarefas", { usuario: ctx.gerente })).corpo;
             const deProjeto = lista.find((t: any) => t.codigo === "tarefa-teste");
             expect(deProjeto.coluna).toMatchObject({ nome: "A fazer", cor: "cinza" });
             expect(deProjeto.projeto.colunas).toBeUndefined();
-            expect(lista.find((t: any) => t.codigo === avulsa.corpo.codigo).coluna).toBeNull();
         });
 
         it("tarefa de sigiloso sem acesso: 404 no PATCH /coluna", async () => {

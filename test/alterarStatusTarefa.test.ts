@@ -1,9 +1,7 @@
 import AlterarStatusTarefa from "../source/useCases/tarefas/AlterarStatusTarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import MoverTarefa from "../source/useCases/tarefas/MoverTarefa";
-import CriarTarefa from "../source/useCases/tarefas/CriarTarefa";
-import CategoriaTarefa from "../source/domain/enum/CategoriaTarefa";
-import { criarContexto, criarProjeto, criarTarefa, dataInicio, dataFim } from "./fixtures";
+import { criarContexto, criarProjeto, criarTarefa } from "./fixtures";
 
 test("altera o status e registra a data de conclusão da tarefa", async () => {
     const { factory, membro } = await criarContexto();
@@ -53,19 +51,5 @@ describe("status em tarefa de projeto com colunas", () => {
         const t = await new AlterarStatusTarefa(factory).execute(tarefa.codigo, StatusTarefa.ANDAMENTO, hoje, membro);
         expect(t.coluna!.nome).toBe("A fazer");
         expect(t.status).toBe(StatusTarefa.PENDENTE);
-    });
-
-    it("tarefa avulsa segue igual", async () => {
-        const { factory, gerente } = await preparar();
-        const avulsa = await new CriarTarefa(factory).execute({
-            categoria: CategoriaTarefa.EXECUCAO,
-            titulo: "Avulsa",
-            dataInicio,
-            dataFim,
-            criadaPor: gerente,
-        });
-        const t = await new AlterarStatusTarefa(factory).execute(avulsa.codigo, StatusTarefa.ANDAMENTO, hoje, gerente);
-        expect(t.status).toBe(StatusTarefa.ANDAMENTO);
-        expect(t.coluna).toBeNull();
     });
 });

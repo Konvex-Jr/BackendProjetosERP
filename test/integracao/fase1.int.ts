@@ -237,50 +237,6 @@ descrever("fase 1 contra PostgreSQL", () => {
         await chamar("POST", `/tarefas/${t.corpo.codigo}/comentarios`, lid, { texto: "Outro" });
         expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}`, lid)).status).toBeLessThan(300);
     }, 60000);
-    test("sessão 8c: tarefa avulsa gravada no banco, com categoria e quem criou", async () => {
-        const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        const pessoa = await chamar("POST", "/usuarios", dir, {
-            nome: "Assessor",
-            email: "assessor@teste.com",
-            senha: "SenhaAssessor1",
-            perfil: "membro",
-            codigoSenioridade: "junior",
-        });
-        const t = await chamar("POST", "/tarefas", dir, {
-            categoria: "inovacao",
-            titulo: "Pesquisa",
-            dataInicio: "2026-11-02",
-            dataFim: "2026-11-06",
-            prioridade: "P2",
-            codigosResponsaveis: [pessoa.corpo.codigo],
-        });
-        expect(t.status).toBe(200);
-        const ass = (await entrar("assessor@teste.com", "SenhaAssessor1")).corpo.token as string;
-        const minhas = (await chamar("GET", "/tarefas?minhas=true", ass)).corpo;
-        expect(minhas).toHaveLength(1);
-        expect(minhas[0].projeto).toBeNull();
-        expect(minhas[0].categoria).toBe("inovacao");
-        expect(minhas[0].criadaPor.nome).toBeTruthy();
-        expect((await chamar("PATCH", `/tarefas/${t.corpo.codigo}/status`, ass, { status: "concluida" })).status).toBe(200);
-        const editada = await chamar("PUT", `/tarefas/${t.corpo.codigo}`, dir, {
-            categoria: "execucao",
-            titulo: "Pesquisa",
-            dataInicio: "2026-11-02",
-            dataFim: "2026-11-06",
-            prioridade: "P1",
-            status: "concluida",
-            codigosResponsaveis: [pessoa.corpo.codigo],
-        });
-        expect(editada.status).toBe(200);
-        expect((await chamar("GET", "/tarefas?categoria=execucao", dir)).corpo.map((x: any) => x.codigo)).toEqual([t.corpo.codigo]);
-        // O banco também barra tarefa sem projeto e sem categoria.
-        await expect(
-            pool.query(
-                "INSERT INTO tarefas (codigo, titulo, data_inicio, data_fim) VALUES (gen_random_uuid(), 'x', '2026-11-02', '2026-11-03')",
-            ),
-        ).rejects.toThrow(/tarefas_projeto_ou_categoria/);
-        expect((await chamar("DELETE", `/tarefas/${t.corpo.codigo}`, dir)).status).toBeLessThan(300);
-    }, 60000);
     test("sessão 12c/17: anexos da Biblioteca gravados no banco e no disco, com sigilo do item", async () => {
         const pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
         process.env.ANEXOS_DIR = pasta;
@@ -438,8 +394,15 @@ descrever("fase 1 contra PostgreSQL", () => {
 
         // Checklist volta na ordem em que foi gravado.
         const textos = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto"];
+        const projChecklist = await chamar("POST", "/projetos", dir, {
+            nome: "Projeto checklist",
+            descricao: "Teste",
+            dataInicio: "2026-11-01",
+            dataFim: "2026-12-31",
+            status: "em_execucao",
+        });
         const dadosTarefa = {
-            categoria: "execucao",
+            codigoProjeto: projChecklist.corpo.codigo,
             titulo: "Ordem do checklist",
             dataInicio: "2026-11-13",
             dataFim: "2026-11-20",
@@ -453,7 +416,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         });
         expect([comChecklist.status, comChecklist.corpo.message]).toEqual([200, undefined]);
         await pool.query("UPDATE tarefa_checklist_itens SET feito = feito WHERE texto IN ('Primeiro', 'Terceiro')"); // muda a ordem física
-        const lida = (await chamar("GET", "/tarefas?categoria=execucao", dir)).corpo.find((x: any) => x.codigo === tarefa.corpo.codigo);
+        const lida = (await chamar("GET", "/tarefas", dir)).corpo.find((x: any) => x.codigo === tarefa.corpo.codigo);
         expect(lida.checklist.map((i: any) => i.texto)).toEqual(textos);
 
         // Contagem de tarefas por projeto (progresso igual para membro e gestão).
@@ -467,7 +430,6 @@ descrever("fase 1 contra PostgreSQL", () => {
         for (const titulo of ["Uma", "Outra"]) {
             const t = await chamar("POST", "/tarefas", dir, {
                 ...dadosTarefa,
-                categoria: undefined,
                 titulo,
                 codigoProjeto: proj.corpo.codigo,
             });

@@ -1,8 +1,6 @@
 import MoverTarefa from "../source/useCases/tarefas/MoverTarefa";
-import CriarTarefa from "../source/useCases/tarefas/CriarTarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import Projeto from "../source/domain/entity/Projeto";
-import CategoriaTarefa from "../source/domain/enum/CategoriaTarefa";
 import { criarContexto, criarProjeto, criarTarefa, dataInicio, dataFim } from "./fixtures";
 
 const HOJE = new Date("2026-11-16T00:00:00.000Z");
@@ -59,19 +57,5 @@ describe("MoverTarefa", () => {
         await expect(mover(outro.colunas[1].codigo)).rejects.toMatchObject({ codigo: "COLUNA_DE_OUTRO_PROJETO" });
         await expect(mover("nao-existe")).rejects.toMatchObject({ codigo: "COLUNA_DE_OUTRO_PROJETO" });
         await expect(mover(undefined as unknown as string)).rejects.toMatchObject({ codigo: "COLUNA_DE_OUTRO_PROJETO" });
-    });
-
-    it("tarefa avulsa: TAREFA_AVULSA_SEM_COLUNA", async () => {
-        const { factory, gerente } = await preparar();
-        const avulsa = await new CriarTarefa(factory).execute({
-            categoria: CategoriaTarefa.INOVACAO,
-            titulo: "Avulsa",
-            dataInicio,
-            dataFim,
-            criadaPor: gerente,
-        });
-        await expect(new MoverTarefa(factory).execute(avulsa.codigo, "qualquer", HOJE, gerente)).rejects.toMatchObject({
-            codigo: "TAREFA_AVULSA_SEM_COLUNA",
-        });
     });
 });

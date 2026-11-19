@@ -196,6 +196,8 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("ler tarefa com dados antigos incoerentes devolve a coluna, sem lançar", async () => {
+        // O domínio não lê mais tarefa sem projeto (avulsa, fim na 018): a avulsa antiga sai antes da leitura.
+        await pool.query("DELETE FROM tarefas WHERE projeto_codigo IS NULL");
         const projeto = await inserirProjeto("Terceiro");
         const colunas = (
             await pool.query(

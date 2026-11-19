@@ -55,11 +55,6 @@ export function podeAtribuirAvulsas(usuario: UsuarioAutenticado): boolean {
 export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projeto: Projeto | null): RegrasTarefa {
     const responsavel = tarefa.responsaveis.some((r) => r.codigo === usuario.codigo);
 
-    if (tarefa.avulsa) {
-        const gestao = podeAtribuirAvulsas(usuario);
-        return { ver: gestao || responsavel, organizar: gestao, mudarStatus: gestao || responsavel, comentar: gestao || responsavel };
-    }
-
     if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") {
         return { ver: false, organizar: false, mudarStatus: false, comentar: false };
     }

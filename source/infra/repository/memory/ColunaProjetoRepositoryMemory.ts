@@ -57,7 +57,6 @@ export default class ColunaProjetoRepositoryMemory implements ColunaProjetoRepos
                 naColuna.checklist,
                 naColuna.codigo,
                 naColuna.concluidaPor,
-                naColuna.categoria,
                 naColuna.criadaPor,
                 coluna,
             );
