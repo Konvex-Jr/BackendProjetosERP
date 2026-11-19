@@ -1,7 +1,5 @@
 import DificuldadeTarefa from "../enum/DificuldadeTarefa";
-
-/** Teto semanal (horas) de quem não tem cargo. */
-export const TETO_SEM_CARGO = 10;
+import { TETO_SEM_CARGO } from "../entity/Cargo";
 
 const DIA = 24 * 60 * 60 * 1000;
 

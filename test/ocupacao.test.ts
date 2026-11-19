@@ -1,5 +1,6 @@
 import DificuldadeTarefa, { HORAS_PADRAO } from "../source/domain/enum/DificuldadeTarefa";
-import { TarefaParaOcupacao, TETO_SEM_CARGO, calcularOcupacao, horasNaSemana, segundaDaSemana } from "../source/domain/service/ocupacao";
+import { TETO_SEM_CARGO } from "../source/domain/entity/Cargo";
+import { TarefaParaOcupacao, calcularOcupacao, horasNaSemana, segundaDaSemana } from "../source/domain/service/ocupacao";
 
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
 
