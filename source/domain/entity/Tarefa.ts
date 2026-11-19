@@ -7,6 +7,7 @@ import ItemChecklistTarefa from "./ItemChecklistTarefa";
 import StatusTarefa from "../enum/StatusTarefa";
 import PrioridadeTarefa from "../enum/PrioridadeTarefa";
 import ColunaProjeto from "./ColunaProjeto";
+import DificuldadeTarefa from "../enum/DificuldadeTarefa";
 import { statusDoPapel, PapelColuna } from "../enum/ColunaProjeto";
 
 /**
@@ -33,6 +34,8 @@ export default class Tarefa {
     readonly criadaPor: Usuario | null;
     /** Coluna do kanban do projeto (sessão 21). O status vem do papel dela. */
     readonly coluna: ColunaProjeto;
+    /** Esforço da tarefa (sessão 24a). Nulo = ainda não estimada. */
+    readonly dificuldade: DificuldadeTarefa | null;
 
     constructor(
         projeto: Projeto,
@@ -50,6 +53,7 @@ export default class Tarefa {
         concluidaPor: Usuario | null = null,
         criadaPor: Usuario | null = null,
         coluna: ColunaProjeto | null = null,
+        dificuldade: DificuldadeTarefa | null = null,
     ) {
         if (!projeto) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PROJETO_OBRIGATORIO, "PROJETO_OBRIGATORIO");
@@ -78,6 +82,7 @@ export default class Tarefa {
         this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
         this.criadaPor = criadaPor;
         this.coluna = colunaFinal;
+        this.dificuldade = dificuldade;
 
         this.validar();
     }
@@ -103,6 +108,7 @@ export default class Tarefa {
             this.criadaPor,
             // Mantém a coluna se ela já serve ao novo status; senão, a que corresponde a ele.
             statusValido ? this.projeto.colunaParaStatus(status, this.coluna) : null,
+            this.dificuldade,
         );
     }
 
@@ -129,6 +135,7 @@ export default class Tarefa {
             concluida ? (jaConcluida ? this.concluidaPor : quem) : null,
             this.criadaPor,
             coluna,
+            this.dificuldade,
         );
     }
 
@@ -161,6 +168,7 @@ export default class Tarefa {
             this.concluidaPor,
             this.criadaPor,
             this.coluna,
+            this.dificuldade,
         );
     }
 
@@ -187,6 +195,10 @@ export default class Tarefa {
 
         if (!Object.values(StatusTarefa).includes(this.status)) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.STATUS_INVALIDO, "STATUS_TAREFA_INVALIDO");
+        }
+
+        if (this.dificuldade !== null && !Object.values(DificuldadeTarefa).includes(this.dificuldade)) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.DIFICULDADE_INVALIDA, "DIFICULDADE_INVALIDA");
         }
 
         if (Number.isNaN(this.dataInicio.getTime()) || Number.isNaN(this.dataFim.getTime())) {

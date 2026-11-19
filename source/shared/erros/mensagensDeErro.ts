@@ -48,6 +48,14 @@ export const MENSAGENS_DE_ERRO = {
                 : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
     },
 
+    HORAS_DIFICULDADE: {
+        INVALIDAS: (nivel: string) => `As horas do nível "${nivel}" devem ser um número de 0,5 a 40.`,
+    },
+
+    CARGO: {
+        TETO_INVALIDO: "O teto semanal do cargo (tetoSemanalHoras) deve ser um número inteiro de 1 a 40 horas.",
+    },
+
     PERIODO: {
         PROPRIO: "Você não pode alterar os próprios períodos de área.",
         INICIO_NO_FUTURO: "O início do período na área não pode ser no futuro.",
@@ -69,6 +77,7 @@ export const MENSAGENS_DE_ERRO = {
         PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
         PROJETO_OBRIGATORIO: "Escolha o projeto da tarefa.",
+        DIFICULDADE_INVALIDA: "Dificuldade inválida. Use rapida, facil, media ou dificil.",
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 

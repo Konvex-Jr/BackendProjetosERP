@@ -70,3 +70,37 @@ describe("colunas na edição", () => {
         await expect(editar({ codigoColuna: "nao-existe" })).rejects.toMatchObject({ codigo: "COLUNA_DE_OUTRO_PROJETO" });
     });
 });
+
+describe("dificuldade na edição", () => {
+    const editar = async (extra: object, inicial: string | null = "facil") => {
+        const { factory, membro } = await criarContexto();
+        const tarefa = await criarTarefa(factory, membro);
+        const base = {
+            codigo: tarefa.codigo,
+            titulo: "Tarefa",
+            dataInicio,
+            dataFim,
+            status: StatusTarefa.PENDENTE,
+            prioridade: PrioridadeTarefa.P2,
+            codigosResponsaveis: [membro.codigo],
+        };
+        await new EditarTarefa(factory).execute({ ...base, dificuldade: inicial } as never);
+        return new EditarTarefa(factory).execute({ ...base, ...extra } as never);
+    };
+
+    it("troca a dificuldade", async () => {
+        expect((await editar({ dificuldade: "dificil" })).dificuldade).toBe("dificil");
+    });
+
+    it("null limpa", async () => {
+        expect((await editar({ dificuldade: null })).dificuldade).toBeNull();
+    });
+
+    it("sem o campo mantém", async () => {
+        expect((await editar({})).dificuldade).toBe("facil");
+    });
+
+    it("valor inválido: 400 DIFICULDADE_INVALIDA", async () => {
+        await expect(editar({ dificuldade: "enorme" })).rejects.toMatchObject({ codigo: "DIFICULDADE_INVALIDA" });
+    });
+});

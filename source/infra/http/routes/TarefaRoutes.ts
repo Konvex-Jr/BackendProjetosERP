@@ -1,6 +1,7 @@
 import { hoje } from "../../../shared/datas";
 import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFactoryInterface";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
+import DificuldadeTarefa from "../../../domain/enum/DificuldadeTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
 import ComentarioTarefa from "../../../domain/entity/ComentarioTarefa";
@@ -25,6 +26,13 @@ import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 
 const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
+
+/** Ausente = undefined (mantém); null ou "" = null (limpa). Valor desconhecido o `Tarefa` recusa com 400 DIFICULDADE_INVALIDA. */
+function lerDificuldade(valor: unknown): DificuldadeTarefa | null | undefined {
+    if (valor === undefined) return undefined;
+    if (valor === null || valor === "") return null;
+    return valor as DificuldadeTarefa;
+}
 
 /** Tarefas e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b, 20 e 23b). */
 export default class TarefaRoutes implements ModelRoutes {
@@ -118,6 +126,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataFim: new Date(body.dataFim),
                     prioridade: body.prioridade as PrioridadeTarefa,
                     codigoColuna: body.codigoColuna ?? null,
+                    dificuldade: lerDificuldade(body.dificuldade) ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis,
                     criadaPor: await this.usuarioAtual(usuario),
@@ -137,6 +146,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     status: body.status as StatusTarefa,
                     prioridade: body.prioridade as PrioridadeTarefa,
                     codigoColuna: body.codigoColuna ?? null,
+                    dificuldade: lerDificuldade(body.dificuldade),
                     descricao: body.descricao ?? null,
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
                     codigoDependencia: body.codigoDependencia ?? null,

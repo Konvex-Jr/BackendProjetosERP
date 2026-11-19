@@ -14,6 +14,8 @@ import Tarefa from "../../source/domain/entity/Tarefa";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
+import DificuldadeTarefa from "../../source/domain/enum/DificuldadeTarefa";
+import Cargo from "../../source/domain/entity/Cargo";
 import EditarTarefa from "../../source/useCases/tarefas/EditarTarefa";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
@@ -77,6 +79,68 @@ descrever("tarefas contra PostgreSQL", () => {
         });
         expect(editada.titulo).toBe("Tarefa editada");
         expect(editada.responsaveis.map((r) => r.codigo)).toEqual([pessoa.codigo]);
+    });
+
+    test("dificuldade da tarefa, horas por nível e teto do cargo gravam e leem", async () => {
+        const inicio = new Date("2026-10-12T00:00:00.000Z");
+        const fim = new Date("2026-10-30T00:00:00.000Z");
+        const pessoa = new Usuario(
+            "Dificuldade",
+            `dif-${crypto.randomUUID()}@teste.com`,
+            PerfilUsuario.MEMBRO,
+            true,
+            "hash",
+            new SenioridadeUsuario("pleno", "Pleno", 75),
+        );
+        await factory.criarUsuarioRepository().criar(pessoa);
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Projeto Dif", "Descrição", inicio, fim, undefined, [pessoa], crypto.randomUUID()));
+        const tarefas = factory.criarTarefaRepository();
+        const criada = await tarefas.criar(
+            new Tarefa(
+                projeto,
+                "Com dificuldade",
+                inicio,
+                fim,
+                StatusTarefa.PENDENTE,
+                PrioridadeTarefa.P2,
+                null,
+                null,
+                null,
+                [pessoa],
+                [],
+                undefined,
+                null,
+                null,
+                null,
+                DificuldadeTarefa.MEDIA,
+            ),
+        );
+        expect((await tarefas.buscarPorCodigo(criada.codigo))?.dificuldade).toBe("media");
+        const limpa = await new EditarTarefa(factory).execute({
+            codigo: criada.codigo,
+            titulo: "Com dificuldade",
+            dataInicio: inicio,
+            dataFim: fim,
+            status: StatusTarefa.PENDENTE,
+            prioridade: PrioridadeTarefa.P2,
+            codigosResponsaveis: [pessoa.codigo],
+            dificuldade: null,
+        });
+        expect(limpa.dificuldade).toBeNull();
+        expect((await tarefas.buscarPorCodigo(criada.codigo))?.dificuldade).toBeNull();
+
+        const horas = factory.criarHorasDificuldadeRepository();
+        expect(await horas.listar()).toEqual({ rapida: 1, facil: 2, media: 4, dificil: 8 });
+        await horas.salvar({ rapida: 0.5, facil: 2.5, media: 5, dificil: 12 });
+        expect(await horas.listar()).toEqual({ rapida: 0.5, facil: 2.5, media: 5, dificil: 12 });
+
+        const cargos = factory.criarCargoRepository();
+        const cargo = await cargos.criar(new Cargo(`Cargo ${crypto.randomUUID()}`, true, undefined, false, 15));
+        expect((await cargos.buscarPorCodigo(cargo.codigo))?.tetoSemanalHoras).toBe(15);
+        await cargos.editar(new Cargo(cargo.nome, true, cargo.codigo, false, 20));
+        expect((await cargos.buscarPorCodigo(cargo.codigo))?.tetoSemanalHoras).toBe(20);
     });
 
     test("GET /tarefas pelo banco: tarefa de projeto sigiloso só para quem tem acesso completo", async () => {

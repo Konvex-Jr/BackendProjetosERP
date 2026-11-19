@@ -1,6 +1,7 @@
 import Tarefa from "../../../domain/entity/Tarefa";
 import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
+import DificuldadeTarefa from "../../../domain/enum/DificuldadeTarefa";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
 import { fimDaSemana } from "../../../shared/datas";
 import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
@@ -14,7 +15,7 @@ import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
            status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo,
-           criada_por_codigo, coluna_codigo
+           criada_por_codigo, coluna_codigo, dificuldade
     FROM tarefas
 `;
 
@@ -35,8 +36,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
-                                      concluida_por_codigo, criada_por_codigo, coluna_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                                      concluida_por_codigo, criada_por_codigo, coluna_codigo, dificuldade)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                 [
                     tarefa.codigo,
                     tarefa.projeto.codigo,
@@ -51,6 +52,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.criadaPor?.codigo ?? null,
                     tarefa.coluna.codigo,
+                    tarefa.dificuldade,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -120,7 +122,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
                      status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
-                     concluida_por_codigo = $10, coluna_codigo = $11
+                     concluida_por_codigo = $10, coluna_codigo = $11, dificuldade = $12
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -135,6 +137,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
                     tarefa.coluna.codigo,
+                    tarefa.dificuldade,
                 ],
             );
 
@@ -281,6 +284,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 linha.concluida_por_codigo ? (usuarios.get(linha.concluida_por_codigo) ?? null) : null,
                 linha.criada_por_codigo ? (usuarios.get(linha.criada_por_codigo) ?? null) : null,
                 coluna,
+                (linha.dificuldade as DificuldadeTarefa | null) ?? null,
             );
 
             construidas.set(codigo, tarefa);

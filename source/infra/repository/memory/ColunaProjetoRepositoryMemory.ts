@@ -59,6 +59,7 @@ export default class ColunaProjetoRepositoryMemory implements ColunaProjetoRepos
                 naColuna.concluidaPor,
                 naColuna.criadaPor,
                 coluna,
+                naColuna.dificuldade,
             );
         });
 

@@ -1,3 +1,4 @@
+import HorasDificuldadeRepositoryMemory from "./memory/HorasDificuldadeRepositoryMemory";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "../../domain/interfaces/SenioridadeRepositoryInterface";
@@ -78,6 +79,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
+    private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
@@ -111,6 +113,10 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarCargoRepository() {
         return this.cargoRepository;
+    }
+
+    criarHorasDificuldadeRepository() {
+        return this.horasDificuldadeRepository;
     }
 
     criarPeriodoAreaRepository() {

@@ -493,6 +493,10 @@ const rotasFase1: Record<string, Record<string, object>> = {
         post: operation(["Configurações"], "Criar cargo (diretores)", json),
     },
     "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
+    "/config/horas-dificuldade": {
+        get: operation(["Configurações"], "Horas de cada nível de dificuldade da tarefa"),
+        put: operation(["Configurações"], "Gravar as horas por dificuldade (diretores)", json),
+    },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {

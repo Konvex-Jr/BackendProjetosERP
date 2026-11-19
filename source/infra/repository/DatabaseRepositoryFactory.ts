@@ -1,3 +1,4 @@
+import HorasDificuldadeRepositoryDatabase from "./database/HorasDificuldadeRepositoryDatabase";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "../../domain/interfaces/SenioridadeRepositoryInterface";
@@ -70,6 +71,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarCargoRepository() {
         return new CargoRepositoryDatabase(this.conexao);
+    }
+
+    criarHorasDificuldadeRepository() {
+        return new HorasDificuldadeRepositoryDatabase(this.conexao);
     }
 
     criarPeriodoAreaRepository() {
