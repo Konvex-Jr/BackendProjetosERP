@@ -1,4 +1,5 @@
 import { hoje } from "../../../shared/datas";
+import { lerDataObrigatoria } from "../../../shared/entradas";
 import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFactoryInterface";
 import PrioridadeTarefa from "../../../domain/enum/PrioridadeTarefa";
 import DificuldadeTarefa from "../../../domain/enum/DificuldadeTarefa";
@@ -134,8 +135,8 @@ export default class TarefaRoutes implements ModelRoutes {
                 await new CriarTarefa(this.factory).execute({
                     codigoProjeto: body.codigoProjeto,
                     titulo: body.titulo ?? "",
-                    dataInicio: new Date(body.dataInicio),
-                    dataFim: new Date(body.dataFim),
+                    dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
+                    dataFim: lerDataObrigatoria(body.dataFim, "dataFim"),
                     prioridade: body.prioridade as PrioridadeTarefa,
                     codigoColuna: body.codigoColuna ?? null,
                     dificuldade: lerDificuldade(body.dificuldade) ?? null,
@@ -154,8 +155,8 @@ export default class TarefaRoutes implements ModelRoutes {
                 await new EditarTarefa(this.factory).execute({
                     codigo: params.codigo,
                     titulo: body.titulo,
-                    dataInicio: new Date(body.dataInicio),
-                    dataFim: new Date(body.dataFim),
+                    dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
+                    dataFim: lerDataObrigatoria(body.dataFim, "dataFim"),
                     status: body.status as StatusTarefa,
                     prioridade: body.prioridade as PrioridadeTarefa,
                     codigoColuna: body.codigoColuna ?? null,

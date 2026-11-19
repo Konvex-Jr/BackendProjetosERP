@@ -50,6 +50,16 @@ describe("horasNaSemana", () => {
         expect(horasNaSemana(t, 2, d("2026-11-16"), hoje)).toBe(0);
     });
 
+    it("hora do dia nas datas (meio-dia local = 15:00Z) não tira dia da conta", () => {
+        const comHora = (s: string) => new Date(`${s}T15:00:00.000Z`);
+        const t = tarefa({ dificuldade: DificuldadeTarefa.DIFICIL, dataInicio: comHora("2026-11-23"), dataFim: comHora("2026-11-27") });
+        expect(horasNaSemana(t, 8, d("2026-11-23"), hoje)).toBe(8);
+        // Semana e hoje com hora também
+        expect(horasNaSemana(t, 8, comHora("2026-11-23"), comHora("2026-11-23"))).toBe(8);
+        const [o] = calcularOcupacao([t], HORAS_PADRAO, new Map(), ["U1"], comHora("2026-11-25"), hoje);
+        expect(o.horas).toBe(8);
+    });
+
     it("concluída, sem dificuldade ou projeto inativo valem 0", () => {
         const t = tarefa({ dataInicio: d("2026-11-16"), dataFim: d("2026-11-20") });
         expect(horasNaSemana({ ...t, concluida: true }, 2, d("2026-11-23"), hoje)).toBe(0);

@@ -251,6 +251,88 @@ describe("Ocupação semanal (HTTP)", () => {
             expect(r.corpo.avisosOcupacao).toEqual([]);
         });
 
+        describe("datas com hora (a tela manda meio-dia local, 15:00Z)", () => {
+            const segundaQueVem = new Date(dia.getTime() + (7 - ((dia.getUTCDay() + 6) % 7)) * UM_DIA);
+            const sextaQueVem = new Date(segundaQueVem.getTime() + 4 * UM_DIA);
+            const as15 = (d: Date) => `${iso(d)}T15:00:00.000Z`;
+            const corpoSemanaQueVem = (extra: Record<string, unknown> = {}) =>
+                corpoTarefa({ dataInicio: as15(segundaQueVem), dataFim: as15(sextaQueVem), ...extra });
+
+            beforeEach(async () => {
+                // Já tem uma Média (4 h) na segunda da semana que vem.
+                await ctx.factory
+                    .criarTarefaRepository()
+                    .criar(
+                        new Tarefa(
+                            normal,
+                            "Média de segunda",
+                            segundaQueVem,
+                            segundaQueVem,
+                            StatusTarefa.PENDENTE,
+                            PrioridadeTarefa.P2,
+                            null,
+                            null,
+                            null,
+                            [assessor],
+                            [],
+                            "t-seg",
+                            null,
+                            null,
+                            null,
+                            DificuldadeTarefa.MEDIA,
+                        ),
+                    );
+            });
+
+            it("Difícil de segunda a sexta da semana que vem: aviso de 120% (nenhum dia perdido)", async () => {
+                const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoSemanaQueVem() });
+                expect(r.status).toBe(200);
+                expect(r.corpo.avisosOcupacao).toHaveLength(1);
+                expect(r.corpo.avisosOcupacao[0]).toMatchObject({
+                    codigoUsuario: assessor.codigo,
+                    horas: 12,
+                    teto: 10,
+                    percentual: 120,
+                    semana: iso(segundaQueVem),
+                });
+                // Gravada no dia, sem a hora
+                const gravada = await ctx.factory.criarTarefaRepository().buscarPorCodigo(r.corpo.codigo);
+                expect(gravada!.dataInicio.toISOString()).toBe(`${iso(segundaQueVem)}T00:00:00.000Z`);
+                expect(gravada!.dataFim.toISOString()).toBe(`${iso(sextaQueVem)}T00:00:00.000Z`);
+            });
+
+            it("PUT só do título com as mesmas datas às 15:00Z: avisosOcupacao vazio", async () => {
+                const criada = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoSemanaQueVem() });
+                expect(criada.corpo.avisosOcupacao).toHaveLength(1);
+                const r = await servidor.chamar("put", `/tarefas/${criada.corpo.codigo}`, {
+                    usuario: ctx.gerente,
+                    corpo: corpoSemanaQueVem({ titulo: "Só o título" }),
+                });
+                expect(r.status).toBe(200);
+                expect(r.corpo.titulo).toBe("Só o título");
+                expect(r.corpo.avisosOcupacao).toEqual([]);
+            });
+
+            it("o número do aviso é o mesmo do GET /ocupacao e do detalhe na mesma semana", async () => {
+                const criada = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoSemanaQueVem() });
+                const aviso = criada.corpo.avisosOcupacao[0];
+                const todas = await servidor.chamar("get", `/ocupacao?semana=${aviso.semana}`, { usuario: diretor });
+                const total = todas.corpo.find((p: any) => p.codigoUsuario === assessor.codigo);
+                expect({ horas: total.horas, percentual: total.percentual }).toEqual({ horas: aviso.horas, percentual: aviso.percentual });
+                const detalhe = await servidor.chamar("get", `/ocupacao/${assessor.codigo}?semana=${aviso.semana}`, { usuario: diretor });
+                expect({ horas: detalhe.corpo.horas, percentual: detalhe.corpo.percentual }).toEqual({
+                    horas: aviso.horas,
+                    percentual: aviso.percentual,
+                });
+            });
+        });
+
+        it("datas ausentes: 400 com o campo", async () => {
+            const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoTarefa({ dataFim: undefined }) });
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("CAMPO_OBRIGATORIO");
+        });
+
         it("falha no cálculo do aviso não vira 500: a tarefa fica gravada e avisosOcupacao vem vazio", async () => {
             const erro = jest.spyOn(console, "error").mockImplementation(() => undefined);
             const horas = ctx.factory.criarHorasDificuldadeRepository();

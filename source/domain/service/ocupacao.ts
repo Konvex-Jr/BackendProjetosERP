@@ -23,27 +23,40 @@ export interface OcupacaoPessoa {
     tarefas: Array<{ codigo: string; horas: number }>;
 }
 
+/**
+ * O dia (meia-noite UTC) de uma data. No sistema, data sem hora já é meia-noite UTC do dia de São Paulo;
+ * isto só descarta uma hora que tenha sobrado (ex.: meio-dia local vindo da tela), para nunca perder um dia na conta.
+ */
+export function noDia(data: Date): Date {
+    return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));
+}
+
 /** Segunda-feira da semana do dia (todas as datas são meia-noite UTC do dia de São Paulo). */
 export function segundaDaSemana(dia: Date): Date {
-    const deslocamento = (dia.getUTCDay() + 6) % 7;
-    return new Date(dia.getTime() - deslocamento * DIA);
+    const d = noDia(dia);
+    const deslocamento = (d.getUTCDay() + 6) % 7;
+    return new Date(d.getTime() - deslocamento * DIA);
 }
 
 /** Horas da tarefa que caem na semana que começa em `segunda`. */
-export function horasNaSemana(t: TarefaParaOcupacao, horasDoNivel: number, segunda: Date, hoje: Date): number {
+export function horasNaSemana(t: TarefaParaOcupacao, horasDoNivel: number, segundaInformada: Date, hojeInformado: Date): number {
     if (t.concluida || !t.projetoAtivo || t.dificuldade === null) return 0;
+    const hoje = noDia(hojeInformado);
+    const segunda = segundaDaSemana(segundaInformada);
+    const dataInicio = noDia(t.dataInicio);
+    const dataFim = noDia(t.dataFim);
     const semanaDeHoje = segundaDaSemana(hoje).getTime();
-    if (t.dataFim.getTime() < hoje.getTime()) {
+    if (dataFim.getTime() < hoje.getTime()) {
         return segunda.getTime() === semanaDeHoje ? horasDoNivel : 0;
     }
     const dias: number[] = [];
-    for (let ms = t.dataInicio.getTime(); ms <= t.dataFim.getTime(); ms += DIA) {
+    for (let ms = dataInicio.getTime(); ms <= dataFim.getTime(); ms += DIA) {
         const diaSemana = new Date(ms).getUTCDay();
         if (diaSemana >= 1 && diaSemana <= 5) dias.push(ms);
     }
     if (dias.length === 0) {
-        const diaInicio = t.dataInicio.getUTCDay();
-        const sexta = t.dataInicio.getTime() - (diaInicio === 0 ? 2 : diaInicio === 6 ? 1 : 0) * DIA;
+        const diaInicio = dataInicio.getUTCDay();
+        const sexta = dataInicio.getTime() - (diaInicio === 0 ? 2 : diaInicio === 6 ? 1 : 0) * DIA;
         return segundaDaSemana(new Date(sexta)).getTime() === segunda.getTime() ? horasDoNivel : 0;
     }
     const inicio = segunda.getTime();

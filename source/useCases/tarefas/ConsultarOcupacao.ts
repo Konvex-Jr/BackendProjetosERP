@@ -6,7 +6,7 @@ import { STATUS_NA_EJ } from "../../domain/enum/StatusPessoa";
 import StatusProjeto from "../../domain/enum/StatusProjeto";
 import StatusTarefa from "../../domain/enum/StatusTarefa";
 import { HorasPorDificuldade } from "../../domain/enum/DificuldadeTarefa";
-import { calcularOcupacao, segundaDaSemana, TarefaParaOcupacao } from "../../domain/service/ocupacao";
+import { calcularOcupacao, noDia, segundaDaSemana, TarefaParaOcupacao } from "../../domain/service/ocupacao";
 import { hoje as hojeEmSaoPaulo } from "../../shared/datas";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
@@ -43,6 +43,8 @@ export interface AvisoOcupacao extends OcupacaoResumo {
 
 const arredondar = (n: number) => Math.round(n * 10) / 10;
 const dataIso = (d: Date) => d.toISOString().slice(0, 10);
+/** Dia da data (AAAA-MM-DD), sem a hora: a coluna é DATE, então só o dia conta. */
+const diaIso = (d: Date) => dataIso(noDia(d));
 
 function projetoAtivo(projeto: Projeto): boolean {
     return projeto.status !== StatusProjeto.CONCLUIDO && projeto.status !== StatusProjeto.ARQUIVADO;
@@ -71,8 +73,8 @@ function mesmosResponsaveis(a: Tarefa, b: Tarefa): boolean {
 function mudouAConta(antes: Tarefa, depois: Tarefa): boolean {
     return (
         antes.dificuldade !== depois.dificuldade ||
-        antes.dataInicio.getTime() !== depois.dataInicio.getTime() ||
-        antes.dataFim.getTime() !== depois.dataFim.getTime() ||
+        diaIso(antes.dataInicio) !== diaIso(depois.dataInicio) ||
+        diaIso(antes.dataFim) !== diaIso(depois.dataFim) ||
         antes.status !== depois.status ||
         antes.coluna.codigo !== depois.coluna.codigo ||
         !mesmosResponsaveis(antes, depois)
@@ -156,25 +158,28 @@ export default class ConsultarOcupacao {
      * entra se passar de 100%. Vazio se a gravação não mexe na conta ou se a tarefa não soma horas
      * (concluída, sem dificuldade ou de projeto concluído/arquivado).
      */
-    async avisos(antes: Tarefa | null, depois: Tarefa): Promise<AvisoOcupacao[]> {
-        if (antes && !mudouAConta(antes, depois)) return [];
-        if (depois.status === StatusTarefa.CONCLUIDA || depois.dificuldade === null || depois.responsaveis.length === 0) return [];
-        const dia = this.hoje();
+    async avisos(antes: Tarefa | null, gravada: Tarefa): Promise<AvisoOcupacao[]> {
+        if (antes && !mudouAConta(antes, gravada)) return [];
+        if (gravada.status === StatusTarefa.CONCLUIDA || gravada.dificuldade === null || gravada.responsaveis.length === 0) return [];
+        const dia = noDia(this.hoje());
         const repo = this.factory.criarTarefaRepository();
         const lidas = new Map<string, Tarefa>();
-        for (const r of depois.responsaveis) for (const t of await repo.listarPorResponsavel(r.codigo)) lidas.set(t.codigo, t);
+        for (const r of gravada.responsaveis) for (const t of await repo.listarPorResponsavel(r.codigo)) lidas.set(t.codigo, t);
+        // Vale a versão lida do repositório (datas como gravadas, sem hora); a recebida só entra se não veio na leitura.
+        const depois = lidas.get(gravada.codigo) ?? gravada;
         lidas.set(depois.codigo, depois);
         const { tarefas, horas, periodos, projetos } = await this.carregar([...lidas.values()]);
         const projeto = projetos.get(depois.projeto.codigo) ?? depois.projeto;
         if (!projetoAtivo(projeto)) return [];
 
         // Semanas tocadas: da semana do início à do fim, mas nunca antes da semana atual (aviso de semana passada não serve);
-        // atrasada, só a semana de hoje (onde as horas caem).
+        // atrasada, só a semana de hoje (onde as horas caem). Datas sempre no dia (meia-noite UTC).
         const semanas: Date[] = [];
         const semanaAtual = segundaDaSemana(dia).getTime();
-        if (depois.dataFim.getTime() < dia.getTime()) semanas.push(new Date(semanaAtual));
+        const fim = noDia(depois.dataFim);
+        if (fim.getTime() < dia.getTime()) semanas.push(new Date(semanaAtual));
         else {
-            const ultima = segundaDaSemana(depois.dataFim).getTime();
+            const ultima = segundaDaSemana(fim).getTime();
             const primeira = Math.max(segundaDaSemana(depois.dataInicio).getTime(), semanaAtual);
             for (let s = primeira; s <= ultima; s += UMA_SEMANA) semanas.push(new Date(s));
         }
