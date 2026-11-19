@@ -49,7 +49,7 @@ END $$;
 
 -- Cada área sem projeto geral ganha o seu (arquivado se a área estiver inativa).
 INSERT INTO projetos (nome, descricao, data_inicio, data_fim, status, area_codigo, tipo, geral_da_area)
-SELECT a.nome || ' · geral', 'Projeto geral da área ' || a.nome || '.',
+SELECT a.nome || ' · geral', 'Tarefas da área ' || a.nome || ' que ainda não são projeto.',
        (now() AT TIME ZONE 'America/Sao_Paulo')::date, DATE '2099-12-31',
        CASE WHEN a.ativa THEN 'em_execucao' ELSE 'arquivado' END::status_projeto,
        a.codigo, 'interno', true

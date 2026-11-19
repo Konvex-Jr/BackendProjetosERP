@@ -118,6 +118,8 @@ descrever("migração 018 sobre a 017", () => {
             { area: "Projetos", nome: "Projetos · geral", status: "em_execucao", tipo: "interno", colunas: 4 },
         ]);
         expect((await geral("Inovação"))[0].data_fim).toBe("2099-12-31");
+        const descricao = (await pool.query("SELECT descricao FROM projetos WHERE nome = 'Inovação · geral'")).rows[0].descricao;
+        expect(descricao).toBe("Tarefas da área Inovação que ainda não são projeto.");
     });
 
     test("projeto de cliente continua cliente e fora do geral", async () => {
