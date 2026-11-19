@@ -74,7 +74,11 @@ export default class TarefaRoutes implements ModelRoutes {
 
     /** Resposta das gravações: a tarefa como antes, mais `avisosOcupacao` (responsáveis acima de 100% na semana; sessão 24a). */
     private async comAvisos(antes: Tarefa | null, depois: Tarefa) {
-        const avisosOcupacao = await new ConsultarOcupacao(this.factory).avisos(antes, depois);
+        // A tarefa já foi gravada: falha no cálculo do aviso não pode virar 500.
+        const avisosOcupacao = await new ConsultarOcupacao(this.factory).avisos(antes, depois).catch((erro) => {
+            console.error("Aviso de ocupação não calculado:", erro?.message ?? erro);
+            return [];
+        });
         return { ...(await this.comAnexosDe(depois)), avisosOcupacao };
     }
 

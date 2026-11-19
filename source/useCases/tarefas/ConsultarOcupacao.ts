@@ -168,12 +168,15 @@ export default class ConsultarOcupacao {
         const projeto = projetos.get(depois.projeto.codigo) ?? depois.projeto;
         if (!projetoAtivo(projeto)) return [];
 
-        // Semanas tocadas: da semana do início à do fim; atrasada, só a semana de hoje (onde as horas caem).
+        // Semanas tocadas: da semana do início à do fim, mas nunca antes da semana atual (aviso de semana passada não serve);
+        // atrasada, só a semana de hoje (onde as horas caem).
         const semanas: Date[] = [];
-        if (depois.dataFim.getTime() < dia.getTime()) semanas.push(segundaDaSemana(dia));
+        const semanaAtual = segundaDaSemana(dia).getTime();
+        if (depois.dataFim.getTime() < dia.getTime()) semanas.push(new Date(semanaAtual));
         else {
             const ultima = segundaDaSemana(depois.dataFim).getTime();
-            for (let s = segundaDaSemana(depois.dataInicio).getTime(); s <= ultima; s += UMA_SEMANA) semanas.push(new Date(s));
+            const primeira = Math.max(segundaDaSemana(depois.dataInicio).getTime(), semanaAtual);
+            for (let s = primeira; s <= ultima; s += UMA_SEMANA) semanas.push(new Date(s));
         }
 
         const codigos = depois.responsaveis.map((r) => r.codigo);

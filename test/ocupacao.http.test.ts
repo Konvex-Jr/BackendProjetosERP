@@ -250,6 +250,24 @@ describe("Ocupação semanal (HTTP)", () => {
             expect(r.status).toBe(200);
             expect(r.corpo.avisosOcupacao).toEqual([]);
         });
+
+        it("falha no cálculo do aviso não vira 500: a tarefa fica gravada e avisosOcupacao vem vazio", async () => {
+            const erro = jest.spyOn(console, "error").mockImplementation(() => undefined);
+            const horas = ctx.factory.criarHorasDificuldadeRepository();
+            jest.spyOn(ctx.factory, "criarHorasDificuldadeRepository").mockReturnValue(
+                Object.assign(Object.create(Object.getPrototypeOf(horas)), horas, {
+                    listar: async () => {
+                        throw new Error("banco fora");
+                    },
+                }),
+            );
+            const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoTarefa() });
+            expect(r.status).toBe(200);
+            expect(r.corpo.avisosOcupacao).toEqual([]);
+            expect(await ctx.factory.criarTarefaRepository().buscarPorCodigo(r.corpo.codigo)).not.toBeNull();
+            expect(erro).toHaveBeenCalled();
+            jest.restoreAllMocks();
+        });
     });
 
     describe("ConsultarOcupacao (semana e teto)", () => {
@@ -260,6 +278,60 @@ describe("Ocupação semanal (HTTP)", () => {
             const domingo = diaNoFuso(new Date("2026-11-23T01:00:00.000Z"));
             const r = await new ConsultarOcupacao(ctx.factory, () => domingo).dePessoa(auth(diretor), assessor.codigo);
             expect(r.semana).toBe("2026-11-16");
+        });
+
+        it("aviso só de semanas a partir da atual: sobrecarga só em semana passada não avisa; nesta semana, avisa com ela", async () => {
+            const d = (t: string) => new Date(`${t}T00:00:00.000Z`);
+            const quarta = d("2026-11-18");
+            const usuarios = ctx.factory.criarUsuarioRepository();
+            const passado = new Usuario(
+                "Pedro Passado",
+                "pedro@konvex.com.br",
+                PerfilUsuario.MEMBRO,
+                true,
+                "x",
+                ctx.senioridade,
+                "usr-pedro",
+            );
+            const agora = new Usuario("Alice Agora", "alice@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-alice");
+            await usuarios.criar(passado);
+            await usuarios.criar(agora);
+            const cargos = ctx.factory.criarCargoRepository();
+            const apertado = await cargos.criar(new Cargo("Apertado", true, undefined, false, 1));
+            const folgado = await cargos.criar(new Cargo("Folgado", true, undefined, false, 40));
+            const periodos = ctx.factory.criarPeriodoAreaRepository();
+            // Pedro: teto 1 até 02/11 (exclusivo), 40 depois: só as semanas passadas ficam acima de 100%.
+            await periodos.criar(new PeriodoArea(passado.codigo, area, apertado, d("2026-10-01"), d("2026-11-02"), null));
+            await periodos.criar(new PeriodoArea(passado.codigo, area, folgado, d("2026-11-02"), null, null));
+            const tarefas = ctx.factory.criarTarefaRepository();
+            const nova = (titulo: string, inicio: string, fim: string, dif: DificuldadeTarefa, resp: Usuario[]) =>
+                new Tarefa(
+                    normal,
+                    titulo,
+                    d(inicio),
+                    d(fim),
+                    StatusTarefa.PENDENTE,
+                    PrioridadeTarefa.P2,
+                    null,
+                    null,
+                    null,
+                    resp,
+                    [],
+                    undefined,
+                    null,
+                    null,
+                    null,
+                    dif,
+                );
+            // Alice (teto 10) já tem 8 h + 4 h nesta semana.
+            await tarefas.criar(nova("Esta semana 1", "2026-11-18", "2026-11-20", DificuldadeTarefa.DIFICIL, [agora]));
+            await tarefas.criar(nova("Esta semana 2", "2026-11-18", "2026-11-20", DificuldadeTarefa.MEDIA, [agora]));
+            // Começou 3 semanas atrás (26/10) e termina na próxima (27/11): 25 dias úteis, 1,6 h por semana.
+            const longa = await tarefas.criar(nova("Longa", "2026-10-26", "2026-11-27", DificuldadeTarefa.DIFICIL, [passado, agora]));
+
+            const avisos = await new ConsultarOcupacao(ctx.factory, () => quarta).avisos(null, longa);
+            expect(avisos.map((a) => a.codigoUsuario)).toEqual([agora.codigo]);
+            expect(avisos[0]).toMatchObject({ semana: "2026-11-16", horas: 13.6, teto: 10, percentual: 136 });
         });
 
         it("teto da semana vem do cargo vigente na segunda; dois cargos (dados antigos) = o maior", async () => {
