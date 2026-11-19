@@ -82,6 +82,10 @@ export const MENSAGENS_DE_ERRO = {
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 
+    OCUPACAO: {
+        SEMANA_INVALIDA: "A semana (semana) deve ser uma data no formato AAAA-MM-DD.",
+    },
+
     COLUNA: {
         NOME_INVALIDO: (nome: string) =>
             nome

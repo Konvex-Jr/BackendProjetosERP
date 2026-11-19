@@ -23,6 +23,7 @@ import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
 import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
+import ConsultarOcupacao from "../../../useCases/tarefas/ConsultarOcupacao";
 
 const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
@@ -69,6 +70,12 @@ export default class TarefaRoutes implements ModelRoutes {
 
     private async comAnexosDe(tarefa: Tarefa) {
         return (await this.comAnexos([tarefa]))[0];
+    }
+
+    /** Resposta das gravações: a tarefa como antes, mais `avisosOcupacao` (responsáveis acima de 100% na semana; sessão 24a). */
+    private async comAvisos(antes: Tarefa | null, depois: Tarefa) {
+        const avisosOcupacao = await new ConsultarOcupacao(this.factory).avisos(antes, depois);
+        return { ...(await this.comAnexosDe(depois)), avisosOcupacao };
     }
 
     private async usuarioAtual(usuario: UsuarioAutenticado) {
@@ -118,7 +125,8 @@ export default class TarefaRoutes implements ModelRoutes {
             if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
             // Participante cria e fica como responsável; o líder organiza depois.
             if (papel === "participante") codigosResponsaveis = [usuario.codigo];
-            return this.comAnexosDe(
+            return this.comAvisos(
+                null,
                 await new CriarTarefa(this.factory).execute({
                     codigoProjeto: body.codigoProjeto,
                     titulo: body.titulo ?? "",
@@ -136,8 +144,9 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("put", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            await this.exigirOrganizar(usuario, params.codigo);
-            return this.comAnexosDe(
+            const { tarefa: antes } = await this.exigirOrganizar(usuario, params.codigo);
+            return this.comAvisos(
+                antes,
                 await new EditarTarefa(this.factory).execute({
                     codigo: params.codigo,
                     titulo: body.titulo,
@@ -164,11 +173,12 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("patch", "/tarefas/:codigo/status", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            const { regras } = await this.carregar(usuario, params.codigo);
+            const { tarefa: antes, regras } = await this.carregar(usuario, params.codigo);
             if (!regras.mudarStatus) {
                 throw new ErroProibido("Você só pode concluir ou reabrir tarefas em que é responsável.");
             }
-            return this.comAnexosDe(
+            return this.comAvisos(
+                antes,
                 await new AlterarStatusTarefa(this.factory).execute(
                     params.codigo,
                     body.status as StatusTarefa,
@@ -180,11 +190,12 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("patch", "/tarefas/:codigo/coluna", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            const { regras } = await this.carregar(usuario, params.codigo);
+            const { tarefa: antes, regras } = await this.carregar(usuario, params.codigo);
             if (!regras.mudarStatus) {
                 throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_MOVER);
             }
-            return this.comAnexosDe(
+            return this.comAvisos(
+                antes,
                 await new MoverTarefa(this.factory).execute(params.codigo, body.codigoColuna, hoje(), await this.usuarioAtual(usuario)),
             );
         });
