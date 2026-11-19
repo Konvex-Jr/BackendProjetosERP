@@ -3,6 +3,7 @@ import Projeto from "../../domain/entity/Projeto";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { exigirNaoGeral } from "./sincronizarGeral";
 
 /**
  * Confere a lista de acesso antes de gravar: só pessoas com login (Ativo ou Trainee). Código
@@ -32,6 +33,7 @@ export default class DefinirAcessoProjeto {
         const projetos = this.factory.criarProjetoRepository();
         const projeto = await projetos.buscarPorCodigo(input.codigoProjeto);
         if (!projeto) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
+        exigirNaoGeral(projeto);
         const acesso = await validarCodigosAcesso(this.factory, input.codigos);
         return projetos.editar(projeto.copiar({ acesso }));
     }

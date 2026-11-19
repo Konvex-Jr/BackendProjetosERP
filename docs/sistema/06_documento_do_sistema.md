@@ -82,6 +82,8 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
   - **Biblioteca:** itens ligados a sigiloso que a pessoa não vê completo somem para todos os papéis, gestão inclusive, e ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
+- **Projeto interno (sessão 23b).** `tipo` é `cliente` (padrão) ou `interno`; outro valor é 400 `TIPO_PROJETO_INVALIDO`. Interno sempre tem área (400 `AREA_OBRIGATORIA_INTERNO`). `GET /projetos?tipo=interno|cliente` filtra.
+- **Projeto geral da área.** Um por área (`geralDaArea`), nome "Área · geral", interno, nunca sigiloso. Criado pelo sistema (migração 018 para as áreas existentes e `SalvarArea` para as novas); renomear a área renomeia o geral, inativar arquiva e reativar volta a Em andamento. A equipe e a liderança não são gravadas: vêm dos períodos da área e da `liderancaArea`. Editar, excluir, mudar status, acesso, equipe e líder do geral é 400 `PROJETO_GERAL_FIXO`; só `PUT /projetos/:codigo/colunas` segue valendo. As tarefas que eram avulsas moram nele.
 
 ### Tarefas (`/tarefas`)
 Toda tarefa tem **projeto** (sessão 23b). A tarefa avulsa (sem projeto, com categoria) acabou: a migração 018 levou as avulsas para o **projeto geral da área** da categoria, e `POST /tarefas` sem `codigoProjeto` responde 400 `PROJETO_OBRIGATORIO` para todos (antes da checagem de permissão); `categoria` no corpo ou na consulta é ignorada. Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna).

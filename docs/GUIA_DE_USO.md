@@ -29,9 +29,10 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
 - **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
-**Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
+**Projetos**: só os projetos de que você participa ou participou, mais o **projeto geral** de cada área em que você tem ou teve período. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
 - **Kanban por etapa**: as colunas são as etapas do trabalho daquele projeto (por padrão, A fazer, Fazendo, Revisando e Concluído). Cada cartão mostra o prazo, mas o prazo não depende da coluna.
 - **Mover uma tarefa**: arraste o cartão para outra coluna, ou use **Mover para...** no menu do cartão (no celular, o menu é o caminho). Você move as tarefas em que é responsável; o líder move qualquer uma. No modal da tarefa, o campo **Etapa** faz o mesmo. Entrar na coluna marcada como concluída conta a tarefa como concluída; sair dela a reabre.
+- **Projeto interno e projeto geral da área**: projeto **interno** é da própria EJ (não é de cliente) e sempre pertence a uma área; na lista dá para filtrar por tipo. Cada área tem um **projeto geral** ("Área · geral"), criado pelo sistema, onde ficam as tarefas que antes eram avulsas. Nele a equipe é quem tem período na área (você não monta a equipe), quem lidera a área organiza o quadro e as tarefas, e ele não pode ser editado, excluído, arquivado à mão nem ficar sigiloso (só as colunas do quadro mudam). Ele é arquivado quando a área é inativada e volta quando ela é reativada.
 - **Editar colunas** (botão acima do quadro, só para o líder e a gestão): crie, renomeie, mude a cor, reordene com os botões subir e descer, e exclua colunas, de 2 a 12 por projeto. Marque qual coluna é a de **entrada** (onde caem as tarefas novas) e qual é a **concluída**; cada uma existe uma só vez. Ao excluir uma coluna que tem tarefas, o sistema pergunta para qual coluna elas vão. Ao trocar a coluna concluída, o sistema avisa quantas tarefas passam a contar como concluídas e quantas voltam a abertas.
 
 **Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar ou abrir o material (PDF e imagem abrem numa janela do sistema) e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
@@ -58,7 +59,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
 
-**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
+**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Toda tarefa fica num projeto: o que era avulso vive no **projeto geral** da área. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
 
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
 - **Áreas e cargos** ficam no perfil da pessoa, não no formulário: na seção **Áreas e cargos**, adicione um período (área, cargo opcional, início e, se já terminou, o fim), corrija as datas ou exclua um lançamento errado. Nenhuma data pode ser no futuro, e dois períodos na mesma área não podem se sobrepor. Quando a pessoa sai da EJ, as áreas atuais dela são encerradas na data de saída; se ela voltar, lance um período novo.
@@ -77,7 +78,7 @@ Tudo o que o gerente faz, mais:
 - **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive avulsa) e exclui qualquer anexo de tarefa.
 - **Pessoas**: cadastra e edita outros diretores.
 - **Projetos**: exclui projetos (leva junto os itens da Biblioteca com sigilo Equipe do projeto). Prefira **Arquivar**, que mantém o histórico.
-- **Configurações**: áreas, cargos e senioridades. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
+- **Configurações**: áreas, cargos e senioridades. Criar uma área cria o projeto geral dela; renomear a área renomeia o geral, e inativar arquiva. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
 
 ---
 

@@ -4,6 +4,8 @@ import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import StatusProjeto from "../../../domain/enum/StatusProjeto";
 import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
+import TipoProjeto from "../../../domain/enum/TipoProjeto";
+import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import CriarProjeto from "../../../useCases/projetos/CriarProjeto";
 import EditarProjeto from "../../../useCases/projetos/EditarProjeto";
@@ -28,7 +30,17 @@ import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import GerirColunasProjeto from "../../../useCases/projetos/GerirColunasProjeto";
 import { papelNoProjeto } from "../../../shared/seguranca/regrasTarefa";
+import { exigirNaoGeral } from "../../../useCases/projetos/sincronizarGeral";
 import DefinirAcessoProjeto from "../../../useCases/projetos/DefinirAcessoProjeto";
+
+/** Tipo vindo da API (ausente = não informado); outro valor é 400 TIPO_PROJETO_INVALIDO. */
+function lerTipo(valor: unknown): TipoProjeto | undefined {
+    if (valor === undefined || valor === null || valor === "") return undefined;
+    if (!Object.values(TipoProjeto).includes(valor as TipoProjeto)) {
+        throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.TIPO_INVALIDO, "TIPO_PROJETO_INVALIDO");
+    }
+    return valor as TipoProjeto;
+}
 
 function lerDetalhes(body: any): EntradaDetalhesProjeto {
     return {
@@ -36,6 +48,7 @@ function lerDetalhes(body: any): EntradaDetalhesProjeto {
         objetivo: body.objetivo,
         clienteNome: body.clienteNome,
         prioridade: lerEnum(body.prioridade, PrioridadeProjeto, "prioridade"),
+        tipo: lerTipo(body.tipo),
         progresso: lerInteiro(body.progresso, "progresso"),
         codigoResponsavel: body.codigoResponsavel,
         codigoArea: body.codigoArea,
@@ -61,7 +74,7 @@ export default class ProjetoRoutes implements ModelRoutes {
     private async paraResposta(
         usuario: UsuarioAutenticado,
         projetos: Projeto[],
-        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
+        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string; tipo?: TipoProjeto } = {},
     ) {
         const acessos = projetos.map((p) => ({ projeto: p, acesso: acessoAoProjeto(usuario, p) }));
         const busca = normalizarBusca(filtro.busca);
@@ -102,9 +115,11 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoResponsavel: query?.codigoResponsavel || undefined,
                 busca: query?.busca || undefined,
             };
+            const tipo = lerTipo(query?.tipo);
             const projetos = await new ListarProjetos(f).execute({
                 status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
                 ...filtro,
+                tipo,
                 codigoUsuario: projetosVisiveisPara(usuario, filtro.codigoUsuario),
             });
             return this.paraResposta(usuario, projetos, filtro);
@@ -176,6 +191,7 @@ export default class ProjetoRoutes implements ModelRoutes {
         this.http.route("put", "/projetos/:codigo/acesso", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body?.user);
             const projeto = await this.carregarParaEscrita(usuario, params.codigo);
+            exigirNaoGeral(projeto);
             if (!podeGerirAcesso(usuario, projeto)) throw new ErroProibido(MENSAGENS_DE_ERRO.PROJETO.ACESSO_SEM_PERMISSAO);
             return new DefinirAcessoProjeto(f).execute({ codigoProjeto: params.codigo, codigos: body.codigos });
         });

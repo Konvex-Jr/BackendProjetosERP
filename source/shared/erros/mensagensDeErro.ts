@@ -36,6 +36,7 @@ export const MENSAGENS_DE_ERRO = {
         AREA_OBRIGATORIA_INTERNO: "Projeto interno precisa de uma área.",
         GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído, arquivado nem ficar sigiloso.",
         GERAL_SIGILOSO: "O projeto geral da área não pode ser sigiloso.",
+        TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
         SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
         SIGILO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam o sigilo.",

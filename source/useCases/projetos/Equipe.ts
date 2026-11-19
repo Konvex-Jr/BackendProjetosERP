@@ -7,6 +7,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
+import { exigirNaoGeral } from "./sincronizarGeral";
 
 /** Resultado das operações da aba Equipe: o projeto e o alerta de alocação da pessoa (RN-04). */
 export interface ResultadoEquipe {
@@ -17,6 +18,7 @@ export interface ResultadoEquipe {
 async function carregar(factory: RepositoryFactoryInterface, codigoProjeto: string): Promise<Projeto> {
     const projeto = await factory.criarProjetoRepository().buscarPorCodigo(codigoProjeto);
     if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
+    exigirNaoGeral(projeto);
     return projeto;
 }
 

@@ -260,6 +260,9 @@ export default class Projeto {
             throw new ErroValidacao("O código do projeto deve ter até 30 caracteres.", "REFERENCIA_LONGA");
         }
 
+        if (!Object.values(TipoProjeto).includes(this.tipo)) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.TIPO_INVALIDO, "TIPO_PROJETO_INVALIDO");
+        }
         if (this.tipo === TipoProjeto.INTERNO && !this.area) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.AREA_OBRIGATORIA_INTERNO, "AREA_OBRIGATORIA_INTERNO");
         }
