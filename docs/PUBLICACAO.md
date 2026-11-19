@@ -351,9 +351,12 @@ cd /docker/erp-konvex
 docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
 SELECT categoria, count(*) FROM tarefas WHERE categoria IS NOT NULL GROUP BY categoria ORDER BY categoria;
 SELECT nome, ativa FROM areas ORDER BY nome;
+SELECT t.categoria, a.nome AS area, a.ativa, count(*) FROM tarefas t
+  LEFT JOIN areas a ON lower(unaccent(a.nome)) = t.categoria
+  WHERE t.categoria IS NOT NULL GROUP BY t.categoria, a.nome, a.ativa ORDER BY t.categoria;
 SQL
 ```
-A primeira lista mostra quantas avulsas existem por categoria. A segunda mostra as áreas atuais: cada uma ganha um projeto geral; as inativas ficam com o geral arquivado. Uma categoria com avulsa e sem área de mesmo nome (sem acento, sem maiúsculas) faz a migração criar a área, sob "Projetos" (ou sob a primeira área raiz, se "Projetos" não existir).
+A primeira lista mostra quantas avulsas existem por categoria. A segunda mostra as áreas atuais: cada uma ganha um projeto geral; as inativas ficam com o geral arquivado. A terceira cruza cada categoria com a área de mesmo nome e mostra se ela está ativa (`ativa` falso = o geral dessa área nasce arquivado). **Efeitos a avisar à equipe:** as avulsas migradas passam a ser lidas por quem está ou esteve na área (antes só a gestão e o responsável), e a avulsa de uma categoria cuja área está inativa cai num geral arquivado: dá para ler, não para criar tarefa nova ali; para reabrir, reative a área. Uma categoria com avulsa e sem área de mesmo nome (sem acento, sem maiúsculas) faz a migração criar a área, sob "Projetos" (ou sob a primeira área raiz, se "Projetos" não existir).
 
 **Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`).
 
