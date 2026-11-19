@@ -75,7 +75,9 @@ export default class EditarTarefa {
             input.dificuldade === undefined ? atual.dificuldade : input.dificuldade,
         );
         editada.exigirConclusaoCoerente();
-        return this.tarefas.editar(editada);
+        // Corrigir a data só vale para quem pode mudar a situação e se a tarefa segue concluída (reabrir zera a data).
+        const corrigir = !input.manterSituacao && concluida && input.dataConclusao;
+        return this.tarefas.editar(corrigir ? editada.comDataConclusao(input.dataConclusao as Date, hoje()) : editada);
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {
         let atual = await this.tarefas.buscarPorCodigo(codigoPredecessora);

@@ -13,6 +13,7 @@ import ListarTarefas from "../../../useCases/tarefas/ListarTarefas";
 import CriarTarefa from "../../../useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../../useCases/tarefas/EditarTarefa";
 import AlterarStatusTarefa from "../../../useCases/tarefas/AlterarStatusTarefa";
+import CorrigirConclusao from "../../../useCases/tarefas/CorrigirConclusao";
 import MoverTarefa from "../../../useCases/tarefas/MoverTarefa";
 import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
@@ -26,7 +27,6 @@ import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTa
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 import ConsultarOcupacao from "../../../useCases/tarefas/ConsultarOcupacao";
 
-const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
 
 /** Ausente = undefined (mantém); null ou "" = null (limpa). Valor desconhecido o `Tarefa` recusa com 400 DIFICULDADE_INVALIDA. */
@@ -57,7 +57,7 @@ export default class TarefaRoutes implements ModelRoutes {
     /** Editar e excluir: quem organiza ou o participante que criou a tarefa (sessão 24b). */
     private async exigirEditar(usuario: UsuarioAutenticado, codigo: string) {
         const r = await this.carregar(usuario, codigo);
-        if (!r.regras.editar) throw new ErroProibido(SO_QUEM_ORGANIZA);
+        if (!r.regras.editar) throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_EDITAR);
         return r;
     }
 
@@ -166,6 +166,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
                     manterResponsaveis: !regras.organizar,
                     manterSituacao: !regras.mudarStatus,
+                    dataConclusao: body.dataConclusao ? lerDataObrigatoria(body.dataConclusao, "dataConclusao") : undefined,
                     codigoDependencia: body.codigoDependencia ?? null,
                     checklist: Array.isArray(body.checklist)
                         ? body.checklist.map((item: any) => ({
@@ -206,6 +207,15 @@ export default class TarefaRoutes implements ModelRoutes {
                 antes,
                 await new MoverTarefa(this.factory).execute(params.codigo, body.codigoColuna, hoje(), await this.usuarioAtual(usuario)),
             );
+        });
+
+        // Corrige a data de conclusão: quem pode mudar a situação (responsável, líder, gestão) ou editar.
+        this.http.route("patch", "/tarefas/:codigo/conclusao", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body.user);
+            const { tarefa: antes, regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.mudarStatus && !regras.editar) throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_EDITAR);
+            const data = lerDataObrigatoria(body.dataConclusao, "dataConclusao");
+            return this.comAvisos(antes, await new CorrigirConclusao(this.factory).execute(params.codigo, data, hoje()));
         });
 
         this.http.route("delete", "/tarefas/:codigo", true, async (params: any, body: any) => {

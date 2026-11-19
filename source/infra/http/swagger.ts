@@ -308,6 +308,20 @@ const swaggerSpecification = {
                 },
             ),
         },
+        "/tarefas/{codigo}/conclusao": {
+            patch: operation(
+                ["Tarefas"],
+                "Corrigir a data de conclusão de tarefa concluída (quem muda o status ou edita a tarefa; quem concluiu não muda; 400 TAREFA_NAO_CONCLUIDA, DATA_CONCLUSAO_FUTURA, DATA_CONCLUSAO_ANTES_DO_INICIO)",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["dataConclusao"],
+                        properties: { dataConclusao: { type: "string", format: "date-time" } },
+                    }),
+                },
+            ),
+        },
         "/ocupacao": {
             get: operation(
                 ["Tarefas"],

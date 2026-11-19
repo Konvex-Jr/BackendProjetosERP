@@ -19,6 +19,8 @@ export default interface EditarTarefaInput {
     manterResponsaveis?: boolean;
     /** Verdadeiro: ignora status e coluna e mantém a situação atual (quem edita sem poder mudar status). */
     manterSituacao?: boolean;
+    /** Corrige a data de conclusão. Só vale se a tarefa segue concluída e `manterSituacao` é falso; ausente mantém. */
+    dataConclusao?: Date | null;
     codigoDependencia?: string | null;
     checklist?: EditarTarefaChecklistInput[];
     /** Quem está editando; vira `concluidaPor` se a edição concluir a tarefa. */

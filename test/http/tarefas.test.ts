@@ -2,6 +2,7 @@ import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
+import { hoje as hojeNoFuso } from "../../source/shared/datas";
 import { subirServidor } from "./servidorTeste";
 
 /** Sessão 8: tarefas pela API (criar, editar, status, responsável, excluir). */
@@ -259,6 +260,81 @@ describe("Tarefas pela API", () => {
             const part = projeto.participacaoAtivaDe(colega.codigo)!;
             await servidor.chamar("post", `/projetos/proj-time/membros/${part.codigo}/encerrar`, { usuario: ctx.gerente, corpo: {} });
             expect((await editar(colega, t, { prioridade: "P1" })).status).toBe(403);
+        });
+    });
+
+    describe("sessão 24b: corrigir a data de conclusão", () => {
+        const hojeIso = () => hojeNoFuso().toISOString().slice(0, 10);
+        const concluida = async () => {
+            const projeto = (await ctx.factory.criarProjetoRepository().buscarPorCodigo("proj-time"))!;
+            await criarTarefa(ctx.factory, colega, projeto, "tarefa-feita");
+            await servidor.chamar("patch", "/tarefas/tarefa-feita/status", { usuario: colega, corpo: { status: "concluida" } });
+            return "tarefa-feita";
+        };
+        const corrigir = (usuario: Usuario, codigo: string, dataConclusao?: unknown) =>
+            servidor.chamar("patch", `/tarefas/${codigo}/conclusao`, { usuario, corpo: { dataConclusao } });
+
+        it("responsável corrige; outro participante, 403", async () => {
+            const codigo = await concluida();
+            const r = await corrigir(colega, codigo, "2026-11-12");
+            expect(r.status).toBe(200);
+            expect(r.corpo.dataConclusao.slice(0, 10)).toBe("2026-11-12");
+            expect(r.corpo.concluidaPor.codigo).toBe(colega.codigo);
+            expect((await corrigir(ctx.membro, codigo, "2026-11-12")).status).toBe(403);
+            expect((await corrigir(ctx.gerente, codigo, "2026-11-13")).status).toBe(200);
+        });
+
+        it("data da tela com horário no dia de hoje não é futura", async () => {
+            const codigo = await concluida();
+            const r = await corrigir(colega, codigo, `${hojeIso()}T15:00:00.000Z`);
+            expect(r.status).toBe(200);
+            expect(r.corpo.dataConclusao.slice(0, 10)).toBe(hojeIso());
+        });
+
+        it("amanhã: 400 DATA_CONCLUSAO_FUTURA", async () => {
+            const codigo = await concluida();
+            const amanha = new Date(hojeNoFuso().getTime() + 86_400_000).toISOString().slice(0, 10);
+            const r = await corrigir(colega, codigo, amanha);
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("DATA_CONCLUSAO_FUTURA");
+        });
+
+        it("sem dataConclusao: 400 citando o campo", async () => {
+            const codigo = await concluida();
+            const r = await corrigir(colega, codigo, undefined);
+            expect(r.status).toBe(400);
+            expect(r.corpo.message).toContain("dataConclusao");
+        });
+
+        it("tarefa pendente: 400 TAREFA_NAO_CONCLUIDA", async () => {
+            const projeto = (await ctx.factory.criarProjetoRepository().buscarPorCodigo("proj-time"))!;
+            await criarTarefa(ctx.factory, colega, projeto, "tarefa-aberta");
+            const r = await corrigir(colega, "tarefa-aberta", "2026-11-12");
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("TAREFA_NAO_CONCLUIDA");
+        });
+
+        it("PUT do editor grava a data se segue concluída e a zera se reabre", async () => {
+            const codigo = await concluida();
+            const corpoPut = (extra: object) => ({
+                titulo: "Tarefa de Teste",
+                dataInicio: "2026-10-12T12:00:00.000Z",
+                dataFim: "2026-10-30T12:00:00.000Z",
+                prioridade: "P2",
+                ...extra,
+            });
+            const mantem = await servidor.chamar("put", `/tarefas/${codigo}`, {
+                usuario: ctx.gerente,
+                corpo: corpoPut({ status: "concluida", dataConclusao: "2026-11-10T12:00:00.000Z", codigosResponsaveis: [colega.codigo] }),
+            });
+            expect(mantem.status).toBe(200);
+            expect(mantem.corpo.dataConclusao.slice(0, 10)).toBe("2026-11-10");
+            const reabre = await servidor.chamar("put", `/tarefas/${codigo}`, {
+                usuario: ctx.gerente,
+                corpo: corpoPut({ status: "andamento", dataConclusao: "2026-11-10T12:00:00.000Z", codigosResponsaveis: [colega.codigo] }),
+            });
+            expect(reabre.status).toBe(200);
+            expect(reabre.corpo.dataConclusao).toBeNull();
         });
     });
 });

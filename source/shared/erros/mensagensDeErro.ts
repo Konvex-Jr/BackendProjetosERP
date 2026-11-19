@@ -79,6 +79,10 @@ export const MENSAGENS_DE_ERRO = {
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
         PROJETO_OBRIGATORIO: "Escolha o projeto da tarefa.",
         DIFICULDADE_INVALIDA: "Dificuldade inválida. Use rapida, facil, media ou dificil.",
+        SEM_PERMISSAO_EDITAR: "Só o líder, a gestão ou quem criou a tarefa podem fazer isso.",
+        TAREFA_NAO_CONCLUIDA: "Só tarefas concluídas têm data de conclusão para corrigir.",
+        DATA_CONCLUSAO_FUTURA: "A data de conclusão (dataConclusao) não pode ser no futuro.",
+        DATA_CONCLUSAO_ANTES_DO_INICIO: "A data de conclusão (dataConclusao) não pode ser anterior ao início da tarefa.",
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 
