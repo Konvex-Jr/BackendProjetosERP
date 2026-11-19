@@ -9,7 +9,8 @@ import { carregarProjetos } from "./carregadores";
 import { validarColunas } from "../../../domain/entity/ColunaProjeto";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
-    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo`;
+    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo,
+    tipo, geral_da_area`;
 
 function valores(projeto: Projeto): unknown[] {
     return [
@@ -26,9 +27,12 @@ function valores(projeto: Projeto): unknown[] {
         projeto.responsavel?.codigo ?? null,
         projeto.area?.codigo ?? null,
         projeto.tags,
-        projeto.lider?.codigo ?? null,
+        // O geral não tem líder gravado: quem lidera vem dos períodos da área.
+        projeto.geralDaArea ? null : (projeto.lider?.codigo ?? null),
         projeto.sigiloso,
         projeto.criadoPor,
+        projeto.tipo,
+        projeto.geralDaArea,
     ];
 }
 
@@ -39,7 +43,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
@@ -59,6 +63,10 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         if (filtro.codigoArea) {
             parametros.push(filtro.codigoArea);
             condicoes.push(`area_codigo = $${parametros.length}`);
+        }
+        if (filtro.tipo) {
+            parametros.push(filtro.tipo);
+            condicoes.push(`tipo = $${parametros.length}`);
         }
         if (filtro.codigoResponsavel) {
             parametros.push(filtro.codigoResponsavel);
@@ -82,11 +90,16 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             `SELECT DISTINCT p.codigo, p.data_inicio, p.nome
              FROM projetos p
              JOIN projeto_membros pm ON pm.projeto_codigo = p.codigo
-             WHERE pm.usuario_codigo = $1
+             WHERE pm.usuario_codigo = $1 AND NOT p.geral_da_area
              ORDER BY p.data_inicio, p.nome`,
             [codigoUsuario],
         );
-        return this.hidratar(linhas.map((l) => l.codigo));
+        // Um geral por área: carregar todos e filtrar pela equipe e liderança montadas pelos períodos.
+        const gerais = await this.conexao.consultar("SELECT codigo FROM projetos WHERE geral_da_area ORDER BY nome");
+        const dosGerais = (await this.hidratar(gerais.map((l) => l.codigo))).filter(
+            (p) => p.participacoes.some((m) => m.usuario.codigo === codigoUsuario) || p.lideresDaArea.includes(codigoUsuario),
+        );
+        return [...(await this.hidratar(linhas.map((l) => l.codigo))), ...dosGerais];
     }
 
     async listarComAcesso(codigoUsuario: string): Promise<Projeto[]> {
@@ -111,11 +124,17 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         return projetos.get(codigo) ?? null;
     }
 
+    async buscarGeralDaArea(codigoArea: string): Promise<Projeto | null> {
+        const linhas = await this.conexao.consultar("SELECT codigo FROM projetos WHERE geral_da_area AND area_codigo = $1", [codigoArea]);
+        if (linhas.length === 0) return null;
+        return this.buscarPorCodigo(linhas[0].codigo);
+    }
+
     async editar(projeto: Projeto): Promise<Projeto> {
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],
@@ -179,6 +198,8 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
      * recebe data de saída e continua no histórico (RF-014, RN-01).
      */
     private async gravarParticipacoes(conexao: ConexaoBanco, projeto: Projeto): Promise<void> {
+        // A equipe do geral vem dos períodos da área e nunca é gravada.
+        if (projeto.geralDaArea) return;
         // Encerra antes de inserir, para que alguém que saiu e voltou não esbarre no índice de participação ativa.
         const ordenadas = [...projeto.participacoes].sort((a, b) => Number(a.ativa) - Number(b.ativa));
         for (const p of ordenadas) {

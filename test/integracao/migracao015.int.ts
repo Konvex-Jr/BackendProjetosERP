@@ -160,6 +160,8 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("o repositório grava as colunas ao criar o projeto e a tarefa fica na coluna dele", async () => {
+        // Os repositórios são os de hoje e leem colunas das migrações seguintes (tipo e geral_da_area, da 018).
+        await aplicarMigracoes(pool, PASTA, silencio);
         const conexao = PgConexao.criar(URL_TESTE!);
         try {
             const fabrica = new DatabaseRepositoryFactory(conexao);

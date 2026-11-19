@@ -9,6 +9,12 @@ import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
 import Area from "../../../domain/entity/Area";
 import Participacao from "../../../domain/entity/Participacao";
 import ColunaProjeto from "../../../domain/entity/ColunaProjeto";
+import PeriodoArea from "../../../domain/entity/PeriodoArea";
+import { comEquipeDaArea } from "../../../domain/entity/ProjetoGeral";
+import TipoProjeto from "../../../domain/enum/TipoProjeto";
+import { lideresDaArea } from "../../../shared/seguranca/liderancaArea";
+import AreaRepositoryDatabase from "./AreaRepositoryDatabase";
+import PeriodoAreaRepositoryDatabase from "./PeriodoAreaRepositoryDatabase";
 
 /**
  * Funções compartilhadas pelos repositórios em banco para montar pessoas e projetos.
@@ -84,6 +90,8 @@ export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[])
 /**
  * Projetos com área, equipe (todas as participações, inclusive encerradas), responsável e líder.
  * São poucas consultas no total, seja um projeto ou cem: projetos, participações, acesso, colunas e pessoas.
+ * Se houver projeto geral na lista, mais três: os períodos das áreas deles, os períodos que lideram e as áreas.
+ * A equipe do geral vem dos períodos (comEquipeDaArea), nunca de projeto_membros.
  */
 export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[]): Promise<Map<string, Projeto>> {
     const projetos = new Map<string, Projeto>();
@@ -97,6 +105,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
                 p.responsavel_codigo, p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
+                p.tipo, p.geral_da_area,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa
          FROM projetos p
          LEFT JOIN areas a ON a.codigo = p.area_codigo
@@ -126,58 +135,79 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
         [lista],
     );
 
+    const gerais = linhas.filter((l) => l.geral_da_area && l.area_codigo);
+    let periodosDosGerais: PeriodoArea[] = [];
+    let periodosQueLideram: PeriodoArea[] = [];
+    let areas: Area[] = [];
+    if (gerais.length > 0) {
+        const periodos = new PeriodoAreaRepositoryDatabase(conexao);
+        periodosDosGerais = await periodos.listarDasAreas(gerais.map((l) => l.area_codigo));
+        periodosQueLideram = await periodos.listarAbertosQueLideram();
+        areas = await new AreaRepositoryDatabase(conexao).listar();
+    }
+
     const usuarios = await carregarUsuarios(conexao, [
+        ...periodosDosGerais.map((p) => p.codigoUsuario),
         ...vinculos.map((v) => v.usuario_codigo),
         ...linhas.map((l) => l.responsavel_codigo).filter(Boolean),
         ...linhas.map((l) => l.lider_codigo).filter(Boolean),
     ]);
 
     for (const linha of linhas) {
-        const participacoes = vinculos
-            .filter((v) => v.projeto_codigo === linha.codigo)
-            .map(
-                (v) =>
-                    new Participacao(
-                        usuarios.get(v.usuario_codigo)!,
-                        {
-                            funcao: v.funcao,
-                            responsabilidades: v.responsabilidades,
-                            alocacao: Number(v.alocacao),
-                            dataEntrada: v.data_entrada,
-                            dataSaida: v.data_saida,
-                        },
-                        v.codigo,
-                    ),
-            );
+        // O geral não tem equipe gravada: a participação e o líder vêm só dos períodos.
+        const participacoes = linha.geral_da_area
+            ? []
+            : vinculos
+                  .filter((v) => v.projeto_codigo === linha.codigo)
+                  .map(
+                      (v) =>
+                          new Participacao(
+                              usuarios.get(v.usuario_codigo)!,
+                              {
+                                  funcao: v.funcao,
+                                  responsabilidades: v.responsabilidades,
+                                  alocacao: Number(v.alocacao),
+                                  dataEntrada: v.data_entrada,
+                                  dataSaida: v.data_saida,
+                              },
+                              v.codigo,
+                          ),
+                  );
+
+        const projeto = new Projeto(
+            linha.nome,
+            linha.descricao,
+            linha.data_inicio,
+            linha.data_fim,
+            linha.status as StatusProjeto,
+            participacoes,
+            linha.codigo,
+            {
+                referencia: linha.referencia,
+                objetivo: linha.objetivo,
+                clienteNome: linha.cliente_nome,
+                prioridade: linha.prioridade as PrioridadeProjeto,
+                progresso: Number(linha.progresso),
+                responsavel: linha.responsavel_codigo ? (usuarios.get(linha.responsavel_codigo) ?? null) : null,
+                area: areaDeLinha(linha),
+                tags: linha.tags ?? [],
+                lider: linha.lider_codigo && !linha.geral_da_area ? (usuarios.get(linha.lider_codigo) ?? null) : null,
+                sigiloso: linha.sigiloso,
+                criadoPor: linha.criado_por_codigo,
+                acesso: acessos.filter((a) => a.projeto_codigo === linha.codigo).map((a) => a.usuario_codigo),
+                colunas: colunas
+                    .filter((c) => c.projeto_codigo === linha.codigo)
+                    .map((c) => new ColunaProjeto(c.nome, c.cor, c.papel, c.codigo)),
+                tipo: linha.tipo as TipoProjeto,
+                geralDaArea: linha.geral_da_area,
+            },
+        );
 
         projetos.set(
             linha.codigo,
-            new Projeto(
-                linha.nome,
-                linha.descricao,
-                linha.data_inicio,
-                linha.data_fim,
-                linha.status as StatusProjeto,
-                participacoes,
-                linha.codigo,
-                {
-                    referencia: linha.referencia,
-                    objetivo: linha.objetivo,
-                    clienteNome: linha.cliente_nome,
-                    prioridade: linha.prioridade as PrioridadeProjeto,
-                    progresso: Number(linha.progresso),
-                    responsavel: linha.responsavel_codigo ? (usuarios.get(linha.responsavel_codigo) ?? null) : null,
-                    area: areaDeLinha(linha),
-                    tags: linha.tags ?? [],
-                    lider: linha.lider_codigo ? (usuarios.get(linha.lider_codigo) ?? null) : null,
-                    sigiloso: linha.sigiloso,
-                    criadoPor: linha.criado_por_codigo,
-                    acesso: acessos.filter((a) => a.projeto_codigo === linha.codigo).map((a) => a.usuario_codigo),
-                    colunas: colunas
-                        .filter((c) => c.projeto_codigo === linha.codigo)
-                        .map((c) => new ColunaProjeto(c.nome, c.cor, c.papel, c.codigo)),
-                },
-            ),
+            projeto.geralDaArea && projeto.area
+                ? comEquipeDaArea(projeto, periodosDosGerais, usuarios, lideresDaArea(projeto.area.codigo, areas, periodosQueLideram))
+                : projeto,
         );
     }
 
