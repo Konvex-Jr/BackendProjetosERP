@@ -86,7 +86,9 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("cria as quatro colunas padrão em cada projeto, também ao rodar de novo", async () => {
-        expect((await aplicarMigracoes(pool, PASTA, silencio)).slice(0, 1)).toEqual(["015_colunas_projeto.sql"]);
+        // Só até a 015: as seguintes (a 018 apaga a categoria das tarefas) mudam o que este teste confere.
+        copyFileSync(path.join(PASTA, "015_colunas_projeto.sql"), path.join(antigas, "015_colunas_projeto.sql"));
+        expect(await aplicarMigracoes(pool, antigas, silencio)).toEqual(["015_colunas_projeto.sql"]);
         await pool.query(readFileSync(path.join(PASTA, "015_colunas_projeto.sql"), "utf8"));
 
         for (const projeto of [projetoA, projetoB]) {
