@@ -96,3 +96,42 @@ describe("calcularOcupacao", () => {
         expect(r[0].horas).toBe(0);
     });
 });
+
+describe("arredondamento e bordas", () => {
+    const hoje = d("2026-11-23");
+    const segunda = d("2026-11-23");
+
+    it("fração não exata sai com 1 casa", () => {
+        const t = (codigo: string) =>
+            tarefa({
+                codigo,
+                dificuldade: DificuldadeTarefa.RAPIDA,
+                dataInicio: d("2026-11-25"),
+                dataFim: d("2026-11-30"),
+            });
+        expect(horasNaSemana(t("A"), 1, segunda, hoje)).toBe(0.75);
+        const [r] = calcularOcupacao([t("A"), t("B"), t("C")], HORAS_PADRAO, new Map(), ["U1"], segunda, hoje);
+        expect(r.tarefas.map((x) => x.horas)).toEqual([0.8, 0.8, 0.8]);
+        expect(r.horas).toBe(2.3);
+        expect(Number.isInteger(r.horas * 10)).toBe(true);
+        expect(r.percentual).toBe(23);
+    });
+
+    it("sexta a segunda divide entre as duas semanas", () => {
+        const t = tarefa({ dataInicio: d("2026-11-27"), dataFim: d("2026-11-30") });
+        expect(horasNaSemana(t, 4, d("2026-11-23"), hoje)).toBe(2);
+        expect(horasNaSemana(t, 4, d("2026-11-30"), hoje)).toBe(2);
+    });
+
+    it("dataFim igual a hoje não é atrasada", () => {
+        const t = tarefa({ dataInicio: d("2026-11-23"), dataFim: d("2026-11-27") });
+        const h = d("2026-11-27");
+        expect(horasNaSemana(t, 4, d("2026-11-23"), h)).toBe(4);
+        expect(horasNaSemana(t, 4, d("2026-11-30"), h)).toBe(0);
+    });
+
+    it("dataInicio depois de dataFim não lança", () => {
+        const t = tarefa({ dataInicio: d("2026-11-25"), dataFim: d("2026-11-23") });
+        expect(() => horasNaSemana(t, 4, segunda, hoje)).not.toThrow();
+    });
+});
