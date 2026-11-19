@@ -27,7 +27,7 @@ interface AcessoAoDono {
  * - item da Biblioteca (sessão 17): baixa quem vê o item (sigilo); envia e exclui quem pode alterá-lo;
  * - capacitação (sessão 13): todos baixam o material; envia e exclui a gestão;
  * - tarefa (sessão 19, regras dos comentários em `regrasTarefa`): vê e baixa quem vê a tarefa; envia quem
- *   comenta (equipe atual; na avulsa, responsáveis e gestão); exclui quem enviou ou quem organiza.
+ *   comenta (equipe atual do projeto); exclui quem enviou ou quem organiza.
  * Quem não pode ler o dono recebe 404, como se o anexo não existisse.
  */
 export default class GerirAnexos {

@@ -39,6 +39,12 @@ describe("acessoAoProjeto", () => {
     ])("projeto normal: %s", (_nome, quem, esperado) => {
         expect(acessoAoProjeto(quem, normal)).toBe(esperado);
     });
+
+    test("projeto geral (sessão 23b): quem lidera a área tem acesso completo sem estar na equipe", () => {
+        const geral: ProjetoParaAcesso = { ...normal, participacoes: [], lideresDaArea: ["f"] };
+        expect(acessoAoProjeto(fora, geral)).toBe("completo");
+        expect(acessoAoProjeto(equipe, geral)).toBe("nada");
+    });
 });
 
 describe("podeGerirAcesso", () => {

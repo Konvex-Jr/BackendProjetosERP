@@ -8,7 +8,7 @@ export default interface EditarTarefaInput {
     dataFim: Date;
     status: StatusTarefa;
     prioridade: PrioridadeTarefa;
-    /** Só tarefa de projeto: se vier, a coluna vale mais que o `status`. */
+    /** Se vier, a coluna vale mais que o `status`. */
     codigoColuna?: string | null;
     descricao?: string | null;
     codigosResponsaveis: string[];

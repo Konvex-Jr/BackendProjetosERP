@@ -9,7 +9,7 @@ export interface ContagemTarefas {
     semana: number;
 }
 
-/** Tarefas de projeto e avulsas. Não aplica permissão: quem decide o que a pessoa vê é regrasTarefa. */
+/** Tarefas (sempre de um projeto). Não aplica permissão: quem decide o que a pessoa vê é regrasTarefa. */
 export default interface TarefaRepositoryInterface {
     criar(tarefa: Tarefa): Promise<Tarefa>;
     listar(): Promise<Tarefa[]>;

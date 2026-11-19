@@ -16,6 +16,7 @@ import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
@@ -25,7 +26,7 @@ import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
 
-/** Tarefas e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b e 8c). */
+/** Tarefas e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b, 20 e 23b). */
 export default class TarefaRoutes implements ModelRoutes {
     constructor(
         private readonly http: Http,
@@ -83,7 +84,8 @@ export default class TarefaRoutes implements ModelRoutes {
                 return !sigiloso || acessoAoProjeto(usuario, sigiloso) === "completo";
             });
             if (podeVerTodosProjetos(usuario)) return this.comAnexos(semSigilosoAlheio);
-            // Membro: tarefas dos projetos de que participa ou participou, e as em que é responsável.
+            // Membro: tarefas dos projetos de que participa ou participou (no geral da área, pelos períodos ou por
+            // liderar a área) e as em que é responsável.
             const visiveis = new Set(
                 (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
             );
@@ -100,8 +102,9 @@ export default class TarefaRoutes implements ModelRoutes {
         this.http.route("post", "/tarefas", true, async (_params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             let codigosResponsaveis: string[] = body.codigosResponsaveis ?? [];
-            // Sem codigoProjeto, o caso de uso recusa com PROJETO_OBRIGATORIO (Task 4 trata a rota).
-            const projeto = body.codigoProjeto ? await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto) : null;
+            // Toda tarefa tem projeto (sessão 23b): sem ele, 400 para todos, antes da permissão. `categoria` é ignorada.
+            if (!body.codigoProjeto) throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PROJETO_OBRIGATORIO, "PROJETO_OBRIGATORIO");
+            const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto);
             if (projeto?.sigiloso) exigirAcessoCompleto(usuario, projeto);
             const papel = papelNoProjeto(usuario, projeto);
             if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
@@ -109,7 +112,7 @@ export default class TarefaRoutes implements ModelRoutes {
             if (papel === "participante") codigosResponsaveis = [usuario.codigo];
             return this.comAnexosDe(
                 await new CriarTarefa(this.factory).execute({
-                    codigoProjeto: body.codigoProjeto || null,
+                    codigoProjeto: body.codigoProjeto,
                     titulo: body.titulo ?? "",
                     dataInicio: new Date(body.dataInicio),
                     dataFim: new Date(body.dataFim),

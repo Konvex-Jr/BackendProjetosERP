@@ -150,7 +150,6 @@ export const MENSAGENS_DE_ERRO = {
         ARQUIVO_SUMIU: "O arquivo deste anexo não foi encontrado no servidor. Avise a gestão.",
         SEM_PERMISSAO_CAPACITACAO: "Só diretores e gerentes podem anexar ou excluir material das capacitações.",
         SEM_PERMISSAO_TAREFA_PROJETO: "Só a equipe atual do projeto anexa arquivos nas tarefas.",
-        SEM_PERMISSAO_TAREFA_AVULSA: "Só os responsáveis e a gestão anexam arquivos nesta tarefa.",
         SO_OS_PROPRIOS: "Você só pode excluir os arquivos que enviou.",
     },
 
