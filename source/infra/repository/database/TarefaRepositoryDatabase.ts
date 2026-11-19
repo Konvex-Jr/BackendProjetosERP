@@ -174,11 +174,15 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
     }
 
     /**
-     * Trava a coluna da tarefa (FOR SHARE) e confere que o papel dela ainda é o que o caso de uso viu.
-     * A gravação do quadro reescreve as colunas na própria transação: ou espera esta tarefa, ou esta
-     * espera ela, e a tarefa nunca grava um status que o papel da coluna não sustenta mais.
+     * Trava o projeto (FOR KEY SHARE) e depois a coluna da tarefa (FOR SHARE), e confere que o papel dela
+     * ainda é o que o caso de uso viu. A gravação do quadro reescreve as colunas na própria transação: ou
+     * espera esta tarefa, ou esta espera ela, e a tarefa nunca grava um status que o papel da coluna não
+     * sustenta mais. Ordem projeto → coluna, a mesma de quem exclui o projeto (FOR UPDATE nele, e o DELETE
+     * leva as colunas em cascata): na ordem contrária as duas transações podiam travar uma à outra (40P01).
      */
     private async travarColuna(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
+        const projeto = await conexao.consultar("SELECT 1 FROM projetos WHERE codigo = $1 FOR KEY SHARE", [tarefa.projeto.codigo]);
+        if (projeto.length === 0) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
         if (!tarefa.coluna) return;
         const linhas = await conexao.consultar("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [tarefa.coluna.codigo]);
         if (linhas.length === 0 || linhas[0].papel !== tarefa.coluna.papel) {

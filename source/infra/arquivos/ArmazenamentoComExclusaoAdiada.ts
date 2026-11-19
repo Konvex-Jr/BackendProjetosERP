@@ -11,6 +11,7 @@ export default class ArmazenamentoComExclusaoAdiada implements ArmazenamentoAnex
         private readonly aExcluir: string[],
     ) {}
 
+    // Grava no disco na hora: um ROLLBACK depois de salvar deixa o arquivo sobrando (o conferirAnexos acha).
     salvar(arquivo: string, conteudo: Buffer): Promise<void> {
         return this.real.salvar(arquivo, conteudo);
     }

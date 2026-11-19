@@ -21,6 +21,7 @@ import ItemBiblioteca from "../../source/domain/entity/ItemBiblioteca";
 import { DonoAnexo } from "../../source/domain/enum/Anexo";
 import GerirAnexos from "../../source/useCases/anexos/GerirAnexos";
 import SalvarArea from "../../source/useCases/config/SalvarArea";
+import Tarefa from "../../source/domain/entity/Tarefa";
 import ProjetoRepositoryDatabase from "../../source/infra/repository/database/ProjetoRepositoryDatabase";
 import { existsSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
@@ -237,6 +238,31 @@ descrever("projeto geral da área contra PostgreSQL", () => {
             expect(await existe("projetos", geral.codigo)).toBe(true);
             expect(await existe("biblioteca_itens", item.codigo)).toBe(true);
             expect(existsSync(arquivo)).toBe(true);
+        });
+
+        test("criar tarefa num geral que acabou de ser excluído dá 404 do projeto, não 500", async () => {
+            const { area, geral } = await cenario("Eventos");
+            const entrada = geral.colunas.find((c) => c.papel === "entrada")!;
+            const tarefa = new Tarefa(
+                geral,
+                "Atrasada",
+                dia("2026-11-20"),
+                dia("2026-11-27"),
+                undefined,
+                undefined,
+                null,
+                null,
+                null,
+                [],
+                [],
+                undefined,
+                null,
+                null,
+                entrada,
+            );
+            await new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Eventos", temGeral: false });
+
+            await expect(factory.criarTarefaRepository().criar(tarefa)).rejects.toMatchObject({ codigoHttp: 404 });
         });
 
         test("se a exclusão do geral falhar, a área continua com o geral e o arquivo continua no disco", async () => {
