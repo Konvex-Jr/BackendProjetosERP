@@ -104,6 +104,9 @@ async function main() {
     const bia = await pessoa("Bia Membro", "bia@dev.konvex", "membro");
     const caio = await pessoa("Caio Membro", "caio@dev.konvex", "membro");
 
+    // Papel membro, mas com cargo que lidera a área de Execução: organiza o geral da área (sessão 23b).
+    const lia = await pessoa("Lia Líder", "lia@dev.konvex", "membro");
+
     // Trainee com login (papel membro, sem Biblioteca).
     const davi = await pessoa("Davi Trainee", "davi@dev.konvex", "membro", { status: "trainee" });
 
@@ -131,6 +134,7 @@ async function main() {
     const assessor = await cargo("Assessor", false);
     const gerente = await cargo("Gerente", true);
     await cargo("Diretor", true);
+    const coordenador = await cargo("Coordenador", true);
     const periodosFicticios = [
         // Inês lidera Inovação (gerente); Caio é da equipe de Inovação e Execução; Bia fica fora de Inovação.
         [ines, [[areaInovacao, gerente, -300, null]]],
@@ -149,6 +153,7 @@ async function main() {
             ],
         ],
         [davi, [[areaCapacitacao, null, -10, null]]],
+        [lia, [[areaExecucao, coordenador, -60, null]]],
     ];
     for (const [quem, lista] of periodosFicticios) {
         if ((await exigir("GET", `/usuarios/${quem.codigo}/periodos`, dir)).length) continue;
