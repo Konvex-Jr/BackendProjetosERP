@@ -27,8 +27,16 @@ export function limparResponsaveisQueSairam(itens: ItemChecklistTarefa[], respon
  * RESPONSAVEL_ITEM_FORA_DA_TAREFA), a não ser que tenha acabado de sair dela (aí o item fica sem responsável).
  */
 export function montarChecklist(itens: EditarTarefaChecklistInput[], { responsaveis, sairam = new Set(), atuais }: Contexto) {
+    const usados = new Set<string>();
     return itens.map((item) => {
         const atual = item.codigo ? atuais?.find((a) => a.codigo === item.codigo) : undefined;
+        if (atual) {
+            // O mesmo item duas vezes gravaria o mesmo código duas vezes (violação de chave): 400, não 500.
+            if (usados.has(atual.codigo)) {
+                throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.ITEM_CHECKLIST_REPETIDO, "ITEM_CHECKLIST_REPETIDO");
+            }
+            usados.add(atual.codigo);
+        }
         let responsavel: Usuario | null = null;
         if (item.codigoResponsavel === undefined) {
             responsavel = atual?.responsavel ? (responsaveis.find((r) => r.codigo === atual.responsavel!.codigo) ?? null) : null;

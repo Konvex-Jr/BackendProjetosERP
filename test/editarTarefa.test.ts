@@ -180,6 +180,20 @@ describe("checklist na edição (sessão 24b)", () => {
         expect(r.checklist[0].texto).toBe("A editado");
     });
 
+    it("o mesmo código de item duas vezes no corpo: 400 ITEM_CHECKLIST_REPETIDO", async () => {
+        const { editar } = await preparar();
+        const criada = await editar({ checklist: [{ texto: "A", feito: false }] });
+        const codigo = criada.checklist[0].codigo;
+        await expect(
+            editar({
+                checklist: [
+                    { codigo, texto: "A", feito: false },
+                    { codigo, texto: "A de novo", feito: false },
+                ],
+            }),
+        ).rejects.toMatchObject({ codigo: "ITEM_CHECKLIST_REPETIDO", codigoHttp: 400 });
+    });
+
     it("item novo com feito true no corpo nasce não feito; código desconhecido vira novo", async () => {
         const { editar } = await preparar();
         const r = await editar({ checklist: [{ codigo: "inventado", texto: "N", feito: true }] });
