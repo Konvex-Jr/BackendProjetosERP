@@ -378,6 +378,47 @@ Tem que haver um geral por área, com o status `arquivado` só nas áreas inativ
 
 **Rollback:** a 018 apaga `tarefas.categoria` e a regra que permitia tarefa sem projeto. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 24a (dificuldade da tarefa e ocupação semanal): migração 019
+A migração `019_dificuldade_ocupacao.sql` acrescenta `tarefas.dificuldade`, cria a tabela `horas_dificuldade` (Rápida 1, Fácil 2, Média 4, Difícil 8), acrescenta `cargos.teto_semanal_horas` (padrão 10; 20 para cargos que começam com diretor, presidente ou vice) e **apaga `projeto_membros.alocacao`**: o percentual de alocação digitado à mão deixa de existir e a ocupação passa a ser calculada das tarefas. Publicar **backend e frontend juntos**.
+
+**Parte 0, consultar antes (anote a saída):** a ocupação usa o cargo do período vigente; se alguém tem dois cargos ao mesmo tempo (áreas diferentes), vale o maior teto. A consulta lista esses casos para a gestão conferir.
+```bash
+cd /docker/erp-konvex
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT u.nome, a1.nome AS area1, c1.nome AS cargo1, a2.nome AS area2, c2.nome AS cargo2
+FROM periodos_area p1
+JOIN periodos_area p2 ON p1.usuario_codigo = p2.usuario_codigo AND p1.codigo < p2.codigo
+JOIN usuarios u ON u.codigo = p1.usuario_codigo
+JOIN areas a1 ON a1.codigo = p1.area_codigo
+JOIN areas a2 ON a2.codigo = p2.area_codigo
+JOIN cargos c1 ON c1.codigo = p1.cargo_codigo
+JOIN cargos c2 ON c2.codigo = p2.cargo_codigo
+WHERE p1.inicio < COALESCE(p2.fim, 'infinity') AND p2.inicio < COALESCE(p1.fim, 'infinity');
+SQL
+```
+Sem linhas = nada a ajustar. Com linhas, a gestão decide se encerra um dos períodos (a regra nova não deixa criar dois cargos ao mesmo tempo, mas não mexe nos que já existem).
+
+**Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`). A 019 apaga a coluna `alocacao`; só o `.dump` traz os valores de volta.
+
+**Parte 2, atualizar e construir:** igual à Parte 2 da sessão 22.
+
+**Parte 3, subir:**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 019_dificuldade_ocupacao.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/ocupacao           # 401
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT nome, teto_semanal_horas FROM cargos ORDER BY nome;"'
+```
+Depois, no navegador: **Configurações** (conferir as horas por dificuldade e o **teto semanal** de cada cargo, e ajustar o que não bater com a realidade da Konvex) e o perfil de uma pessoa (cartão "Ocupação da semana"). Tarefas que já existem **não têm dificuldade** e não entram na conta: a gestão e os líderes vão preenchendo conforme editam as tarefas.
+
+**Rollback:** a 019 apaga `projeto_membros.alocacao`. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
