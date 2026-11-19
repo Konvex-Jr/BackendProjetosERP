@@ -7,6 +7,7 @@ export interface ResumoProjeto {
     nome: string;
     sigiloso: true;
     resumo: true;
+    tipo: Projeto["tipo"];
     status: StatusProjeto;
     dataInicio: Date;
     dataFim: Date;
@@ -30,6 +31,7 @@ export function resumoProjeto(projeto: Projeto, tarefas: ContagemTarefas): Resum
         nome: projeto.nome,
         sigiloso: true,
         resumo: true,
+        tipo: projeto.tipo,
         status: projeto.status,
         dataInicio: projeto.dataInicio,
         dataFim: projeto.dataFim,

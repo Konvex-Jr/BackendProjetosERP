@@ -18,6 +18,8 @@ export interface ProjetoNoPerfil {
     dataEntrada: Date;
     dataSaida: Date | null;
     sigiloso: boolean;
+    tipo: Projeto["tipo"];
+    geralDaArea: boolean;
     /** Sem acesso completo ao projeto: nome e datas aparecem, referência e função saem nulas. */
     restrito: boolean;
 }
@@ -77,6 +79,8 @@ export default class ObterPerfilPessoa {
                     dataEntrada: p.dataEntrada,
                     dataSaida: p.dataSaida,
                     sigiloso: projeto.sigiloso,
+                    tipo: projeto.tipo,
+                    geralDaArea: projeto.geralDaArea,
                     restrito,
                 };
                 (p.ativa ? projetosAtuais : projetosAnteriores).push(item);
