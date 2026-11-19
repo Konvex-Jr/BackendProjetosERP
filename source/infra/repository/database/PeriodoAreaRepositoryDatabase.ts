@@ -9,7 +9,7 @@ import { dataParaSql, dataParaSqlOuNulo } from "../../database/conversoes";
 const SELECT = `
     SELECT p.codigo, p.usuario_codigo, p.inicio, p.fim, p.registrado_por,
            a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa,
-           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo, c.lidera_area AS cargo_lidera_area
+           c.codigo AS cargo_codigo, c.nome AS cargo_nome, c.ativo AS cargo_ativo, c.lidera_area AS cargo_lidera_area, c.teto_semanal_horas AS cargo_teto
     FROM periodos_area p
     JOIN areas a ON a.codigo = p.area_codigo
     LEFT JOIN cargos c ON c.codigo = p.cargo_codigo
@@ -24,7 +24,7 @@ function paraEntidade(l: any): PeriodoArea {
     return PeriodoArea.carregar(
         l.usuario_codigo,
         new Area(l.area_nome, l.area_pai_codigo ?? null, l.area_ativa, l.area_codigo),
-        l.cargo_codigo ? new Cargo(l.cargo_nome, l.cargo_ativo, l.cargo_codigo, l.cargo_lidera_area) : null,
+        l.cargo_codigo ? new Cargo(l.cargo_nome, l.cargo_ativo, l.cargo_codigo, l.cargo_lidera_area, l.cargo_teto) : null,
         l.inicio,
         l.fim ?? null,
         l.registrado_por ?? null,

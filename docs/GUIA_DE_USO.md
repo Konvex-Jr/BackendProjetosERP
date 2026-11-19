@@ -26,6 +26,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 **Tarefas**: abre em "Minhas tarefas" (de projetos, inclusive o geral da sua área). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois.
 - Na tela Tarefas o quadro é por **semana**: cada cartão mostra um selo com a **etapa** da tarefa (A fazer, Fazendo...). Arraste o cartão para a coluna **Concluído** (ou use Concluir/Reabrir no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
+- **Dificuldade**: cada tarefa tem uma dificuldade (Rápida, Fácil, Média ou Difícil; ao lado de cada opção aparecem as horas, por exemplo "Média (4 h)"). É ela que mede a carga da tarefa: as horas se espalham pelos dias de trabalho (segunda a sexta) entre a data de início e a de entrega. Tarefa sem dificuldade não entra na conta. Ao escolher os responsáveis, cada nome mostra a **ocupação** da semana da entrega; se a tarefa deixar alguém acima de 100% numa semana, o sistema **avisa** depois de salvar (é um aviso, não bloqueia).
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
 - **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (no projeto geral da área, só o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
@@ -53,15 +54,16 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas no projeto geral de Inovação.
 
 **Meu perfil** (no menu): seus dados de contato e apresentação (telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio), troca de senha e a sua foto.
+- **Ocupação da semana**: percentual de horas da semana em relação ao teto do seu cargo (por padrão 10 h por semana; diretoria, presidência e vice-presidência, 20 h), com a barra (até 80% normal, de 81 a 100% atenção, acima disso alerta) e as setas para ver outras semanas. A lista mostra as tarefas que somam (título, projeto e horas na semana). Tarefa de projeto sigiloso a que você não tem acesso entra na linha **Outras tarefas**, só com as horas. O mesmo cartão aparece no perfil das outras pessoas.
 - **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
 - **Links**: GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.
 - **Áreas e cargos**: suas áreas atuais (você pode estar em mais de uma, cada uma com o seu cargo) e a trajetória anterior, com as datas. Quem lança e corrige é a gestão; no seu perfil a seção é só leitura.
 
-**Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
+**Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, entrada e saída) e escolhe o líder. A equipe mostra a **ocupação na semana** de cada pessoa (calculada das tarefas, sem edição); não existe mais percentual de alocação digitado à mão.
 
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto e situação. Toda tarefa fica num projeto: o que era avulso vive no **projeto geral** da área. Anexa arquivos em qualquer tarefa, inclusive as do projeto geral, e exclui qualquer anexo de tarefa.
 
-**Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
+**Pessoas**: a tabela tem a coluna **Ocupação** (percentual da semana atual, ordenável). Cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
 - **Áreas e cargos** ficam no perfil da pessoa, não no formulário: na seção **Áreas e cargos**, adicione um período (área, cargo opcional, início e, se já terminou, o fim), corrija as datas ou exclua um lançamento errado. Nenhuma data pode ser no futuro, e dois períodos na mesma área não podem se sobrepor. Quando a pessoa sai da EJ, as áreas atuais dela são encerradas na data de saída; se ela voltar, lance um período novo.
 
 **Biblioteca**: lê todos os itens, de qualquer sigilo, e usa o sigilo **Só gestão**. Liga um item a qualquer projeto. Edita e exclui qualquer item (por exemplo, para corrigir tags ou tirar algo repetido) e os anexos dele.
@@ -78,7 +80,7 @@ Tudo o que o gerente faz, mais:
 - **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive as do projeto geral) e exclui qualquer anexo de tarefa.
 - **Pessoas**: cadastra e edita outros diretores.
 - **Projetos**: exclui projetos (leva junto os itens da Biblioteca com sigilo Equipe do projeto). Prefira **Arquivar**, que mantém o histórico.
-- **Configurações**: áreas, cargos e senioridades. Criar uma área cria o projeto geral dela; renomear a área renomeia o geral, e inativar arquiva. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
+- **Configurações**: áreas, cargos e senioridades, mais as **Horas por dificuldade** (quantas horas vale cada nível: padrão Rápida 1, Fácil 2, Média 4, Difícil 8) e o **Teto semanal (h)** de cada cargo, de 1 a 40. Mudar as horas ou o teto vale na hora, também para as semanas já passadas. Criar uma área cria o projeto geral dela; renomear a área renomeia o geral, e inativar arquiva. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
 
 ---
 
@@ -105,7 +107,7 @@ Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confi
 - quem está na lista de acesso;
 - a **equipe atual**. Quem sai da equipe perde o acesso (num projeto normal, o histórico continua visível).
 
-**Gerente que não está nessas listas** vê só o **resumo**: nome, situação, datas, quantas tarefas há (e quantas estão concluídas ou atrasadas), a equipe e a alocação de cada um. Não vê descrição, tarefas nem Biblioteca, e não edita nada do projeto.
+**Gerente que não está nessas listas** vê só o **resumo**: nome, situação, datas, quantas tarefas há (e quantas estão concluídas ou atrasadas), a equipe (sem a ocupação). Não vê descrição, tarefas nem Biblioteca, e não edita nada do projeto.
 
 **Membro e trainee fora do projeto** não o veem: ele nem aparece na lista, e abrir o endereço direto mostra "projeto não encontrado".
 

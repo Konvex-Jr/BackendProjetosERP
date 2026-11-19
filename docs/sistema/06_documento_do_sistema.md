@@ -207,6 +207,11 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual ou líder | `regrasTarefa().comentar` / `GerirAnexos.acesso` |
 | Excluir anexo de tarefa | ✅ | ✅ | o que enviou, ou se é líder | autor ou `regrasTarefa().organizar` / `GerirAnexos.acesso` |
 | Apagar comentário | qualquer | qualquer | os próprios (líder: qualquer do projeto) | `TarefaRoutes` + `regrasTarefa().organizar` |
+| Ver a ocupação semanal de todos (horas, teto, %) | ✅ | ✅ | ✅ (trainee também) | `GET /ocupacao` (todo logado; só totais, sem tarefas) |
+| Ver o detalhe da ocupação de uma pessoa | ✅ | ✅ | ✅ (trainee também) | `GET /ocupacao/:codigoUsuario` / `ConsultarOcupacao.dePessoa` (`acessoAoProjeto` por tarefa) |
+| Receber aviso de ocupação acima de 100% ao salvar tarefa | quem salva | quem salva | quem salva | `avisosOcupacao` em POST/PUT `/tarefas`, PATCH status e coluna (não bloqueia) |
+
+Sessão 24a (ocupação): o total de cada pessoa é visível a todo logado, porque soma todas as tarefas abertas com dificuldade (inclusive as de projetos que quem pede não vê). O detalhe mostra cada tarefa pelo acesso de quem pede ao projeto dela: `completo` = linha da tarefa (título, projeto e horas); `resumo` (gerente fora de sigiloso) = uma linha por projeto com o nome e as horas somadas, sem títulos; `nada` (membro fora do projeto, ex-membro de sigiloso, inclusive a própria pessoa) = tudo numa linha "Outras tarefas", sem título, código nem projeto. O aviso ao salvar só traz nome e números dos responsáveis.
 
 Sessão 23b: a tarefa avulsa acabou e a ação `tarefas.atribuir` saiu do catálogo (a gestão organiza qualquer tarefa com `tarefas.gerirTodas`). No projeto geral da área, quem tem período aberto é a equipe atual, quem teve é ex-participante e quem tem cargo que lidera a área é líder, mesmo com papel membro (organiza, mas não é responsável).
 

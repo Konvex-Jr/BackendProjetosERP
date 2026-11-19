@@ -159,4 +159,23 @@ describe("GerirPeriodosArea", () => {
             }),
         ).rejects.toMatchObject({ codigo: "SAIDA_NO_FUTURO" });
     });
+
+    test("dois cargos ao mesmo tempo em áreas diferentes: 400 PERIODO_CARGO_SIMULTANEO", async () => {
+        const { gerir, membro, gerente, projetos, marketing, assessor } = await contexto();
+        await gerir.criar(
+            membro.codigo,
+            { codigoArea: projetos.codigo, codigoCargo: assessor.codigo, inicio: dia("2026-02-01") },
+            gerente.codigo,
+        );
+        await expect(
+            gerir.criar(
+                membro.codigo,
+                { codigoArea: marketing.codigo, codigoCargo: assessor.codigo, inicio: dia("2026-03-01") },
+                gerente.codigo,
+            ),
+        ).rejects.toMatchObject({ codigo: "PERIODO_CARGO_SIMULTANEO" });
+        await expect(
+            gerir.criar(membro.codigo, { codigoArea: marketing.codigo, inicio: dia("2026-03-01") }, gerente.codigo),
+        ).resolves.toBeDefined();
+    });
 });

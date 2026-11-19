@@ -4,6 +4,7 @@ import ModelRoutes from "../infra/http/routes/ModelRoutes";
 import UsuarioRoutes from "../infra/http/routes/UsuarioRoutes";
 import ProjetoRoutes from "../infra/http/routes/ProjetoRoutes";
 import TarefaRoutes from "../infra/http/routes/TarefaRoutes";
+import OcupacaoRoutes from "../infra/http/routes/OcupacaoRoutes";
 import CapacitacaoRoutes from "../infra/http/routes/CapacitacaoRoutes";
 import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
 import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
@@ -88,7 +89,7 @@ export const MODULOS: Modulo[] = [
     {
         chave: "tarefas",
         nome: "Tarefas",
-        rotas: [TarefaRoutes],
+        rotas: [TarefaRoutes, OcupacaoRoutes],
         permissoes: [Permissao.TAREFAS_GERIR_TODAS],
         // Painel global (sessão 8c): as tarefas dos meus projetos, inclusive o geral da minha área (sessão 23b);
         // a gestão filtra por pessoa.

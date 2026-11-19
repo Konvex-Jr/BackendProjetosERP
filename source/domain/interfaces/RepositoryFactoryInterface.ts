@@ -1,3 +1,4 @@
+import HorasDificuldadeRepositoryInterface from "./HorasDificuldadeRepositoryInterface";
 import UsuarioRepositoryInterface from "./UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "./SenioridadeRepositoryInterface";
 import ProjetoRepositoryInterface from "./ProjetoRepositoryInterface";
@@ -35,6 +36,7 @@ export default interface RepositoryFactoryInterface {
     criarAreaRepository(): AreaRepositoryInterface;
     criarCargoRepository(): CargoRepositoryInterface;
     criarPeriodoAreaRepository(): PeriodoAreaRepositoryInterface;
+    criarHorasDificuldadeRepository(): HorasDificuldadeRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
     criarBibliotecaRepository(): BibliotecaRepositoryInterface;

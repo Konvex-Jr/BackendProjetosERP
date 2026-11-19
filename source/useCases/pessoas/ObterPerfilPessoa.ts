@@ -1,7 +1,9 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Projeto from "../../domain/entity/Projeto";
 import Usuario from "../../domain/entity/Usuario";
-import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
+import ConsultarOcupacao, { OcupacaoDetalhe } from "../tarefas/ConsultarOcupacao";
+import { segundaDaSemana } from "../../domain/service/ocupacao";
+import { hoje } from "../../shared/datas";
 import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
@@ -14,7 +16,6 @@ export interface ProjetoNoPerfil {
     referencia: string | null;
     status: string;
     funcao: string | null;
-    alocacao: number;
     dataEntrada: Date;
     dataSaida: Date | null;
     sigiloso: boolean;
@@ -42,7 +43,8 @@ export interface PerfilPessoa {
     /** Trajetória nas áreas: todos os períodos, abertos primeiro (sessão 23a). */
     periodos: PeriodoArea[];
     capacitacoes: { proximas: CapacitacaoNoPerfil[]; realizadas: CapacitacaoNoPerfil[]; horasCumpridas: number };
-    alocacao: ResumoAlocacao;
+    /** Ocupação da semana atual (horas, teto, percentual e itens que o leitor pode ver). */
+    ocupacao: OcupacaoDetalhe;
 }
 
 /**
@@ -55,14 +57,14 @@ export interface PerfilPessoa {
 export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(codigo: string, quemPede?: UsuarioAutenticado | null): Promise<PerfilPessoa> {
+    async execute(codigo: string, quemPede: UsuarioAutenticado): Promise<PerfilPessoa> {
         const lido = await this.factory.criarUsuarioRepository().buscarPorCodigo(codigo);
         if (!lido) throw new ErroNaoEncontrado("Pessoa não encontrada.");
         const usuario = await comAreasAtuais(this.factory, lido);
 
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
-        const veTudo = !quemPede || quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
-        const acessoDe = (projeto: Projeto) => (quemPede ? acessoAoProjeto(quemPede, projeto) : "completo");
+        const veTudo = quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
+        const acessoDe = (projeto: Projeto) => acessoAoProjeto(quemPede, projeto);
         const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => acessoDe(p) === "completo");
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
@@ -75,7 +77,6 @@ export default class ObterPerfilPessoa {
                     referencia: restrito ? null : projeto.referencia,
                     status: projeto.status,
                     funcao: restrito ? null : p.funcao,
-                    alocacao: p.alocacao,
                     dataEntrada: p.dataEntrada,
                     dataSaida: p.dataSaida,
                     sigiloso: projeto.sigiloso,
@@ -119,8 +120,8 @@ export default class ObterPerfilPessoa {
             projetosAnteriores,
             periodos,
             capacitacoes: { proximas, realizadas, horasCumpridas },
-            // O total considera todos os projetos (o alerta de 100% vale igual); a lista, só os visíveis.
-            alocacao: { ...calcularAlocacao(todosOsProjetos, codigo), projetos: calcularAlocacao(projetos, codigo).projetos },
+            // As horas contam tudo; os itens seguem o acesso de quem lê (projeto sem acesso vira "outras").
+            ocupacao: await new ConsultarOcupacao(this.factory).dePessoa(quemPede, codigo, segundaDaSemana(hoje())),
         };
     }
 }

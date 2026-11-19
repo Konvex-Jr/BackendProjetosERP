@@ -162,7 +162,7 @@ describe("Escrita em projeto sigiloso", () => {
         it("encerrar e editar participação: gerente fora 403", async () => {
             const sig = await ctx.factory.criarProjetoRepository().buscarPorCodigo("proj-sig");
             const cod = sig!.participacoes[0].codigo;
-            expect((await chamar("put", `/projetos/proj-sig/membros/${cod}`, gerenteFora, { alocacao: 10 })).status).toBe(403);
+            expect((await chamar("put", `/projetos/proj-sig/membros/${cod}`, gerenteFora, { funcao: "Dev" })).status).toBe(403);
             expect((await chamar("post", `/projetos/proj-sig/membros/${cod}/encerrar`, gerenteFora, {})).status).toBe(403);
         });
     });

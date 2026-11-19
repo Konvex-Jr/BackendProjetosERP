@@ -114,7 +114,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     );
 
     const vinculos = await conexao.consultar(
-        `SELECT codigo, projeto_codigo, usuario_codigo, funcao, responsabilidades, alocacao, data_entrada, data_saida
+        `SELECT codigo, projeto_codigo, usuario_codigo, funcao, responsabilidades, data_entrada, data_saida
          FROM projeto_membros
          WHERE projeto_codigo = ANY($1::uuid[])
          ORDER BY data_entrada, codigo`,
@@ -166,7 +166,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                               {
                                   funcao: v.funcao,
                                   responsabilidades: v.responsabilidades,
-                                  alocacao: Number(v.alocacao),
                                   dataEntrada: v.data_entrada,
                                   dataSaida: v.data_saida,
                               },

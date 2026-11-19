@@ -71,3 +71,32 @@ describe("coluna ao criar", () => {
         expect(t.concluidaPor?.codigo).toBe("usr-ana");
     });
 });
+
+describe("dificuldade", () => {
+    const criar = async (dificuldade?: string | null) => {
+        const { factory, membro } = await criarContexto();
+        const projeto = await criarProjeto(factory, membro);
+        return new CriarTarefa(factory).execute({
+            codigoProjeto: projeto.codigo,
+            titulo: "Tarefa",
+            dataInicio,
+            dataFim,
+            prioridade: PrioridadeTarefa.P1,
+            dificuldade,
+        } as never);
+    };
+
+    it("grava e devolve a dificuldade", async () => {
+        const t = await criar("media");
+        expect(t.dificuldade).toBe("media");
+        expect(JSON.parse(JSON.stringify(t)).dificuldade).toBe("media");
+    });
+
+    it("sem dificuldade fica nula", async () => {
+        expect((await criar()).dificuldade).toBeNull();
+    });
+
+    it("dificuldade desconhecida: 400 DIFICULDADE_INVALIDA", async () => {
+        await expect(criar("muito_dificil")).rejects.toMatchObject({ codigo: "DIFICULDADE_INVALIDA" });
+    });
+});

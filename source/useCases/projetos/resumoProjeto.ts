@@ -14,7 +14,6 @@ export interface ResumoProjeto {
     tarefas: ContagemTarefas;
     participacoes: {
         usuario: { codigo: string; nome: string };
-        alocacao: number;
         ativa: boolean;
         dataEntrada: Date;
         dataSaida: Date | null;
@@ -38,7 +37,6 @@ export function resumoProjeto(projeto: Projeto, tarefas: ContagemTarefas): Resum
         tarefas,
         participacoes: projeto.participacoes.map((p) => ({
             usuario: { codigo: p.usuario.codigo, nome: p.usuario.nome },
-            alocacao: p.alocacao,
             ativa: p.ativa,
             dataEntrada: p.dataEntrada,
             dataSaida: p.dataSaida,

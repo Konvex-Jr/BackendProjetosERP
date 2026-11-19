@@ -219,7 +219,6 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoUsuario: body.codigoUsuario,
                 funcao: body.funcao,
                 responsabilidades: body.responsabilidades,
-                alocacao: lerInteiro(body.alocacao, "alocacao"),
                 dataEntrada: lerData(body.dataEntrada, "dataEntrada"),
             });
         });
@@ -232,7 +231,6 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoParticipacao: params.codigoParticipacao,
                 funcao: body.funcao,
                 responsabilidades: body.responsabilidades,
-                alocacao: lerInteiro(body.alocacao, "alocacao"),
             });
         });
 

@@ -23,6 +23,14 @@ const nomeArquivo = {
     schema: { type: "string" },
 };
 
+/** Qualquer dia da semana desejada (segunda a domingo); ausente = semana de hoje em São Paulo. */
+const SEMANA_OCUPACAO = {
+    name: "semana",
+    in: "query",
+    schema: { type: "string", format: "date" },
+    description: "AAAA-MM-DD de qualquer dia da semana; padrão: hoje (São Paulo).",
+};
+
 const operation = (tags: string[], summary: string, options: Record<string, any> = {}) => ({
     tags,
     summary,
@@ -251,33 +259,45 @@ const swaggerSpecification = {
                     ],
                 },
             ),
-            post: operation(["Tarefas"], "Criar tarefa", {
-                requestBody: jsonBody({ $ref: "#/components/schemas/TarefaInput" }),
-            }),
+            post: operation(
+                ["Tarefas"],
+                "Criar tarefa. Devolve a tarefa com `avisosOcupacao`: [{ codigoUsuario, nome, horas, teto, percentual, semana }] dos responsáveis acima de 100% (não bloqueia).",
+                {
+                    requestBody: jsonBody({ $ref: "#/components/schemas/TarefaInput" }),
+                },
+            ),
         },
         "/tarefas/{codigo}": {
-            put: operation(["Tarefas"], "Editar tarefa", {
-                parameters: [{ $ref: "#/components/parameters/codigo" }],
-                requestBody: jsonBody({ $ref: "#/components/schemas/TarefaInput" }),
-            }),
+            put: operation(
+                ["Tarefas"],
+                "Editar tarefa. Devolve a tarefa com `avisosOcupacao`: [{ codigoUsuario, nome, horas, teto, percentual, semana }] dos responsáveis acima de 100% (não bloqueia).",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }],
+                    requestBody: jsonBody({ $ref: "#/components/schemas/TarefaInput" }),
+                },
+            ),
             delete: operation(["Tarefas"], "Excluir tarefa", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
             }),
         },
         "/tarefas/{codigo}/status": {
-            patch: operation(["Tarefas"], "Alterar status da tarefa", {
-                parameters: [{ $ref: "#/components/parameters/codigo" }],
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["status"],
-                    properties: { status: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
-                }),
-            }),
+            patch: operation(
+                ["Tarefas"],
+                "Alterar status da tarefa. Devolve a tarefa com `avisosOcupacao`: [{ codigoUsuario, nome, horas, teto, percentual, semana }] dos responsáveis acima de 100% (não bloqueia).",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["status"],
+                        properties: { status: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
+                    }),
+                },
+            ),
         },
         "/tarefas/{codigo}/coluna": {
             patch: operation(
                 ["Tarefas"],
-                "Mover a tarefa para uma coluna do quadro do projeto (mesma permissão do status; o status vem do papel da coluna; 400 COLUNA_DE_OUTRO_PROJETO)",
+                "Mover a tarefa para uma coluna do quadro do projeto (mesma permissão do status; o status vem do papel da coluna; 400 COLUNA_DE_OUTRO_PROJETO). Devolve a tarefa com `avisosOcupacao`",
                 {
                     parameters: [{ $ref: "#/components/parameters/codigo" }],
                     requestBody: jsonBody({
@@ -285,6 +305,22 @@ const swaggerSpecification = {
                         required: ["codigoColuna"],
                         properties: { codigoColuna: { type: "string" } },
                     }),
+                },
+            ),
+        },
+        "/ocupacao": {
+            get: operation(
+                ["Tarefas"],
+                "Ocupação semanal de todas as pessoas ativas e trainees: [{ codigoUsuario, nome, horas, teto, percentual }] (todo logado; 400 SEMANA_INVALIDA)",
+                { parameters: [SEMANA_OCUPACAO] },
+            ),
+        },
+        "/ocupacao/{codigoUsuario}": {
+            get: operation(
+                ["Tarefas"],
+                "Ocupação semanal de uma pessoa: { codigoUsuario, horas, teto, percentual, semana, itens }. Itens pelo acesso de quem pede ao projeto: tarefa (título e projeto), projeto (só nome e horas somadas, gestão fora de sigiloso) ou outras (tudo somado, sem título nem projeto). 404 pessoa inexistente",
+                {
+                    parameters: [{ name: "codigoUsuario", in: "path", required: true, schema: { type: "string" } }, SEMANA_OCUPACAO],
                 },
             ),
         },
@@ -493,10 +529,14 @@ const rotasFase1: Record<string, Record<string, object>> = {
         post: operation(["Configurações"], "Criar cargo (diretores)", json),
     },
     "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
+    "/config/horas-dificuldade": {
+        get: operation(["Configurações"], "Horas de cada nível de dificuldade da tarefa"),
+        put: operation(["Configurações"], "Gravar as horas por dificuldade (diretores)", json),
+    },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {
-        put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }),
+        put: operation(["Projetos"], "Editar função e responsabilidades", { ...participacao, ...json }),
     },
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": {
         post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }),

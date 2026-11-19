@@ -12,8 +12,6 @@ export default class Participacao {
     readonly usuario: Usuario;
     readonly funcao: string | null;
     readonly responsabilidades: string | null;
-    /** Percentual de dedicação ao projeto, de 0 a 100. */
-    readonly alocacao: number;
     readonly dataEntrada: Date;
     readonly dataSaida: Date | null;
 
@@ -22,7 +20,6 @@ export default class Participacao {
         dados: {
             funcao?: string | null;
             responsabilidades?: string | null;
-            alocacao?: number;
             dataEntrada?: Date;
             dataSaida?: Date | null;
         } = {},
@@ -32,7 +29,6 @@ export default class Participacao {
         this.usuario = usuario;
         this.funcao = dados.funcao?.trim() || null;
         this.responsabilidades = dados.responsabilidades?.trim() || null;
-        this.alocacao = dados.alocacao === undefined || dados.alocacao === null ? 0 : Number(dados.alocacao);
         this.dataEntrada = dados.dataEntrada ?? hoje();
         this.dataSaida = dados.dataSaida ?? null;
         this.validar();
@@ -42,18 +38,12 @@ export default class Participacao {
         return this.dataSaida === null;
     }
 
-    copiar(alteracoes: {
-        funcao?: string | null;
-        responsabilidades?: string | null;
-        alocacao?: number;
-        dataSaida?: Date | null;
-    }): Participacao {
+    copiar(alteracoes: { funcao?: string | null; responsabilidades?: string | null; dataSaida?: Date | null }): Participacao {
         return new Participacao(
             this.usuario,
             {
                 funcao: alteracoes.funcao !== undefined ? alteracoes.funcao : this.funcao,
                 responsabilidades: alteracoes.responsabilidades !== undefined ? alteracoes.responsabilidades : this.responsabilidades,
-                alocacao: alteracoes.alocacao !== undefined ? alteracoes.alocacao : this.alocacao,
                 dataEntrada: this.dataEntrada,
                 dataSaida: alteracoes.dataSaida !== undefined ? alteracoes.dataSaida : this.dataSaida,
             },
@@ -67,7 +57,6 @@ export default class Participacao {
             usuario: this.usuario,
             funcao: this.funcao,
             responsabilidades: this.responsabilidades,
-            alocacao: this.alocacao,
             dataEntrada: this.dataEntrada,
             dataSaida: this.dataSaida,
             ativa: this.ativa,
@@ -75,9 +64,6 @@ export default class Participacao {
     }
 
     private validar(): void {
-        if (!Number.isInteger(this.alocacao) || this.alocacao < 0 || this.alocacao > 100) {
-            throw new ErroValidacao("A alocação deve ser um número inteiro entre 0 e 100.", "ALOCACAO_INVALIDA");
-        }
         if (this.funcao && this.funcao.length > 80) {
             throw new ErroValidacao("A função no projeto deve ter até 80 caracteres.", "FUNCAO_LONGA");
         }

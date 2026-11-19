@@ -1,5 +1,6 @@
 import StatusTarefa from "../../domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../domain/enum/PrioridadeTarefa";
+import DificuldadeTarefa from "../../domain/enum/DificuldadeTarefa";
 import Usuario from "../../domain/entity/Usuario";
 export default interface EditarTarefaInput {
     codigo: string;
@@ -11,6 +12,8 @@ export default interface EditarTarefaInput {
     /** Se vier, a coluna vale mais que o `status`. */
     codigoColuna?: string | null;
     descricao?: string | null;
+    /** Ausente mantém a atual; null limpa. */
+    dificuldade?: DificuldadeTarefa | null;
     codigosResponsaveis: string[];
     codigoDependencia?: string | null;
     checklist?: EditarTarefaChecklistInput[];

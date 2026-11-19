@@ -68,6 +68,7 @@ export default class EditarTarefa {
             concluida ? (atual.dataConclusao ? atual.concluidaPor : (input.quem ?? null)) : null,
             atual.criadaPor,
             coluna,
+            input.dificuldade === undefined ? atual.dificuldade : input.dificuldade,
         );
         editada.exigirConclusaoCoerente();
         return this.tarefas.editar(editada);

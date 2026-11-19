@@ -50,6 +50,7 @@ export default class CriarTarefa {
             nasceConcluida ? (input.criadaPor ?? null) : null,
             input.criadaPor ?? null,
             coluna,
+            input.dificuldade ?? null,
         );
         tarefa.exigirConclusaoCoerente();
         return this.tarefas.criar(tarefa);

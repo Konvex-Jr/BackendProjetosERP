@@ -130,8 +130,28 @@ export function validarNovoPeriodo(
     if (periodo.cargo && !periodo.cargo.ativo && periodo.cargo.codigo !== anterior?.cargo?.codigo) {
         throw new ErroValidacao(M.CARGO_INATIVO, "CARGO_INATIVO");
     }
+    validarUmCargoPorVez(periodo, outros, anterior);
     if (periodo.aberto && !STATUS_NA_EJ.includes(pessoa.status)) throw new ErroValidacao(M.PESSOA_FORA_DA_EJ, "PESSOA_FORA_DA_EJ");
     if (periodo.fim && pessoa.dataSaida && periodo.fim.getTime() > pessoa.dataSaida.getTime()) {
         throw new ErroValidacao(M.FIM_DEPOIS_DA_SAIDA, "FIM_DEPOIS_DA_SAIDA");
     }
+}
+
+const fimComoNumero = (fim: Date | null) => (fim === null ? Infinity : fim.getTime());
+
+/**
+ * Só um período com cargo por vez. Barra apenas a gravação que cria ou aumenta o conflito: dados antigos
+ * com dois cargos juntos continuam editáveis para encurtar ou encerrar.
+ */
+function validarUmCargoPorVez(periodo: PeriodoArea, outros: PeriodoArea[], anterior: PeriodoArea | null): void {
+    if (!periodo.cargo) return;
+    const conflito = outros.find((o) => o.codigo !== periodo.codigo && o.cargo && sobrepoe(o, periodo));
+    if (!conflito) return;
+    const aumenta =
+        !anterior ||
+        anterior.cargo?.codigo !== periodo.cargo.codigo ||
+        periodo.inicio.getTime() < anterior.inicio.getTime() ||
+        fimComoNumero(periodo.fim) > fimComoNumero(anterior.fim) ||
+        !sobrepoe(anterior, conflito);
+    if (aumenta) throw new ErroValidacao(M.CARGO_SIMULTANEO(conflito.area.nome), "PERIODO_CARGO_SIMULTANEO");
 }

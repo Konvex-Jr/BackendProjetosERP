@@ -219,8 +219,8 @@ async function main() {
             dataFim: dia(40),
             status: "em_execucao",
         });
-        await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev", alocacao: 50 });
-        await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: caio.codigo, funcao: "Design", alocacao: 30 });
+        await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
+        await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: caio.codigo, funcao: "Design" });
         await exigir("PUT", `/projetos/${projeto.codigo}/lider`, dir, { codigoUsuario: bia.codigo });
         for (const [titulo, ini, fim, quem] of [
             ["Levantar requisitos", -15, -10, bia],
@@ -274,6 +274,29 @@ async function main() {
             }),
         );
     }
+    // Ocupação semanal (sessão 24a): as 4 dificuldades, uma tarefa que cruza duas semanas e Caio (assessor, teto 10 h)
+    // acima de 100% na semana atual. As datas são relativas a hoje, então os dados servem em qualquer semana.
+    for (const [titulo, ini, fim, quem, dificuldade] of [
+        ["Ajustar o rodapé", -1, 1, bia, "rapida"],
+        ["Corrigir os links do menu", -2, 2, bia, "facil"],
+        ["Integrar o formulário ao e-mail", -3, 10, bia, "media"],
+        ["Redesenhar a página inicial", -6, 6, caio, "dificil"],
+        ["Refazer o guia de estilos", -6, 6, caio, "dificil"],
+        ["Preparar a apresentação final", -6, 6, caio, "dificil"],
+    ]) {
+        if (tarefasDoProjeto.some((t) => t.titulo === titulo)) continue;
+        tarefasDoProjeto.push(
+            await exigir("POST", "/tarefas", dir, {
+                codigoProjeto: projeto.codigo,
+                titulo,
+                dataInicio: dia(ini),
+                dataFim: dia(fim),
+                prioridade: "P2",
+                dificuldade,
+                codigosResponsaveis: [quem.codigo],
+            }),
+        );
+    }
     const etapaDaTarefa = {
         "Publicar primeira versão": "A fazer",
         "Protótipo das telas": "Fazendo",
@@ -312,8 +335,8 @@ async function main() {
             sigiloso: true,
             acesso: [ines.codigo],
         });
-        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev", alocacao: 20 });
-        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio", alocacao: 10 });
+        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
+        await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio" });
         console.log("Projeto sigiloso (acesso: Inês; equipe: Bia e Davi) criado.");
     }
     if ((await exigir("GET", `/tarefas?codigoProjeto=${sigiloso.codigo}`, dir)).length === 0) {

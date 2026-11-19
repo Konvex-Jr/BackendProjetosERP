@@ -52,7 +52,9 @@ describe("Visibilidade de projetos", () => {
         expect(visto.status).toBe(200);
         expect(visto.corpo.projetosAtuais).toEqual([]);
         expect(visto.corpo.projetosAnteriores).toEqual([]);
-        expect(visto.corpo.alocacao.projetos).toEqual([]);
+        expect(visto.corpo.ocupacao.percentual).toBe(0);
+        expect(visto.corpo.ocupacao.itens).toEqual([]);
+        expect(visto.corpo.alocacao).toBeUndefined();
 
         const pelaGestao = await servidor.chamar("get", `/usuarios/${outroMembro.codigo}/perfil`, { usuario: ctx.gerente });
         expect(pelaGestao.corpo.projetosAtuais.map((p: any) => p.codigo)).toEqual(["proj-alheio"]);
