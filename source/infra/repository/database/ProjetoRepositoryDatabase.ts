@@ -205,12 +205,11 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         for (const p of ordenadas) {
             await conexao.consultar(
                 `INSERT INTO projeto_membros
-                    (codigo, projeto_codigo, usuario_codigo, funcao, responsabilidades, alocacao, data_entrada, data_saida)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    (codigo, projeto_codigo, usuario_codigo, funcao, responsabilidades, data_entrada, data_saida)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                  ON CONFLICT (codigo) DO UPDATE SET
                     funcao = EXCLUDED.funcao,
                     responsabilidades = EXCLUDED.responsabilidades,
-                    alocacao = EXCLUDED.alocacao,
                     data_saida = EXCLUDED.data_saida`,
                 [
                     p.codigo,
@@ -218,7 +217,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
                     p.usuario.codigo,
                     p.funcao,
                     p.responsabilidades,
-                    p.alocacao,
                     dataParaSql(p.dataEntrada),
                     dataParaSqlOuNulo(p.dataSaida),
                 ],

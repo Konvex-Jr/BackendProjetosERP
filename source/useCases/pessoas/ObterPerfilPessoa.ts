@@ -1,11 +1,14 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Projeto from "../../domain/entity/Projeto";
 import Usuario from "../../domain/entity/Usuario";
-import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
+import ConsultarOcupacao, { OcupacaoDetalhe } from "../tarefas/ConsultarOcupacao";
+import { segundaDaSemana } from "../../domain/service/ocupacao";
+import { hoje } from "../../shared/datas";
 import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { comAreasAtuais } from "./areasAtuais";
 
 export interface ProjetoNoPerfil {
@@ -14,7 +17,6 @@ export interface ProjetoNoPerfil {
     referencia: string | null;
     status: string;
     funcao: string | null;
-    alocacao: number;
     dataEntrada: Date;
     dataSaida: Date | null;
     sigiloso: boolean;
@@ -42,7 +44,8 @@ export interface PerfilPessoa {
     /** Trajetória nas áreas: todos os períodos, abertos primeiro (sessão 23a). */
     periodos: PeriodoArea[];
     capacitacoes: { proximas: CapacitacaoNoPerfil[]; realizadas: CapacitacaoNoPerfil[]; horasCumpridas: number };
-    alocacao: ResumoAlocacao;
+    /** Ocupação da semana atual (horas, teto, percentual e itens que o leitor pode ver). */
+    ocupacao: OcupacaoDetalhe;
 }
 
 /**
@@ -75,7 +78,6 @@ export default class ObterPerfilPessoa {
                     referencia: restrito ? null : projeto.referencia,
                     status: projeto.status,
                     funcao: restrito ? null : p.funcao,
-                    alocacao: p.alocacao,
                     dataEntrada: p.dataEntrada,
                     dataSaida: p.dataSaida,
                     sigiloso: projeto.sigiloso,
@@ -119,8 +121,12 @@ export default class ObterPerfilPessoa {
             projetosAnteriores,
             periodos,
             capacitacoes: { proximas, realizadas, horasCumpridas },
-            // O total considera todos os projetos (o alerta de 100% vale igual); a lista, só os visíveis.
-            alocacao: { ...calcularAlocacao(todosOsProjetos, codigo), projetos: calcularAlocacao(projetos, codigo).projetos },
+            // As horas contam tudo; os itens seguem o acesso de quem lê (projeto sem acesso vira "outras").
+            ocupacao: await new ConsultarOcupacao(this.factory).dePessoa(
+                quemPede ?? { codigo: lido.codigo, perfil: PerfilUsuario.DIRETOR },
+                codigo,
+                segundaDaSemana(hoje()),
+            ),
         };
     }
 }

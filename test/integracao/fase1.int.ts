@@ -129,7 +129,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(perfil.status).toBe(200);
         expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBe("membro");
 
-        // Projetos e equipe com alerta de alocação
+        // Projetos e equipe (a alocação manual saiu na 24a: o corpo ignora `alocacao` e não devolve)
         const p1 = await chamar("POST", "/projetos", dir, {
             nome: "Projeto A",
             descricao: "Teste",
@@ -155,20 +155,20 @@ descrever("fase 1 contra PostgreSQL", () => {
             alocacao: 70,
         });
         expect(e1.status).toBe(200);
-        expect(e1.corpo.alocacao.excedeu).toBe(false);
+        expect(e1.corpo.alocacao).toBeUndefined();
+        expect(e1.corpo.projeto.participacoes.every((x: any) => x.alocacao === undefined)).toBe(true);
         const e2 = await chamar("POST", `/projetos/${cod2}/membros`, dir, {
             codigoUsuario: membro.corpo.codigo,
             funcao: "Dev",
             alocacao: 50,
         });
-        expect(e2.corpo.alocacao.total).toBe(120);
-        expect(e2.corpo.alocacao.excedeu).toBe(true);
+        expect(e2.status).toBe(200);
         expect(
             (await chamar("POST", `/projetos/${cod1}/membros`, dir, { codigoUsuario: trainee.corpo.codigo, funcao: "Apoio", alocacao: 20 }))
                 .status,
         ).toBe(200);
 
-        // Projeto fora dos status ativos não conta na alocação
+        // Mudar a situação do projeto
         expect((await chamar("PATCH", `/projetos/${cod2}/status`, dir, { status: "concluido" })).status).toBe(200);
 
         // Membro vê os projetos de que participa

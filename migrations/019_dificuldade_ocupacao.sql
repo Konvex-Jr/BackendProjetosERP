@@ -30,3 +30,6 @@ BEGIN
         UPDATE cargos SET teto_semanal_horas = 20 WHERE unaccent(lower(nome)) ~ '^(diretor|presidente|vice)';
     END IF;
 END $$;
+
+-- A alocação manual por participação saiu: a carga vem das tarefas (dificuldade → horas).
+ALTER TABLE projeto_membros DROP COLUMN IF EXISTS alocacao;

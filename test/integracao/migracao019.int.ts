@@ -27,6 +27,20 @@ descrever("migração 019 sobre a 018", () => {
         }
         await aplicarMigracoes(pool, antigas, silencio);
         await pool.query("INSERT INTO cargos (nome) VALUES ('Diretor de Projetos'), ('Assessor')");
+        const pessoa = (
+            await pool.query(
+                `INSERT INTO usuarios (nome, email, perfil, ativo, senha_hash) VALUES ('Ana', 'ana@x.com', 'membro', true, 'h') RETURNING codigo`,
+            )
+        ).rows[0].codigo;
+        const proj = (
+            await pool.query(
+                `INSERT INTO projetos (nome, descricao, data_inicio, data_fim) VALUES ('Antigo', 'D', '2026-01-01', '2026-06-01') RETURNING codigo`,
+            )
+        ).rows[0].codigo;
+        await pool.query(
+            `INSERT INTO projeto_membros (projeto_codigo, usuario_codigo, alocacao, data_entrada) VALUES ($1, $2, 30, '2026-01-01')`,
+            [proj, pessoa],
+        );
         await aplicarMigracoes(pool, PASTA, silencio);
     }, 60000);
 
@@ -56,6 +70,14 @@ descrever("migração 019 sobre a 018", () => {
         await expect(inserir("media")).resolves.toBeDefined();
         await expect(inserir("muito_dificil")).rejects.toThrow();
         await expect(inserir("extrema")).rejects.toThrow(/tarefas_dificuldade_valida/);
+    });
+
+    test("projeto_membros perde a coluna alocacao e mantém a participação", async () => {
+        const colunas = (
+            await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'projeto_membros'")
+        ).rows.map((r) => r.column_name);
+        expect(colunas).not.toContain("alocacao");
+        expect((await pool.query("SELECT 1 FROM projeto_membros")).rowCount).toBe(1);
     });
 
     test("horas_dificuldade tem os 4 valores", async () => {

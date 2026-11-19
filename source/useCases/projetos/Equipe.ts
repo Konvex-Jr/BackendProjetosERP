@@ -1,7 +1,6 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Projeto from "../../domain/entity/Projeto";
 import Participacao, { hoje } from "../../domain/entity/Participacao";
-import { calcularAlocacao, ResumoAlocacao } from "../../domain/service/alocacao";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
@@ -9,10 +8,9 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
 import { exigirNaoGeral } from "./sincronizarGeral";
 
-/** Resultado das operações da aba Equipe: o projeto e o alerta de alocação da pessoa (RN-04). */
+/** Resultado das operações da aba Equipe: o projeto com a equipe atualizada. */
 export interface ResultadoEquipe {
     projeto: Projeto;
-    alocacao: ResumoAlocacao;
 }
 
 async function carregar(factory: RepositoryFactoryInterface, codigoProjeto: string): Promise<Projeto> {
@@ -22,14 +20,12 @@ async function carregar(factory: RepositoryFactoryInterface, codigoProjeto: stri
     return projeto;
 }
 
-async function gravarEResumir(factory: RepositoryFactoryInterface, projeto: Projeto, codigoUsuario: string): Promise<ResultadoEquipe> {
-    const repo = factory.criarProjetoRepository();
-    await repo.editar(projeto);
-    const projetosDaPessoa = await repo.listarPorMembro(codigoUsuario);
-    return { projeto, alocacao: calcularAlocacao(projetosDaPessoa, codigoUsuario) };
+async function gravarEResumir(factory: RepositoryFactoryInterface, projeto: Projeto): Promise<ResultadoEquipe> {
+    await factory.criarProjetoRepository().editar(projeto);
+    return { projeto };
 }
 
-/** PR-06: adiciona uma pessoa à equipe com função, responsabilidades e alocação. */
+/** PR-06: adiciona uma pessoa à equipe com função e responsabilidades. */
 export class AdicionarParticipante {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
@@ -38,7 +34,6 @@ export class AdicionarParticipante {
         codigoUsuario: string;
         funcao?: string | null;
         responsabilidades?: string | null;
-        alocacao?: number;
         dataEntrada?: Date | null;
     }): Promise<ResultadoEquipe> {
         const projeto = await carregar(this.factory, input.codigoProjeto);
@@ -51,14 +46,13 @@ export class AdicionarParticipante {
         const participacao = new Participacao(usuario, {
             funcao: input.funcao,
             responsabilidades: input.responsabilidades,
-            alocacao: input.alocacao,
             dataEntrada: input.dataEntrada ?? hoje(),
         });
-        return gravarEResumir(this.factory, projeto.copiar({ participacoes: [...projeto.participacoes, participacao] }), usuario.codigo);
+        return gravarEResumir(this.factory, projeto.copiar({ participacoes: [...projeto.participacoes, participacao] }));
     }
 }
 
-/** Edita função, responsabilidades e alocação de uma participação em aberto. */
+/** Edita função e responsabilidades de uma participação em aberto. */
 export class EditarParticipacao {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
@@ -67,7 +61,6 @@ export class EditarParticipacao {
         codigoParticipacao: string;
         funcao?: string | null;
         responsabilidades?: string | null;
-        alocacao?: number;
     }): Promise<ResultadoEquipe> {
         const projeto = await carregar(this.factory, input.codigoProjeto);
         const atual = projeto.participacoes.find((p) => p.codigo === input.codigoParticipacao);
@@ -76,12 +69,10 @@ export class EditarParticipacao {
         const editada = atual.copiar({
             funcao: input.funcao,
             responsabilidades: input.responsabilidades,
-            alocacao: input.alocacao,
         });
         return gravarEResumir(
             this.factory,
             projeto.copiar({ participacoes: projeto.participacoes.map((p) => (p.codigo === atual.codigo ? editada : p)) }),
-            atual.usuario.codigo,
         );
     }
 }
@@ -99,7 +90,6 @@ export class EncerrarParticipacao {
         return gravarEResumir(
             this.factory,
             projeto.copiar({ participacoes: projeto.participacoes.map((p) => (p.codigo === atual.codigo ? encerrada : p)) }),
-            atual.usuario.codigo,
         );
     }
 }

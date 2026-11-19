@@ -536,7 +536,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {
-        put: operation(["Projetos"], "Editar função e alocação", { ...participacao, ...json }),
+        put: operation(["Projetos"], "Editar função e responsabilidades", { ...participacao, ...json }),
     },
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": {
         post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }),

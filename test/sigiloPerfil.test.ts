@@ -2,6 +2,11 @@ import Participacao from "../source/domain/entity/Participacao";
 import Projeto from "../source/domain/entity/Projeto";
 import Usuario from "../source/domain/entity/Usuario";
 import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import Tarefa from "../source/domain/entity/Tarefa";
+import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
+import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
+import StatusTarefa from "../source/domain/enum/StatusTarefa";
+import { hoje } from "../source/shared/datas";
 import ObterPerfilPessoa from "../source/useCases/pessoas/ObterPerfilPessoa";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
 
@@ -45,7 +50,7 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         expect(JSON.stringify(sig)).not.toContain("REF-SECRETA");
         const normal = todos.find((p) => p.codigo === "p-normal")!;
         expect(normal).toMatchObject({ sigiloso: false, restrito: false, referencia: "REF-SECRETA", tipo: "cliente", geralDaArea: false });
-        expect(perfil.alocacao.projetos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig"]);
+        expect(perfil.ocupacao.percentual).toBe(0);
     });
 
     it("a própria pessoa vê o que perdeu como restrito e o que ainda tem como completo", async () => {
@@ -66,17 +71,42 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         // Ana está na equipe atual de p-sig (completo); em p-sig-antigo saiu (nada): some.
         expect(todos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig"]);
         expect(todos.every((p) => !p.restrito)).toBe(true);
-        expect(perfil.alocacao.projetos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig"]);
+        expect(perfil.ocupacao).toMatchObject({ percentual: 0, horas: 0, itens: [] });
+        expect("alocacao" in perfil).toBe(false);
     });
 
-    it("alocação total conta todos os projetos, e a lista só os visíveis", async () => {
+    it("ocupação total conta todos os projetos, e os itens só os visíveis", async () => {
         const { factory, membro, outro, auth } = await montar();
-        const repo = factory.criarProjetoRepository();
-        await repo.criar(new Projeto("Oculto", "d", dataInicio, dataFim, undefined, [outro], "p-oculto", { sigiloso: true }));
+        const hojeSp = hoje();
+        const dia = 86_400_000;
+        const oculto = new Projeto("Oculto", "d", dataInicio, dataFim, undefined, [outro], "p-oculto", { sigiloso: true });
+        await factory.criarProjetoRepository().criar(oculto);
+        const tarefa = new Tarefa(
+            oculto,
+            "Secreta",
+            new Date(hojeSp.getTime() - 7 * dia),
+            new Date(hojeSp.getTime() + 7 * dia),
+            StatusTarefa.PENDENTE,
+            PrioridadeTarefa.P2,
+            null,
+            null,
+            null,
+            [outro],
+            [],
+            undefined,
+            null,
+            null,
+            null,
+            DificuldadeTarefa.DIFICIL,
+        );
+        await factory.criarTarefaRepository().criar(tarefa);
         const perfil = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(membro));
-        expect(perfil.alocacao.projetos.map((p) => p.codigo)).not.toContain("p-oculto");
+        expect(perfil.ocupacao.horas).toBeGreaterThan(0);
+        expect(perfil.ocupacao.itens.every((i) => i.tipo === "outras")).toBe(true);
+        expect(JSON.stringify(perfil.ocupacao)).not.toContain("Secreta");
         const completo = await new ObterPerfilPessoa(factory).execute(outro.codigo);
-        expect(completo.alocacao.projetos.map((p) => p.codigo)).toContain("p-oculto");
-        expect(completo.alocacao.total).toBe(perfil.alocacao.total);
+        expect(completo.ocupacao.itens.map((i) => i.tipo)).toContain("tarefa");
+        expect(completo.ocupacao.horas).toBe(perfil.ocupacao.horas);
+        expect(completo.ocupacao.percentual).toBe(perfil.ocupacao.percentual);
     });
 });

@@ -21,7 +21,7 @@ describe("resumoProjeto", () => {
         expect(resumo.resumo).toBe(true);
         expect(resumo.sigiloso).toBe(true);
         expect(resumo.tipo).toBe("cliente");
-        expect(Object.keys(resumo.participacoes[0]).sort()).toEqual(["alocacao", "ativa", "dataEntrada", "dataSaida", "usuario"]);
+        expect(Object.keys(resumo.participacoes[0]).sort()).toEqual(["ativa", "dataEntrada", "dataSaida", "usuario"]);
         expect(Object.keys(resumo.participacoes[0].usuario).sort()).toEqual(["codigo", "nome"]);
         const json = JSON.stringify(resumo);
         for (const proibido of ["clienteNome", "Cliente Secreto", "descricao", "descrição secreta", "referencia", "REF-77", "funcao"]) {

@@ -20,7 +20,6 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         const { projeto: comTrainee } = await new AdicionarParticipante(factory).execute({
             codigoProjeto: projeto.codigo,
             codigoUsuario: membro.codigo,
-            alocacao: 20,
         });
         expect(comTrainee.membros.map((m) => m.codigo)).toContain(membro.codigo);
     });
