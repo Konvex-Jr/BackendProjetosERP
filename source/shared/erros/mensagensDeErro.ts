@@ -46,6 +46,8 @@ export const MENSAGENS_DE_ERRO = {
             nome
                 ? `${nome} (${codigo}) não tem login: só pessoas Ativas ou Trainees entram na lista de acesso.`
                 : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
+        GERAL_COM_TAREFAS: (quantidade: number) =>
+            `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
     },
 
     HORAS_DIFICULDADE: {

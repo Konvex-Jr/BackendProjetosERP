@@ -17,6 +17,14 @@ import Projeto from "../../source/domain/entity/Projeto";
 import { novoGeral } from "../../source/domain/entity/ProjetoGeral";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import TipoProjeto from "../../source/domain/enum/TipoProjeto";
+import ItemBiblioteca from "../../source/domain/entity/ItemBiblioteca";
+import { DonoAnexo } from "../../source/domain/enum/Anexo";
+import GerirAnexos from "../../source/useCases/anexos/GerirAnexos";
+import SalvarArea from "../../source/useCases/config/SalvarArea";
+import ProjetoRepositoryDatabase from "../../source/infra/repository/database/ProjetoRepositoryDatabase";
+import { existsSync, mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import path from "path";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -139,5 +147,114 @@ descrever("projeto geral da área contra PostgreSQL", () => {
         const internos = (await repo.listar({ tipo: TipoProjeto.INTERNO })).map((p) => p.codigo);
         expect(internos.sort()).toEqual([geral.codigo, interno.codigo].sort());
         expect((await repo.listar({ tipo: TipoProjeto.CLIENTE })).map((p) => p.codigo)).toEqual([cliente.codigo]);
+    });
+
+    describe("geral opcional (sessão 24b)", () => {
+        let pasta: string;
+        let diretor: Usuario;
+
+        beforeAll(async () => {
+            pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
+            process.env.ANEXOS_DIR = pasta;
+            diretor = new Usuario(
+                "Dora",
+                "dora@teste.com",
+                PerfilUsuario.DIRETOR,
+                true,
+                "hash",
+                new SenioridadeUsuario("pleno", "Pleno", 75),
+            );
+            await factory.criarUsuarioRepository().criar(diretor);
+        });
+
+        afterAll(() => {
+            delete process.env.ANEXOS_DIR;
+            rmSync(pasta, { recursive: true, force: true });
+        });
+
+        /** Área nova (com geral) e um item da equipe do geral com anexo no disco. */
+        async function cenario(nome: string) {
+            const area = await new SalvarArea(factory).execute({ nome });
+            const geral = (await factory.criarProjetoRepository().buscarGeralDaArea(area.codigo))!;
+            const item = await factory.criarBibliotecaRepository().criar(
+                new ItemBiblioteca({
+                    titulo: `Ata ${nome}`,
+                    sigilo: "projeto",
+                    projeto: { codigo: geral.codigo, nome: geral.nome },
+                    autor: { codigo: diretor.codigo, nome: diretor.nome },
+                }),
+            );
+            const anexo = await new GerirAnexos(factory).enviar(
+                { codigo: diretor.codigo, perfil: diretor.perfil },
+                DonoAnexo.BIBLIOTECA,
+                item.codigo,
+                { nome: "ata.pdf", conteudo: Buffer.from("%PDF-1.4") },
+            );
+            return { area, geral, item, arquivo: path.join(pasta, anexo.arquivo) };
+        }
+
+        const linhaArea = async (codigo: string) =>
+            (await pool.query("SELECT nome, tem_geral FROM areas WHERE codigo = $1", [codigo])).rows[0];
+        const existe = async (tabela: string, codigo: string) =>
+            (await pool.query(`SELECT 1 FROM ${tabela} WHERE codigo = $1`, [codigo])).rowCount === 1;
+
+        test("desligar sem tarefas exclui o geral, as colunas, o item da equipe e o arquivo; religar cria outro", async () => {
+            const { area, geral, item, arquivo } = await cenario("Jurídico");
+            expect(geral.nome).toBe("Jurídico geral");
+
+            await new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Jurídico", temGeral: false });
+
+            expect(await linhaArea(area.codigo)).toEqual({ nome: "Jurídico", tem_geral: false });
+            expect(await existe("projetos", geral.codigo)).toBe(false);
+            expect((await pool.query("SELECT 1 FROM colunas_projeto WHERE projeto_codigo = $1", [geral.codigo])).rowCount).toBe(0);
+            expect(await existe("biblioteca_itens", item.codigo)).toBe(false);
+            expect(existsSync(arquivo)).toBe(false);
+            expect((await factory.criarAreaRepository().buscarPorCodigo(area.codigo))?.temGeral).toBe(false);
+
+            await new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Jurídico" });
+            expect(await factory.criarProjetoRepository().buscarGeralDaArea(area.codigo)).toBeNull();
+
+            await new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Jurídico", temGeral: true });
+            const novo = (await factory.criarProjetoRepository().buscarGeralDaArea(area.codigo))!;
+            expect(novo.codigo).not.toBe(geral.codigo);
+            expect(await linhaArea(area.codigo)).toEqual({ nome: "Jurídico", tem_geral: true });
+        });
+
+        test("geral com tarefa: 409 GERAL_COM_TAREFAS e nada muda", async () => {
+            const { area, geral, item, arquivo } = await cenario("Comercial");
+            await pool.query(
+                `INSERT INTO tarefas (titulo, projeto_codigo, coluna_codigo, status, data_inicio, data_fim)
+                 SELECT 'T', $1, codigo, 'pendente', '2026-01-01', '2026-02-01' FROM colunas_projeto WHERE projeto_codigo = $1 AND papel = 'entrada'`,
+                [geral.codigo],
+            );
+
+            await expect(new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Vendas", temGeral: false })).rejects.toMatchObject({
+                codigo: "GERAL_COM_TAREFAS",
+                message: expect.stringContaining("1 tarefa"),
+            });
+
+            expect(await linhaArea(area.codigo)).toEqual({ nome: "Comercial", tem_geral: true });
+            expect(await existe("projetos", geral.codigo)).toBe(true);
+            expect(await existe("biblioteca_itens", item.codigo)).toBe(true);
+            expect(existsSync(arquivo)).toBe(true);
+        });
+
+        test("se a exclusão do geral falhar, a área continua com o geral e o arquivo continua no disco", async () => {
+            const { area, geral, item, arquivo } = await cenario("Marketing");
+            const falha = jest.spyOn(ProjetoRepositoryDatabase.prototype, "excluir").mockRejectedValue(new Error("falha no banco"));
+            try {
+                await expect(new SalvarArea(factory).execute({ codigo: area.codigo, nome: "Marketing", temGeral: false })).rejects.toThrow(
+                    "falha no banco",
+                );
+            } finally {
+                falha.mockRestore();
+            }
+
+            expect(await linhaArea(area.codigo)).toEqual({ nome: "Marketing", tem_geral: true });
+            expect(await existe("projetos", geral.codigo)).toBe(true);
+            expect(await existe("biblioteca_itens", item.codigo)).toBe(true);
+            expect((await pool.query("SELECT 1 FROM anexos WHERE dono_codigo = $1", [item.codigo])).rowCount).toBe(1);
+            expect(existsSync(arquivo)).toBe(true);
+        });
     });
 });

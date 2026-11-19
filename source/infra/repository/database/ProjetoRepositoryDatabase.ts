@@ -151,6 +151,10 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         if (linhas.length === 0) throw new ErroNaoEncontrado("Projeto não encontrado.");
     }
 
+    async travar(codigo: string): Promise<void> {
+        await this.conexao.consultar("SELECT codigo FROM projetos WHERE codigo = $1 FOR UPDATE", [codigo]);
+    }
+
     private async gravar(operacao: (conexao: ConexaoBanco) => Promise<void>): Promise<void> {
         try {
             await this.conexao.transacao(operacao);

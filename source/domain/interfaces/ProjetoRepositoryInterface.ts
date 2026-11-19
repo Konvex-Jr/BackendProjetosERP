@@ -30,4 +30,6 @@ export default interface ProjetoRepositoryInterface {
     /** Grava o projeto e suas participações. Participações nunca são apagadas, só encerradas. No geral, não grava participações nem líder. */
     editar(projeto: Projeto): Promise<Projeto>;
     excluir(codigo: string): Promise<void>;
+    /** Trava a linha do projeto (FOR UPDATE) até o fim da transação: ninguém liga tarefa nova a ele. Fora de transação não segura nada. */
+    travar(codigo: string): Promise<void>;
 }

@@ -103,6 +103,11 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
         return this.armazenamentoFotos;
     }
 
+    /** Na memória não há transação: roda direto. Quem usa confere tudo o que pode falhar antes de gravar. */
+    async emTransacao<T>(operacao: (factory: RepositoryFactoryInterface) => Promise<T>): Promise<T> {
+        return operacao(this);
+    }
+
     criarBibliotecaRepository() {
         return this.bibliotecaRepository;
     }

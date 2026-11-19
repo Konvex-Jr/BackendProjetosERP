@@ -1,5 +1,6 @@
 /**
- * Migração 020 (sessão 24b) sobre um banco já na 019: responsável por item do checklist.
+ * Migração 020 (sessão 24b) sobre um banco já na 019: responsável por item do checklist, projeto geral
+ * opcional por área (areas.tem_geral) e nome do geral sem a bolinha.
  * Uso: DATABASE_URL_TESTE=postgresql://... npm run test:integracao
  * ATENÇÃO: apaga e recria o schema "public" do banco informado.
  */
@@ -53,6 +54,14 @@ descrever("migração 020 sobre a 019", () => {
         ).rows[0].codigo;
         // Item gravado antes da migração: continua existindo, sem responsável.
         await pool.query("INSERT INTO tarefa_checklist_itens (tarefa_codigo, texto) VALUES ($1, 'Antigo')", [tarefa]);
+        // Área com o geral no nome antigo (" · geral") e um projeto comum com o mesmo texto no nome.
+        const area = (await pool.query("INSERT INTO areas (nome) VALUES ('Inovação') RETURNING codigo")).rows[0].codigo;
+        await pool.query(
+            `INSERT INTO projetos (nome, descricao, data_inicio, data_fim, area_codigo, tipo, geral_da_area)
+             VALUES ('Inovação · geral', 'D', '2026-01-01', '2099-12-31', $1, 'interno', true),
+                    ('Pesquisa · geral', 'D', '2026-01-01', '2026-06-01', $1, 'interno', false)`,
+            [area],
+        );
         await aplicarMigracoes(pool, PASTA, silencio);
     }, 60000);
 
@@ -80,6 +89,17 @@ descrever("migração 020 sobre a 019", () => {
         expect((await pool.query("SELECT responsavel_codigo FROM tarefa_checklist_itens WHERE codigo = $1", [codigo])).rows[0]).toEqual({
             responsavel_codigo: null,
         });
+    });
+
+    test("áreas ganham tem_geral true e o geral perde a bolinha (só o geral)", async () => {
+        expect((await pool.query("SELECT nome, tem_geral FROM areas")).rows).toEqual([{ nome: "Inovação", tem_geral: true }]);
+        const nomes = (await pool.query("SELECT nome, geral_da_area FROM projetos WHERE area_codigo IS NOT NULL ORDER BY nome")).rows;
+        expect(nomes).toEqual([
+            { nome: "Inovação geral", geral_da_area: true },
+            { nome: "Pesquisa · geral", geral_da_area: false },
+        ]);
+        await pool.query("INSERT INTO areas (nome) VALUES ('Nova')");
+        expect((await pool.query("SELECT tem_geral FROM areas WHERE nome = 'Nova'")).rows[0]).toEqual({ tem_geral: true });
     });
 
     test("rodar o SQL de novo não quebra", async () => {

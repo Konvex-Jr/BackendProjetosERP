@@ -3,6 +3,9 @@ import PeriodoArea from "../../source/domain/entity/PeriodoArea";
 import Projeto from "../../source/domain/entity/Projeto";
 import Usuario from "../../source/domain/entity/Usuario";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import ItemBiblioteca from "../../source/domain/entity/ItemBiblioteca";
+import { DonoAnexo } from "../../source/domain/enum/Anexo";
+import GerirAnexos from "../../source/useCases/anexos/GerirAnexos";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
@@ -118,7 +121,7 @@ describe("Projetos internos e geral da área", () => {
     describe("geral acompanha a área", () => {
         it("criar área cria o geral", async () => {
             const geral = await geralDa(juridico.codigo);
-            expect(geral?.nome).toBe("Jurídico · geral");
+            expect(geral?.nome).toBe("Jurídico geral");
             expect(geral?.status).toBe("em_execucao");
             expect(geral?.tipo).toBe("interno");
         });
@@ -126,7 +129,7 @@ describe("Projetos internos e geral da área", () => {
         it("renomear, inativar e reativar a área acompanha o geral", async () => {
             const codigo = juridico.codigo;
             await servidor.chamar("put", `/areas/${codigo}`, { usuario: diretor, corpo: { nome: "Legal" } });
-            expect((await geralDa(codigo))?.nome).toBe("Legal · geral");
+            expect((await geralDa(codigo))?.nome).toBe("Legal geral");
             expect((await geralDa(codigo))?.area?.nome).toBe("Legal");
             await servidor.chamar("put", `/areas/${codigo}`, { usuario: diretor, corpo: { nome: "Legal", ativa: false } });
             expect((await geralDa(codigo))?.status).toBe("arquivado");
@@ -157,6 +160,122 @@ describe("Projetos internos e geral da área", () => {
             const lista = await servidor.chamar("get", `/tarefas?codigoProjeto=${geral.codigo}`, { usuario: ana });
             expect(lista.status).toBe(200);
             expect(lista.corpo.map((t: any) => t.titulo)).toContain("Revisar contrato");
+        });
+    });
+
+    describe("geral opcional (sessão 24b)", () => {
+        const novaTarefa = (codigoProjeto: string, titulo: string) =>
+            servidor.chamar("post", "/tarefas", {
+                usuario: ana,
+                corpo: {
+                    codigoProjeto,
+                    titulo,
+                    dataInicio: "2026-11-20T12:00:00.000Z",
+                    dataFim: "2026-11-27T12:00:00.000Z",
+                    prioridade: "P2",
+                },
+            });
+        const desligar = () =>
+            servidor.chamar("put", `/areas/${juridico.codigo}`, { usuario: diretor, corpo: { nome: "Jurídico", temGeral: false } });
+
+        it("a área nasce com temGeral true e o JSON traz o campo", async () => {
+            expect(juridico.temGeral).toBe(true);
+            const lista = await servidor.chamar("get", "/areas", { usuario: diretor });
+            expect(lista.corpo.find((a: any) => a.codigo === juridico.codigo).temGeral).toBe(true);
+        });
+
+        it("temGeral false sem tarefas exclui o geral, com a Biblioteca dele, e não volta ao salvar de novo", async () => {
+            const geral = (await geralDa(juridico.codigo))!;
+            const ref = { codigo: geral.codigo, nome: geral.nome };
+            const autor = { codigo: diretor.codigo, nome: diretor.nome };
+            const biblioteca = ctx.factory.criarBibliotecaRepository();
+            const daEquipe = await biblioteca.criar(new ItemBiblioteca({ titulo: "Da equipe", sigilo: "projeto", projeto: ref, autor }));
+            const aberto = await biblioteca.criar(new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor }));
+            const anexo = await new GerirAnexos(ctx.factory).enviar(
+                { codigo: diretor.codigo, perfil: diretor.perfil },
+                DonoAnexo.BIBLIOTECA,
+                daEquipe.codigo,
+                { nome: "ata.pdf", conteudo: Buffer.from("%PDF-1.4") },
+            );
+
+            const r = await desligar();
+            expect(r.status).toBe(200);
+            expect(r.corpo.temGeral).toBe(false);
+            expect(await geralDa(juridico.codigo)).toBeNull();
+            expect(await biblioteca.buscarPorCodigo(daEquipe.codigo)).toBeNull();
+            expect((await biblioteca.buscarPorCodigo(aberto.codigo))?.projeto).toBeNull();
+            expect(await ctx.factory.criarArmazenamentoAnexos().ler(anexo.arquivo)).toBeNull();
+
+            const deNovo = await servidor.chamar("put", `/areas/${juridico.codigo}`, { usuario: diretor, corpo: { nome: "Legal" } });
+            expect(deNovo.status).toBe(200);
+            expect(deNovo.corpo.temGeral).toBe(false);
+            expect(await geralDa(juridico.codigo)).toBeNull();
+        });
+
+        it("com 2 tarefas no geral responde 409 GERAL_COM_TAREFAS e não muda a área", async () => {
+            const geral = (await geralDa(juridico.codigo))!;
+            expect((await novaTarefa(geral.codigo, "Um")).status).toBe(200);
+            expect((await novaTarefa(geral.codigo, "Dois")).status).toBe(200);
+
+            const r = await servidor.chamar("put", `/areas/${juridico.codigo}`, {
+                usuario: diretor,
+                corpo: { nome: "Outro nome", temGeral: false },
+            });
+            expect(r.status).toBe(409);
+            expect(r.corpo.codigo).toBe("GERAL_COM_TAREFAS");
+            expect(r.corpo.message).toContain("2 tarefas");
+            const area = await ctx.factory.criarAreaRepository().buscarPorCodigo(juridico.codigo);
+            expect(area).toMatchObject({ nome: "Jurídico", temGeral: true });
+            expect((await geralDa(juridico.codigo))?.codigo).toBe(geral.codigo);
+        });
+
+        it("religar cria um geral novo e vazio", async () => {
+            const antigo = (await geralDa(juridico.codigo))!;
+            await desligar();
+            const r = await servidor.chamar("put", `/areas/${juridico.codigo}`, {
+                usuario: diretor,
+                corpo: { nome: "Jurídico", temGeral: true },
+            });
+            expect(r.corpo.temGeral).toBe(true);
+            const novo = (await geralDa(juridico.codigo))!;
+            expect(novo.codigo).not.toBe(antigo.codigo);
+            expect(novo.nome).toBe("Jurídico geral");
+            expect(await ctx.factory.criarTarefaRepository().listarCodigosPorProjeto(novo.codigo)).toEqual([]);
+        });
+
+        it("área criada com temGeral false não ganha geral", async () => {
+            const r = await servidor.chamar("post", "/areas", {
+                usuario: diretor,
+                corpo: { nome: "Presidência Executiva", temGeral: false },
+            });
+            expect(r.status).toBe(200);
+            expect(r.corpo.temGeral).toBe(false);
+            expect(await geralDa(r.corpo.codigo)).toBeNull();
+        });
+
+        it("temGeral que não é booleano responde 400", async () => {
+            const r = await servidor.chamar("put", `/areas/${juridico.codigo}`, {
+                usuario: diretor,
+                corpo: { nome: "Jurídico", temGeral: "não" },
+            });
+            expect(r.status).toBe(400);
+        });
+
+        it("área sem geral não quebra projetos, ocupação, períodos nem perfil", async () => {
+            await desligar();
+            for (const usuario of [diretor, ana]) {
+                for (const rota of [
+                    "/projetos",
+                    "/ocupacao",
+                    `/ocupacao/${ana.codigo}`,
+                    `/usuarios/${ana.codigo}/periodos`,
+                    `/usuarios/${ana.codigo}/perfil`,
+                    "/usuarios",
+                ]) {
+                    const r = await servidor.chamar("get", rota, { usuario });
+                    expect([rota, r.status]).toEqual([rota, 200]);
+                }
+            }
         });
     });
 });

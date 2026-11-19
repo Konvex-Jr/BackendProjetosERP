@@ -561,9 +561,15 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
-        post: operation(["Configurações"], "Criar área (diretores)", json),
+        post: operation(["Configurações"], "Criar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }", json),
     },
-    "/areas/{codigo}": { put: operation(["Configurações"], "Editar área (diretores)", comCodigo(json)) },
+    "/areas/{codigo}": {
+        put: operation(
+            ["Configurações"],
+            "Editar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }; temGeral false exclui o projeto geral (409 GERAL_COM_TAREFAS se tiver tarefas)",
+            comCodigo(json),
+        ),
+    },
     "/cargos": {
         get: operation(["Configurações"], "Listar cargos"),
         post: operation(["Configurações"], "Criar cargo (diretores)", json),

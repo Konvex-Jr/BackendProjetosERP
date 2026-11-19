@@ -7,12 +7,15 @@ export default class Area {
     readonly nome: string;
     readonly codigoAreaPai: string | null;
     readonly ativa: boolean;
+    /** A área tem projeto geral (sessão 24b). Desligado, o geral é excluído e não volta. */
+    readonly temGeral: boolean;
 
-    constructor(nome: string, codigoAreaPai: string | null = null, ativa = true, codigo?: string) {
+    constructor(nome: string, codigoAreaPai: string | null = null, ativa = true, codigo?: string, temGeral = true) {
         this.codigo = codigo ?? uuid();
         this.nome = (nome ?? "").trim();
         this.codigoAreaPai = codigoAreaPai || null;
         this.ativa = ativa;
+        this.temGeral = temGeral;
         if (!this.nome) throw new ErroValidacao("O nome da área é obrigatório.", "NOME_AREA_OBRIGATORIO");
         if (this.nome.length > 80) throw new ErroValidacao("O nome da área deve ter até 80 caracteres.", "NOME_AREA_LONGO");
         if (this.codigoAreaPai === this.codigo) {

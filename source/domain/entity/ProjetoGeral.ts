@@ -10,7 +10,7 @@ import TipoProjeto from "../enum/TipoProjeto";
 const FIM_DO_GERAL = new Date("2099-12-31T00:00:00.000Z");
 
 export function nomeDoGeral(area: Area): string {
-    return `${area.nome} · geral`;
+    return `${area.nome} geral`;
 }
 
 /** Projeto geral da área: interno, fixo, sem equipe própria (a equipe vem dos períodos da área). */
