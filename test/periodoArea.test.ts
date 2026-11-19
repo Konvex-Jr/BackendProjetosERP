@@ -109,6 +109,72 @@ describe("validarNovoPeriodo", () => {
     });
 });
 
+describe("validarNovoPeriodo: um cargo por vez", () => {
+    const diretor = new Cargo("Diretor");
+    const assessor = new Cargo("Assessor");
+
+    it("cargo sobreposto a outro cargo em outra área: 400 citando a área", () => {
+        const outro = periodo(outra, "2026-01-01", null, diretor);
+        let erro: any;
+        try {
+            validarNovoPeriodo(periodo(ativa, "2026-03-01", null, assessor), [outro], null, ativo);
+        } catch (e) {
+            erro = e;
+        }
+        expect(erro.codigo).toBe("PERIODO_CARGO_SIMULTANEO");
+        expect(erro.message).toContain("Marketing");
+    });
+    it("cargo sobreposto a outro sem cargo é ok", () => {
+        const outro = periodo(outra, "2026-01-01", null);
+        expect(() => validarNovoPeriodo(periodo(ativa, "2026-03-01", null, assessor), [outro], null, ativo)).not.toThrow();
+    });
+    it("dois sem cargo é ok", () => {
+        const outro = periodo(outra, "2026-01-01", null);
+        expect(() => validarNovoPeriodo(periodo(ativa, "2026-03-01", null), [outro], null, ativo)).not.toThrow();
+    });
+    it("cargo com datas que não se tocam é ok", () => {
+        const outro = periodo(outra, "2026-01-01", "2026-03-01", diretor);
+        expect(() => validarNovoPeriodo(periodo(ativa, "2026-03-01", null, assessor), [outro], null, ativo)).not.toThrow();
+    });
+
+    describe("dados antigos com dois cargos sobrepostos", () => {
+        const velho = PeriodoArea.carregar("u1", ativa, assessor, dia("2026-02-01"), null, null, "p1");
+        const outro = PeriodoArea.carregar("u1", outra, diretor, dia("2026-01-01"), null, null, "p2");
+        it("encurtar o fim é ok", () => {
+            expect(() => validarNovoPeriodo(velho.copiar({ fim: dia("2026-05-01") }), [outro], velho, ativo)).not.toThrow();
+        });
+        it("trocar o cargo barra", () => {
+            const outroCargo = new Cargo("Gerente");
+            expect(codigoDoErro(() => validarNovoPeriodo(velho.copiar({ cargo: outroCargo }), [outro], velho, ativo))).toBe(
+                "PERIODO_CARGO_SIMULTANEO",
+            );
+        });
+        it("adiantar o início barra", () => {
+            expect(codigoDoErro(() => validarNovoPeriodo(velho.copiar({ inicio: dia("2026-01-15") }), [outro], velho, ativo))).toBe(
+                "PERIODO_CARGO_SIMULTANEO",
+            );
+        });
+        it("esticar o fim barra", () => {
+            const fechado = PeriodoArea.carregar("u1", ativa, assessor, dia("2026-02-01"), dia("2026-04-01"), null, "p1");
+            expect(codigoDoErro(() => validarNovoPeriodo(fechado.copiar({ fim: dia("2026-05-01") }), [outro], fechado, ativo))).toBe(
+                "PERIODO_CARGO_SIMULTANEO",
+            );
+        });
+        it("abrir um período fechado barra", () => {
+            const fechado = PeriodoArea.carregar("u1", ativa, assessor, dia("2026-02-01"), dia("2026-04-01"), null, "p1");
+            expect(codigoDoErro(() => validarNovoPeriodo(fechado.copiar({ fim: null }), [outro], fechado, ativo))).toBe(
+                "PERIODO_CARGO_SIMULTANEO",
+            );
+        });
+        it("mover para sobrepor um período que antes não sobrepunha barra", () => {
+            const antes = PeriodoArea.carregar("u1", ativa, assessor, dia("2025-01-01"), dia("2025-06-01"), null, "p1");
+            expect(codigoDoErro(() => validarNovoPeriodo(antes.copiar({ fim: dia("2026-02-01") }), [outro], antes, ativo))).toBe(
+                "PERIODO_CARGO_SIMULTANEO",
+            );
+        });
+    });
+});
+
 describe("Cargo.lideraArea", () => {
     it("padrão false", () => expect(new Cargo("Diretor").lideraArea).toBe(false));
     it("true quando passado", () => expect(new Cargo("Diretor", true, undefined, true).lideraArea).toBe(true));

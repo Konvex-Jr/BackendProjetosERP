@@ -64,6 +64,7 @@ export const MENSAGENS_DE_ERRO = {
         SOBREPOSTO: (inicio: string, fim: string | null) =>
             `Já existe um período nesta área que se sobrepõe a este (de ${inicio} ${fim ? `até ${fim}` : "em aberto"}).`,
         SOBREPOSTO_SEM_DATAS: "Já existe um período nesta área que se sobrepõe a este.",
+        CARGO_SIMULTANEO: (area: string) => `A pessoa já tem cargo no período de ${area} nessas datas. Só um período com cargo por vez.`,
         AREA_INATIVA: "A área informada está inativa.",
         AREA_INATIVA_NAO_REABRE: "A área deste período está inativa: o período não pode ser reaberto. Informe a data de fim.",
         AREA_OBRIGATORIA: "Informe a área do período (campo codigoArea).",
