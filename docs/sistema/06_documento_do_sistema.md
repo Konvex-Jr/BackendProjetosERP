@@ -64,6 +64,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 
 ### Configurações (`/areas`, `/cargos`, `/senioridades`)
 - Só o diretor cria e edita áreas (hierárquicas, com subáreas), cargos e senioridades (`configuracoes.editar`). Todos os logados leem as listas (servem aos formulários).
+- Área tem a opção **Projeto geral** (`temGeral`, desde a 24b, migração 020; padrão ligada). Desligar exclui o geral da área se ele não tem tarefas; com tarefas, 409 `GERAL_COM_TAREFAS` e nada muda. Religar cria um geral novo e vazio. Área sem geral não quebra listas nem ocupação.
 - A área **Inovação** não dá mais nenhum direito especial (desde a sessão 17). É só uma área como as outras.
 - Cargo tem a marca **"Lidera a área"** (`lideraArea`, desde a 23a). A migração 017 marcou os cargos cujo nome começa com "Gerente" ou "Diretor"; o diretor confere em Configurações.
 - **Liderança de área (regra provisória; as lideranças da EJ vão decidir a definitiva, 18/11/2026):** lidera uma área quem tem o papel diretor do sistema, ou um período em aberto com cargo que lidera nessa área ou em alguma acima dela (subindo pela área pai). Fica toda em `source/shared/seguranca/liderancaArea.ts`. Na 23a ela só existe e é testada; quem a usa é a 23b (projeto geral e projetos internos).
@@ -83,7 +84,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
 - **Projeto interno (sessão 23b).** `tipo` é `cliente` (padrão) ou `interno`; outro valor é 400 `TIPO_PROJETO_INVALIDO`. Interno sempre tem área (400 `AREA_OBRIGATORIA_INTERNO`). `GET /projetos?tipo=interno|cliente` filtra.
-- **Projeto geral da área.** Um por área (`geralDaArea`), nome "Área · geral", interno, nunca sigiloso. Criado pelo sistema (migração 018 para as áreas existentes e `SalvarArea` para as novas); renomear a área renomeia o geral, inativar arquiva e reativar volta a Em andamento. A equipe e a liderança não são gravadas: vêm dos períodos da área e da `liderancaArea`. Editar, excluir, mudar status, acesso, equipe e líder do geral é 400 `PROJETO_GERAL_FIXO`; só `PUT /projetos/:codigo/colunas` segue valendo. As tarefas que eram avulsas moram nele.
+- **Projeto geral da área.** Um por área (`geralDaArea`), nome "Área geral", interno, nunca sigiloso. Criado pelo sistema (migração 018 para as áreas existentes e `SalvarArea` para as novas); renomear a área renomeia o geral, inativar arquiva e reativar volta a Em andamento. A equipe e a liderança não são gravadas: vêm dos períodos da área e da `liderancaArea`. Editar, excluir, mudar status, acesso, equipe e líder do geral é 400 `PROJETO_GERAL_FIXO`; só `PUT /projetos/:codigo/colunas` segue valendo. As tarefas que eram avulsas moram nele.
 
 ### Tarefas (`/tarefas`)
 Toda tarefa tem **projeto** (sessão 23b). A tarefa avulsa (sem projeto, com categoria) acabou: a migração 018 levou as avulsas para o **projeto geral da área** da categoria, e `POST /tarefas` sem `codigoProjeto` responde 400 `PROJETO_OBRIGATORIO` para todos (antes da checagem de permissão); `categoria` no corpo ou na consulta é ignorada. Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna).
@@ -162,6 +163,7 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | O mesmo nos períodos de diretores | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
 | Alterar os próprios períodos | ✅ | ❌ | ❌ | `exigirPodeGerirPeriodosDe` (403 `PERIODO.PROPRIO`) |
 | Criar e editar áreas, cargos, senioridades | ✅ | ❌ | ❌ | `configuracoes.editar` |
+| Ligar ou desligar o projeto geral da área (opção "Projeto geral") | ✅ | ❌ | ❌ | `configuracoes.editar` / `SalvarArea` (`temGeral`) |
 
 ### Projetos
 | Ação | Diretor | Gerente | Membro | Código |
@@ -199,6 +201,8 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Criar tarefa (sempre num projeto; sem projeto: 400 `PROJETO_OBRIGATORIO`) | ✅ | ✅ | se é da equipe atual (fica responsável); se é líder, para qualquer pessoa da equipe | `tarefas.gerirTodas` / `papelNoProjeto` |
 | Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto (no geral: se tem cargo que lidera a área) | `regrasTarefa().organizar` / `Projeto.ehLider` |
 | Editar e excluir a tarefa que criou (sem trocar responsáveis nem situação) | ✅ | ✅ | se é da equipe atual e criou a tarefa | `regrasTarefa().editar` |
+| Corrigir a data de conclusão de tarefa concluída (não futura, não antes do início; quem concluiu não muda) | ✅ | ✅ | se é líder, ou participante e responsável, ou participante que criou a tarefa | `PATCH /tarefas/:codigo/conclusao` / `regrasTarefa().mudarStatus` ou `editar` |
+| Marcar item do checklist (grava na hora; qualquer item da tarefa) | ✅ | ✅ | se é líder, ou participante e responsável, ou participante que criou a tarefa | `PATCH /tarefas/:codigo/checklist/:item` / `regrasTarefa().mudarStatus` ou `editar` |
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
 | Mover tarefa de projeto entre as colunas | ✅ | ✅ | se é líder, ou participante e responsável (mesma regra de concluir e reabrir) | `PATCH /tarefas/:codigo/coluna` / `regrasTarefa().mudarStatus` |
 | Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto (no geral: se lidera a área) | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
