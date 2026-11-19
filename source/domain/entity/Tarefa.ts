@@ -8,17 +8,15 @@ import StatusTarefa from "../enum/StatusTarefa";
 import PrioridadeTarefa from "../enum/PrioridadeTarefa";
 import ColunaProjeto from "./ColunaProjeto";
 import { statusDoPapel, PapelColuna } from "../enum/ColunaProjeto";
-import CategoriaTarefa, { ehCategoriaTarefa } from "../enum/CategoriaTarefa";
 
 /**
- * Tarefa de projeto ou avulsa: tem projeto ou categoria, nunca os dois. Como as outras entidades,
+ * Tarefa de projeto (toda tarefa tem projeto desde a sessão 23b). Como as outras entidades,
  * é imutável e se valida no construtor; mudar algo gera uma cópia (comStatus, semDependencia...).
  * Quem pode ver e alterar fica em shared/seguranca/regrasTarefa.ts.
  */
 export default class Tarefa {
     readonly codigo: string;
-    /** Projeto da tarefa; nulo na tarefa avulsa (sessão 8c), que tem `categoria`. */
-    readonly projeto: Projeto | null;
+    readonly projeto: Projeto;
     readonly titulo: string;
     readonly dataInicio: Date;
     readonly dataFim: Date;
@@ -31,15 +29,13 @@ export default class Tarefa {
     readonly checklist: ItemChecklistTarefa[];
     /** Quem concluiu (sessão 8b). Nulo se não concluída ou concluída antes do registro existir. */
     readonly concluidaPor: Usuario | null;
-    /** Só em tarefa avulsa: Inovação, Capacitação ou Execução (sessão 8c). */
-    readonly categoria: CategoriaTarefa | null;
     /** Quem criou (sessão 8c). Nulo nas tarefas criadas antes. */
     readonly criadaPor: Usuario | null;
-    /** Coluna do kanban do projeto (sessão 21). O status vem do papel dela; nulo na tarefa avulsa. */
-    readonly coluna: ColunaProjeto | null;
+    /** Coluna do kanban do projeto (sessão 21). O status vem do papel dela. */
+    readonly coluna: ColunaProjeto;
 
     constructor(
-        projeto: Projeto | null,
+        projeto: Projeto,
         titulo: string,
         dataInicio: Date,
         dataFim: Date,
@@ -52,20 +48,19 @@ export default class Tarefa {
         checklist: ItemChecklistTarefa[] = [],
         codigo?: string,
         concluidaPor: Usuario | null = null,
-        categoria: CategoriaTarefa | null = null,
         criadaPor: Usuario | null = null,
         coluna: ColunaProjeto | null = null,
     ) {
-        if (projeto === null && coluna !== null) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
+        if (!projeto) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PROJETO_OBRIGATORIO, "PROJETO_OBRIGATORIO");
         }
         // Sem coluna, o status escolhe a coluna: um status inválido não pode virar "andamento" em silêncio.
-        if (projeto && coluna === null && !Object.values(StatusTarefa).includes(status)) {
+        if (coluna === null && !Object.values(StatusTarefa).includes(status)) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.STATUS_INVALIDO, "STATUS_TAREFA_INVALIDO");
         }
-        // Tarefa de projeto: a coluna manda e o status é o do papel dela (o status passado só escolhe a coluna).
-        const colunaFinal = projeto ? (coluna ?? projeto.colunaParaStatus(status)) : null;
-        if (colunaFinal) status = statusDoPapel(colunaFinal.papel);
+        // A coluna manda e o status é o do papel dela (o status passado só escolhe a coluna).
+        const colunaFinal = coluna ?? projeto.colunaParaStatus(status);
+        status = statusDoPapel(colunaFinal.papel);
 
         this.codigo = codigo ?? uuid();
         this.projeto = projeto;
@@ -81,15 +76,10 @@ export default class Tarefa {
         this.checklist = checklist;
         // Reabrir a tarefa apaga quem concluiu.
         this.concluidaPor = status === StatusTarefa.CONCLUIDA ? concluidaPor : null;
-        this.categoria = categoria ?? null;
         this.criadaPor = criadaPor;
         this.coluna = colunaFinal;
 
         this.validar();
-    }
-
-    get avulsa(): boolean {
-        return this.projeto === null;
     }
 
     /** Cópia com outro status/conclusão, mantendo o resto. */
@@ -110,10 +100,9 @@ export default class Tarefa {
             this.checklist,
             this.codigo,
             concluidaPor,
-            this.categoria,
             this.criadaPor,
             // Mantém a coluna se ela já serve ao novo status; senão, a que corresponde a ele.
-            this.projeto && statusValido ? this.projeto.colunaParaStatus(status, this.coluna) : null,
+            statusValido ? this.projeto.colunaParaStatus(status, this.coluna) : null,
         );
     }
 
@@ -138,7 +127,6 @@ export default class Tarefa {
             this.checklist,
             this.codigo,
             concluida ? (jaConcluida ? this.concluidaPor : quem) : null,
-            this.categoria,
             this.criadaPor,
             coluna,
         );
@@ -171,7 +159,6 @@ export default class Tarefa {
             this.checklist,
             this.codigo,
             this.concluidaPor,
-            this.categoria,
             this.criadaPor,
             this.coluna,
         );
@@ -179,9 +166,9 @@ export default class Tarefa {
 
     toJSON() {
         // As colunas já vêm em `coluna`; não repetir a lista inteira dentro de `projeto`.
-        const projeto: Record<string, unknown> | null = this.projeto ? { ...this.projeto.toJSON() } : null;
-        if (projeto) delete projeto.colunas;
-        return { ...this, projeto, coluna: this.coluna ? this.coluna.toJSON() : null, avulsa: this.avulsa };
+        const projeto: Record<string, unknown> = { ...this.projeto.toJSON() };
+        delete projeto.colunas;
+        return { ...this, projeto, coluna: this.coluna.toJSON() };
     }
 
     /** Atrasada = não concluída e com prazo anterior a "hoje". */
@@ -210,20 +197,12 @@ export default class Tarefa {
             throw new ErroValidacao("O prazo não pode ser anterior à data de início da tarefa.", "PERIODO_TAREFA_INVALIDO");
         }
 
-        if ((this.projeto === null) === (this.categoria === null)) {
-            throw new ErroValidacao("A tarefa precisa ter um projeto ou uma categoria (e não os dois).", "TAREFA_PROJETO_OU_CATEGORIA");
-        }
-
-        if (this.categoria !== null && !ehCategoriaTarefa(this.categoria)) {
-            throw new ErroValidacao("Categoria inválida. Use inovacao, capacitacao ou execucao.", "CATEGORIA_TAREFA_INVALIDA");
-        }
-
         if (this.dependeDe) {
             if (this.dependeDe.codigo === this.codigo) {
                 throw new ErroValidacao("Uma tarefa não pode depender dela mesma.", "DEPENDENCIA_CIRCULAR");
             }
 
-            if (!this.projeto || this.dependeDe.projeto?.codigo !== this.projeto.codigo) {
+            if (this.dependeDe.projeto?.codigo !== this.projeto.codigo) {
                 throw new ErroValidacao("A tarefa predecessora deve pertencer ao mesmo projeto.", "DEPENDENCIA_OUTRO_PROJETO");
             }
         }

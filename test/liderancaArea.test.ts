@@ -3,7 +3,7 @@ import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea from "../source/domain/entity/PeriodoArea";
 import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
-import { areasLideradas, lideraArea } from "../source/shared/seguranca/liderancaArea";
+import { areasLideradas, lideraArea, lideresDaArea } from "../source/shared/seguranca/liderancaArea";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -71,5 +71,24 @@ describe("liderança das áreas (regra provisória)", () => {
         const ciclicas = [a, b, marketing];
         expect(lideraArea(membro, "a", ciclicas, [aberto(marketing, gerente)])).toBe(false);
         expect(areasLideradas(membro, ciclicas, [aberto(marketing, gerente)])).toEqual(new Set(["marketing"]));
+    });
+});
+
+describe("lideresDaArea", () => {
+    test("líder da área pai entra; cargo sem lideraArea e período encerrado não entram", () => {
+        const periodos = [
+            aberto(projetos, gerente, "chefe"),
+            aberto(inovacao, assessor, "assessor"),
+            new PeriodoArea("antigo", inovacao, gerente, dia("2026-01-01"), dia("2026-02-01"), null),
+            aberto(marketing, gerente, "outra-area"),
+        ];
+        expect(lideresDaArea("inovacao", areas, periodos)).toEqual(["chefe"]);
+    });
+
+    test("sem repetição e sem travar em ciclo", () => {
+        const a = new Area("A", "b", true, "a");
+        const b = new Area("B", "a", true, "b");
+        const periodos = [aberto(a, gerente, "x"), aberto(b, gerente, "x")];
+        expect(lideresDaArea("a", [a, b], periodos)).toEqual(["x"]);
     });
 });

@@ -23,15 +23,16 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Dashboard**: suas tarefas abertas e atrasadas, o andamento delas (burndown) e as capacitações em que você se inscreveu.
 
-**Tarefas**: abre em "Minhas tarefas" (de projetos e avulsas). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
+**Tarefas**: abre em "Minhas tarefas" (de projetos, inclusive o geral da sua área). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois.
 - Na tela Tarefas o quadro é por **semana**: cada cartão mostra um selo com a **etapa** da tarefa (A fazer, Fazendo...). Arraste o cartão para a coluna **Concluído** (ou use Concluir/Reabrir no modal) para concluir ou reabrir as tarefas **em que você é responsável**.
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
-- **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (na tarefa avulsa, o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
+- **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (no projeto geral da área, só o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
-**Projetos**: só os projetos de que você participa ou participou. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
+**Projetos**: só os projetos de que você participa ou participou, mais o **projeto geral** de cada área em que você tem ou teve período. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
 - **Kanban por etapa**: as colunas são as etapas do trabalho daquele projeto (por padrão, A fazer, Fazendo, Revisando e Concluído). Cada cartão mostra o prazo, mas o prazo não depende da coluna.
 - **Mover uma tarefa**: arraste o cartão para outra coluna, ou use **Mover para...** no menu do cartão (no celular, o menu é o caminho). Você move as tarefas em que é responsável; o líder move qualquer uma. No modal da tarefa, o campo **Etapa** faz o mesmo. Entrar na coluna marcada como concluída conta a tarefa como concluída; sair dela a reabre.
+- **Projeto interno e projeto geral da área**: projeto **interno** é da própria EJ (não é de cliente) e sempre pertence a uma área; na lista dá para filtrar por tipo. Cada área tem um **projeto geral** ("Área · geral"), criado pelo sistema, onde ficam as tarefas que antes eram avulsas. Nele a equipe é quem tem período na área (você não monta a equipe), quem lidera a área organiza o quadro e as tarefas, e ele não pode ser editado, excluído, arquivado à mão nem ficar sigiloso (só as colunas do quadro mudam). Ele é arquivado quando a área é inativada e volta quando ela é reativada.
 - **Editar colunas** (botão acima do quadro, só para o líder e a gestão): crie, renomeie, mude a cor, reordene com os botões subir e descer, e exclua colunas, de 2 a 12 por projeto. Marque qual coluna é a de **entrada** (onde caem as tarefas novas) e qual é a **concluída**; cada uma existe uma só vez. Ao excluir uma coluna que tem tarefas, o sistema pergunta para qual coluna elas vão. Ao trocar a coluna concluída, o sistema avisa quantas tarefas passam a contar como concluídas e quantas voltam a abertas.
 
 **Capacitações**: veja as próximas em lista ou no **calendário** do mês (no celular, em forma de agenda). Abra uma para ver a descrição, baixar ou abrir o material (PDF e imagem abrem numa janela do sistema) e **se inscrever**; dá para cancelar até a hora de início. Depois da capacitação, se a gestão marcou sua presença, a ficha mostra **Avaliar** (nota de 1 a 5 e dois comentários). A gestão lê sua avaliação com seu nome; quem ministrou lê sem o nome; os demais veem só a média. As horas das capacitações em que você esteve presente aparecem no seu perfil.
@@ -49,7 +50,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - **Clipe:** nas listas da Biblioteca e nos cartões de tarefa, o clipe com número mostra quantos arquivos o item tem.
 - **No perfil:** em **Meu perfil** e no perfil de outras pessoas, a seção **Itens na Biblioteca** lista o que a pessoa cadastrou (só o que você pode ler); clique para abrir a ficha.
 - Na ficha de cada projeto, a aba **Biblioteca** mostra os itens ligados a ele que você pode ver.
-- Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas avulsas de Inovação.
+- Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas no projeto geral de Inovação.
 
 **Meu perfil** (no menu): seus dados de contato e apresentação (telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio), troca de senha e a sua foto.
 - **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
@@ -58,7 +59,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder. O sistema avisa quando a alocação de alguém passa de 100%.
 
-**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto ou categoria e situação. Cria **tarefas avulsas** (sem projeto) nas categorias Inovação, Capacitação ou Execução, para qualquer pessoa ativa. Anexa arquivos em qualquer tarefa, inclusive avulsa, e exclui qualquer anexo de tarefa.
+**Tarefas**: vê e organiza todas. Filtra por pessoa, projeto e situação. Toda tarefa fica num projeto: o que era avulso vive no **projeto geral** da área. Anexa arquivos em qualquer tarefa, inclusive as do projeto geral, e exclui qualquer anexo de tarefa.
 
 **Pessoas**: cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
 - **Áreas e cargos** ficam no perfil da pessoa, não no formulário: na seção **Áreas e cargos**, adicione um período (área, cargo opcional, início e, se já terminou, o fim), corrija as datas ou exclua um lançamento errado. Nenhuma data pode ser no futuro, e dois períodos na mesma área não podem se sobrepor. Quando a pessoa sai da EJ, as áreas atuais dela são encerradas na data de saída; se ela voltar, lance um período novo.
@@ -74,17 +75,17 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 ## Diretor
 
 Tudo o que o gerente faz, mais:
-- **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive avulsa) e exclui qualquer anexo de tarefa.
+- **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive as do projeto geral) e exclui qualquer anexo de tarefa.
 - **Pessoas**: cadastra e edita outros diretores.
 - **Projetos**: exclui projetos (leva junto os itens da Biblioteca com sigilo Equipe do projeto). Prefira **Arquivar**, que mantém o histórico.
-- **Configurações**: áreas, cargos e senioridades. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
+- **Configurações**: áreas, cargos e senioridades. Criar uma área cria o projeto geral dela; renomear a área renomeia o geral, e inativar arquiva. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
 
 ---
 
 ## Trainee
 
 Quem entra como trainee faz login como qualquer pessoa, com o acesso de **membro**:
-- Vê os projetos de que participa e as tarefas deles, as tarefas avulsas em que é responsável, o próprio perfil, a lista de pessoas, as capacitações e o Dashboard.
+- Vê os projetos de que participa e as tarefas deles, as tarefas do projeto geral da área em que é responsável, o próprio perfil, a lista de pessoas, as capacitações e o Dashboard.
 - **Não vê a Biblioteca**: o item não aparece no menu, e abrir o endereço direto mostra erro de acesso.
 - **Não pode ser líder** de projeto.
 - A gestão cria a pessoa já como Trainee em **Pessoas**, **Nova pessoa**: escolhe o status **Trainee** e digita a **Senha inicial** (o perfil fica Membro, sem opção). Para trocar a senha depois, use **Redefinir senha** no menu da pessoa.

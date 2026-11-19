@@ -44,7 +44,7 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         expect(sig).toMatchObject({ nome: "Sigiloso ativo", sigiloso: true, restrito: true, referencia: null, funcao: null });
         expect(JSON.stringify(sig)).not.toContain("REF-SECRETA");
         const normal = todos.find((p) => p.codigo === "p-normal")!;
-        expect(normal).toMatchObject({ sigiloso: false, restrito: false, referencia: "REF-SECRETA" });
+        expect(normal).toMatchObject({ sigiloso: false, restrito: false, referencia: "REF-SECRETA", tipo: "cliente", geralDaArea: false });
         expect(perfil.alocacao.projetos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig"]);
     });
 

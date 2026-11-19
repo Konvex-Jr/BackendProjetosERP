@@ -1,6 +1,7 @@
 import { DetalhesProjeto } from "../../domain/entity/Projeto";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import PrioridadeProjeto from "../../domain/enum/PrioridadeProjeto";
+import TipoProjeto from "../../domain/enum/TipoProjeto";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
@@ -10,6 +11,7 @@ export interface EntradaDetalhesProjeto {
     objetivo?: string | null;
     clienteNome?: string | null;
     prioridade?: PrioridadeProjeto;
+    tipo?: TipoProjeto;
     progresso?: number;
     codigoResponsavel?: string | null;
     codigoArea?: string | null;
@@ -21,7 +23,7 @@ export async function resolverDetalhesProjeto(
     entrada: EntradaDetalhesProjeto,
 ): Promise<DetalhesProjeto> {
     const detalhes: DetalhesProjeto = {};
-    for (const campo of ["referencia", "objetivo", "clienteNome", "prioridade", "progresso"] as const) {
+    for (const campo of ["referencia", "objetivo", "clienteNome", "prioridade", "progresso", "tipo"] as const) {
         if (entrada[campo] !== undefined) (detalhes as any)[campo] = entrada[campo];
     }
     if (entrada.tags !== undefined) {

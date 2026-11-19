@@ -3,6 +3,7 @@ import Projeto from "../../domain/entity/Projeto";
 import StatusProjeto from "../../domain/enum/StatusProjeto";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import { exigirNaoGeral } from "./sincronizarGeral";
 
 /**
  * RF-021: muda o status do projeto. Sem status informado, alterna entre
@@ -15,6 +16,7 @@ export default class AlternarStatusProjeto {
         const projetos = this.factory.criarProjetoRepository();
         const p = await projetos.buscarPorCodigo(codigo);
         if (!p) throw new ErroNaoEncontrado("Projeto não encontrado.");
+        exigirNaoGeral(p);
         if (status !== undefined && !Object.values(StatusProjeto).includes(status)) {
             throw new ErroValidacao("Status de projeto inválido.", "STATUS_PROJETO_INVALIDO");
         }

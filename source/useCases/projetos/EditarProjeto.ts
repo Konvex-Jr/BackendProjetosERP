@@ -3,6 +3,7 @@ import Projeto from "../../domain/entity/Projeto";
 import Participacao, { hoje } from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { resolverDetalhesProjeto } from "./dadosProjeto";
+import { exigirNaoGeral } from "./sincronizarGeral";
 import EditarProjetoInput from "./EditarProjetoInput";
 
 /** RF-020 e RF-022: edita o projeto. Ninguém sai do histórico da equipe. */
@@ -13,6 +14,7 @@ export default class EditarProjeto {
         const projetos = this.factory.criarProjetoRepository();
         const atual = await projetos.buscarPorCodigo(input.codigo);
         if (!atual) throw new ErroNaoEncontrado("Projeto não encontrado.");
+        exigirNaoGeral(atual);
 
         let participacoes = atual.participacoes;
         if (input.codigosMembros !== undefined) {

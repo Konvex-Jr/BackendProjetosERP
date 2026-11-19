@@ -2,8 +2,6 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Tarefa from "../../domain/entity/Tarefa";
 import Usuario from "../../domain/entity/Usuario";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { hoje as hojeNoFuso } from "../../shared/datas";
 import { colunaDoProjeto } from "./colunaDoProjeto";
 
@@ -18,7 +16,6 @@ export default class MoverTarefa {
     async execute(codigo: string, codigoColuna: string, hoje = hojeNoFuso(), quem: Usuario | null = null): Promise<Tarefa> {
         const t = await this.tarefas.buscarPorCodigo(codigo);
         if (!t) throw new ErroNaoEncontrado("Tarefa não encontrada.");
-        if (!t.projeto) throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.AVULSA_SEM_COLUNA, "TAREFA_AVULSA_SEM_COLUNA");
         const projeto = await this.projetos.buscarPorCodigo(t.projeto.codigo);
         if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
         const movida = t.naColuna(colunaDoProjeto(projeto, codigoColuna), hoje, quem);

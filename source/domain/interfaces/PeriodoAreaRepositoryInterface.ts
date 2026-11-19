@@ -10,6 +10,10 @@ export default interface PeriodoAreaRepositoryInterface {
     listarDe(codigoUsuario: string): Promise<PeriodoArea[]>;
     /** Períodos abertos (fim nulo) de várias pessoas, numa consulta só. */
     listarAbertosDe(codigosUsuario: string[]): Promise<PeriodoArea[]>;
+    /** Todos os períodos (abertos e encerrados) dessas áreas, numa consulta só. Monta a equipe do projeto geral. */
+    listarDasAreas(codigosArea: string[]): Promise<PeriodoArea[]>;
+    /** Períodos abertos com cargo que lidera, de todas as áreas. Monta a liderança do projeto geral. */
+    listarAbertosQueLideram(): Promise<PeriodoArea[]>;
     buscarPorCodigo(codigo: string): Promise<PeriodoArea | null>;
     criar(periodo: PeriodoArea): Promise<PeriodoArea>;
     editar(periodo: PeriodoArea): Promise<PeriodoArea>;

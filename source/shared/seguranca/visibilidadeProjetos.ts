@@ -37,19 +37,23 @@ export interface ProjetoParaAcesso {
     criadoPor: string | null;
     acesso: readonly string[];
     participacoes: { usuario: { codigo: string }; ativa: boolean }[];
+    /** Projeto geral (sessão 23b): quem lidera a área vê tudo, mesmo sem estar na equipe. */
+    lideresDaArea?: readonly string[];
 }
 
 /** completo: vê tudo; resumo: gerente fora de projeto sigiloso (só andamento); nada: nem sabe que existe. */
 export type AcessoProjeto = "completo" | "resumo" | "nada";
 
 /**
- * Projeto normal: gerente/diretor veem todos; membro, se participa ou participou.
+ * Projeto normal: gerente/diretor veem todos; membro, se participa ou participou ou se lidera a área
+ * do projeto geral (`lideresDaArea`).
  * Sigiloso: diretor (projetos.verSigilosos), criador, lista de acesso e equipe ATUAL veem tudo;
  * o gerente fora vê o resumo; os demais, nada. Ex-equipe perde o acesso ao sigiloso.
  */
 export function acessoAoProjeto(usuario: UsuarioAutenticado, projeto: ProjetoParaAcesso): AcessoProjeto {
     if (!projeto.sigiloso) {
-        return podeVerTodosProjetos(usuario) || participaOuParticipou(usuario.codigo, projeto) ? "completo" : "nada";
+        const lideraArea = projeto.lideresDaArea?.includes(usuario.codigo) ?? false;
+        return podeVerTodosProjetos(usuario) || lideraArea || participaOuParticipou(usuario.codigo, projeto) ? "completo" : "nada";
     }
     if (temPermissao(usuario, Permissao.PROJETOS_VER_SIGILOSOS)) return "completo";
     if (projeto.criadoPor === usuario.codigo || projeto.acesso.includes(usuario.codigo)) return "completo";

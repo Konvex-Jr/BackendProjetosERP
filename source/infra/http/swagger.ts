@@ -120,11 +120,10 @@ const swaggerSpecification = {
             },
             TarefaInput: {
                 type: "object",
-                description: "Informe codigoProjeto (tarefa de projeto) OU categoria (tarefa avulsa, só a gestão cria).",
-                required: ["titulo", "dataInicio", "dataFim"],
+                description: "Toda tarefa tem projeto (sessão 23b): sem codigoProjeto, 400 PROJETO_OBRIGATORIO. `categoria` é ignorada.",
+                required: ["codigoProjeto", "titulo", "dataInicio", "dataFim"],
                 properties: {
-                    codigoProjeto: { type: "string", nullable: true },
-                    categoria: { type: "string", nullable: true, enum: ["inovacao", "capacitacao", "execucao"] },
+                    codigoProjeto: { type: "string" },
                     titulo: { type: "string" },
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
@@ -136,7 +135,7 @@ const swaggerSpecification = {
                         type: "string",
                         nullable: true,
                         description:
-                            "Só tarefa de projeto: coluna do quadro. Ao criar, o padrão é a de entrada; ao editar, vale mais que `status`. A resposta traz `coluna` ({ codigo, nome, cor, papel }; nulo na avulsa).",
+                            "Coluna do quadro do projeto. Ao criar, o padrão é a de entrada; ao editar, vale mais que `status`. A resposta traz `coluna` ({ codigo, nome, cor, papel }).",
                     },
                     checklist: {
                         type: "array",
@@ -235,19 +234,23 @@ const swaggerSpecification = {
             }),
         },
         "/tarefas": {
-            get: operation(["Tarefas"], "Listar tarefas (membro: dos seus projetos e as avulsas em que é responsável)", {
-                parameters: [
-                    { name: "codigoProjeto", in: "query", schema: { type: "string" } },
-                    { name: "codigoResponsavel", in: "query", schema: { type: "string" } },
-                    { name: "minhas", in: "query", schema: { type: "boolean" }, description: "Só as tarefas em que eu sou responsável." },
-                    {
-                        name: "categoria",
-                        in: "query",
-                        schema: { type: "string", enum: ["inovacao", "capacitacao", "execucao", "avulsas"] },
-                    },
-                    { name: "status", in: "query", schema: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
-                ],
-            }),
+            get: operation(
+                ["Tarefas"],
+                "Listar tarefas (membro: dos projetos de que participa ou participou, do geral da área e as em que é responsável)",
+                {
+                    parameters: [
+                        { name: "codigoProjeto", in: "query", schema: { type: "string" } },
+                        { name: "codigoResponsavel", in: "query", schema: { type: "string" } },
+                        {
+                            name: "minhas",
+                            in: "query",
+                            schema: { type: "boolean" },
+                            description: "Só as tarefas em que eu sou responsável.",
+                        },
+                        { name: "status", in: "query", schema: { type: "string", enum: ["pendente", "andamento", "concluida"] } },
+                    ],
+                },
+            ),
             post: operation(["Tarefas"], "Criar tarefa", {
                 requestBody: jsonBody({ $ref: "#/components/schemas/TarefaInput" }),
             }),
@@ -274,7 +277,7 @@ const swaggerSpecification = {
         "/tarefas/{codigo}/coluna": {
             patch: operation(
                 ["Tarefas"],
-                "Mover a tarefa para uma coluna do quadro do projeto (mesma permissão do status; o status vem do papel da coluna; 400 COLUNA_DE_OUTRO_PROJETO, 400 TAREFA_AVULSA_SEM_COLUNA)",
+                "Mover a tarefa para uma coluna do quadro do projeto (mesma permissão do status; o status vem do papel da coluna; 400 COLUNA_DE_OUTRO_PROJETO)",
                 {
                     parameters: [{ $ref: "#/components/parameters/codigo" }],
                     requestBody: jsonBody({
@@ -399,14 +402,10 @@ const swaggerSpecification = {
                 "Listar anexos da tarefa, do mais antigo ao mais novo, com podeExcluir (quem vê a tarefa; 404 se não vê)",
                 { parameters: [{ $ref: "#/components/parameters/codigo" }] },
             ),
-            post: operation(
-                ["Anexos"],
-                "Anexar arquivo à tarefa (quem comenta: equipe atual; na avulsa, responsáveis e gestão; 404 se não vê)",
-                {
-                    parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
-                    requestBody: corpoArquivo,
-                },
-            ),
+            post: operation(["Anexos"], "Anexar arquivo à tarefa (quem comenta: equipe atual do projeto; 404 se não vê)", {
+                parameters: [{ $ref: "#/components/parameters/codigo" }, nomeArquivo],
+                requestBody: corpoArquivo,
+            }),
         },
         "/anexos/regras": {
             get: operation(["Anexos"], "Tamanho máximo (bytes) e extensões aceitas"),

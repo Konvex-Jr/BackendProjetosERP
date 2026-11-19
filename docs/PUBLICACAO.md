@@ -342,6 +342,42 @@ O total de períodos em aberto deve ser próximo do número de pessoas Ativas e 
 
 **Rollback:** a 017 apaga colunas e tabelas antigas. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 23b (projetos internos e geral por área): migração 018
+A migração `018_projetos_internos.sql` acrescenta `projetos.tipo` e `projetos.geral_da_area`, cria um projeto geral ("<Área> · geral") para cada área, **move as tarefas avulsas para o geral da área da categoria** (cria as áreas Inovação, Execução e Capacitação só se houver avulsa da categoria e a área não existir) e **apaga `tarefas.categoria`**. Publicar **backend e frontend juntos**.
+
+**Parte 0, consultar antes (anote a saída):**
+```bash
+cd /docker/erp-konvex
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT categoria, count(*) FROM tarefas WHERE categoria IS NOT NULL GROUP BY categoria ORDER BY categoria;
+SELECT nome, ativa FROM areas ORDER BY nome;
+SELECT t.categoria, a.nome AS area, a.ativa, count(*) FROM tarefas t
+  LEFT JOIN areas a ON lower(unaccent(a.nome)) = t.categoria
+  WHERE t.categoria IS NOT NULL GROUP BY t.categoria, a.nome, a.ativa ORDER BY t.categoria;
+SQL
+```
+A primeira lista mostra quantas avulsas existem por categoria. A segunda mostra as áreas atuais: cada uma ganha um projeto geral; as inativas ficam com o geral arquivado. A terceira cruza cada categoria com a área de mesmo nome e mostra se ela está ativa (`ativa` falso = o geral dessa área nasce arquivado). **Efeitos a avisar à equipe:** as avulsas migradas passam a ser lidas por quem está ou esteve na área (antes só a gestão e o responsável), e a avulsa de uma categoria cuja área está inativa cai num geral arquivado: dá para ler, não para criar tarefa nova ali; para reabrir, reative a área. Uma categoria com avulsa e sem área de mesmo nome (sem acento, sem maiúsculas) faz a migração criar a área, sob "Projetos" (ou sob a primeira área raiz, se "Projetos" não existir).
+
+**Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`).
+
+**Parte 2, atualizar e construir:** igual à Parte 2 da sessão 22.
+
+**Parte 3, subir:**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 018_projetos_internos.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes   # 401
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT nome, status FROM projetos WHERE geral_da_area ORDER BY nome;"'
+```
+Tem que haver um geral por área, com o status `arquivado` só nas áreas inativas.
+
+**Rollback:** a 018 apaga `tarefas.categoria` e a regra que permitia tarefa sem projeto. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

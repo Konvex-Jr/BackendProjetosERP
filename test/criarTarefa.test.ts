@@ -1,7 +1,6 @@
 import CriarTarefa from "../source/useCases/tarefas/CriarTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarProjeto, dataInicio, dataFim } from "./fixtures";
-import CategoriaTarefa from "../source/domain/enum/CategoriaTarefa";
 
 test("cria uma tarefa vinculada a um projeto e responsável", async () => {
     const { factory, membro } = await criarContexto();
@@ -70,12 +69,5 @@ describe("coluna ao criar", () => {
         expect(t.status).toBe("concluida");
         expect(t.dataConclusao).not.toBeNull();
         expect(t.concluidaPor?.codigo).toBe("usr-ana");
-    });
-
-    it("avulsa com codigoColuna: TAREFA_AVULSA_SEM_COLUNA", async () => {
-        const { factory } = await criarContexto();
-        await expect(
-            new CriarTarefa(factory).execute({ categoria: CategoriaTarefa.EXECUCAO, titulo: "T", dataInicio, dataFim, codigoColuna: "x" }),
-        ).rejects.toMatchObject({ codigo: "TAREFA_AVULSA_SEM_COLUNA" });
     });
 });

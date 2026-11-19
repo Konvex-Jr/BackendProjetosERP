@@ -26,29 +26,12 @@ function projetoPadrao(colunas?: ColunaProjeto[]): Projeto {
 }
 
 function tarefaDe(
-    projeto: Projeto | null,
+    projeto: Projeto,
     status = StatusTarefa.PENDENTE,
     coluna: ColunaProjeto | null = null,
     dataConclusao: Date | null = null,
 ) {
-    return new Tarefa(
-        projeto,
-        "Tarefa",
-        inicio,
-        fim,
-        status,
-        undefined,
-        null,
-        dataConclusao,
-        null,
-        [],
-        [],
-        undefined,
-        null,
-        projeto ? null : ("execucao" as any),
-        null,
-        coluna,
-    );
+    return new Tarefa(projeto, "Tarefa", inicio, fim, status, undefined, null, dataConclusao, null, [], [], undefined, null, null, coluna);
 }
 
 describe("ColunaProjeto", () => {
@@ -194,12 +177,6 @@ describe("Tarefa com coluna", () => {
         const json = JSON.parse(JSON.stringify(tarefaDe(projetoPadrao())));
         expect(json.coluna.nome).toBe("A fazer");
         expect(json.projeto.colunas).toBeUndefined();
-    });
-
-    it("tarefa avulsa não tem coluna", () => {
-        const coluna = colunasPadrao()[0];
-        expect(codigoDoErro(() => tarefaDe(null, StatusTarefa.PENDENTE, coluna))).toBe("TAREFA_AVULSA_SEM_COLUNA");
-        expect(tarefaDe(null).coluna).toBeNull();
     });
 });
 

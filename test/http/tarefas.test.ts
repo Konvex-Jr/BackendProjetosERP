@@ -33,6 +33,45 @@ describe("Tarefas pela API", () => {
 
     afterEach(async () => servidor.fechar());
 
+    it("filtros do painel: responsável, status e projeto; membro vê só o projeto dele", async () => {
+        const doColega = await servidor.chamar("post", "/tarefas", {
+            usuario: ctx.gerente,
+            corpo: corpo({ titulo: "Do colega", codigosResponsaveis: [colega.codigo] }),
+        });
+        const daAna = await servidor.chamar("post", "/tarefas", {
+            usuario: ctx.gerente,
+            corpo: corpo({ titulo: "Da Ana", codigosResponsaveis: [ctx.membro.codigo] }),
+        });
+        const outroProjeto = await ctx.factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Outro", "d", dataInicio, dataFim, undefined, [deFora], "proj-outro"));
+        const alheia = await criarTarefa(ctx.factory, deFora, outroProjeto, "tarefa-alheia");
+        const ids = async (q: string, usuario = ctx.gerente) =>
+            (await servidor.chamar("get", `/tarefas${q}`, { usuario })).corpo.map((x: any) => x.codigo).sort();
+        expect(await ids("")).toEqual([doColega.corpo.codigo, daAna.corpo.codigo, alheia.codigo].sort());
+        expect(await ids(`?codigoResponsavel=${colega.codigo}`)).toEqual([doColega.corpo.codigo]);
+        expect(await ids("?status=concluida")).toEqual([]);
+        expect(await ids("?codigoProjeto=proj-outro")).toEqual([alheia.codigo]);
+        // Membro: as tarefas do projeto de que participa; nunca as do projeto do colega de fora.
+        expect(await ids("", ctx.membro)).toEqual([doColega.corpo.codigo, daAna.corpo.codigo].sort());
+        expect(await ids("", deFora)).toEqual([alheia.codigo]);
+    });
+
+    it("sessão 17: iniciativa saiu; o campo no corpo é ignorado no POST e no PUT", async () => {
+        const criada = await servidor.chamar("post", "/tarefas", {
+            usuario: ctx.gerente,
+            corpo: corpo({ codigoIniciativa: "ini-x", iniciativa: { codigo: "ini-x" } }),
+        });
+        expect(criada.status).toBe(200);
+        expect(criada.corpo).not.toHaveProperty("iniciativa");
+        const editada = await servidor.chamar("put", `/tarefas/${criada.corpo.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { ...corpo(), status: "pendente", codigoIniciativa: "ini-y" },
+        });
+        expect(editada.status).toBe(200);
+        expect(editada.corpo).not.toHaveProperty("iniciativa");
+    });
+
     it("gerente cria, edita, muda status e exclui", async () => {
         const criada = await servidor.chamar("post", "/tarefas", {
             usuario: ctx.gerente,
@@ -152,22 +191,11 @@ describe("Tarefas pela API", () => {
             expect((await mover(colega, "tarefa-teste", undefined)).status).toBe(400);
         });
 
-        it("GET /tarefas traz coluna na de projeto, null na avulsa, e não repete projeto.colunas", async () => {
-            const avulsa = await servidor.chamar("post", "/tarefas", {
-                usuario: ctx.gerente,
-                corpo: {
-                    categoria: "inovacao",
-                    titulo: "Avulsa",
-                    dataInicio: "2026-10-12T12:00:00.000Z",
-                    dataFim: "2026-10-16T12:00:00.000Z",
-                },
-            });
-            expect(avulsa.status).toBe(200);
+        it("GET /tarefas traz a coluna e não repete projeto.colunas", async () => {
             const lista = (await servidor.chamar("get", "/tarefas", { usuario: ctx.gerente })).corpo;
             const deProjeto = lista.find((t: any) => t.codigo === "tarefa-teste");
             expect(deProjeto.coluna).toMatchObject({ nome: "A fazer", cor: "cinza" });
             expect(deProjeto.projeto.colunas).toBeUndefined();
-            expect(lista.find((t: any) => t.codigo === avulsa.corpo.codigo).coluna).toBeNull();
         });
 
         it("tarefa de sigiloso sem acesso: 404 no PATCH /coluna", async () => {

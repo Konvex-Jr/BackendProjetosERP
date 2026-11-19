@@ -1,6 +1,7 @@
 import Area from "../../domain/entity/Area";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { sincronizarGeral } from "../projetos/sincronizarGeral";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 /** ADR-007: cria ou edita uma área. Impede ciclos na hierarquia. */
@@ -29,6 +30,8 @@ export default class SalvarArea {
         }
 
         const area = new Area(input.nome, codigoAreaPai, input.ativa ?? atual?.ativa ?? true, atual?.codigo);
-        return atual ? repo.editar(area) : repo.criar(area);
+        const salva = atual ? await repo.editar(area) : await repo.criar(area);
+        await sincronizarGeral(this.factory, salva);
+        return salva;
     }
 }

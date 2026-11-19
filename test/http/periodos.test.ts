@@ -102,4 +102,31 @@ describe("Períodos por área (HTTP)", () => {
         const daDiretora = await servidor.chamar("get", `/usuarios/${diretora.codigo}/perfil`, { usuario: ctx.gerente });
         expect(daDiretora.corpo.podeGerirPeriodos).toBe(false);
     });
+
+    it("gerente não mexe nos próprios períodos: 403 PERIODO.PROPRIO; perfil próprio sem podeGerirPeriodos", async () => {
+        const meu = await servidor.chamar("post", caminho(ctx.membro), { usuario: ctx.gerente, corpo: corpo() });
+        const codigoPeriodo = meu.corpo.codigo;
+        const post = await servidor.chamar("post", caminho(ctx.gerente), { usuario: ctx.gerente, corpo: corpo() });
+        expect(post.status).toBe(403);
+        expect(JSON.stringify(post.corpo)).toContain("próprios períodos");
+        expect((await servidor.chamar("put", `${caminho(ctx.gerente)}/x`, { usuario: ctx.gerente, corpo: corpo() })).status).toBe(403);
+        expect((await servidor.chamar("delete", `${caminho(ctx.gerente)}/x`, { usuario: ctx.gerente })).status).toBe(403);
+        const perfil = await servidor.chamar("get", `/usuarios/${ctx.gerente.codigo}/perfil`, { usuario: ctx.gerente });
+        expect(perfil.corpo.podeGerirPeriodos).toBe(false);
+        // continua podendo no período de um membro
+        expect((await servidor.chamar("delete", `${caminho(ctx.membro)}/${codigoPeriodo}`, { usuario: ctx.gerente })).status).toBe(204);
+    });
+
+    it("diretor altera os próprios períodos", async () => {
+        const criado = await servidor.chamar("post", caminho(diretora), { usuario: diretora, corpo: corpo() });
+        expect(criado.status).toBe(200);
+        const editado = await servidor.chamar("put", `${caminho(diretora)}/${criado.corpo.codigo}`, {
+            usuario: diretora,
+            corpo: corpo({ inicio: "2026-01-10" }),
+        });
+        expect(editado.status).toBe(200);
+        const perfil = await servidor.chamar("get", `/usuarios/${diretora.codigo}/perfil`, { usuario: diretora });
+        expect(perfil.corpo.podeGerirPeriodos).toBe(true);
+        expect((await servidor.chamar("delete", `${caminho(diretora)}/${criado.corpo.codigo}`, { usuario: diretora })).status).toBe(204);
+    });
 });

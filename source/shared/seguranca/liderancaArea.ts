@@ -49,3 +49,12 @@ export function areasLideradas(usuario: UsuarioAutenticado, areas: Area[], perio
     const raizes = new Set(periodosDeLideranca(usuario, periodosAbertos).map((p) => p.area.codigo));
     return new Set(areas.filter((a) => areaEAcima(a.codigo, areas).some((c) => raizes.has(c))).map((a) => a.codigo));
 }
+
+/** Códigos de quem lidera a área hoje: período aberto com cargo que lidera na área ou em alguma acima dela. */
+export function lideresDaArea(codigoArea: string, areas: Area[], periodosAbertos: PeriodoArea[]): string[] {
+    const acima = new Set(areaEAcima(codigoArea, areas));
+    const lideres = periodosAbertos
+        .filter((p) => p.aberto && p.cargo?.lideraArea === true && acima.has(p.area.codigo))
+        .map((p) => p.codigoUsuario);
+    return [...new Set(lideres)];
+}

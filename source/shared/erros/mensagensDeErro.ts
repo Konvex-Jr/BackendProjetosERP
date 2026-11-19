@@ -33,6 +33,11 @@ export const MENSAGENS_DE_ERRO = {
         NOME_OBRIGATORIO: "O nome do projeto é obrigatório.",
         DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
         NAO_ENCONTRADO: "Projeto não encontrado.",
+        AREA_OBRIGATORIA_INTERNO: "Projeto interno precisa de uma área.",
+        GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído, arquivado nem ficar sigiloso.",
+        GERAL_SIGILOSO: "O projeto geral da área não pode ser sigiloso.",
+        TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
+        GERAL_INTERNO: "O projeto geral da área é sempre interno.",
         SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
         SIGILO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam o sigilo.",
         ACESSO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam a lista de acesso.",
@@ -44,6 +49,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     PERIODO: {
+        PROPRIO: "Você não pode alterar os próprios períodos de área.",
         INICIO_NO_FUTURO: "O início do período na área não pode ser no futuro.",
         FIM_NO_FUTURO: "O fim do período na área não pode ser no futuro.",
         FIM_NAO_DEPOIS_DO_INICIO: "O fim do período na área deve ser depois do início.",
@@ -62,7 +68,7 @@ export const MENSAGENS_DE_ERRO = {
         TITULO_OBRIGATORIO: "O título da tarefa é obrigatório.",
         PRIORIDADE_INVALIDA: "Prioridade inválida. Use P1, P2, P3 ou P4.",
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
-        AVULSA_SEM_COLUNA: "Tarefa avulsa não tem coluna: só tarefa de projeto vai para uma coluna do kanban.",
+        PROJETO_OBRIGATORIO: "Escolha o projeto da tarefa.",
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 
@@ -146,7 +152,6 @@ export const MENSAGENS_DE_ERRO = {
         ARQUIVO_SUMIU: "O arquivo deste anexo não foi encontrado no servidor. Avise a gestão.",
         SEM_PERMISSAO_CAPACITACAO: "Só diretores e gerentes podem anexar ou excluir material das capacitações.",
         SEM_PERMISSAO_TAREFA_PROJETO: "Só a equipe atual do projeto anexa arquivos nas tarefas.",
-        SEM_PERMISSAO_TAREFA_AVULSA: "Só os responsáveis e a gestão anexam arquivos nesta tarefa.",
         SO_OS_PROPRIOS: "Você só pode excluir os arquivos que enviou.",
     },
 

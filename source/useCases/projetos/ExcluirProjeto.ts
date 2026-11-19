@@ -4,6 +4,7 @@ import SigiloBiblioteca from "../../domain/enum/SigiloBiblioteca";
 import { DonoAnexo } from "../../domain/enum/Anexo";
 import GerirAnexos from "../anexos/GerirAnexos";
 import ExcluirItemBiblioteca from "../biblioteca/ExcluirItemBiblioteca";
+import { exigirNaoGeral } from "./sincronizarGeral";
 
 export default class ExcluirProjeto {
     private readonly projetos;
@@ -13,7 +14,9 @@ export default class ExcluirProjeto {
         this.tarefas = factory.criarTarefaRepository();
     }
     async execute(codigo: string): Promise<void> {
-        if (!(await this.projetos.buscarPorCodigo(codigo))) throw new ErroNaoEncontrado("Projeto não encontrado.");
+        const projeto = await this.projetos.buscarPorCodigo(codigo);
+        if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
+        exigirNaoGeral(projeto);
         // Só os códigos: montar as tarefas revalida cada uma e pode falhar (responsável que já saiu da equipe).
         // Vem antes da Biblioteca, para que uma falha aqui não a deixe pela metade.
         const codigosTarefas = await this.tarefas.listarCodigosPorProjeto(codigo);

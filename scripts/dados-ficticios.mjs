@@ -104,6 +104,9 @@ async function main() {
     const bia = await pessoa("Bia Membro", "bia@dev.konvex", "membro");
     const caio = await pessoa("Caio Membro", "caio@dev.konvex", "membro");
 
+    // Papel membro, mas com cargo que lidera a área de Execução: organiza o geral da área (sessão 23b).
+    const lia = await pessoa("Lia Líder", "lia@dev.konvex", "membro");
+
     // Trainee com login (papel membro, sem Biblioteca).
     const davi = await pessoa("Davi Trainee", "davi@dev.konvex", "membro", { status: "trainee" });
 
@@ -131,18 +134,26 @@ async function main() {
     const assessor = await cargo("Assessor", false);
     const gerente = await cargo("Gerente", true);
     await cargo("Diretor", true);
+    const coordenador = await cargo("Coordenador", true);
     const periodosFicticios = [
-        [ines, [[areaProjetos, gerente, -300, null]]],
+        // Inês lidera Inovação (gerente); Caio é da equipe de Inovação e Execução; Bia fica fora de Inovação.
+        [ines, [[areaInovacao, gerente, -300, null]]],
         [
             bia,
             [
                 [areaExecucao, assessor, -200, null],
-                [areaInovacao, gerente, -60, null],
                 [areaCapacitacao, assessor, -400, -200],
             ],
         ],
-        [caio, [[areaExecucao, assessor, -120, null]]],
+        [
+            caio,
+            [
+                [areaExecucao, assessor, -120, null],
+                [areaInovacao, assessor, -90, null],
+            ],
+        ],
         [davi, [[areaCapacitacao, null, -10, null]]],
+        [lia, [[areaExecucao, coordenador, -60, null]]],
     ];
     for (const [quem, lista] of periodosFicticios) {
         if ((await exigir("GET", `/usuarios/${quem.codigo}/periodos`, dir)).length) continue;
@@ -157,7 +168,48 @@ async function main() {
         console.log(`Períodos de ${quem.nome} lançados.`);
     }
 
+    // Bancos que já tinham os dados antigos: tira o período de Bia em Inovação e a raiz de Inês (idempotente).
+    for (const [quem, areaTira] of [
+        [bia, areaInovacao],
+        [ines, areaProjetos],
+    ]) {
+        for (const p of await exigir("GET", `/usuarios/${quem.codigo}/periodos`, dir)) {
+            if (p.area.codigo === areaTira.codigo)
+                await exigir("DELETE", `/usuarios/${quem.codigo}/periodos/${p.codigo}`, dir, undefined, [200, 204]);
+        }
+    }
+    const periodosInes = await exigir("GET", `/usuarios/${ines.codigo}/periodos`, dir);
+    if (!periodosInes.length) {
+        await exigir("POST", `/usuarios/${ines.codigo}/periodos`, dir, {
+            codigoArea: areaInovacao.codigo,
+            codigoCargo: gerente.codigo,
+            inicio: dia(-300),
+            fim: null,
+        });
+    }
+    const periodosCaio = await exigir("GET", `/usuarios/${caio.codigo}/periodos`, dir);
+    if (!periodosCaio.some((p) => p.area.codigo === areaInovacao.codigo)) {
+        await exigir("POST", `/usuarios/${caio.codigo}/periodos`, dir, {
+            codigoArea: areaInovacao.codigo,
+            codigoCargo: assessor.codigo,
+            inicio: dia(-90),
+            fim: null,
+        });
+    }
+
     const projetos = await exigir("GET", "/projetos", dir);
+    if (!projetos.some((p) => p.nome === "Robô")) {
+        await exigir("POST", "/projetos", dir, {
+            nome: "Robô",
+            descricao: "Projeto interno de Inovação.",
+            dataInicio: dia(-10),
+            dataFim: dia(90),
+            status: "em_execucao",
+            tipo: "interno",
+            codigoArea: areaInovacao.codigo,
+        });
+        console.log("Projeto interno Robô (Inovação) criado.");
+    }
     let projeto = projetos.find((p) => p.nome === "Site institucional (fictício)");
     if (!projeto) {
         projeto = await exigir("POST", "/projetos", dir, {

@@ -41,7 +41,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     constructor() {
         this.usuarioRepository = new UsuarioRepositoryMemory();
         this.senioridadeRepository = new SenioridadeRepositoryMemory();
-        this.projetoRepository = new ProjetoRepositoryMemory();
+        this.projetoRepository = new ProjetoRepositoryMemory(this.periodoAreaRepository, this.areaRepository, this.usuarioRepository);
         this.tarefaRepository = new TarefaRepositoryMemory();
         this.colunaProjetoRepository = new ColunaProjetoRepositoryMemory(this.projetoRepository, this.tarefaRepository);
         this.capacitacaoRepository = new CapacitacaoRepositoryMemory();

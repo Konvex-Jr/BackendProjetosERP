@@ -22,7 +22,7 @@
 **Trainee** (status `Trainee`, sessão 20) **tem login**, sempre com o papel **membro** (`exigirTraineeMembro` em `useCases/pessoas/dadosPessoa.ts`: trainee com outro papel é 400 `TRAINEE_SO_MEMBRO`). Enxerga o que o membro enxerga, **menos a Biblioteca** (sem item no menu, `semTrainee` em `modulos/registro.ts`; as rotas da Biblioteca e dos anexos de item respondem 403, `exigirNaoTrainee` em `permissoes.ts`) e **não lidera** projeto (`PUT /projetos/:codigo/lider` responde 400 `TRAINEE_NAO_LIDERA`). O status vem do banco a cada requisição, então virar Ativo vale na chamada seguinte. Trainee é **só a etapa de entrada**: a pessoa nasce Trainee (ou Ativa) e ninguém volta a ser trainee; mudar o status **para** Trainee é 400 `STATUS_TRAINEE_SO_NA_ENTRADA` (`AlterarStatusPessoa`).
 
 ### Duas camadas de permissão
-1. **Ações do catálogo, por papel.** `source/shared/seguranca/catalogoPermissoes.ts` lista as ações (`projetos.editar`, `tarefas.atribuir`…) e o mapa `PERMISSOES_POR_PAPEL` diz quais cada papel tem. As rotas checam a ação, nunca o papel (`exigirPermissao` e `temPermissao` em `permissoes.ts`).
+1. **Ações do catálogo, por papel.** `source/shared/seguranca/catalogoPermissoes.ts` lista as ações (`projetos.editar`, `tarefas.gerirTodas`…) e o mapa `PERMISSOES_POR_PAPEL` diz quais cada papel tem. As rotas checam a ação, nunca o papel (`exigirPermissao` e `temPermissao` em `permissoes.ts`).
    - Diretor: todas as ações.
    - Gerente: todas, **menos** `pessoas.gerirDiretores`, `projetos.excluir` e `configuracoes.editar` (lista `DO_GESTOR`).
    - Membro: **nenhuma**. Tudo o que o membro faz vem da camada 2.
@@ -38,7 +38,7 @@
 ### Detalhes que valem para tudo
 - O papel é lido do banco **a cada requisição**, não do token: mudar o papel de alguém vale na chamada seguinte (`UsuarioAutenticado` em `permissoes.ts`).
 - Papel desconhecido recebe lista vazia (na dúvida, nega: `permissoesDoPapel`).
-- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa avulsa de outra pessoa, anexo de item que ela não lê, projeto sigiloso que ela não vê.
+- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa de projeto sigiloso que ela não vê, anexo de item que ela não lê, projeto sigiloso que ela não vê.
 - A API devolve booleanos por item (`podeAlterar`, `podeGerir`, `podeInscrever`…) e a tela obedece. O menu vem de `GET /auth/permissoes`, montado por `menuDoUsuario` em `source/modulos/registro.ts`; o `Layout` do frontend só abre telas que vieram no menu.
 - Login: 5 falhas bloqueiam aquele e-mail naquele IP, e 30 falhas bloqueiam o IP inteiro, por 15 minutos (429; `limiteTentativas.ts`, limites em `LoginUsuario.ts`). Sessão: JWT de 15 min + refresh de 7 dias.
 
@@ -52,7 +52,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
 - **Áreas e cargos por período** (sessão 23a, migração 017): a pessoa pode estar em várias áreas ao mesmo tempo, cada uma com um cargo opcional e um período `[início, fim)` (fim vazio = atual). A pessoa não grava mais área nem cargo; as "áreas atuais" (`areas` na resposta) são os períodos em aberto. Se uma tela antiga ainda mandar `codigoArea` ou `codigoCargo` no `PUT /usuarios/:codigo`, os campos são ignorados.
-  - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`). Todos os logados leem.
+  - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`; ninguém altera os próprios períodos, exceto o diretor). Todos os logados leem.
   - Regras (400 com código): nenhuma data no futuro (`INICIO_NO_FUTURO`, `FIM_NO_FUTURO`); fim depois do início (`FIM_NAO_DEPOIS_DO_INICIO`); dois períodos da mesma pessoa na mesma área não se sobrepõem (`PERIODO_SOBREPOSTO`, garantido também pelo banco em gravações simultâneas); só área e cargo ativos ao escolher (`AREA_INATIVA`, `CARGO_INATIVO`; corrigir só as datas de um período antigo com área desativada continua permitido); período em aberto só para quem está na EJ (`PESSOA_FORA_DA_EJ`); fim não passa da saída da pessoa (`FIM_DEPOIS_DA_SAIDA`).
   - Quem sai da EJ (Alumni ou Inativo) tem os períodos em aberto **sempre** encerrados na data de saída, mesmo quando a gestão escolhe manter as participações nos projetos. Quem volta a Ativo não reabre nada: a gestão lança um período novo.
 - Cada pessoa edita no próprio perfil só contato e apresentação: nome de exibição, telefone, LinkedIn, GitHub, link do calendário, curso, semestre e bio (`PUT /auth/perfil`). E troca a própria senha e a própria foto.
@@ -82,31 +82,33 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
   - **Biblioteca:** itens ligados a sigiloso que a pessoa não vê completo somem para todos os papéis, gestão inclusive, e ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
+- **Projeto interno (sessão 23b).** `tipo` é `cliente` (padrão) ou `interno`; outro valor é 400 `TIPO_PROJETO_INVALIDO`. Interno sempre tem área (400 `AREA_OBRIGATORIA_INTERNO`). `GET /projetos?tipo=interno|cliente` filtra.
+- **Projeto geral da área.** Um por área (`geralDaArea`), nome "Área · geral", interno, nunca sigiloso. Criado pelo sistema (migração 018 para as áreas existentes e `SalvarArea` para as novas); renomear a área renomeia o geral, inativar arquiva e reativar volta a Em andamento. A equipe e a liderança não são gravadas: vêm dos períodos da área e da `liderancaArea`. Editar, excluir, mudar status, acesso, equipe e líder do geral é 400 `PROJETO_GERAL_FIXO`; só `PUT /projetos/:codigo/colunas` segue valendo. As tarefas que eram avulsas moram nele.
 
 ### Tarefas (`/tarefas`)
-Toda tarefa tem **projeto** ou **categoria** (Inovação, Capacitação, Execução). Sem projeto, ela é "avulsa". Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna). O acompanhamento de inovação é feito com tarefas avulsas de categoria Inovação, que continuam só da gestão.
+Toda tarefa tem **projeto** (sessão 23b). A tarefa avulsa (sem projeto, com categoria) acabou: a migração 018 levou as avulsas para o **projeto geral da área** da categoria, e `POST /tarefas` sem `codigoProjeto` responde 400 `PROJETO_OBRIGATORIO` para todos (antes da checagem de permissão); `categoria` no corpo ou na consulta é ignorada. Tarefas antigas ligadas a iniciativas perderam essa ligação (a migração 012 removeu a coluna).
+
+**Projeto geral da área (sessão 23b).** Cada área tem um projeto interno geral. A equipe dele não é montada à mão: vem dos períodos na área (período aberto = equipe atual; encerrado = ex-participante). Quem tem cargo que lidera a área (`lideresDaArea`, regra de `liderancaArea.ts`) conta como **líder** do geral, mesmo com papel membro: vê tudo (`acessoAoProjeto` = `completo`), cria tarefa para qualquer pessoa da equipe, edita, move, exclui e organiza o quadro. Como não está na equipe, não entra como responsável (400 `RESPONSAVEL_FORA_DO_PROJETO`). O geral nunca é sigiloso.
 
 **Quadro por etapa (sessão 21).** O quadro do projeto é por etapa, não por semana. Cada projeto tem de 2 a 12 colunas (tabela `colunas_projeto`, migração 015); projeto novo nasce com A fazer, Fazendo, Revisando e Concluído.
 - Cada coluna tem nome (1 a 40 caracteres, sem repetir no projeto, sem diferenciar maiúsculas), cor (`cinza`, `azul`, `verde`, `amarelo`, `laranja`, `vermelho`, `roxo`, `rosa`) e papel: `entrada` (onde caem as tarefas novas), `meio` ou `concluida`. Exatamente uma `entrada` e uma `concluida`, em colunas diferentes; a concluída não precisa ser a última.
-- **O status da tarefa de projeto vem sempre do papel da coluna:** `entrada` = `pendente`, `meio` = `andamento`, `concluida` = `concluida`. Progresso, burndown e indicadores seguem usando o status. Entrar na coluna concluída grava a data de conclusão (hoje) e quem moveu; sair apaga os dois. Tarefa avulsa não tem coluna.
+- **O status da tarefa de projeto vem sempre do papel da coluna:** `entrada` = `pendente`, `meio` = `andamento`, `concluida` = `concluida`. Progresso, burndown e indicadores seguem usando o status. Entrar na coluna concluída grava a data de conclusão (hoje) e quem moveu; sair apaga os dois.
 - `PUT /projetos/:codigo/colunas` grava a lista inteira numa transação: `{ colunas: [{ codigo?, nome, cor, papel }], destinos: { "<coluna excluída>": "<coluna de destino>" } }`. Coluna excluída com tarefas exige destino; as tarefas movidas, ou de coluna cujo papel mudou, têm status e conclusão recalculados. Erros 400 dizem o campo e a coluna. Coluna enviada com código que não está mais no projeto (outra pessoa a excluiu), ou tarefa que caiu numa coluna excluída durante a gravação: 409 `QUADRO_MUDOU`, e a tela recarrega o quadro.
-- `PATCH /tarefas/:codigo/coluna` move a tarefa (`{ codigoColuna }`); coluna de outro projeto ou tarefa avulsa dá 400. `PATCH /tarefas/:codigo/status` segue existindo: em tarefa de projeto, `concluida` vai para a coluna concluída, `pendente` para a de entrada e `andamento` para a primeira coluna `meio` (ou fica onde está, se já está numa); se o projeto não tem coluna `meio`, `andamento` cai na coluna de entrada (e a tarefa fica `pendente`). Mover exige a mesma permissão de concluir ou reabrir (responsável, líder ou gestão); sem ela, 403.
-- A tela Tarefas (todos os projetos e avulsas) segue por semana, com um selo da etapa no cartão. O prazo da tarefa não depende da coluna.
+- `PATCH /tarefas/:codigo/coluna` move a tarefa (`{ codigoColuna }`); coluna de outro projeto dá 400. `PATCH /tarefas/:codigo/status` segue existindo: em tarefa de projeto, `concluida` vai para a coluna concluída, `pendente` para a de entrada e `andamento` para a primeira coluna `meio` (ou fica onde está, se já está numa); se o projeto não tem coluna `meio`, `andamento` cai na coluna de entrada (e a tarefa fica `pendente`). Mover exige a mesma permissão de concluir ou reabrir (responsável, líder ou gestão); sem ela, 403.
+- A tela Tarefas (todos os projetos) segue por semana, com um selo da etapa no cartão. O prazo da tarefa não depende da coluna.
 - Regras: `source/useCases/projetos/GerirColunasProjeto.ts`, `source/useCases/tarefas/MoverTarefa.ts`, `regrasTarefa.ts`.
 
 Tarefa de projeto, pelo papel da pessoa no projeto (`papelNoProjeto`):
 | Papel no projeto | Pode |
 |---|---|
-| Gestão (`tarefas.gerirTodas`) ou líder | Tudo: criar, editar, atribuir, excluir, concluir ou reabrir qualquer tarefa, apagar qualquer comentário |
+| Gestão (`tarefas.gerirTodas`) ou líder (no geral, quem lidera a área) | Tudo: criar, editar, atribuir, excluir, concluir ou reabrir qualquer tarefa, apagar qualquer comentário |
 | Participante (equipe atual) | Criar (fica como único responsável), concluir ou reabrir as tarefas em que é responsável, comentar, apagar os próprios comentários |
 | Ex-participante | Ler as tarefas e os comentários; não comenta |
 | Nenhum | Só vê as tarefas em que é responsável |
 
-Tarefa avulsa:
-- Só a gestão cria, edita, reatribui e exclui (`tarefas.atribuir`); responsável pode ser qualquer pessoa ativa.
-- O responsável vê, conclui ou reabre e comenta. Para os demais, a tarefa não existe (404).
+Responsável que já estava na tarefa continua ao editar, mesmo fora da equipe (caso das avulsas migradas com responsável de outra área); quem entra precisa estar na equipe.
 
-Lista (`GET /tarefas`): a gestão recebe todas; o membro recebe as dos projetos de que participa ou participou e as que tem como responsável.
+Lista (`GET /tarefas`): a gestão recebe todas; o membro recebe as dos projetos de que participa ou participou (no geral, pelos períodos na área ou por liderar a área) e as que tem como responsável.
 
 ### Capacitações (`/capacitacoes`)
 - Todos os logados veem a lista e a ficha, com média e número de avaliações.
@@ -158,6 +160,7 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | Ver os períodos nas áreas de qualquer pessoa | ✅ | ✅ | ✅ | só login (`GET /usuarios/:codigo/periodos`) |
 | Lançar, corrigir e excluir períodos de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
 | O mesmo nos períodos de diretores | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
+| Alterar os próprios períodos | ✅ | ❌ | ❌ | `exigirPodeGerirPeriodosDe` (403 `PERIODO.PROPRIO`) |
 | Criar e editar áreas, cargos, senioridades | ✅ | ❌ | ❌ | `configuracoes.editar` |
 
 ### Projetos
@@ -184,7 +187,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Ação | Trainee | Código |
 |---|---|---|
 | Entrar no sistema | ✅ (papel membro) | `exigirTraineeMembro` (`dadosPessoa.ts`) |
-| Ver projetos da equipe e as tarefas deles, as próprias avulsas, o próprio perfil, a lista de pessoas, capacitações e o Dashboard | ✅ (como membro) | `participaOuParticipou`, `regrasTarefa()`; menu em `registro.ts` |
+| Ver projetos da equipe (inclusive o geral da área) e as tarefas deles, o próprio perfil, a lista de pessoas, capacitações e o Dashboard | ✅ (como membro) | `participaOuParticipou`, `regrasTarefa()`; menu em `registro.ts` |
 | Biblioteca (menu, itens, anexos de item) | ❌ (403, sem item no menu) | `semTrainee` (`registro.ts`), `exigirNaoTrainee` (`BibliotecaRoutes`, `GerirAnexos`) |
 | Ser líder de projeto | ❌ (400 `TRAINEE_NAO_LIDERA`) | `PUT /projetos/:codigo/lider` |
 | Voltar a ser trainee depois de mudar de status | ❌ (400 `STATUS_TRAINEE_SO_NA_ENTRADA`) | `AlterarStatusPessoa` |
@@ -192,20 +195,20 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 ### Tarefas
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
-| Ver tarefas de projeto | todas | todas | dos seus projetos (atuais e anteriores) e as que é responsável | `projetos.verTodos` + `regrasTarefa().ver` |
-| Criar tarefa em projeto | ✅ | ✅ | se é da equipe atual (fica responsável) | `tarefas.gerirTodas` / `papelNoProjeto` |
-| Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto | `regrasTarefa().organizar` |
+| Ver tarefas de projeto | todas | todas | dos seus projetos (atuais e anteriores; no geral, se tem ou teve período na área ou lidera a área) e as que é responsável | `projetos.verTodos` + `regrasTarefa().ver` (`acessoAoProjeto`) |
+| Criar tarefa (sempre num projeto; sem projeto: 400 `PROJETO_OBRIGATORIO`) | ✅ | ✅ | se é da equipe atual (fica responsável); se é líder, para qualquer pessoa da equipe | `tarefas.gerirTodas` / `papelNoProjeto` |
+| Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto (no geral: se tem cargo que lidera a área) | `regrasTarefa().organizar` / `Projeto.ehLider` |
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
 | Mover tarefa de projeto entre as colunas | ✅ | ✅ | se é líder, ou participante e responsável (mesma regra de concluir e reabrir) | `PATCH /tarefas/:codigo/coluna` / `regrasTarefa().mudarStatus` |
-| Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
+| Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto (no geral: se lidera a área) | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
 | Ver as colunas do projeto | todas | todas (sigiloso fora: não vê) | dos projetos que vê por completo | acesso completo (`acessoAoProjeto`) |
-| Comentar em tarefa de projeto | ✅ | ✅ | se é da equipe atual | `regrasTarefa().comentar` |
+| Comentar em tarefa de projeto | ✅ | ✅ | se é da equipe atual (no geral: período aberto na área) ou líder | `regrasTarefa().comentar` |
 | Ver e baixar anexo de tarefa | ✅ | ✅ | se vê a tarefa (senão 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
-| Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual (avulsa: se é responsável) | `regrasTarefa().comentar` / `GerirAnexos.acesso` |
-| Excluir anexo de tarefa | ✅ | ✅ | o que enviou, ou se é líder (avulsa: só o que enviou) | autor ou `regrasTarefa().organizar` / `GerirAnexos.acesso` |
+| Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual ou líder | `regrasTarefa().comentar` / `GerirAnexos.acesso` |
+| Excluir anexo de tarefa | ✅ | ✅ | o que enviou, ou se é líder | autor ou `regrasTarefa().organizar` / `GerirAnexos.acesso` |
 | Apagar comentário | qualquer | qualquer | os próprios (líder: qualquer do projeto) | `TarefaRoutes` + `regrasTarefa().organizar` |
-| Criar, editar, reatribuir, excluir tarefa avulsa | ✅ | ✅ | ❌ | `tarefas.atribuir` (`podeAtribuirAvulsas`) |
-| Ver, concluir e comentar tarefa avulsa | todas | todas | só as que é responsável | `regrasTarefa()` (ramo avulsa) |
+
+Sessão 23b: a tarefa avulsa acabou e a ação `tarefas.atribuir` saiu do catálogo (a gestão organiza qualquer tarefa com `tarefas.gerirTodas`). No projeto geral da área, quem tem período aberto é a equipe atual, quem teve é ex-participante e quem tem cargo que lidera a área é líder, mesmo com papel membro (organiza, mas não é responsável).
 
 ### Capacitações
 | Ação | Diretor | Gerente | Membro | Código |
@@ -231,7 +234,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Baixar anexo | ✅ | ✅ | se lê o item | `GerirAnexos.acesso` |
 | Enviar e excluir anexo | ✅ | ✅ | se edita o item | `GerirAnexos.acesso` |
 
-Perdas da sessão 17: a área **Inovação** não cria mais nada de forma especial; tarefa avulsa (inclusive de Inovação) continua só da gestão (`tarefas.atribuir`); ideias de quem é da área entram como itens da Biblioteca (sugestão: tag `inovacao`).
+Perdas da sessão 17: a área **Inovação** não cria mais nada de forma especial; ideias de quem é da área entram como itens da Biblioteca (sugestão: tag `inovacao`).
 
 ### Painel e telas da gestão
 | Ação | Diretor | Gerente | Membro | Código |

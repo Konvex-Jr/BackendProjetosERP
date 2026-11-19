@@ -16,19 +16,17 @@ import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
+import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
-import { papelNoProjeto, podeAtribuirAvulsas, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
+import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
-import { ehCategoriaTarefa } from "../../../domain/enum/CategoriaTarefa";
-import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 
 const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
-const SO_GESTAO_AVULSA = "Só a gestão organiza tarefas avulsas.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
 
-/** Tarefas (de projeto e avulsas) e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b e 8c). */
+/** Tarefas e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b, 20 e 23b). */
 export default class TarefaRoutes implements ModelRoutes {
     constructor(
         private readonly http: Http,
@@ -43,14 +41,12 @@ export default class TarefaRoutes implements ModelRoutes {
             if (acessoAoProjeto(usuario, projeto) === "nada") throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
             exigirAcessoCompleto(usuario, projeto);
         }
-        // Avulsa de outra pessoa: para quem não pode ver, a tarefa "não existe".
-        if (tarefa.avulsa && !regras.ver) throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
         return { tarefa, regras };
     }
 
     private async exigirOrganizar(usuario: UsuarioAutenticado, codigo: string) {
         const r = await this.carregar(usuario, codigo);
-        if (!r.regras.organizar) throw new ErroProibido(r.tarefa.avulsa ? SO_GESTAO_AVULSA : SO_QUEM_ORGANIZA);
+        if (!r.regras.organizar) throw new ErroProibido(SO_QUEM_ORGANIZA);
         return r;
     }
 
@@ -75,24 +71,21 @@ export default class TarefaRoutes implements ModelRoutes {
         this.http.route("get", "/tarefas", true, async (_params: any, body: any, query: any) => {
             const usuario = exigirAutenticado(body?.user);
             const minhas = query?.minhas === "true" || query?.minhas === "1";
-            if (query?.categoria && query.categoria !== "avulsas" && !ehCategoriaTarefa(query.categoria)) {
-                throw new ErroValidacao("Categoria inválida. Use inovacao, capacitacao, execucao ou avulsas.", "CATEGORIA_TAREFA_INVALIDA");
-            }
             const tarefas = await new ListarTarefas(this.factory).execute({
                 codigoProjeto: query?.codigoProjeto,
                 codigoResponsavel: minhas ? usuario.codigo : query?.codigoResponsavel,
-                categoria: query?.categoria,
                 status: query?.status,
             });
             // Tarefa de projeto sigiloso só vai para quem tem acesso completo ao projeto (nem o responsável que saiu,
             // nem a gestão fora). Usa o projeto atual (equipe de hoje), não o que veio junto da tarefa.
             const sigilosos = new Map((await this.factory.criarProjetoRepository().listarSigilosos()).map((p) => [p.codigo, p]));
             const semSigilosoAlheio = tarefas.filter((t) => {
-                const sigiloso = t.projeto ? sigilosos.get(t.projeto.codigo) : undefined;
+                const sigiloso = sigilosos.get(t.projeto.codigo);
                 return !sigiloso || acessoAoProjeto(usuario, sigiloso) === "completo";
             });
-            if (podeVerTodosProjetos(usuario) && podeAtribuirAvulsas(usuario)) return this.comAnexos(semSigilosoAlheio);
-            // Membro: tarefas dos projetos de que participa ou participou, e as (de projeto ou avulsas) em que é responsável.
+            if (podeVerTodosProjetos(usuario)) return this.comAnexos(semSigilosoAlheio);
+            // Membro: tarefas dos projetos de que participa ou participou (no geral da área, pelos períodos ou por
+            // liderar a área) e as em que é responsável.
             const visiveis = new Set(
                 (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
             );
@@ -100,8 +93,8 @@ export default class TarefaRoutes implements ModelRoutes {
                 semSigilosoAlheio.filter(
                     (t) =>
                         t.responsaveis.some((r) => r.codigo === usuario.codigo) ||
-                        (t.projeto !== null && (podeVerTodosProjetos(usuario) || visiveis.has(t.projeto.codigo))) ||
-                        (t.avulsa && podeAtribuirAvulsas(usuario)),
+                        podeVerTodosProjetos(usuario) ||
+                        visiveis.has(t.projeto.codigo),
                 ),
             );
         });
@@ -109,21 +102,17 @@ export default class TarefaRoutes implements ModelRoutes {
         this.http.route("post", "/tarefas", true, async (_params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             let codigosResponsaveis: string[] = body.codigosResponsaveis ?? [];
-            if (!body.codigoProjeto) {
-                // Tarefa avulsa (8c): só a gestão cria; responsáveis = qualquer pessoa ativa.
-                if (!podeAtribuirAvulsas(usuario)) throw new ErroProibido("Só a gestão cria tarefas avulsas. Escolha um projeto.");
-            } else {
-                const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto);
-                if (projeto?.sigiloso) exigirAcessoCompleto(usuario, projeto);
-                const papel = papelNoProjeto(usuario, projeto);
-                if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
-                // Participante cria e fica como responsável; o líder organiza depois.
-                if (papel === "participante") codigosResponsaveis = [usuario.codigo];
-            }
+            // Toda tarefa tem projeto (sessão 23b): sem ele, 400 para todos, antes da permissão. `categoria` é ignorada.
+            if (!body.codigoProjeto) throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PROJETO_OBRIGATORIO, "PROJETO_OBRIGATORIO");
+            const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto);
+            if (projeto?.sigiloso) exigirAcessoCompleto(usuario, projeto);
+            const papel = papelNoProjeto(usuario, projeto);
+            if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
+            // Participante cria e fica como responsável; o líder organiza depois.
+            if (papel === "participante") codigosResponsaveis = [usuario.codigo];
             return this.comAnexosDe(
                 await new CriarTarefa(this.factory).execute({
-                    codigoProjeto: body.codigoProjeto || null,
-                    categoria: body.categoria || null,
+                    codigoProjeto: body.codigoProjeto,
                     titulo: body.titulo ?? "",
                     dataInicio: new Date(body.dataInicio),
                     dataFim: new Date(body.dataFim),
@@ -159,7 +148,6 @@ export default class TarefaRoutes implements ModelRoutes {
                           }))
                         : undefined,
                     quem: await this.usuarioAtual(usuario),
-                    categoria: body.categoria ?? undefined,
                 }),
             );
         });
@@ -206,14 +194,8 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("post", "/tarefas/:codigo/comentarios", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            const { tarefa, regras } = await this.carregar(usuario, params.codigo);
-            if (!regras.comentar) {
-                throw new ErroProibido(
-                    tarefa.avulsa
-                        ? "Só os responsáveis e a gestão comentam nesta tarefa."
-                        : "Só a equipe atual do projeto comenta nas tarefas.",
-                );
-            }
+            const { regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.comentar) throw new ErroProibido("Só a equipe atual do projeto comenta nas tarefas.");
             const autor = await this.usuarioAtual(usuario);
             if (!autor) throw new ErroNaoEncontrado("Pessoa não encontrada.");
             return this.factory.criarComentarioTarefaRepository().criar(new ComentarioTarefa(params.codigo, autor, body.texto));

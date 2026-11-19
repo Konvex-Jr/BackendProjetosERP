@@ -14,7 +14,7 @@ import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 const SELECT_TAREFA = `
     SELECT codigo, projeto_codigo, titulo, descricao, data_inicio, data_fim,
            status, prioridade, data_conclusao, depende_de_codigo, concluida_por_codigo,
-           categoria, criada_por_codigo, coluna_codigo
+           criada_por_codigo, coluna_codigo
     FROM tarefas
 `;
 
@@ -35,11 +35,11 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
             await conexao.consultar(
                 `INSERT INTO tarefas (codigo, projeto_codigo, titulo, descricao, data_inicio,
                                       data_fim, status, prioridade, data_conclusao, depende_de_codigo,
-                                      concluida_por_codigo, categoria, criada_por_codigo, coluna_codigo)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                                      concluida_por_codigo, criada_por_codigo, coluna_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     tarefa.codigo,
-                    tarefa.projeto?.codigo ?? null,
+                    tarefa.projeto.codigo,
                     tarefa.titulo,
                     tarefa.descricao,
                     dataParaSql(tarefa.dataInicio),
@@ -49,9 +49,8 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
-                    tarefa.categoria,
                     tarefa.criadaPor?.codigo ?? null,
-                    tarefa.coluna?.codigo ?? null,
+                    tarefa.coluna.codigo,
                 ],
             );
             await this.gravarRelacionamentos(conexao, tarefa);
@@ -121,7 +120,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 `UPDATE tarefas
                  SET titulo = $2, descricao = $3, data_inicio = $4, data_fim = $5,
                      status = $6, prioridade = $7, data_conclusao = $8, depende_de_codigo = $9,
-                     concluida_por_codigo = $10, categoria = $11, coluna_codigo = $12
+                     concluida_por_codigo = $10, coluna_codigo = $11
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [
@@ -135,8 +134,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                     dataParaSqlOuNulo(tarefa.dataConclusao),
                     tarefa.dependeDe?.codigo ?? null,
                     tarefa.concluidaPor?.codigo ?? null,
-                    tarefa.categoria,
-                    tarefa.coluna?.codigo ?? null,
+                    tarefa.coluna.codigo,
                 ],
             );
 
@@ -263,9 +261,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 .filter((i) => i.tarefa_codigo === codigo)
                 .map((i) => new ItemChecklistTarefa(i.texto, i.feito, i.codigo));
 
-            const projeto = linha.projeto_codigo ? projetos.get(linha.projeto_codigo)! : null;
+            const projeto = projetos.get(linha.projeto_codigo)!;
             // Coluna não achada (dado estranho): o construtor cai na coluna que corresponde ao status.
-            const coluna = projeto?.colunas.find((c) => c.codigo === linha.coluna_codigo) ?? null;
+            const coluna = projeto.colunas.find((c) => c.codigo === linha.coluna_codigo) ?? null;
 
             const tarefa = new Tarefa(
                 projeto,
@@ -281,7 +279,6 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
                 checklist,
                 linha.codigo,
                 linha.concluida_por_codigo ? (usuarios.get(linha.concluida_por_codigo) ?? null) : null,
-                linha.categoria ?? null,
                 linha.criada_por_codigo ? (usuarios.get(linha.criada_por_codigo) ?? null) : null,
                 coluna,
             );

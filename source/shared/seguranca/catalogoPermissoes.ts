@@ -15,8 +15,6 @@ export const Permissao = {
     /** Ver (e gerir o acesso de) qualquer projeto sigiloso: só a diretoria. Sessão 20. */
     PROJETOS_VER_SIGILOSOS: "projetos.verSigilosos",
     TAREFAS_GERIR_TODAS: "tarefas.gerirTodas",
-    /** Criar e organizar tarefas avulsas (sem projeto). Sessão 8c. */
-    TAREFAS_ATRIBUIR: "tarefas.atribuir",
     CAPACITACOES_GERIR: "capacitacoes.gerir",
     /** Ler itens da Biblioteca de qualquer sigilo (gestão). Sessão 17. */
     BIBLIOTECA_VER_TODOS: "biblioteca.verTodos",
@@ -40,7 +38,6 @@ const DO_GESTOR: Permissao[] = [
     Permissao.PROJETOS_VER_TODOS,
     Permissao.PROJETOS_EDITAR,
     Permissao.TAREFAS_GERIR_TODAS,
-    Permissao.TAREFAS_ATRIBUIR,
     Permissao.CAPACITACOES_GERIR,
     Permissao.BIBLIOTECA_VER_TODOS,
     Permissao.BIBLIOTECA_GERIR,

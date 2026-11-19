@@ -23,6 +23,16 @@ export default class PeriodoAreaRepositoryMemory implements PeriodoAreaRepositor
             .sort((a, b) => a.inicio.getTime() - b.inicio.getTime() || a.area.nome.localeCompare(b.area.nome));
     }
 
+    async listarDasAreas(codigosArea: string[]): Promise<PeriodoArea[]> {
+        return this.periodos.filter((p) => codigosArea.includes(p.area.codigo)).sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+    }
+
+    async listarAbertosQueLideram(): Promise<PeriodoArea[]> {
+        return this.periodos
+            .filter((p) => p.aberto && p.cargo?.lideraArea === true)
+            .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+    }
+
     async buscarPorCodigo(codigo: string): Promise<PeriodoArea | null> {
         return this.periodos.find((p) => p.codigo === codigo) ?? null;
     }

@@ -8,7 +8,7 @@ import { regrasTarefa, RegrasTarefa } from "../../shared/seguranca/regrasTarefa"
 /**
  * Carga comum das rotas de tarefa e dos anexos de tarefa: a tarefa, o projeto atual (com equipe e líder)
  * e as regras da pessoa. Só lança se a tarefa não existe; quem chama decide o que fazer sem `regras.ver`
- * (as rotas de tarefa dão 404 só na avulsa; os anexos dão 404 sempre).
+ * (as rotas de tarefa dão 404 só em projeto sigiloso que a pessoa não vê; os anexos dão 404 sempre).
  */
 export async function carregarTarefa(
     factory: RepositoryFactoryInterface,

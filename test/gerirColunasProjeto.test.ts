@@ -33,7 +33,6 @@ describe("GerirColunasProjeto", () => {
             undefined,
             null,
             null,
-            null,
             projeto.colunaDeEntrada,
         );
         return ctx.factory.criarTarefaRepository().criar(base.naColuna(coluna, new Date("2026-11-01T00:00:00.000Z"), ctx.gerente));

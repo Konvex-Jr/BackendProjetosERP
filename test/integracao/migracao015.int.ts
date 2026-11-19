@@ -86,7 +86,9 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("cria as quatro colunas padrão em cada projeto, também ao rodar de novo", async () => {
-        expect((await aplicarMigracoes(pool, PASTA, silencio)).slice(0, 1)).toEqual(["015_colunas_projeto.sql"]);
+        // Só até a 015: as seguintes (a 018 apaga a categoria das tarefas) mudam o que este teste confere.
+        copyFileSync(path.join(PASTA, "015_colunas_projeto.sql"), path.join(antigas, "015_colunas_projeto.sql"));
+        expect(await aplicarMigracoes(pool, antigas, silencio)).toEqual(["015_colunas_projeto.sql"]);
         await pool.query(readFileSync(path.join(PASTA, "015_colunas_projeto.sql"), "utf8"));
 
         for (const projeto of [projetoA, projetoB]) {
@@ -158,6 +160,8 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("o repositório grava as colunas ao criar o projeto e a tarefa fica na coluna dele", async () => {
+        // Os repositórios são os de hoje e leem colunas das migrações seguintes (tipo e geral_da_area, da 018).
+        await aplicarMigracoes(pool, PASTA, silencio);
         const conexao = PgConexao.criar(URL_TESTE!);
         try {
             const fabrica = new DatabaseRepositoryFactory(conexao);
@@ -194,6 +198,8 @@ descrever("migração 015 sobre a 014", () => {
     });
 
     test("ler tarefa com dados antigos incoerentes devolve a coluna, sem lançar", async () => {
+        // O domínio não lê mais tarefa sem projeto (avulsa, fim na 018): a avulsa antiga sai antes da leitura.
+        await pool.query("DELETE FROM tarefas WHERE projeto_codigo IS NULL");
         const projeto = await inserirProjeto("Terceiro");
         const colunas = (
             await pool.query(

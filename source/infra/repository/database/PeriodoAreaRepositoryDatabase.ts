@@ -52,6 +52,19 @@ export default class PeriodoAreaRepositoryDatabase implements PeriodoAreaReposit
         return linhas.map(paraEntidade);
     }
 
+    async listarDasAreas(codigosArea: string[]): Promise<PeriodoArea[]> {
+        if (codigosArea.length === 0) return [];
+        const linhas = await this.conexao.consultar(`${SELECT} WHERE p.area_codigo = ANY($1::uuid[]) ORDER BY p.inicio, p.codigo`, [
+            [...new Set(codigosArea)],
+        ]);
+        return linhas.map(paraEntidade);
+    }
+
+    async listarAbertosQueLideram(): Promise<PeriodoArea[]> {
+        const linhas = await this.conexao.consultar(`${SELECT} WHERE p.fim IS NULL AND c.lidera_area ORDER BY p.inicio, p.codigo`);
+        return linhas.map(paraEntidade);
+    }
+
     async buscarPorCodigo(codigo: string): Promise<PeriodoArea | null> {
         const linhas = await this.conexao.consultar(`${SELECT} WHERE p.codigo = $1`, [codigo]);
         return linhas.length ? paraEntidade(linhas[0]) : null;
