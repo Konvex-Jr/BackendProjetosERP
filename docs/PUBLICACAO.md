@@ -519,7 +519,19 @@ cd /docker/erp-konvex
 docker exec konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT curso, count(*) FROM usuarios GROUP BY 1 ORDER BY 2 DESC"'
 docker exec konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT status, count(*) FROM usuarios GROUP BY 1"'
 ```
-Se algum curso real não casar com o mapeamento da migração, **parar e avisar antes do deploy**. Anotar os números para comparar depois.
+Mapeamento da migração 022 (sem acento e sem diferença de maiúsculas):
+- Começa com "ciencia" e contém "comput", ou é "BCC" ou "CC": vira Ciência da Computação.
+- Começa com "eng" e contém "mec": vira Engenharia Mecânica.
+- Começa com "eng" e contém "eletr": vira Engenharia Elétrica.
+- Todo o resto vira vazio.
+
+Atenção: "Mecatrônica" e "Eletrônica" cairiam em Mecânica e Elétrica pelo padrão. Se aparecerem na consulta, **parar e avisar o Claude antes do deploy**. O mesmo vale para qualquer curso real que não case com o mapeamento. Anotar os números para comparar depois.
+
+Guardar a lista de cursos atuais, para a gestão recompletar os vazios depois:
+```bash
+DATA=$(date +%F_%H%M)
+docker exec konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "COPY (SELECT codigo, nome, curso FROM usuarios ORDER BY nome) TO STDOUT WITH CSV HEADER"' > /root/backup-konvex/cursos_$DATA.csv && ls -lh /root/backup-konvex/cursos_$DATA.csv
+```
 
 **Parte 2, backup:**
 ```bash
@@ -538,7 +550,7 @@ docker logs konvex-backend 2>&1 | tail -20
 
 **Parte 4, conferir a migração:**
 ```bash
-docker logs konvex-backend 2>&1 | grep 022
+docker logs konvex-backend 2>&1 | grep 022_pessoas
 ```
 Tem que aparecer `Migração aplicada: 022_pessoas.sql`. Depois repetir as duas consultas da Parte 1: o total de pessoas não muda, não sobra status `alumni` e todo curso preenchido é um dos três.
 
