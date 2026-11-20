@@ -456,7 +456,7 @@ Os nomes dos gerais têm que estar sem a bolinha ("Inovação geral").
 **Rollback:** a 020 só acrescenta colunas e renomeia projetos, mas desligar o geral exclui um projeto. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
 
 ### Publicação da sessão 25a (conta: convite por e-mail, esqueci a senha e manter conectado): migração 021
-A migração `021_links_de_senha.sql` cria a tabela de links de senha e acrescenta `refresh_tokens.lembrar`. A partir daqui **ninguém vê nem define a senha de outra pessoa**: a gestão cadastra só o e-mail e a pessoa cria a senha por um link enviado por e-mail (convite, validade de 72 h). "Esqueci a senha" gera um link de 1 h. "Manter conectado" guarda um cookie `HttpOnly` por 15 dias. Publicar **backend e frontend juntos**.
+A migração `021_conta_senha.sql` cria a tabela de links de senha e acrescenta `refresh_tokens.lembrar`. A partir daqui **ninguém vê nem define a senha de outra pessoa**: a gestão cadastra só o e-mail e a pessoa cria a senha por um link enviado por e-mail (convite, validade de 72 h). "Esqueci a senha" gera um link de 1 h. "Manter conectado" guarda um cookie `HttpOnly` por 15 dias. Publicar **backend e frontend juntos**.
 
 **Parte 0, antes de tudo (administrador do Google Workspace, no navegador):**
 1. Criar o alias `nao-responda@` no domínio da Konvex (Admin → Diretório → Usuários → um usuário → Adicionar alias).
@@ -494,7 +494,7 @@ docker compose build backend frontend
 docker compose up -d
 docker logs konvex-backend 2>&1 | tail -20
 ```
-No log tem que aparecer `Migração aplicada: 021_links_de_senha.sql` e `API disponível na porta 5001`.
+No log tem que aparecer `Migração aplicada: 021_conta_senha.sql` e `API disponível na porta 5001`.
 
 **Parte 4, conferir de fora:**
 ```bash

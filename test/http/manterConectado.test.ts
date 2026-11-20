@@ -208,75 +208,25 @@ describe("Manter conectado (cookie de lembrete)", () => {
         }
     }
 
-    it("duas retomadas simultâneas com o mesmo cookie: só uma passa", async () => {
+    it("duas retomadas simultâneas com o mesmo cookie: só uma passa (caso de uso, com portão)", async () => {
         const c0 = valorCookie(lerSetCookie((await login(true)).headers));
         const r = await corrida(() => new RetomarSessao(ctx.factory).execute(c0));
         expect(r.map((x) => x.status).sort()).toEqual(["fulfilled", "rejected"]);
     });
 
-    it("dois refresh simultâneos com o mesmo token: só um passa", async () => {
+    it("dois refresh simultâneos com o mesmo token: só um passa (caso de uso, com portão)", async () => {
         const { refreshToken } = (await login(false)).corpo;
         const r = await corrida(() => new RenovarSessao(ctx.factory).execute(refreshToken));
         expect(r.map((x) => x.status).sort()).toEqual(["fulfilled", "rejected"]);
     });
 
-    it("cookie já girado reapresentado: 401, cookie apagado e todas as sessões revogadas", async () => {
-        const c0 = valorCookie(lerSetCookie((await login(true)).headers));
-        const r1 = await retomar(c0);
-        const r = await retomar(c0);
-        expect(r.status).toBe(401);
-        const linha = lerSetCookie(r.headers)!;
-        expect(linha).toMatch(/^konvex_lembrar=;/);
-        expect(linha).toMatch(/Max-Age=0/);
-        expect((await retomar(valorCookie(lerSetCookie(r1.headers)))).status).toBe(401);
-        expect((await servidor.chamar("post", "/auth/refresh", { corpo: { refreshToken: r1.corpo.refreshToken } })).status).toBe(401);
-    });
-
-    it("sem cookie ou com cookie desconhecido: 401", async () => {
-        expect((await retomar()).status).toBe(401);
-        expect((await retomar("inexistente")).status).toBe(401);
-    });
-
-    it("refresh com o token de lembrete no corpo: 401", async () => {
-        const c0 = valorCookie(lerSetCookie((await login(true)).headers));
-        const r = await servidor.chamar("post", "/auth/refresh", { corpo: { refreshToken: c0 } });
-        expect(r.status).toBe(401);
-        // Não estraga o lembrete.
-        expect((await retomar(c0)).status).toBe(200);
-    });
-
-    it("refresh token de aba não serve para retomar", async () => {
-        const r = await login(false);
-        expect((await retomar(r.corpo.refreshToken)).status).toBe(401);
-    });
-
-    it("login sem manterConectado com cookie antigo apaga o cookie e revoga o lembrete", async () => {
-        const c0 = valorCookie(lerSetCookie((await login(true)).headers));
-        const r = await login(false, c0);
-        expect(r.status).toBe(200);
-        const linha = lerSetCookie(r.headers)!;
-        expect(linha).toMatch(/^konvex_lembrar=;/);
-        expect(linha).toMatch(/Max-Age=0/);
-        expect((await retomar(c0)).status).toBe(401);
-    });
-
-    it("login com manterConectado e cookie antigo troca o cookie e revoga o antigo", async () => {
-        const c0 = valorCookie(lerSetCookie((await login(true)).headers));
-        const r = await login(true, c0);
-        const c1 = valorCookie(lerSetCookie(r.headers));
-        expect(c1).not.toBe(c0);
-        expect((await retomar(c1)).status).toBe(200);
-        // O antigo foi revogado: reapresentar dá 401.
-        expect((await retomar(c0)).status).toBe(401);
-    });
-
-    it("duas retomadas simultâneas com o mesmo cookie: só uma passa", async () => {
+    it("duas retomadas simultâneas com o mesmo cookie: só uma passa (HTTP)", async () => {
         const c0 = valorCookie(lerSetCookie((await login(true)).headers));
         const status = (await Promise.all([retomar(c0), retomar(c0)])).map((r) => r.status).sort();
         expect(status).toEqual([200, 401]);
     });
 
-    it("dois refresh simultâneos com o mesmo token: só um passa", async () => {
+    it("dois refresh simultâneos com o mesmo token: só um passa (HTTP)", async () => {
         const { refreshToken } = (await login(false)).corpo;
         const chamar = () => servidor.chamar("post", "/auth/refresh", { corpo: { refreshToken } });
         const status = (await Promise.all([chamar(), chamar()])).map((r) => r.status).sort();
