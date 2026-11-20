@@ -52,7 +52,10 @@ export default class AlterarStatusPessoa {
         if (saindo && input.dataSaida && input.dataSaida.getTime() > hoje().getTime()) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.SAIDA_NO_FUTURO, "SAIDA_NO_FUTURO");
         }
-        const motivoInformado = input.motivoSaida === undefined || input.motivoSaida === null ? "" : String(input.motivoSaida).trim();
+        if (input.motivoSaida !== undefined && input.motivoSaida !== null && typeof input.motivoSaida !== "string") {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.MOTIVO_SAIDA_OBRIGATORIO, "MOTIVO_SAIDA_OBRIGATORIO");
+        }
+        const motivoInformado = (input.motivoSaida ?? "").trim();
         const entrandoNaSaida = !STATUS_DE_SAIDA.includes(atual.status) && saindo;
         if (entrandoNaSaida && !motivoInformado) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.MOTIVO_SAIDA_OBRIGATORIO, "MOTIVO_SAIDA_OBRIGATORIO");

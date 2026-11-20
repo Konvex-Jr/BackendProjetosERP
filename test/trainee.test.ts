@@ -106,7 +106,13 @@ describe("Trainee", () => {
     });
 
     describe("sempre membro", () => {
-        const dados = { nome: "Novo", email: "novo@konvex.com.br", senha: "Senha@forte1", senioridade: { codigo: "pleno" } };
+        const dados = {
+            nome: "Novo",
+            email: "novo@konvex.com.br",
+            senha: "Senha@forte1",
+            senioridade: { codigo: "pleno" },
+            curso: "Engenharia Elétrica",
+        };
 
         it("criar trainee gerente: 400 TRAINEE_SO_MEMBRO", async () => {
             const r = await servidor.chamar("post", "/usuarios", {

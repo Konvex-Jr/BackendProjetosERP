@@ -87,7 +87,7 @@ descrever("conta e senha contra PostgreSQL", () => {
         const fora = await chamar(
             "POST",
             "/usuarios",
-            { nome: "Fora", email: "fora@gmail.com", perfil: "gerente", codigoSenioridade: "lideranca" },
+            { nome: "Fora", email: "fora@gmail.com", perfil: "gerente", codigoSenioridade: "lideranca", curso: "Engenharia Mecânica" },
             { "access-token": tokenDiretora },
         );
         expect(fora.status).toBe(400);
@@ -95,7 +95,7 @@ descrever("conta e senha contra PostgreSQL", () => {
         const criada = await chamar(
             "POST",
             "/usuarios",
-            { nome: "Nova Pessoa", email: EMAIL_NOVA, perfil: "gerente", codigoSenioridade: "lideranca" },
+            { nome: "Nova Pessoa", email: EMAIL_NOVA, perfil: "gerente", codigoSenioridade: "lideranca", curso: "Engenharia Mecânica" },
             { "access-token": tokenDiretora },
         );
         expect(criada.status).toBe(200);

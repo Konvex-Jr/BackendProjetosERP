@@ -67,6 +67,7 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         calendarioUrl: texto("calendarioUrl"),
         githubUrl: texto("githubUrl"),
         curso: texto("curso"),
+        emailPessoal: texto("emailPessoal"),
         semestre:
             body.semestre === undefined
                 ? undefined
@@ -74,6 +75,7 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
                   ? null
                   : lerInteiro(body.semestre, "semestre"),
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
+        fimTrainee: body.fimTrainee === undefined ? undefined : lerData(body.fimTrainee, "fimTrainee"),
         bio: texto("bio"),
     };
 }
@@ -195,7 +197,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
-            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio } = lerPerfil(body);
+            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, emailPessoal, semestre, bio } = lerPerfil(body);
             const editado = await new EditarUsuario(f).execute({
                 codigo: eu.codigo,
                 nomeExibicao,
@@ -204,6 +206,7 @@ export default class UsuarioRoutes implements ModelRoutes {
                 calendarioUrl,
                 githubUrl,
                 curso,
+                emailPessoal,
                 semestre,
                 bio,
             });

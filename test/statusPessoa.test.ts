@@ -144,3 +144,18 @@ describe("Motivo da saída e fim do trainee (25b)", () => {
         expect(s.usuario.fimTrainee).toBeNull();
     });
 });
+
+describe("motivo da saída que não é texto (25b)", () => {
+    it("objeto ou número: 400 MOTIVO_SAIDA_OBRIGATORIO", async () => {
+        const { factory, membro } = await criarContexto();
+        for (const motivoSaida of [{ a: 1 }, 42]) {
+            await expect(
+                new AlterarStatusPessoa(factory).execute({
+                    codigo: membro.codigo,
+                    status: StatusPessoa.INATIVO,
+                    motivoSaida: motivoSaida as any,
+                }),
+            ).rejects.toMatchObject({ codigo: "MOTIVO_SAIDA_OBRIGATORIO" });
+        }
+    });
+});

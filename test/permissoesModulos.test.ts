@@ -118,7 +118,7 @@ describe("PUT /auth/perfil", () => {
                 user: eu,
                 telefone: "47 99999-0000",
                 bio: "Oi",
-                curso: "Eng. de Software",
+                curso: "Engenharia Mecânica",
                 // Ignorados: só a gestão muda nome, e-mail, perfil e área.
                 nome: "Outro",
                 email: "x@y.com",
@@ -132,5 +132,24 @@ describe("PUT /auth/perfil", () => {
         expect(editado.email).toBe(ana.email);
         expect(editado.perfil).toBe(ana.perfil);
         await expect(rotas["put /auth/perfil"]({}, { telefone: "1" })).rejects.toThrow(ErroNaoAutorizado);
+    });
+
+    test("e-mail pessoal grava e outro membro lê; fimTrainee da própria pessoa é ignorado", async () => {
+        const { factory, membro: ana, gerente } = await criarContexto();
+        const rotas: Record<string, any> = {};
+        const http: any = { route: (m: string, u: string, _a: boolean, cb: any) => (rotas[`${m} ${u}`] = cb), swagger: () => undefined };
+        new Router(http, factory).init();
+        const eu = { codigo: ana.codigo, perfil: ana.perfil };
+        const r = await rotas["put /auth/perfil"]({}, { user: eu, emailPessoal: "Ana@Gmail.com", fimTrainee: "2026-01-01" });
+        expect(r.emailPessoal).toBe("ana@gmail.com");
+        expect(r.fimTrainee ?? null).toBeNull();
+        const visto = await rotas["get /usuarios/:codigo"](
+            { codigo: ana.codigo },
+            { user: { codigo: gerente.codigo, perfil: gerente.perfil } },
+        );
+        expect(visto.emailPessoal).toBe("ana@gmail.com");
+        await expect(rotas["put /auth/perfil"]({}, { user: eu, emailPessoal: "sem-arroba" })).rejects.toMatchObject({
+            codigo: "EMAIL_PESSOAL_INVALIDO",
+        });
     });
 });

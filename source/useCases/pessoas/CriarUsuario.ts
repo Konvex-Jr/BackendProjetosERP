@@ -7,7 +7,7 @@ import { hoje } from "../../domain/entity/Participacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { exigirDominioKonvex, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirDominioKonvex, conferirCamposAlterados, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import GerirLinkSenha from "../auth/GerirLinkSenha";
 import CriarUsuarioInput from "./CriarUsuarioInput";
 import CriarUsuarioOutput from "./CriarUsuarioOutput";
@@ -46,6 +46,7 @@ export default class CriarUsuario {
         exigirTraineeMembro(status, input.perfil);
 
         const detalhes = resolverPerfilPessoa(input);
+        conferirCamposAlterados(null, { ...detalhes, status, dataEntrada: detalhes.dataEntrada ?? hoje() });
         const usuario = new Usuario(
             String(input.nome ?? "").trim(),
             email,

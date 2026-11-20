@@ -12,7 +12,13 @@ describe("Esqueci a senha e link de senha (HTTP)", () => {
         ctx = await criarContexto();
         await cadastrarComSenha(
             ctx.factory,
-            { nome: "Ana Dev", email: "ana@dev.konvex", perfil: PerfilUsuario.MEMBRO, senioridade: ctx.senioridade },
+            {
+                nome: "Ana Dev",
+                email: "ana@dev.konvex",
+                perfil: PerfilUsuario.MEMBRO,
+                senioridade: ctx.senioridade,
+                curso: "Engenharia Mecânica",
+            },
             "Senha@antiga1",
         );
         envio = ctx.factory.criarEnvioEmail() as EnvioEmailMemoria;

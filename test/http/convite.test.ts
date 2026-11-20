@@ -18,7 +18,13 @@ describe("Cadastro por convite (HTTP)", () => {
         await servidor.fechar();
     });
 
-    const dados = { nome: "Nova Pessoa", email: "nova@dev.konvex", perfil: "membro", codigoSenioridade: "pleno" };
+    const dados = {
+        nome: "Nova Pessoa",
+        email: "nova@dev.konvex",
+        perfil: "membro",
+        codigoSenioridade: "pleno",
+        curso: "Engenharia Mecânica",
+    };
 
     it("POST /usuarios cria sem senha e devolve conviteEnviado", async () => {
         const r = await servidor.chamar("post", "/usuarios", { usuario: ctx.gerente, corpo: dados });

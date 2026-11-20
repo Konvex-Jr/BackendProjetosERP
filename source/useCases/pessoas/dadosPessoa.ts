@@ -1,7 +1,9 @@
-import { DetalhesPessoa } from "../../domain/entity/Usuario";
+import Usuario, { DetalhesPessoa } from "../../domain/entity/Usuario";
 import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
+import { ehCursoValido, CURSOS } from "../../domain/enum/Curso";
+import { hoje } from "../../shared/datas";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 
 /** Campos do perfil como chegam na API (todos opcionais; ausente = não alterar). */
@@ -66,5 +68,46 @@ export function exigirDominioKonvex(email: string): void {
     if (!dominio) return;
     if (!email.trim().toLowerCase().endsWith(`@${dominio}`)) {
         throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.EMAIL_FORA_DO_DOMINIO(dominio), "EMAIL_FORA_DO_DOMINIO");
+    }
+}
+
+/** Dia civil da data (as datas da pessoa são meia-noite UTC; um horário no meio do dia cai no mesmo dia). */
+const dia = (d: Date | null | undefined) => (d ? Date.parse(d.toISOString().slice(0, 10)) : null);
+
+/**
+ * Confere curso, telefone e fim do trainee só quando o campo muda: pessoa antiga com valor fora da
+ * regra continua editando outros campos. `atual = null` na criação (tudo conta como alterado).
+ */
+export function conferirCamposAlterados(atual: Usuario | null, detalhes: DetalhesPessoa): void {
+    const M = MENSAGENS_DE_ERRO.USUARIO;
+    if (atual === null || detalhes.curso !== undefined) {
+        const curso = typeof detalhes.curso === "string" ? detalhes.curso.trim() : "";
+        if (!curso) throw new ErroValidacao(M.CURSO_OBRIGATORIO, "CURSO_OBRIGATORIO");
+        if (curso !== (atual?.curso ?? null) && !ehCursoValido(curso)) {
+            throw new ErroValidacao(M.CURSO_INVALIDO(CURSOS), "CURSO_INVALIDO");
+        }
+    }
+
+    if (detalhes.telefone !== undefined && detalhes.telefone !== null && String(detalhes.telefone).trim() !== "") {
+        const telefone = String(detalhes.telefone);
+        if (telefone !== (atual?.telefone ?? null)) {
+            const digitos = telefone.replace(/\D/g, "").length;
+            if (digitos < 10 || digitos > 11) throw new ErroValidacao(M.TELEFONE_INVALIDO, "TELEFONE_INVALIDO");
+        }
+    }
+
+    const fim = detalhes.fimTrainee !== undefined ? detalhes.fimTrainee : (atual?.fimTrainee ?? null);
+    const entrada = detalhes.dataEntrada !== undefined ? detalhes.dataEntrada : (atual?.dataEntrada ?? null);
+    const mudouFim = detalhes.fimTrainee !== undefined && dia(detalhes.fimTrainee) !== dia(atual?.fimTrainee);
+    const mudouEntrada = detalhes.dataEntrada !== undefined && dia(detalhes.dataEntrada) !== dia(atual?.dataEntrada);
+    if (fim && (mudouFim || mudouEntrada)) {
+        if (entrada && dia(fim)! < dia(entrada)!) {
+            throw new ErroValidacao(M.FIM_TRAINEE_ANTES_DA_ENTRADA, "FIM_TRAINEE_ANTES_DA_ENTRADA");
+        }
+    }
+    if (fim && mudouFim) {
+        if (dia(fim)! > hoje().getTime()) throw new ErroValidacao(M.FIM_TRAINEE_NO_FUTURO, "FIM_TRAINEE_NO_FUTURO");
+        const status = detalhes.status ?? atual?.status;
+        if (status === StatusPessoa.TRAINEE) throw new ErroValidacao(M.FIM_TRAINEE_COM_TRAINEE, "FIM_TRAINEE_COM_TRAINEE");
     }
 }

@@ -19,7 +19,13 @@ describe("RetomarSessao e lembrete", () => {
         ctx = await criarContexto();
         ana = await cadastrarComSenha(
             ctx.factory,
-            { nome: "Ana Dev", email: "ana@dev.konvex", perfil: PerfilUsuario.MEMBRO, senioridade: ctx.senioridade },
+            {
+                nome: "Ana Dev",
+                email: "ana@dev.konvex",
+                perfil: PerfilUsuario.MEMBRO,
+                senioridade: ctx.senioridade,
+                curso: "Engenharia Mecânica",
+            },
             SENHA,
         );
     });

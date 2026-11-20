@@ -4,7 +4,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirDominioKonvex, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirDominioKonvex, conferirCamposAlterados, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
 /**
@@ -40,6 +40,7 @@ export default class EditarUsuario {
         exigirTraineeMembro(atual.status, input.perfil ?? atual.perfil);
 
         const detalhes = resolverPerfilPessoa(input);
+        conferirCamposAlterados(atual, detalhes);
         const editado = atual.copiar({
             nome: input.nome !== undefined ? String(input.nome).trim() : undefined,
             email,

@@ -20,6 +20,12 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     USUARIO: {
+        CURSO_OBRIGATORIO: "Informe o curso (curso).",
+        CURSO_INVALIDO: (cursos: readonly string[]) => `O curso (curso) deve ser um destes: ${cursos.join(", ")}.`,
+        TELEFONE_INVALIDO: "O telefone (telefone) deve ter 10 ou 11 dígitos, como (11) 98765-4321.",
+        FIM_TRAINEE_ANTES_DA_ENTRADA: "O fim do trainee (fimTrainee) não pode ser antes da data de entrada (dataEntrada).",
+        FIM_TRAINEE_NO_FUTURO: "O fim do trainee (fimTrainee) não pode ser no futuro.",
+        FIM_TRAINEE_COM_TRAINEE: "Quem ainda é trainee não tem fim do trainee (fimTrainee).",
         EMAIL_PESSOAL_INVALIDO: "O e-mail pessoal (emailPessoal) deve ser um e-mail válido de até 254 caracteres.",
         MOTIVO_SAIDA_OBRIGATORIO: "Informe o motivo da saída (motivoSaida).",
         MOTIVO_SAIDA_LONGO: "O motivo da saída (motivoSaida) deve ter até 500 caracteres.",
