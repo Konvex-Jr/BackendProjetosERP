@@ -106,6 +106,11 @@ export default class Usuario {
         this.validar();
     }
 
+    /** Tem acesso mas ainda não definiu a senha (convite não usado). */
+    get convitePendente(): boolean {
+        return this.ativo && !this.senha;
+    }
+
     /** Cria uma cópia com alterações, preservando o que não foi informado. */
     copiar(
         alteracoes: Partial<{
@@ -146,6 +151,7 @@ export default class Usuario {
             senioridade: this.senioridade,
             ativo: this.ativo,
             naEj: this.naEj,
+            convitePendente: this.convitePendente,
             status: this.status,
             nomeExibicao: this.nomeExibicao,
             foto: this.foto,

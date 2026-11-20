@@ -16,6 +16,7 @@ export const MENSAGENS_DE_ERRO = {
         CREDENCIAIS_INVALIDAS: "E-mail ou senha inválidos.",
         ACESSO_NAO_AUTORIZADO: "Acesso não autorizado.",
         TOKEN_EXPIRADO: "O token de acesso expirou.",
+        LINK_SENHA_INVALIDO: 'Este link não vale mais. Peça um novo em "Esqueci a senha".',
     },
 
     USUARIO: {
