@@ -29,7 +29,11 @@ export default class RetomarSessao {
 
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(registro.codigoUsuario);
         // Revoga antes de conferir a pessoa: o lembrete usado não vale de novo em nenhum caso.
-        await tokens.revogar(registro.codigo);
+        // Duas chamadas simultâneas com o mesmo token: só a primeira marca; a outra é reapresentação.
+        if (!(await tokens.revogar(registro.codigo))) {
+            await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
+            throw expirada();
+        }
         if (!usuario || !usuario.ativo) throw expirada();
 
         const lembrete = await emitirLembrete(this.factory, usuario, registro.expiraEm);

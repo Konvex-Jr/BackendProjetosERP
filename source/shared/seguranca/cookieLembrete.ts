@@ -35,7 +35,7 @@ export function formatarCookie(cookie: CookieResposta, agora = Date.now()): stri
 
 /** Lê o cabeçalho Cookie (`a=1; b=2`) sem dependência externa. Valor mal codificado fica como veio. */
 export function lerCookies(cabecalho: unknown): Record<string, string> {
-    const cookies: Record<string, string> = {};
+    const cookies: Record<string, string> = Object.create(null);
     if (typeof cabecalho !== "string") return cookies;
     for (const parte of cabecalho.split(";")) {
         const igual = parte.indexOf("=");

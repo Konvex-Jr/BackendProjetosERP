@@ -33,8 +33,12 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
         };
     }
 
-    async revogar(codigo: string): Promise<void> {
-        await this.conexao.consultar("UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL", [codigo]);
+    async revogar(codigo: string): Promise<boolean> {
+        const linhas = await this.conexao.consultar(
+            "UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL RETURNING codigo",
+            [codigo],
+        );
+        return linhas.length > 0;
     }
 
     async revogarTodosDoUsuario(codigoUsuario: string): Promise<void> {

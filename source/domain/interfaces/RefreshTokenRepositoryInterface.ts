@@ -12,6 +12,7 @@ export interface RegistroRefreshToken {
 export default interface RefreshTokenRepositoryInterface {
     criar(registro: RegistroRefreshToken): Promise<void>;
     buscarPorHash(tokenHash: string): Promise<RegistroRefreshToken | null>;
-    revogar(codigo: string): Promise<void>;
+    /** Marca como revogado; devolve false se já estava revogado (outra chamada chegou antes). */
+    revogar(codigo: string): Promise<boolean>;
     revogarTodosDoUsuario(codigoUsuario: string): Promise<void>;
 }
