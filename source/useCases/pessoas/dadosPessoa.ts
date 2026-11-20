@@ -1,4 +1,4 @@
-import Usuario, { DetalhesPessoa } from "../../domain/entity/Usuario";
+import Usuario, { DetalhesPessoa, URL_VALIDA } from "../../domain/entity/Usuario";
 import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
@@ -122,12 +122,12 @@ export function conferirCamposAlterados(atual: Usuario | null, detalhes: Detalhe
 }
 
 /** `AAAA/1` ou `AAAA/2`, ano a partir de 2000, não depois do semestre atual (jan-jun = 1, jul-dez = 2). */
-export function ingressoValido(valor: string): boolean {
+export function ingressoValido(valor: string, agora: Date = hoje()): boolean {
     if (!/^\d{4}\/[12]$/.test(valor)) return false;
     const ano = Number(valor.slice(0, 4));
     const semestre = Number(valor.slice(5));
     if (ano < 2000) return false;
-    const h = hoje();
+    const h = agora;
     const anoAtual = h.getUTCFullYear();
     const semestreAtual = h.getUTCMonth() < 6 ? 1 : 2;
     return ano < anoAtual || (ano === anoAtual && semestre <= semestreAtual);
@@ -145,6 +145,6 @@ export function pendenciasPerfil(u: Usuario): string[] {
     if (digitos < 10 || digitos > 11) pendentes.push("telefone");
     if (!u.emailPessoal) pendentes.push("emailPessoal");
     if (!u.ingresso || !ingressoValido(u.ingresso)) pendentes.push("ingresso");
-    if (!u.calendarioUrl || !/^https?:\/\/\S+$/i.test(u.calendarioUrl)) pendentes.push("calendarioUrl");
+    if (!u.calendarioUrl || !URL_VALIDA.test(u.calendarioUrl)) pendentes.push("calendarioUrl");
     return pendentes;
 }

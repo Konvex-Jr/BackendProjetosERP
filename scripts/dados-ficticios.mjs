@@ -114,10 +114,6 @@ async function main() {
 
     // Perfil completo (sessão 25b): curso, telefone, e-mail pessoal, ingresso e calendário; quem fica sem
     // eles cai na tela de completar o perfil (só a "Paula Pendente", de propósito). O diretor também.
-    // O diretor do seed nasce sem senioridade e a edição exige uma: define antes.
-    if (!login.usuario.senioridade) {
-        await exigir("PUT", `/usuarios/${login.usuario.codigo}`, dir, { codigoSenioridade: "senior" });
-    }
     await exigir("PUT", "/auth/perfil", dir, {
         curso: CURSOS_FICTICIOS[0],
         telefone: "(11) 98888-0000",

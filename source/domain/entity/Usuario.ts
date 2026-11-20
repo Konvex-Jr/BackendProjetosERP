@@ -42,7 +42,7 @@ export interface DetalhesPessoa {
     bio?: string | null;
 }
 
-const URL_VALIDA = /^https?:\/\/\S+$/i;
+export const URL_VALIDA = /^https?:\/\/\S+$/i;
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**

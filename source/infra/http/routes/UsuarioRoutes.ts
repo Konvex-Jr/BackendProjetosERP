@@ -206,18 +206,21 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
             const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, emailPessoal, ingresso, bio } = lerPerfil(body);
-            const editado = await new EditarUsuario(f).execute({
-                codigo: eu.codigo,
-                nomeExibicao,
-                telefone,
-                linkedinUrl,
-                calendarioUrl,
-                githubUrl,
-                curso,
-                emailPessoal,
-                ingresso,
-                bio,
-            });
+            const editado = await new EditarUsuario(f).execute(
+                {
+                    codigo: eu.codigo,
+                    nomeExibicao,
+                    telefone,
+                    linkedinUrl,
+                    calendarioUrl,
+                    githubUrl,
+                    curso,
+                    emailPessoal,
+                    ingresso,
+                    bio,
+                },
+                { autoEdicao: true },
+            );
             return this.responderEu(editado);
         });
 

@@ -1,7 +1,7 @@
 import Usuario from "../source/domain/entity/Usuario";
 import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
-import { conferirCamposAlterados, pendenciasPerfil } from "../source/useCases/pessoas/dadosPessoa";
+import { conferirCamposAlterados, ingressoValido, pendenciasPerfil } from "../source/useCases/pessoas/dadosPessoa";
 import { hoje } from "../source/shared/datas";
 import Router from "../source/infra/http/Router";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
@@ -42,6 +42,17 @@ describe("ingresso", () => {
     });
 });
 
+describe("ingressoValido na virada do semestre", () => {
+    const em = (d: string) => new Date(`${d}T00:00:00.000Z`);
+    test("30/06, 01/07 e 31/12", () => {
+        expect(ingressoValido("2026/2", em("2026-06-30"))).toBe(false);
+        expect(ingressoValido("2026/1", em("2026-06-30"))).toBe(true);
+        expect(ingressoValido("2026/2", em("2026-07-01"))).toBe(true);
+        expect(ingressoValido("2027/1", em("2026-12-31"))).toBe(false);
+        expect(ingressoValido("2026/2", em("2026-12-31"))).toBe(true);
+    });
+});
+
 describe("pendenciasPerfil", () => {
     test("pessoa completa não tem pendência", () => expect(pendenciasPerfil(pessoa(completo))).toEqual([]));
     test("devolve os faltantes na ordem", () => {
@@ -77,6 +88,18 @@ describe("rotas devolvem pendenciasPerfil", () => {
         expect(ed.ingresso).toBe("2025/1");
         expect(ed.pendenciasPerfil).toEqual(antes.filter((c: string) => c !== "ingresso"));
         await expect(r["put /auth/perfil"]({}, { user: eu, ingresso: "2025/3" })).rejects.toMatchObject({ codigo: "INGRESSO_INVALIDO" });
+    });
+    test("diretor sem senioridade completa o perfil por PUT /auth/perfil", async () => {
+        const { r, factory } = await rotas();
+        const dir = await factory.criarUsuarioRepository().criar(new Usuario("Dir", "dir@x.com", PerfilUsuario.DIRETOR, true, "h"));
+        const ed = await r["put /auth/perfil"](
+            {},
+            {
+                user: { codigo: dir!.codigo, perfil: dir!.perfil },
+                ...completo,
+            },
+        );
+        expect(ed.pendenciasPerfil).toEqual([]);
     });
     test("login traz pendenciasPerfil no usuario", async () => {
         const { r, factory } = await rotas();
