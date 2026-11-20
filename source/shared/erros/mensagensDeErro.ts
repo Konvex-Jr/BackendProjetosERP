@@ -20,6 +20,16 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     USUARIO: {
+        CURSO_OBRIGATORIO: "Informe o curso (curso).",
+        CURSO_INVALIDO: (cursos: readonly string[]) => `O curso (curso) deve ser um destes: ${cursos.join(", ")}.`,
+        TELEFONE_INVALIDO: "O telefone (telefone) deve ter 10 ou 11 dígitos, como (11) 98765-4321.",
+        INGRESSO_INVALIDO: "O ingresso (ingresso) deve ser no formato AAAA/1 ou AAAA/2 (ex.: 2025/1), de 2000 até o semestre atual.",
+        FIM_TRAINEE_ANTES_DA_ENTRADA: "O fim do trainee (fimTrainee) não pode ser antes da data de entrada (dataEntrada).",
+        FIM_TRAINEE_NO_FUTURO: "O fim do trainee (fimTrainee) não pode ser no futuro.",
+        FIM_TRAINEE_COM_TRAINEE: "Quem ainda é trainee não tem fim do trainee (fimTrainee).",
+        EMAIL_PESSOAL_INVALIDO: "O e-mail pessoal (emailPessoal) deve ser um e-mail válido de até 254 caracteres.",
+        MOTIVO_SAIDA_OBRIGATORIO: "Informe o motivo da saída (motivoSaida).",
+        MOTIVO_SAIDA_LONGO: "O motivo da saída (motivoSaida) deve ter até 500 caracteres.",
         SAIDA_NO_FUTURO: "A data de saída (dataSaida) não pode ser no futuro.",
         NAO_ENCONTRADO: "Usuário não encontrado.",
         EMAIL_FORA_DO_DOMINIO: (dominio: string) => `Use o e-mail da Konvex (@${dominio}).`,
@@ -41,7 +51,6 @@ export const MENSAGENS_DE_ERRO = {
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
         SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
-        SIGILO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam o sigilo.",
         ACESSO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam a lista de acesso.",
         ACESSO_LISTA_INVALIDA: "A lista de acesso (codigos) deve ser uma lista de códigos de pessoas.",
         ACESSO_PESSOA_SEM_LOGIN: (codigo: string, nome?: string) =>

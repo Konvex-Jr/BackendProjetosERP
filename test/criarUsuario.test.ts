@@ -19,6 +19,7 @@ const inputValido = {
     email: "john.doe@konvex.com.br",
     perfil: PerfilUsuario.MEMBRO,
     senioridade: senioridadePleno,
+    curso: "Engenharia Mecânica",
 };
 
 beforeEach(() => {
@@ -122,4 +123,21 @@ test("Deve verificar se há registros no repositório", async () => {
     await criarUsuario.execute(inputValido);
 
     expect(await usuarioRepository.listar()).toHaveLength(1);
+});
+
+describe("curso, telefone e fim do trainee na criação (25b)", () => {
+    const falha = (extra: object) => criarUsuario.execute({ ...inputValido, ...extra } as any);
+
+    test("sem curso: 400 CURSO_OBRIGATORIO; curso fora da lista: 400 CURSO_INVALIDO", async () => {
+        await expect(falha({ curso: undefined })).rejects.toMatchObject({ codigo: "CURSO_OBRIGATORIO" });
+        await expect(falha({ curso: "Direito" })).rejects.toMatchObject({ codigo: "CURSO_INVALIDO" });
+        const ok = await falha({ curso: "Engenharia Mecânica" });
+        expect(ok.usuario.curso).toBe("Engenharia Mecânica");
+    });
+
+    test("telefone com 10 ou 11 dígitos passa; outro: 400 TELEFONE_INVALIDO", async () => {
+        await expect(falha({ telefone: "(11) 98765-4321" })).resolves.toBeTruthy();
+        await expect(falha({ email: "b@konvex.com.br", telefone: "1187654321" })).resolves.toBeTruthy();
+        await expect(falha({ email: "c@konvex.com.br", telefone: "123" })).rejects.toMatchObject({ codigo: "TELEFONE_INVALIDO" });
+    });
 });

@@ -107,7 +107,7 @@ describe("foto de perfil (sessão 22)", () => {
     it("inativar a pessoa não mexe na foto", async () => {
         const { factory, membro } = await criarContexto();
         const { foto } = await new GerirFotoPerfil(factory).trocar(membro.codigo, await webp());
-        await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.INATIVO });
+        await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.INATIVO, motivoSaida: "Formou-se" });
         expect((await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo))!.foto).toBe(foto);
         expect(factory.armazenamentoFotos.arquivos.has(foto)).toBe(true);
     });

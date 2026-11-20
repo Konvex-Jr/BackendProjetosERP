@@ -110,6 +110,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             senha: "SenhaMembro@1",
             perfil: "membro",
             codigoSenioridade: "junior",
+            curso: "Engenharia Mecânica",
             codigoArea: area.corpo.codigo,
             codigoCargo: cargo.corpo.codigo,
         });
@@ -120,6 +121,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             senha: "SenhaTrainee@1",
             perfil: "membro",
             codigoSenioridade: "trainee",
+            curso: "Engenharia Mecânica",
             status: "trainee",
         });
         expect(trainee.status).toBe(200);
@@ -132,7 +134,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("POST", "/projetos", mem, { nome: "X" })).status).toBe(403);
 
         // Perfil próprio
-        const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Eng. de Software", perfil: "diretor" });
+        const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Engenharia Elétrica", perfil: "diretor" });
         expect(perfil.status).toBe(200);
         expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBe("membro");
 
@@ -183,7 +185,10 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(meus.corpo.map((p: any) => p.nome).sort()).toEqual(["Projeto A", "Projeto B"]);
 
         // Saída da EJ encerra participações e preserva histórico
-        const saida = await chamar("PATCH", `/usuarios/${membro.corpo.codigo}/status`, dir, { status: "alumni" });
+        const saida = await chamar("PATCH", `/usuarios/${membro.corpo.codigo}/status`, dir, {
+            status: "inativo",
+            motivoSaida: "Formou-se",
+        });
         expect(saida.status).toBe(200);
         const projeto = await chamar("GET", `/projetos/${cod1}`, dir);
         const part = projeto.corpo.participacoes.find((x: any) => x.usuario.codigo === membro.corpo.codigo);
@@ -206,6 +211,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             senha: "SenhaLider@1",
             perfil: "membro",
             codigoSenioridade: "junior",
+            curso: "Engenharia Mecânica",
         });
         const p = await chamar("POST", "/projetos", dir, {
             nome: "Projeto C",
@@ -255,6 +261,7 @@ descrever("fase 1 contra PostgreSQL", () => {
                 senha: "SenhaAnexa@1",
                 perfil: "membro",
                 codigoSenioridade: "junior",
+                curso: "Engenharia Mecânica",
             });
             const membro = (await entrar("anexadora@teste.com", "SenhaAnexa@1")).corpo.token as string;
             const enviar = async (token: string, caminho: string, nome: string, bytes = Buffer.from("%PDF-1.4 teste")) => {
@@ -311,6 +318,7 @@ descrever("fase 1 contra PostgreSQL", () => {
                 senha: "SenhaCap@123",
                 perfil: "membro",
                 codigoSenioridade: "junior",
+                curso: "Engenharia Mecânica",
             });
             return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap@123")).corpo.token as string };
         };

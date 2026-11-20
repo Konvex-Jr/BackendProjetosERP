@@ -27,7 +27,14 @@ export interface DetalhesPessoa {
     calendarioUrl?: string | null;
     githubUrl?: string | null;
     curso?: string | null;
-    semestre?: number | null;
+    /** E-mail pessoal (opcional, visível a todos; sessão 25b). */
+    emailPessoal?: string | null;
+    /** Motivo da saída; só a mudança de status grava. */
+    motivoSaida?: string | null;
+    /** Dia em que deixou de ser trainee. */
+    fimTrainee?: Date | null;
+    /** Ingresso na faculdade, `AAAA/1` ou `AAAA/2` (conferido em dadosPessoa; sessão 25b). */
+    ingresso?: string | null;
     /** Vem dos períodos (preencherAreasAtuais); a pessoa não grava área nem cargo. */
     areas?: AreaAtual[];
     dataEntrada?: Date | null;
@@ -35,12 +42,12 @@ export interface DetalhesPessoa {
     bio?: string | null;
 }
 
-const URL_VALIDA = /^https?:\/\/\S+$/i;
+export const URL_VALIDA = /^https?:\/\/\S+$/i;
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Pessoa da Konvex e, ao mesmo tempo, usuário do sistema. Nunca é excluída (ADR-006):
- * a saída muda o status para Alumni ou Inativo.
+ * a saída muda o status para Inativo.
  */
 export default class Usuario {
     readonly codigo: string;
@@ -61,7 +68,10 @@ export default class Usuario {
     readonly calendarioUrl: string | null;
     readonly githubUrl: string | null;
     readonly curso: string | null;
-    readonly semestre: number | null;
+    readonly emailPessoal: string | null;
+    readonly motivoSaida: string | null;
+    readonly fimTrainee: Date | null;
+    readonly ingresso: string | null;
     readonly areas: AreaAtual[];
     readonly dataEntrada: Date | null;
     readonly dataSaida: Date | null;
@@ -94,10 +104,11 @@ export default class Usuario {
         this.calendarioUrl = textoOuNulo(detalhes.calendarioUrl);
         this.githubUrl = textoOuNulo(detalhes.githubUrl);
         this.curso = textoOuNulo(detalhes.curso);
-        this.semestre =
-            detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
-                ? null
-                : Number(detalhes.semestre);
+        const emailPessoal = textoOuNulo(detalhes.emailPessoal);
+        this.emailPessoal = emailPessoal ? emailPessoal.toLowerCase() : null;
+        this.motivoSaida = textoOuNulo(detalhes.motivoSaida);
+        this.fimTrainee = detalhes.fimTrainee ?? null;
+        this.ingresso = textoOuNulo(detalhes.ingresso);
         this.areas = detalhes.areas ?? [];
         this.dataEntrada = detalhes.dataEntrada ?? null;
         this.dataSaida = detalhes.dataSaida ?? null;
@@ -134,7 +145,10 @@ export default class Usuario {
             calendarioUrl: pick("calendarioUrl"),
             githubUrl: pick("githubUrl"),
             curso: pick("curso"),
-            semestre: pick("semestre"),
+            emailPessoal: pick("emailPessoal"),
+            motivoSaida: pick("motivoSaida"),
+            fimTrainee: pick("fimTrainee"),
+            ingresso: pick("ingresso"),
             areas: pick("areas"),
             dataEntrada: pick("dataEntrada"),
             dataSaida: pick("dataSaida"),
@@ -160,7 +174,10 @@ export default class Usuario {
             calendarioUrl: this.calendarioUrl,
             githubUrl: this.githubUrl,
             curso: this.curso,
-            semestre: this.semestre,
+            emailPessoal: this.emailPessoal,
+            motivoSaida: this.motivoSaida,
+            fimTrainee: this.fimTrainee,
+            ingresso: this.ingresso,
             areas: this.areas,
             dataEntrada: this.dataEntrada,
             dataSaida: this.dataSaida,
@@ -195,10 +212,6 @@ export default class Usuario {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
         }
 
-        if (this.semestre !== null && (!Number.isInteger(this.semestre) || this.semestre < 1 || this.semestre > 20)) {
-            throw new ErroValidacao("O semestre deve ser um número entre 1 e 20.", "SEMESTRE_INVALIDO");
-        }
-
         for (const [campo, valor] of [
             ["do LinkedIn", this.linkedinUrl],
             ["do calendário", this.calendarioUrl],
@@ -209,10 +222,18 @@ export default class Usuario {
             }
         }
 
-        for (const data of [this.dataEntrada, this.dataSaida]) {
+        for (const data of [this.dataEntrada, this.dataSaida, this.fimTrainee]) {
             if (data && Number.isNaN(data.getTime())) {
                 throw new ErroValidacao("Datas de entrada e saída devem ser válidas.", "DATA_PESSOA_INVALIDA");
             }
+        }
+
+        if (this.emailPessoal && (this.emailPessoal.length > 254 || !EMAIL_VALIDO.test(this.emailPessoal))) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.EMAIL_PESSOAL_INVALIDO, "EMAIL_PESSOAL_INVALIDO");
+        }
+
+        if (this.motivoSaida && this.motivoSaida.length > 500) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.MOTIVO_SAIDA_LONGO, "MOTIVO_SAIDA_LONGO");
         }
 
         if (this.dataEntrada && this.dataSaida && this.dataSaida.getTime() < this.dataEntrada.getTime()) {

@@ -38,7 +38,7 @@ describe("Escrita em projeto sigiloso", () => {
         gerenteLista = await novoUsuario("Gil", PerfilUsuario.GERENTE, "usr-gil");
         gerenteFora = await novoUsuario("Fábio", PerfilUsuario.GERENTE, "usr-fabio");
         novo = await novoUsuario("Nina", PerfilUsuario.MEMBRO, "usr-nina");
-        alumni = await novoUsuario("Alê", PerfilUsuario.MEMBRO, "usr-ale", StatusPessoa.ALUMNI);
+        alumni = await novoUsuario("Alê", PerfilUsuario.MEMBRO, "usr-ale", StatusPessoa.INATIVO);
         await ctx.factory.criarProjetoRepository().criar(
             new Projeto("Sigiloso", "descrição", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {
                 sigiloso: true,
@@ -123,10 +123,11 @@ describe("Escrita em projeto sigiloso", () => {
     });
 
     describe("PUT /projetos/:codigo", () => {
-        it("gerente na lista não troca sigiloso (403), mas edita o nome sem trocar", async () => {
+        it("gerente na lista desmarca sigiloso (200) e edita o nome", async () => {
             const troca = await chamar("put", "/projetos/proj-sig", gerenteLista, corpoProjeto({ sigiloso: false }));
-            expect(troca.status).toBe(403);
-            expect(troca.corpo.codigo ?? troca.corpo.code).toBe("SIGILO_SEM_PERMISSAO");
+            expect(troca.status).toBe(200);
+            expect(troca.corpo.sigiloso).toBe(false);
+            await chamar("put", "/projetos/proj-sig", gerenteLista, corpoProjeto({ sigiloso: true }));
             const nome = await chamar("put", "/projetos/proj-sig", gerenteLista, corpoProjeto({ nome: "Novo nome" }));
             expect(nome.status).toBe(200);
             expect(nome.corpo.nome).toBe("Novo nome");
@@ -140,8 +141,19 @@ describe("Escrita em projeto sigiloso", () => {
             expect((await chamar("put", "/projetos/proj-nor", diretor, corpoProjeto({ sigiloso: true }))).status).toBe(200);
         });
 
-        it("gerente comum não torna projeto normal sigiloso (403)", async () => {
-            const r = await chamar("put", "/projetos/proj-nor", ctx.gerente, corpoProjeto({ sigiloso: true }));
+        it("gerente que não criou marca sigiloso (200)", async () => {
+            const marca = await chamar("put", "/projetos/proj-nor", ctx.gerente, corpoProjeto({ sigiloso: true }));
+            expect(marca.status).toBe(200);
+            expect(marca.corpo.sigiloso).toBe(true);
+            // fora da equipe, agora só vê o resumo: desmarcar cabe a quem tem acesso completo
+            expect((await chamar("put", "/projetos/proj-nor", ctx.gerente, corpoProjeto({ sigiloso: false }))).status).toBe(403);
+            const desmarca = await chamar("put", "/projetos/proj-nor", diretor, corpoProjeto({ sigiloso: false }));
+            expect(desmarca.status).toBe(200);
+            expect(desmarca.corpo.sigiloso).toBe(false);
+        });
+
+        it("membro sem projetos.editar não muda o sigilo (403)", async () => {
+            const r = await chamar("put", "/projetos/proj-nor", novo, corpoProjeto({ sigiloso: true }));
             expect(r.status).toBe(403);
         });
     });

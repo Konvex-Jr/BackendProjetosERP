@@ -10,7 +10,13 @@ describe("Limite de tentativas no login", () => {
         const ctx = await criarContexto();
         await cadastrarComSenha(
             ctx.factory,
-            { nome: "Carla", email: "carla@konvex.com.br", perfil: PerfilUsuario.GERENTE, senioridade: ctx.senioridade },
+            {
+                nome: "Carla",
+                email: "carla@konvex.com.br",
+                perfil: PerfilUsuario.GERENTE,
+                senioridade: ctx.senioridade,
+                curso: "Engenharia Mecânica",
+            },
             "Senha@certa1",
         );
         servidor = await subirServidor(ctx.factory);

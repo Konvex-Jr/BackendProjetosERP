@@ -6,7 +6,7 @@ import AlterarStatusPessoa from "./AlterarStatusPessoa";
 export default class InativarUsuario {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(codigo: string): Promise<void> {
-        await new AlterarStatusPessoa(this.factory).execute({ codigo, status: StatusPessoa.INATIVO });
+    async execute(codigo: string, motivoSaida: string): Promise<void> {
+        await new AlterarStatusPessoa(this.factory).execute({ codigo, status: StatusPessoa.INATIVO, motivoSaida });
     }
 }

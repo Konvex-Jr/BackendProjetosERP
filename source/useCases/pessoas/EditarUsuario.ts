@@ -4,7 +4,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirDominioKonvex, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirDominioKonvex, conferirCamposAlterados, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
 /**
@@ -14,7 +14,8 @@ import EditarUsuarioInput from "./EditarUsuarioInput";
 export default class EditarUsuario {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(input: EditarUsuarioInput): Promise<Usuario> {
+    /** `autoEdicao` (PUT /auth/perfil): a pessoa não escolhe senioridade, então não se exige uma. */
+    async execute(input: EditarUsuarioInput, opcoes: { autoEdicao?: boolean } = {}): Promise<Usuario> {
         const usuarios = this.factory.criarUsuarioRepository();
         const atual = await usuarios.buscarPorCodigo(input.codigo);
         if (!atual) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.USUARIO.NAO_ENCONTRADO);
@@ -33,18 +34,19 @@ export default class EditarUsuario {
             senioridade = await this.factory.criarSenioridadeRepository().buscarPorCodigo(input.senioridade.codigo);
             if (!senioridade) throw new ErroNaoEncontrado("Senioridade não encontrada.");
         }
-        if (!senioridade) {
+        if (!senioridade && !opcoes.autoEdicao) {
             throw new ErroValidacao("Selecione uma senioridade cadastrada para o usuário.", "SENIORIDADE_OBRIGATORIA");
         }
 
         exigirTraineeMembro(atual.status, input.perfil ?? atual.perfil);
 
         const detalhes = resolverPerfilPessoa(input);
+        conferirCamposAlterados(atual, detalhes);
         const editado = atual.copiar({
             nome: input.nome !== undefined ? String(input.nome).trim() : undefined,
             email,
             perfil: input.perfil ?? atual.perfil,
-            senioridade,
+            senioridade: senioridade ?? undefined,
             ...detalhes,
         });
         await usuarios.editar(editado);

@@ -26,9 +26,9 @@ import ObterPerfilPessoa from "../../../useCases/pessoas/ObterPerfilPessoa";
 import GerirPeriodosArea, { PeriodoAreaEntrada } from "../../../useCases/pessoas/GerirPeriodosArea";
 import { comAreasAtuais } from "../../../useCases/pessoas/areasAtuais";
 import Usuario from "../../../domain/entity/Usuario";
-import { EntradaPerfilPessoa, lerStatusPessoa } from "../../../useCases/pessoas/dadosPessoa";
+import { EntradaPerfilPessoa, lerStatusPessoa, pendenciasPerfil } from "../../../useCases/pessoas/dadosPessoa";
 import { exigirAutenticado, exigirPodeGerirPerfil } from "../../../shared/seguranca/permissoes";
-import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
+import { lerData, lerDataObrigatoria, lerEnum, lerLista } from "../../../shared/entradas";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
@@ -67,13 +67,10 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
         calendarioUrl: texto("calendarioUrl"),
         githubUrl: texto("githubUrl"),
         curso: texto("curso"),
-        semestre:
-            body.semestre === undefined
-                ? undefined
-                : body.semestre === null || body.semestre === ""
-                  ? null
-                  : lerInteiro(body.semestre, "semestre"),
+        emailPessoal: texto("emailPessoal"),
+        ingresso: texto("ingresso"),
         dataEntrada: body.dataEntrada === undefined ? undefined : lerData(body.dataEntrada, "dataEntrada"),
+        fimTrainee: body.fimTrainee === undefined ? undefined : lerData(body.fimTrainee, "fimTrainee"),
         bio: texto("bio"),
     };
 }
@@ -109,6 +106,16 @@ export default class UsuarioRoutes implements ModelRoutes {
         return comAreasAtuais(this.repositoryFactory, usuario);
     }
 
+    /** A própria pessoa (login, retomar, link de senha, /auth/me, perfil): com `pendenciasPerfil` para a tela bloquear. */
+    private async responderEu(usuario: Usuario) {
+        const pessoa = await this.responderPessoa(usuario);
+        return { ...pessoa.toJSON(), pendenciasPerfil: pendenciasPerfil(usuario) };
+    }
+
+    private async comPendencias<T extends { usuario: Usuario }>(sessao: T) {
+        return { ...sessao, usuario: await this.responderEu(sessao.usuario) };
+    }
+
     private async buscarAlvo(codigo: string) {
         const alvo = await this.repositoryFactory.criarUsuarioRepository().buscarPorCodigo(codigo);
         if (!alvo) throw new ErroNaoEncontrado("Usuário não encontrado.");
@@ -129,7 +136,9 @@ export default class UsuarioRoutes implements ModelRoutes {
                 contexto?.ip,
                 contexto?.cookies?.[NOME_COOKIE_LEMBRETE],
             );
-            return new RespostaComCookies(sessao, [lembrete ? cookieLembrete(lembrete.token, lembrete.expiraEm) : apagarCookieLembrete()]);
+            return new RespostaComCookies(await this.comPendencias(sessao), [
+                lembrete ? cookieLembrete(lembrete.token, lembrete.expiraEm) : apagarCookieLembrete(),
+            ]);
         });
 
         // Aba sem sessão troca o lembrete do cookie por uma sessão própria e um cookie novo (mesmo prazo).
@@ -137,7 +146,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("post", "/auth/retomar", false, async (_p: any, _b: any, _q: any, contexto: ContextoRequisicao) => {
             try {
                 const { sessao, lembrete } = await new RetomarSessao(f).execute(contexto?.cookies?.[NOME_COOKIE_LEMBRETE]);
-                return new RespostaComCookies(sessao, [cookieLembrete(lembrete.token, lembrete.expiraEm)]);
+                return new RespostaComCookies(await this.comPendencias(sessao), [cookieLembrete(lembrete.token, lembrete.expiraEm)]);
             } catch (erro) {
                 if (!(erro instanceof ErroAplicacao)) throw erro;
                 return new RespostaComCookies({ message: erro.message, codigo: erro.codigo }, [apagarCookieLembrete()], erro.codigoHttp);
@@ -163,9 +172,10 @@ export default class UsuarioRoutes implements ModelRoutes {
             }
             try {
                 // Usar o link revoga todas as sessões da pessoa: o cookie de lembrete sai junto.
-                return new RespostaComCookies(await new GerirLinkSenha(f).usar(params.token, body?.senha, body?.confirmacao), [
-                    apagarCookieLembrete(),
-                ]);
+                return new RespostaComCookies(
+                    await this.comPendencias(await new GerirLinkSenha(f).usar(params.token, body?.senha, body?.confirmacao)),
+                    [apagarCookieLembrete()],
+                );
             } catch (erro) {
                 if (erro instanceof ErroValidacao) limiteLinks.registrarFalha(ip);
                 throw erro;
@@ -180,7 +190,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         });
 
         this.http.route("get", "/auth/me", true, async (_p: any, body: any) =>
-            this.responderPessoa(await this.buscarAlvo(exigirAutenticado(body.user).codigo)),
+            this.responderEu(await this.buscarAlvo(exigirAutenticado(body.user).codigo)),
         );
 
         this.http.route("put", "/auth/senha", true, async (_p: any, body: any) => {
@@ -195,19 +205,23 @@ export default class UsuarioRoutes implements ModelRoutes {
         // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
-            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, semestre, bio } = lerPerfil(body);
-            const editado = await new EditarUsuario(f).execute({
-                codigo: eu.codigo,
-                nomeExibicao,
-                telefone,
-                linkedinUrl,
-                calendarioUrl,
-                githubUrl,
-                curso,
-                semestre,
-                bio,
-            });
-            return this.responderPessoa(editado);
+            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, emailPessoal, ingresso, bio } = lerPerfil(body);
+            const editado = await new EditarUsuario(f).execute(
+                {
+                    codigo: eu.codigo,
+                    nomeExibicao,
+                    telefone,
+                    linkedinUrl,
+                    calendarioUrl,
+                    githubUrl,
+                    curso,
+                    emailPessoal,
+                    ingresso,
+                    bio,
+                },
+                { autoEdicao: true },
+            );
+            return this.responderEu(editado);
         });
 
         // Foto de perfil: JPEG, PNG ou WebP já recortado no navegador (até 300 KB); o servidor
@@ -333,6 +347,7 @@ export default class UsuarioRoutes implements ModelRoutes {
                 codigo: alvo.codigo,
                 status: lerStatusPessoa(body.status)!,
                 dataSaida: lerData(body.dataSaida, "dataSaida"),
+                motivoSaida: body.motivoSaida,
                 encerrarParticipacoes: body.encerrarParticipacoes !== false,
             });
             // Trainee que vira Ativo continua nas áreas: a resposta traz as atuais.
@@ -344,7 +359,7 @@ export default class UsuarioRoutes implements ModelRoutes {
             const alvo = await this.buscarAlvo(params.codigo);
             const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
             if (gestor.codigo === alvo.codigo) throw new ErroProibido("Você não pode inativar a própria conta.");
-            await new AlterarStatusPessoa(f).execute({ codigo: alvo.codigo, status: StatusPessoa.INATIVO });
+            await new AlterarStatusPessoa(f).execute({ codigo: alvo.codigo, status: StatusPessoa.INATIVO, motivoSaida: body.motivoSaida });
             return { message: "Pessoa inativada. O histórico foi preservado." };
         });
     }

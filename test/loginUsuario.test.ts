@@ -16,6 +16,7 @@ describe("Caso de uso LoginUsuario", () => {
         email: "john.doe@gmail.com.br",
         perfil: PerfilUsuario.MEMBRO,
         senioridade: new SenioridadeUsuario("pleno", "Pleno", 75),
+        curso: "Engenharia Mecânica",
     };
 
     beforeEach(() => {

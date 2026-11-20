@@ -12,7 +12,7 @@ const aMais = (dias: number) => new Date(hoje().getTime() + dias * 86_400_000);
 const ativa = new Area("Projetos");
 const outra = new Area("Marketing");
 const ativo = { status: StatusPessoa.ATIVO, dataSaida: null };
-const alumni = { status: StatusPessoa.ALUMNI, dataSaida: dia("2026-06-01") };
+const alumni = { status: StatusPessoa.INATIVO, dataSaida: dia("2026-06-01") };
 
 function periodo(area: Area, inicio: string, fim: string | null, cargo: Cargo | null = null, codigo?: string) {
     return new PeriodoArea("u1", area, cargo, dia(inicio), fim ? dia(fim) : null, null, codigo);

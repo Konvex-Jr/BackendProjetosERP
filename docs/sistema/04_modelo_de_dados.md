@@ -5,7 +5,7 @@
 ## Pessoas e estrutura
 | Tabela | Colunas principais | Observações |
 |---|---|---|
-| `usuarios` | nome, email, perfil (ADMIN/MANAGER/MEMBER), status, ativo, senha_hash, senioridade, área, cargo, data_entrada/saida, contato (telefone, linkedin, github, calendário), foto (`<uuid>.webp`, arquivo em `anexos/fotos/`), curso, semestre, bio | Nunca excluída (ADR-006); saída muda o status. Trainee existe sem login |
+| `usuarios` | nome, email, perfil (ADMIN/MANAGER/MEMBER), status, ativo, senha_hash, senioridade, área, cargo, data_entrada/saida, contato (telefone, linkedin, github, calendário), foto (`<uuid>.webp`, arquivo em `anexos/fotos/`), curso, ingresso (AAAA/1 ou AAAA/2), bio | Nunca excluída (ADR-006); saída muda o status. Trainee existe sem login |
 | `areas` | nome, area_pai_codigo, ativa | Hierárquica (subáreas) |
 | `cargos`, `senioridades` | nome; senioridade tem valor_hora e ordem | Configuráveis (ADR-007). valor_hora ainda 0 (QA-01) |
 | `historico_areas`, `historico_cargos` | anterior, novo, data_vigencia, registrado_por | Gravado ao trocar área/cargo |

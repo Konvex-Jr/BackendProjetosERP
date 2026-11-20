@@ -9,8 +9,9 @@ import { normalizarBusca } from "../../../shared/texto";
 import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
-    nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
-    data_entrada, data_saida, bio, calendario_url, github_url`;
+    nome_exibicao, foto, telefone, linkedin_url, curso, ingresso,
+    data_entrada, data_saida, bio, calendario_url, github_url,
+    email_pessoal, motivo_saida, fim_trainee`;
 
 // No UPDATE do editar a foto fica de fora: só o definirFoto grava essa coluna. Senão uma edição
 // que leu a pessoa antes de um PUT /auth/foto escreveria de volta a foto antiga, já apagada do disco.
@@ -32,12 +33,15 @@ function valores(usuario: Usuario): unknown[] {
         usuario.telefone,
         usuario.linkedinUrl,
         usuario.curso,
-        usuario.semestre,
+        usuario.ingresso,
         dataParaSqlOuNulo(usuario.dataEntrada),
         dataParaSqlOuNulo(usuario.dataSaida),
         usuario.bio,
         usuario.calendarioUrl,
         usuario.githubUrl,
+        usuario.emailPessoal,
+        usuario.motivoSaida,
+        dataParaSqlOuNulo(usuario.fimTrainee),
     ];
 }
 
@@ -48,7 +52,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         return this.conexao.transacao(async (conexao) => {
             const linhas = await conexao.consultar(
                 `INSERT INTO usuarios (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
                  ON CONFLICT DO NOTHING
                  RETURNING codigo`,
                 [usuario.codigo, ...valores(usuario)],
