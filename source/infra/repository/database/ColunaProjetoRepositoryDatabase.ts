@@ -24,6 +24,8 @@ export default class ColunaProjetoRepositoryDatabase implements ColunaProjetoRep
             // Trava o projeto: dois quadros gravados ao mesmo tempo esperam um pelo outro. NO KEY UPDATE (e não UPDATE)
             // não briga com o FOR KEY SHARE que a chave estrangeira de uma tarefa nova pega no projeto: sem isso,
             // criar tarefa (que trava a coluna com FOR SHARE) e gravar o quadro ao mesmo tempo podiam dar deadlock.
+            // Toda transação trava o projeto antes das colunas (tarefa: KEY SHARE no projeto e depois a coluna;
+            // excluir o geral: FOR UPDATE no projeto e o DELETE leva as colunas), então ninguém espera na ordem contrária.
             const projeto = await conexao.consultar("SELECT codigo FROM projetos WHERE codigo = $1 FOR NO KEY UPDATE", [codigoProjeto]);
             if (projeto.length === 0) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
 

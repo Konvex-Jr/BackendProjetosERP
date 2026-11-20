@@ -1,13 +1,13 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Tarefa from "../../domain/entity/Tarefa";
 import StatusTarefa from "../../domain/enum/StatusTarefa";
-import ItemChecklistTarefa from "../../domain/entity/ItemChecklistTarefa";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import EditarTarefaInput from "./EditarTarefaInput";
 import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
 import { colunaDoProjeto } from "./colunaDoProjeto";
+import { limparResponsaveisQueSairam, montarChecklist } from "./montarChecklist";
 
 export default class EditarTarefa {
     private readonly tarefas;
@@ -25,14 +25,16 @@ export default class EditarTarefa {
         const projeto = await this.projetos.buscarPorCodigo(atual.projeto.codigo);
         if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
         const jaEram = new Set(atual.responsaveis.map((r) => r.codigo));
-        const responsaveis = [...new Set(input.codigosResponsaveis)].map((c) => {
-            const u = todas.find((x) => x.codigo === c && x.ativo);
-            if (!u) throw new ErroNaoEncontrado(`Responsável ativo não encontrado: ${c}`);
-            // Quem já era responsável continua, mesmo que tenha saído da equipe; quem entra precisa estar nela.
-            if (!jaEram.has(c) && !projeto.membros.some((m) => m.codigo === c))
-                throw new ErroValidacao(`${u.nome} não está na equipe do projeto.`, "RESPONSAVEL_FORA_DO_PROJETO");
-            return u;
-        });
+        const responsaveis = input.manterResponsaveis
+            ? atual.responsaveis
+            : [...new Set(input.codigosResponsaveis)].map((c) => {
+                  const u = todas.find((x) => x.codigo === c && x.ativo);
+                  if (!u) throw new ErroNaoEncontrado(`Responsável ativo não encontrado: ${c}`);
+                  // Quem já era responsável continua, mesmo que tenha saído da equipe; quem entra precisa estar nela.
+                  if (!jaEram.has(c) && !projeto.membros.some((m) => m.codigo === c))
+                      throw new ErroValidacao(`${u.nome} não está na equipe do projeto.`, "RESPONSAVEL_FORA_DO_PROJETO");
+                  return u;
+              });
         let dependencia = null;
         if (input.codigoDependencia) {
             dependencia = await this.tarefas.buscarPorCodigo(input.codigoDependencia);
@@ -44,20 +46,23 @@ export default class EditarTarefa {
         }
         // Com coluna, ela vale; sem, o status escolhe a coluna.
         let coluna = null;
-        if (input.codigoColuna) coluna = colunaDoProjeto(projeto, input.codigoColuna);
-        else if (Object.values(StatusTarefa).includes(input.status)) coluna = projeto.colunaParaStatus(input.status, atual.coluna);
-        const concluida = coluna ? coluna.papel === PapelColuna.CONCLUIDA : input.status === "concluida";
+        const status = input.manterSituacao ? atual.status : input.status;
+        const codigoColuna = input.manterSituacao ? (atual.coluna?.codigo ?? null) : input.codigoColuna;
+        if (codigoColuna) coluna = colunaDoProjeto(projeto, codigoColuna);
+        else if (Object.values(StatusTarefa).includes(status)) coluna = projeto.colunaParaStatus(status, atual.coluna);
+        const concluida = coluna ? coluna.papel === PapelColuna.CONCLUIDA : status === "concluida";
+        const sairam = new Set([...jaEram].filter((c) => !responsaveis.some((r) => r.codigo === c)));
         const checklist =
             input.checklist === undefined
-                ? atual.checklist
-                : input.checklist.map((item) => new ItemChecklistTarefa(item.texto, item.feito, item.codigo));
+                ? limparResponsaveisQueSairam(atual.checklist, responsaveis)
+                : montarChecklist(input.checklist, { responsaveis, sairam, atuais: atual.checklist });
 
         const editada = new Tarefa(
             atual.projeto,
             input.titulo,
             input.dataInicio,
             input.dataFim,
-            input.status,
+            status,
             input.prioridade,
             input.descricao ?? null,
             concluida ? (atual.dataConclusao ?? hoje()) : null,
@@ -71,7 +76,16 @@ export default class EditarTarefa {
             input.dificuldade === undefined ? atual.dificuldade : input.dificuldade,
         );
         editada.exigirConclusaoCoerente();
-        return this.tarefas.editar(editada);
+        // Corrigir a data só vale para quem pode mudar a situação, se a tarefa já era concluída, segue concluída
+        // (reabrir zera a data) e a data mudou de fato; reenviar a mesma data não a revalida (a tarefa pode ter
+        // sido concluída antes do início).
+        const corrigir =
+            !input.manterSituacao &&
+            concluida &&
+            atual.status === StatusTarefa.CONCLUIDA &&
+            input.dataConclusao &&
+            input.dataConclusao.getTime() !== atual.dataConclusao?.getTime();
+        return this.tarefas.editar(corrigir ? editada.comDataConclusao(input.dataConclusao as Date, hoje()) : editada);
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {
         let atual = await this.tarefas.buscarPorCodigo(codigoPredecessora);

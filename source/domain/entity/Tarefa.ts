@@ -139,6 +139,37 @@ export default class Tarefa {
         );
     }
 
+    /**
+     * Cópia com a data de conclusão corrigida (só tarefa concluída): não pode ser futura nem anterior ao início.
+     * Quem concluiu continua o mesmo. Conferido só aqui, nunca ao ler do banco.
+     */
+    comDataConclusao(data: Date, hoje: Date): Tarefa {
+        if (this.status !== StatusTarefa.CONCLUIDA)
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.TAREFA_NAO_CONCLUIDA, "TAREFA_NAO_CONCLUIDA");
+        if (data.getTime() > hoje.getTime())
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.DATA_CONCLUSAO_FUTURA, "DATA_CONCLUSAO_FUTURA");
+        if (data.getTime() < this.dataInicio.getTime())
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.DATA_CONCLUSAO_ANTES_DO_INICIO, "DATA_CONCLUSAO_ANTES_DO_INICIO");
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            this.status,
+            this.prioridade,
+            this.descricao,
+            data,
+            this.dependeDe,
+            this.responsaveis,
+            this.checklist,
+            this.codigo,
+            this.concluidaPor,
+            this.criadaPor,
+            this.coluna,
+            this.dificuldade,
+        );
+    }
+
     /** Conclusão e status andam juntos. Conferido ao criar e editar, nunca ao ler do banco. */
     exigirConclusaoCoerente(): void {
         if (this.status === StatusTarefa.CONCLUIDA && this.dataConclusao === null) {
@@ -148,6 +179,28 @@ export default class Tarefa {
         if (this.status !== StatusTarefa.CONCLUIDA && this.dataConclusao !== null) {
             throw new ErroValidacao("Somente tarefas concluídas podem ter data de conclusão.", "DATA_CONCLUSAO_INCOMPATIVEL");
         }
+    }
+
+    /** Cópia com outro checklist, mantendo o resto. */
+    comChecklist(checklist: ItemChecklistTarefa[]): Tarefa {
+        return new Tarefa(
+            this.projeto,
+            this.titulo,
+            this.dataInicio,
+            this.dataFim,
+            this.status,
+            this.prioridade,
+            this.descricao,
+            this.dataConclusao,
+            this.dependeDe,
+            this.responsaveis,
+            checklist,
+            this.codigo,
+            this.concluidaPor,
+            this.criadaPor,
+            this.coluna,
+            this.dificuldade,
+        );
     }
 
     /** Cópia sem a predecessora (quando ela é excluída). */

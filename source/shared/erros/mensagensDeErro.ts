@@ -46,6 +46,8 @@ export const MENSAGENS_DE_ERRO = {
             nome
                 ? `${nome} (${codigo}) não tem login: só pessoas Ativas ou Trainees entram na lista de acesso.`
                 : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
+        GERAL_COM_TAREFAS: (quantidade: number) =>
+            `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
     },
 
     HORAS_DIFICULDADE: {
@@ -79,6 +81,15 @@ export const MENSAGENS_DE_ERRO = {
         STATUS_INVALIDO: "Situação inválida. Use pendente, andamento ou concluida.",
         PROJETO_OBRIGATORIO: "Escolha o projeto da tarefa.",
         DIFICULDADE_INVALIDA: "Dificuldade inválida. Use rapida, facil, media ou dificil.",
+        SEM_PERMISSAO_EDITAR: "Só o líder, a gestão ou quem criou a tarefa podem fazer isso.",
+        TAREFA_NAO_CONCLUIDA: "Só tarefas concluídas têm data de conclusão para corrigir.",
+        DATA_CONCLUSAO_FUTURA: "A data de conclusão (dataConclusao) não pode ser no futuro.",
+        DATA_CONCLUSAO_ANTES_DO_INICIO: "A data de conclusão (dataConclusao) não pode ser anterior ao início da tarefa.",
+        RESPONSAVEL_ITEM_INVALIDO: "O responsável do item (codigoResponsavel) deve ser o código da pessoa (texto) ou null.",
+        ITEM_CHECKLIST_REPETIDO: "O item do checklist (codigo) aparece mais de uma vez.",
+        RESPONSAVEL_ITEM_FORA_DA_TAREFA: "O responsável do item (codigoResponsavel) precisa ser um dos responsáveis pela tarefa.",
+        FEITO_INVALIDO: "O campo feito deve ser verdadeiro ou falso.",
+        ITEM_NAO_ENCONTRADO: "Item do checklist não encontrado.",
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 

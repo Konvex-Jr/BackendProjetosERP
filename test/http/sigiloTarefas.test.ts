@@ -108,6 +108,7 @@ describe("Tarefas de projeto sigiloso", () => {
             ["put", "/tarefas/t-sig", () => corpoPut],
             ["patch", "/tarefas/t-sig/status", () => ({ status: "concluida" })],
             ["delete", "/tarefas/t-sig", () => undefined],
+            ["patch", "/tarefas/t-sig/checklist/qualquer", () => ({ feito: true })],
             ["get", "/tarefas/t-sig/comentarios", () => undefined],
             ["post", "/tarefas/t-sig/comentarios", () => ({ texto: "oi" })],
         ];

@@ -43,7 +43,13 @@ function unicos(codigos: string[]): string[] {
 
 export function areaDeLinha(linha: any): Area | null {
     if (!linha.area_codigo) return null;
-    return new Area(linha.area_nome, linha.area_pai_codigo ?? null, linha.area_ativa ?? true, linha.area_codigo);
+    return new Area(
+        linha.area_nome,
+        linha.area_pai_codigo ?? null,
+        linha.area_ativa ?? true,
+        linha.area_codigo,
+        linha.area_tem_geral ?? true,
+    );
 }
 
 export function usuarioDeLinha(linha: any): Usuario {
@@ -106,7 +112,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
                 p.responsavel_codigo, p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
                 p.tipo, p.geral_da_area,
-                a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa
+                a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa, a.tem_geral AS area_tem_geral
          FROM projetos p
          LEFT JOIN areas a ON a.codigo = p.area_codigo
          WHERE p.codigo = ANY($1::uuid[])`,

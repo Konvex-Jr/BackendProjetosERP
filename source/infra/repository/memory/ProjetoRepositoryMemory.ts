@@ -88,6 +88,9 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
         this.projetos.splice(indice, 1);
     }
 
+    /** Na memória não há concorrência a segurar. */
+    async travar(_codigo: string): Promise<void> {}
+
     /** O geral é guardado sem equipe e sem líder, como no banco. */
     private paraGuardar(projeto: Projeto): Projeto {
         return projeto.geralDaArea ? projeto.copiar({ participacoes: [], lider: null, lideresDaArea: [] }) : projeto;

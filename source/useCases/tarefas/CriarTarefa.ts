@@ -7,6 +7,7 @@ import { PapelColuna } from "../../domain/enum/ColunaProjeto";
 import { hoje } from "../../shared/datas";
 import CriarTarefaInput from "./CriarTarefaInput";
 import { colunaDoProjeto } from "./colunaDoProjeto";
+import { montarChecklist } from "./montarChecklist";
 
 export default class CriarTarefa {
     private readonly tarefas;
@@ -45,7 +46,7 @@ export default class CriarTarefa {
             nasceConcluida ? hoje() : null,
             null,
             responsaveis,
-            [],
+            montarChecklist(input.checklist ?? [], { responsaveis }),
             undefined,
             nasceConcluida ? (input.criadaPor ?? null) : null,
             input.criadaPor ?? null,

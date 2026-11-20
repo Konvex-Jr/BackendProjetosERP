@@ -13,7 +13,9 @@ import ListarTarefas from "../../../useCases/tarefas/ListarTarefas";
 import CriarTarefa from "../../../useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../../useCases/tarefas/EditarTarefa";
 import AlterarStatusTarefa from "../../../useCases/tarefas/AlterarStatusTarefa";
+import CorrigirConclusao from "../../../useCases/tarefas/CorrigirConclusao";
 import MoverTarefa from "../../../useCases/tarefas/MoverTarefa";
+import MarcarItemChecklist from "../../../useCases/tarefas/MarcarItemChecklist";
 import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
 import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
@@ -26,7 +28,6 @@ import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTa
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 import ConsultarOcupacao from "../../../useCases/tarefas/ConsultarOcupacao";
 
-const SO_QUEM_ORGANIZA = "Só o líder do projeto e a gestão podem fazer isso.";
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
 
 /** Ausente = undefined (mantém); null ou "" = null (limpa). Valor desconhecido o `Tarefa` recusa com 400 DIFICULDADE_INVALIDA. */
@@ -34,6 +35,23 @@ function lerDificuldade(valor: unknown): DificuldadeTarefa | null | undefined {
     if (valor === undefined) return undefined;
     if (valor === null || valor === "") return null;
     return valor as DificuldadeTarefa;
+}
+
+/** Itens do checklist do corpo (criar e editar). Ausente = undefined; o que não é lista ou item é 400, nunca 500. */
+function lerChecklist(valor: unknown) {
+    if (valor === undefined || valor === null) return undefined;
+    if (!Array.isArray(valor)) throw new ErroValidacao("O checklist (checklist) deve ser uma lista de itens.", "CHECKLIST_INVALIDO");
+    return valor.map((item: any) => {
+        if (!item || typeof item !== "object") {
+            throw new ErroValidacao("Cada item do checklist (checklist) deve ser um objeto com texto.", "CHECKLIST_INVALIDO");
+        }
+        return {
+            codigo: typeof (item.codigo ?? item.id) === "string" ? (item.codigo ?? item.id) : undefined,
+            texto: item.texto,
+            feito: Boolean(item.feito),
+            codigoResponsavel: item.codigoResponsavel,
+        };
+    });
 }
 
 /** Tarefas e comentários. Quem pode o quê: `regrasTarefa.ts` (sessões 8b, 20 e 23b). */
@@ -54,9 +72,10 @@ export default class TarefaRoutes implements ModelRoutes {
         return { tarefa, regras };
     }
 
-    private async exigirOrganizar(usuario: UsuarioAutenticado, codigo: string) {
+    /** Editar e excluir: quem organiza ou o participante que criou a tarefa (sessão 24b). */
+    private async exigirEditar(usuario: UsuarioAutenticado, codigo: string) {
         const r = await this.carregar(usuario, codigo);
-        if (!r.regras.organizar) throw new ErroProibido(SO_QUEM_ORGANIZA);
+        if (!r.regras.editar) throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_EDITAR);
         return r;
     }
 
@@ -142,6 +161,7 @@ export default class TarefaRoutes implements ModelRoutes {
                     dificuldade: lerDificuldade(body.dificuldade) ?? null,
                     descricao: body.descricao ?? null,
                     codigosResponsaveis,
+                    checklist: lerChecklist(body.checklist),
                     criadaPor: await this.usuarioAtual(usuario),
                 }),
             );
@@ -149,7 +169,7 @@ export default class TarefaRoutes implements ModelRoutes {
 
         this.http.route("put", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            const { tarefa: antes } = await this.exigirOrganizar(usuario, params.codigo);
+            const { tarefa: antes, regras } = await this.exigirEditar(usuario, params.codigo);
             return this.comAvisos(
                 antes,
                 await new EditarTarefa(this.factory).execute({
@@ -163,14 +183,11 @@ export default class TarefaRoutes implements ModelRoutes {
                     dificuldade: lerDificuldade(body.dificuldade),
                     descricao: body.descricao ?? null,
                     codigosResponsaveis: body.codigosResponsaveis ?? [],
+                    manterResponsaveis: !regras.organizar,
+                    manterSituacao: !regras.mudarStatus,
+                    dataConclusao: body.dataConclusao ? lerDataObrigatoria(body.dataConclusao, "dataConclusao") : undefined,
                     codigoDependencia: body.codigoDependencia ?? null,
-                    checklist: Array.isArray(body.checklist)
-                        ? body.checklist.map((item: any) => ({
-                              codigo: item.codigo ?? item.id,
-                              texto: item.texto,
-                              feito: Boolean(item.feito),
-                          }))
-                        : undefined,
+                    checklist: lerChecklist(body.checklist),
                     quem: await this.usuarioAtual(usuario),
                 }),
             );
@@ -205,9 +222,26 @@ export default class TarefaRoutes implements ModelRoutes {
             );
         });
 
+        // Corrige a data de conclusão: quem pode mudar a situação (responsável, líder, gestão) ou editar.
+        this.http.route("patch", "/tarefas/:codigo/conclusao", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body.user);
+            const { tarefa: antes, regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.mudarStatus && !regras.editar) throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_EDITAR);
+            const data = lerDataObrigatoria(body.dataConclusao, "dataConclusao");
+            return this.comAvisos(antes, await new CorrigirConclusao(this.factory).execute(params.codigo, data, hoje()));
+        });
+
+        // Marcar item: grava na hora para quem muda a situação (responsável, líder, gestão) ou edita a tarefa.
+        this.http.route("patch", "/tarefas/:codigo/checklist/:item", true, async (params: any, body: any) => {
+            const usuario = exigirAutenticado(body.user);
+            const { tarefa: antes, regras } = await this.carregar(usuario, params.codigo);
+            if (!regras.mudarStatus && !regras.editar) throw new ErroProibido(MENSAGENS_DE_ERRO.TAREFA.SEM_PERMISSAO_EDITAR);
+            return this.comAvisos(antes, await new MarcarItemChecklist(this.factory).execute(params.codigo, params.item, body.feito));
+        });
+
         this.http.route("delete", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
-            await this.exigirOrganizar(usuario, params.codigo);
+            await this.exigirEditar(usuario, params.codigo);
             return new ExcluirTarefa(this.factory).execute(params.codigo);
         });
 

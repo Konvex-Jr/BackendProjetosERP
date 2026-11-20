@@ -153,7 +153,16 @@ const swaggerSpecification = {
                             properties: {
                                 codigo: { type: "string", format: "uuid" },
                                 texto: { type: "string", maxLength: 300 },
-                                feito: { type: "boolean" },
+                                feito: {
+                                    type: "boolean",
+                                    description: "Só vale ao criar; ao editar, o feito de item que já existe vem do banco.",
+                                },
+                                codigoResponsavel: {
+                                    type: "string",
+                                    format: "uuid",
+                                    nullable: true,
+                                    description: "Um dos responsáveis da tarefa (400 RESPONSAVEL_ITEM_FORA_DA_TAREFA).",
+                                },
                             },
                         },
                     },
@@ -304,6 +313,37 @@ const swaggerSpecification = {
                         type: "object",
                         required: ["codigoColuna"],
                         properties: { codigoColuna: { type: "string" } },
+                    }),
+                },
+            ),
+        },
+        "/tarefas/{codigo}/checklist/{item}": {
+            patch: operation(
+                ["Tarefas"],
+                "Marcar ou desmarcar um item do checklist na hora (quem muda a situação ou edita a tarefa; 404 item que não é da tarefa; 400 FEITO_INVALIDO). Devolve a tarefa com `avisosOcupacao`",
+                {
+                    parameters: [
+                        { $ref: "#/components/parameters/codigo" },
+                        { name: "item", in: "path", required: true, schema: { type: "string" } },
+                    ],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["feito"],
+                        properties: { feito: { type: "boolean" } },
+                    }),
+                },
+            ),
+        },
+        "/tarefas/{codigo}/conclusao": {
+            patch: operation(
+                ["Tarefas"],
+                "Corrigir a data de conclusão de tarefa concluída (quem muda o status ou edita a tarefa; quem concluiu não muda; 400 TAREFA_NAO_CONCLUIDA, DATA_CONCLUSAO_FUTURA, DATA_CONCLUSAO_ANTES_DO_INICIO)",
+                {
+                    parameters: [{ $ref: "#/components/parameters/codigo" }],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["dataConclusao"],
+                        properties: { dataConclusao: { type: "string", format: "date-time" } },
                     }),
                 },
             ),
@@ -521,9 +561,15 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
-        post: operation(["Configurações"], "Criar área (diretores)", json),
+        post: operation(["Configurações"], "Criar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }", json),
     },
-    "/areas/{codigo}": { put: operation(["Configurações"], "Editar área (diretores)", comCodigo(json)) },
+    "/areas/{codigo}": {
+        put: operation(
+            ["Configurações"],
+            "Editar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }; temGeral false exclui o projeto geral (409 GERAL_COM_TAREFAS se tiver tarefas)",
+            comCodigo(json),
+        ),
+    },
     "/cargos": {
         get: operation(["Configurações"], "Listar cargos"),
         post: operation(["Configurações"], "Criar cargo (diretores)", json),

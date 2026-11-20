@@ -5,7 +5,7 @@ import { violacaoDeUnicidade } from "../../database/conversoes";
 import { ErroConflito } from "../../../shared/erros/ErroConflito";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 
-const SELECT = "SELECT codigo, nome, area_pai_codigo, ativa FROM areas";
+const SELECT = "SELECT codigo, nome, area_pai_codigo, ativa, tem_geral FROM areas";
 
 export default class AreaRepositoryDatabase implements AreaRepositoryInterface {
     constructor(private readonly conexao: ConexaoBanco) {}
@@ -21,19 +21,20 @@ export default class AreaRepositoryDatabase implements AreaRepositoryInterface {
     }
 
     async criar(area: Area): Promise<Area> {
-        await this.executar("INSERT INTO areas (codigo, nome, area_pai_codigo, ativa) VALUES ($1, $2, $3, $4)", [
+        await this.executar("INSERT INTO areas (codigo, nome, area_pai_codigo, ativa, tem_geral) VALUES ($1, $2, $3, $4, $5)", [
             area.codigo,
             area.nome,
             area.codigoAreaPai,
             area.ativa,
+            area.temGeral,
         ]);
         return area;
     }
 
     async editar(area: Area): Promise<Area> {
         const linhas = await this.executar(
-            "UPDATE areas SET nome = $2, area_pai_codigo = $3, ativa = $4 WHERE codigo = $1 RETURNING codigo",
-            [area.codigo, area.nome, area.codigoAreaPai, area.ativa],
+            "UPDATE areas SET nome = $2, area_pai_codigo = $3, ativa = $4, tem_geral = $5 WHERE codigo = $1 RETURNING codigo",
+            [area.codigo, area.nome, area.codigoAreaPai, area.ativa, area.temGeral],
         );
         if (linhas.length === 0) throw new ErroNaoEncontrado("Área não encontrada.");
         return area;
@@ -50,5 +51,5 @@ export default class AreaRepositoryDatabase implements AreaRepositoryInterface {
 }
 
 function paraEntidade(linha: any): Area {
-    return new Area(linha.nome, linha.area_pai_codigo, linha.ativa, linha.codigo);
+    return new Area(linha.nome, linha.area_pai_codigo, linha.ativa, linha.codigo, linha.tem_geral);
 }

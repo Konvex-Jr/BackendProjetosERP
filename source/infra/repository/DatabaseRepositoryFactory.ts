@@ -24,6 +24,7 @@ import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabas
 import AnexoRepositoryDatabase from "./database/AnexoRepositoryDatabase";
 import ArmazenamentoAnexosDisco from "../arquivos/ArmazenamentoAnexosDisco";
 import ArmazenamentoFotosDisco from "../arquivos/ArmazenamentoFotosDisco";
+import ArmazenamentoComExclusaoAdiada from "../arquivos/ArmazenamentoComExclusaoAdiada";
 
 /**
  * Repositórios em PostgreSQL (produção e testes de integração). Cada chamada cria um repositório
@@ -32,9 +33,25 @@ import ArmazenamentoFotosDisco from "../arquivos/ArmazenamentoFotosDisco";
  */
 export default class DatabaseRepositoryFactory implements RepositoryFactoryInterface {
     private readonly conexao: ConexaoBanco;
+    /** Só dentro de `emTransacao`: arquivos de anexo a apagar do disco depois do COMMIT. */
+    private readonly arquivosAExcluir?: string[];
 
-    constructor(conexao: ConexaoBanco) {
+    constructor(conexao: ConexaoBanco, arquivosAExcluir?: string[]) {
         this.conexao = conexao;
+        this.arquivosAExcluir = arquivosAExcluir;
+    }
+
+    async emTransacao<T>(operacao: (factory: RepositoryFactoryInterface) => Promise<T>): Promise<T> {
+        // Já numa transação: reaproveita (quem abriu a de fora apaga os arquivos depois do COMMIT dela).
+        if (this.arquivosAExcluir) return operacao(this);
+        const arquivos: string[] = [];
+        const resultado = await this.conexao.transacao((conexao) => operacao(new DatabaseRepositoryFactory(conexao, arquivos)));
+        const disco = new ArmazenamentoAnexosDisco();
+        for (const arquivo of arquivos) {
+            // Os registros já saíram do banco: um arquivo que falhe aqui só sobra no disco (o conferirAnexos acha).
+            await disco.excluir(arquivo).catch((erro) => console.error(erro));
+        }
+        return resultado;
     }
 
     criarUsuarioRepository(): UsuarioRepositoryInterface {
@@ -95,7 +112,8 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarArmazenamentoAnexos() {
         // Os bytes ficam no disco (ANEXOS_DIR), não no banco; o banco guarda só o registro do anexo.
-        return new ArmazenamentoAnexosDisco();
+        const disco = new ArmazenamentoAnexosDisco();
+        return this.arquivosAExcluir ? new ArmazenamentoComExclusaoAdiada(disco, this.arquivosAExcluir) : disco;
     }
 
     criarArmazenamentoFotos() {

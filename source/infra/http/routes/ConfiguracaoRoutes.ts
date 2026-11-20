@@ -23,7 +23,12 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("get", "/areas", true, async () => f.criarAreaRepository().listar());
         this.http.route("post", "/areas", true, async (_p: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
-            return new SalvarArea(f).execute({ nome: body.nome, codigoAreaPai: body.codigoAreaPai, ativa: body.ativa });
+            return new SalvarArea(f).execute({
+                nome: body.nome,
+                codigoAreaPai: body.codigoAreaPai,
+                ativa: body.ativa,
+                temGeral: lerBooleano(body.temGeral, "temGeral"),
+            });
         });
         this.http.route("put", "/areas/:codigo", true, async (params: any, body: any) => {
             exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
@@ -32,6 +37,7 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
                 nome: body.nome,
                 codigoAreaPai: body.codigoAreaPai,
                 ativa: body.ativa,
+                temGeral: lerBooleano(body.temGeral, "temGeral"),
             });
         });
 

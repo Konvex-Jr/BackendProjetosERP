@@ -21,6 +21,8 @@ export default interface TarefaRepositoryInterface {
     listarPorResponsavel(codigoUsuario: string): Promise<Tarefa[]>;
     buscarPorCodigo(codigo: string): Promise<Tarefa | null>;
     editar(tarefa: Tarefa): Promise<Tarefa>;
+    /** Marca ou desmarca um item do checklist sem regravar a tarefa. Falso se o item não é dessa tarefa. */
+    marcarItem(codigoTarefa: string, codigoItem: string, feito: boolean): Promise<boolean>;
     excluir(codigo: string): Promise<void>;
     excluirPorProjeto(codigoProjeto: string): Promise<void>;
 }

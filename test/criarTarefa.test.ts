@@ -100,3 +100,39 @@ describe("dificuldade", () => {
         await expect(criar("muito_dificil")).rejects.toMatchObject({ codigo: "DIFICULDADE_INVALIDA" });
     });
 });
+
+describe("checklist ao criar (sessão 24b)", () => {
+    const criar = async (checklist: object[], responsaveis: "membro" | "ninguem" = "membro") => {
+        const { factory, membro } = await criarContexto();
+        const projeto = await criarProjeto(factory, membro);
+        return {
+            membro,
+            executar: new CriarTarefa(factory).execute({
+                codigoProjeto: projeto.codigo,
+                titulo: "Tarefa",
+                dataInicio,
+                dataFim,
+                prioridade: PrioridadeTarefa.P1,
+                codigosResponsaveis: responsaveis === "membro" ? [membro.codigo] : [],
+                checklist,
+            } as never),
+        };
+    };
+
+    it("grava os itens na ordem, com responsável e o feito do corpo", async () => {
+        const { membro, executar } = await criar([
+            { texto: "Primeiro", feito: true, codigoResponsavel: "usr-ana" },
+            { texto: "Segundo", feito: false },
+        ]);
+        const t = await executar;
+        expect(t.checklist.map((i) => i.texto)).toEqual(["Primeiro", "Segundo"]);
+        expect(t.checklist.map((i) => i.feito)).toEqual([true, false]);
+        expect(t.checklist[0].responsavel?.codigo).toBe(membro.codigo);
+        expect(t.checklist[1].responsavel).toBeNull();
+    });
+
+    it("responsável do item fora da tarefa: 400 RESPONSAVEL_ITEM_FORA_DA_TAREFA", async () => {
+        const { executar } = await criar([{ texto: "A", feito: false, codigoResponsavel: "usr-ana" }], "ninguem");
+        await expect(executar).rejects.toMatchObject({ codigo: "RESPONSAVEL_ITEM_FORA_DA_TAREFA" });
+    });
+});

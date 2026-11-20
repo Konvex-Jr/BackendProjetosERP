@@ -1,4 +1,5 @@
 import StatusTarefa from "../../../domain/enum/StatusTarefa";
+import ItemChecklistTarefa from "../../../domain/entity/ItemChecklistTarefa";
 import Tarefa from "../../../domain/entity/Tarefa";
 import { fimDaSemana } from "../../../shared/datas";
 import TarefaRepositoryInterface, { ContagemTarefas } from "../../../domain/interfaces/TarefaRepositoryInterface";
@@ -64,6 +65,17 @@ export default class TarefaRepositoryMemory implements TarefaRepositoryInterface
 
         this.tarefas[indice] = tarefa;
         return tarefa;
+    }
+
+    async marcarItem(codigoTarefa: string, codigoItem: string, feito: boolean): Promise<boolean> {
+        const indice = this.tarefas.findIndex((t) => t.codigo === codigoTarefa);
+        if (indice === -1) return false;
+        const tarefa = this.tarefas[indice];
+        if (!tarefa.checklist.some((i) => i.codigo === codigoItem)) return false;
+        this.tarefas[indice] = tarefa.comChecklist(
+            tarefa.checklist.map((i) => (i.codigo === codigoItem ? new ItemChecklistTarefa(i.texto, feito, i.codigo, i.responsavel) : i)),
+        );
+        return true;
     }
 
     async excluir(codigo: string): Promise<void> {

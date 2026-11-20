@@ -44,4 +44,10 @@ export default interface RepositoryFactoryInterface {
     /** Bytes dos anexos (disco em produção, memória nos testes). */
     criarArmazenamentoAnexos(): ArmazenamentoAnexosInterface;
     criarArmazenamentoFotos(): ArmazenamentoFotosInterface;
+    /**
+     * Roda a operação numa ação só, com os repositórios da factory que ela recebe. No banco: uma
+     * transação (erro = ROLLBACK de tudo), e os arquivos de anexo excluídos só saem do disco depois
+     * do COMMIT. Na memória, roda direto (não há como desfazer).
+     */
+    emTransacao<T>(operacao: (factory: RepositoryFactoryInterface) => Promise<T>): Promise<T>;
 }

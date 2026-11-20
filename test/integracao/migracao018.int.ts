@@ -110,15 +110,16 @@ descrever("migração 018 sobre a 017", () => {
                  ORDER BY a.nome`,
             )
         ).rows;
+        // A 018 grava "<Área> · geral"; a 020 (aplicada junto aqui) tira a bolinha.
         expect(linhas).toEqual([
-            { area: "Capacitação", nome: "Capacitação · geral", status: "em_execucao", tipo: "interno", colunas: 4 },
-            { area: "Comercial", nome: "Comercial · geral", status: "arquivado", tipo: "interno", colunas: 4 },
-            { area: "Execução", nome: "Execução · geral", status: "em_execucao", tipo: "interno", colunas: 4 },
-            { area: "Inovação", nome: "Inovação · geral", status: "em_execucao", tipo: "interno", colunas: 4 },
-            { area: "Projetos", nome: "Projetos · geral", status: "em_execucao", tipo: "interno", colunas: 4 },
+            { area: "Capacitação", nome: "Capacitação geral", status: "em_execucao", tipo: "interno", colunas: 4 },
+            { area: "Comercial", nome: "Comercial geral", status: "arquivado", tipo: "interno", colunas: 4 },
+            { area: "Execução", nome: "Execução geral", status: "em_execucao", tipo: "interno", colunas: 4 },
+            { area: "Inovação", nome: "Inovação geral", status: "em_execucao", tipo: "interno", colunas: 4 },
+            { area: "Projetos", nome: "Projetos geral", status: "em_execucao", tipo: "interno", colunas: 4 },
         ]);
         expect((await geral("Inovação"))[0].data_fim).toBe("2099-12-31");
-        const descricao = (await pool.query("SELECT descricao FROM projetos WHERE nome = 'Inovação · geral'")).rows[0].descricao;
+        const descricao = (await pool.query("SELECT descricao FROM projetos WHERE nome = 'Inovação geral'")).rows[0].descricao;
         expect(descricao).toBe("Tarefas da área Inovação que ainda não são projeto.");
     });
 
@@ -128,10 +129,10 @@ descrever("migração 018 sobre a 017", () => {
     });
 
     test("as avulsas foram para o geral da área, na coluna do status", async () => {
-        expect(await tarefa("Pesquisar IA")).toMatchObject({ projeto: "Inovação · geral", coluna: "A fazer", papel: "entrada" });
-        expect(await tarefa("Ajudar evento")).toMatchObject({ projeto: "Execução · geral", coluna: "Fazendo", papel: "meio" });
+        expect(await tarefa("Pesquisar IA")).toMatchObject({ projeto: "Inovação geral", coluna: "A fazer", papel: "entrada" });
+        expect(await tarefa("Ajudar evento")).toMatchObject({ projeto: "Execução geral", coluna: "Fazendo", papel: "meio" });
         expect(await tarefa("Curso")).toMatchObject({
-            projeto: "Capacitação · geral",
+            projeto: "Capacitação geral",
             papel: "concluida",
             conclusao: "2026-01-20",
         });

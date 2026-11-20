@@ -419,6 +419,42 @@ Depois, no navegador: **Configurações** (conferir as horas por dificuldade e o
 
 **Rollback:** a 019 apaga `projeto_membros.alocacao`. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 24b (ajustes de tarefas e projeto geral opcional): migração 020
+A migração `020_tarefas_e_geral.sql` acrescenta `tarefa_checklist_itens.responsavel_codigo` e `areas.tem_geral` (padrão verdadeiro) e renomeia os projetos gerais de "<Área> · geral" para "<Área> geral". Publicar **backend e frontend juntos**.
+
+**Parte 1, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`):
+```bash
+cd /docker/erp-konvex
+DATA=$(date +%F_%H%M); ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos
+```
+
+**Parte 2, atualizar e construir:**
+```bash
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+docker compose build backend frontend
+```
+
+**Parte 3, subir:**
+```bash
+docker compose up -d backend frontend
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 020_tarefas_e_geral.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir de fora:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes          # 401
+curl -s -o /dev/null -w "%{http_code}\n" -X PATCH https://erp.konvexjr.com.br/api/tarefas/x/conclusao   # 401
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT nome FROM projetos WHERE geral_da_area ORDER BY nome;"'
+```
+Os nomes dos gerais têm que estar sem a bolinha ("Inovação geral").
+
+**Parte 5, na tela (gestão):** em **Configurações → Áreas**, desligar **Projeto geral** na Presidência Executiva. Se o geral dela tiver tarefas, o sistema responde com o número delas: mova ou exclua as tarefas e tente de novo.
+
+**Rollback:** a 020 só acrescenta colunas e renomeia projetos, mas desligar o geral exclui um projeto. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

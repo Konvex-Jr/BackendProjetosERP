@@ -19,13 +19,18 @@ const cargo = new Cargo("Assessor", true, "assessor", false);
 describe("projeto geral da área", () => {
     test("novoGeral monta o projeto fixo da área", () => {
         const g = novoGeral(inovacao, dia("2026-11-19"));
-        expect(nomeDoGeral(inovacao)).toBe("Inovação · geral");
-        expect(g.nome).toBe("Inovação · geral");
+        expect(nomeDoGeral(inovacao)).toBe("Inovação geral");
+        expect(g.nome).toBe("Inovação geral");
         expect(g.tipo).toBe(TipoProjeto.INTERNO);
         expect(g.geralDaArea).toBe(true);
         expect(g.status).toBe(StatusProjeto.EM_EXECUCAO);
         expect(g.dataFim).toEqual(dia("2099-12-31"));
         expect(g.colunas).toHaveLength(4);
+    });
+
+    test("área tem projeto geral por padrão; temGeral false desliga", () => {
+        expect(inovacao.temGeral).toBe(true);
+        expect(new Area("Presidência Executiva", null, true, undefined, false).temGeral).toBe(false);
     });
 
     test("área inativa gera geral arquivado", () => {

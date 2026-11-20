@@ -153,6 +153,14 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         return tarefa;
     }
 
+    async marcarItem(codigoTarefa: string, codigoItem: string, feito: boolean): Promise<boolean> {
+        const linhas = await this.conexao.consultar(
+            "UPDATE tarefa_checklist_itens SET feito = $1 WHERE codigo = $2 AND tarefa_codigo = $3 RETURNING codigo",
+            [feito, codigoItem, codigoTarefa],
+        );
+        return linhas.length > 0;
+    }
+
     async excluir(codigo: string): Promise<void> {
         const linhas = await this.conexao.consultar("DELETE FROM tarefas WHERE codigo = $1 RETURNING codigo", [codigo]);
 
@@ -166,11 +174,15 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
     }
 
     /**
-     * Trava a coluna da tarefa (FOR SHARE) e confere que o papel dela ainda é o que o caso de uso viu.
-     * A gravação do quadro reescreve as colunas na própria transação: ou espera esta tarefa, ou esta
-     * espera ela, e a tarefa nunca grava um status que o papel da coluna não sustenta mais.
+     * Trava o projeto (FOR KEY SHARE) e depois a coluna da tarefa (FOR SHARE), e confere que o papel dela
+     * ainda é o que o caso de uso viu. A gravação do quadro reescreve as colunas na própria transação: ou
+     * espera esta tarefa, ou esta espera ela, e a tarefa nunca grava um status que o papel da coluna não
+     * sustenta mais. Ordem projeto → coluna, a mesma de quem exclui o projeto (FOR UPDATE nele, e o DELETE
+     * leva as colunas em cascata): na ordem contrária as duas transações podiam travar uma à outra (40P01).
      */
     private async travarColuna(conexao: ConexaoBanco, tarefa: Tarefa): Promise<void> {
+        const projeto = await conexao.consultar("SELECT 1 FROM projetos WHERE codigo = $1 FOR KEY SHARE", [tarefa.projeto.codigo]);
+        if (projeto.length === 0) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
         if (!tarefa.coluna) return;
         const linhas = await conexao.consultar("SELECT papel FROM colunas_projeto WHERE codigo = $1 FOR SHARE", [tarefa.coluna.codigo]);
         if (linhas.length === 0 || linhas[0].papel !== tarefa.coluna.papel) {
@@ -188,9 +200,9 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         for (let ordem = 0; ordem < tarefa.checklist.length; ordem++) {
             const item = tarefa.checklist[ordem];
             await conexao.consultar(
-                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito, ordem)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [item.codigo, tarefa.codigo, item.texto, item.feito, ordem],
+                `INSERT INTO tarefa_checklist_itens (codigo, tarefa_codigo, texto, feito, ordem, responsavel_codigo)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [item.codigo, tarefa.codigo, item.texto, item.feito, ordem, item.responsavel?.codigo ?? null],
             );
         }
     }
@@ -231,7 +243,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
         );
 
         const itens = await this.conexao.consultar(
-            `SELECT codigo, tarefa_codigo, texto, feito
+            `SELECT codigo, tarefa_codigo, texto, feito, responsavel_codigo
              FROM tarefa_checklist_itens
              WHERE tarefa_codigo = ANY($1::uuid[])
              ORDER BY tarefa_codigo, ordem`,
@@ -242,6 +254,7 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
         const usuarios = await carregarUsuarios(this.conexao, [
             ...vinculos.map((v) => v.usuario_codigo),
+            ...itens.map((i) => i.responsavel_codigo).filter(Boolean),
             ...[...linhas.values()].map((l) => l.concluida_por_codigo).filter(Boolean),
             ...[...linhas.values()].map((l) => l.criada_por_codigo).filter(Boolean),
         ]);
@@ -262,7 +275,15 @@ export default class TarefaRepositoryDatabase implements TarefaRepositoryInterfa
 
             const checklist = itens
                 .filter((i) => i.tarefa_codigo === codigo)
-                .map((i) => new ItemChecklistTarefa(i.texto, i.feito, i.codigo));
+                .map(
+                    (i) =>
+                        new ItemChecklistTarefa(
+                            i.texto,
+                            i.feito,
+                            i.codigo,
+                            i.responsavel_codigo ? (usuarios.get(i.responsavel_codigo) ?? null) : null,
+                        ),
+                );
 
             const projeto = projetos.get(linha.projeto_codigo)!;
             // Coluna não achada (dado estranho): o construtor cai na coluna que corresponde ao status.
