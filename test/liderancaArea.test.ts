@@ -61,7 +61,7 @@ describe("liderança das áreas (regra provisória)", () => {
     });
 
     test("pessoa fora da EJ não lidera, mesmo com período aberto", () => {
-        const alumni = { ...membro, status: StatusPessoa.ALUMNI };
+        const alumni = { ...membro, status: StatusPessoa.INATIVO };
         expect(lideraArea(alumni, "projetos", areas, [aberto(projetos, gerente)])).toBe(false);
     });
 

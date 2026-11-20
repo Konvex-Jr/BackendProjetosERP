@@ -9,7 +9,7 @@ import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 export interface AlterarStatusPessoaInput {
     codigo: string;
     status: StatusPessoa;
-    /** Data de saída para Alumni ou Inativo (padrão: hoje). */
+    /** Data de saída para Inativo (padrão: hoje). */
     dataSaida?: Date | null;
     /**
      * Se verdadeiro (padrão), encerra as participações em aberto com a mesma data de saída.
@@ -26,7 +26,7 @@ export interface AlterarStatusPessoaOutput {
 }
 
 /**
- * PR-01 e RN-01: a saída muda o status para Alumni ou Inativo e registra a data.
+ * PR-01 e RN-01: a saída muda o status para Inativo e registra a data.
  * Nada é apagado: projetos, tarefas, documentos e capacitações continuam ligados à pessoa.
  */
 export default class AlterarStatusPessoa {

@@ -68,7 +68,7 @@ describe("Ocupação semanal (HTTP)", () => {
         fora = await novo("Fê Fora", PerfilUsuario.MEMBRO, "usr-fe");
         diretor = await novo("Dora Diretora", PerfilUsuario.DIRETOR, "usr-dora");
         trainee = await novo("Téo Trainee", PerfilUsuario.MEMBRO, "usr-teo", StatusPessoa.TRAINEE);
-        alumni = await novo("Alu Alumni", PerfilUsuario.MEMBRO, "usr-alu", StatusPessoa.ALUMNI);
+        alumni = await novo("Alu Alumni", PerfilUsuario.MEMBRO, "usr-alu", StatusPessoa.INATIVO);
 
         area = await ctx.factory.criarAreaRepository().criar(new Area("Projetos"));
         const cargo = await ctx.factory.criarCargoRepository().criar(new Cargo("Assessor", true, undefined, false, 10));

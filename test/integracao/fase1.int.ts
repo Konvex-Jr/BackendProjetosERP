@@ -183,7 +183,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(meus.corpo.map((p: any) => p.nome).sort()).toEqual(["Projeto A", "Projeto B"]);
 
         // Saída da EJ encerra participações e preserva histórico
-        const saida = await chamar("PATCH", `/usuarios/${membro.corpo.codigo}/status`, dir, { status: "alumni" });
+        const saida = await chamar("PATCH", `/usuarios/${membro.corpo.codigo}/status`, dir, { status: "inativo" });
         expect(saida.status).toBe(200);
         const projeto = await chamar("GET", `/projetos/${cod1}`, dir);
         const part = projeto.corpo.participacoes.find((x: any) => x.usuario.codigo === membro.corpo.codigo);

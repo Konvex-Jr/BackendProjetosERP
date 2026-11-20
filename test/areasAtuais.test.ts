@@ -34,7 +34,7 @@ describe("preencherAreasAtuais", () => {
     test("pessoa fora da EJ com período aberto (dado incoerente) fica sem áreas atuais", async () => {
         const { factory, senioridade } = await criarContexto();
         const alumni = new Usuario("Beto", "beto@konvex.com.br", PerfilUsuario.MEMBRO, false, "hash", senioridade, "usr-beto", {
-            status: StatusPessoa.ALUMNI,
+            status: StatusPessoa.INATIVO,
         });
         await factory.criarUsuarioRepository().criar(alumni);
         await factory

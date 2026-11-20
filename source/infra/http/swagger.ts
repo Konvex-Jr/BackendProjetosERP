@@ -598,7 +598,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
         delete: operation(["Usuários"], "Excluir período (gestores)", periodo),
     },
     "/usuarios/{codigo}/status": {
-        patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)),
+        patch: operation(["Usuários"], "Mudar status: ativo, trainee, inativo (RF-011)", comCodigo(json)),
     },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),

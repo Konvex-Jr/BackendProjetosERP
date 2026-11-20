@@ -38,7 +38,7 @@ describe("Escrita em projeto sigiloso", () => {
         gerenteLista = await novoUsuario("Gil", PerfilUsuario.GERENTE, "usr-gil");
         gerenteFora = await novoUsuario("Fábio", PerfilUsuario.GERENTE, "usr-fabio");
         novo = await novoUsuario("Nina", PerfilUsuario.MEMBRO, "usr-nina");
-        alumni = await novoUsuario("Alê", PerfilUsuario.MEMBRO, "usr-ale", StatusPessoa.ALUMNI);
+        alumni = await novoUsuario("Alê", PerfilUsuario.MEMBRO, "usr-ale", StatusPessoa.INATIVO);
         await ctx.factory.criarProjetoRepository().criar(
             new Projeto("Sigiloso", "descrição", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {
                 sigiloso: true,

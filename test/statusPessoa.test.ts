@@ -34,7 +34,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
     it("a saída encerra as participações, mas o histórico continua no perfil (CT-012)", async () => {
         const { factory, membro } = await criarContexto();
         await criarProjeto(factory, membro);
-        const resultado = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.ALUMNI });
+        const resultado = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.INATIVO });
         expect(resultado.participacoesEncerradas).toBe(1);
         expect(resultado.usuario.dataSaida).not.toBeNull();
 
@@ -55,7 +55,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
 
         const resultado = await new AlterarStatusPessoa(factory).execute({
             codigo: membro.codigo,
-            status: StatusPessoa.ALUMNI,
+            status: StatusPessoa.INATIVO,
             dataSaida: saida,
             encerrarParticipacoes: false,
         });
@@ -78,7 +78,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         const saida = new Date("2026-09-01T00:00:00.000Z");
         const resultado = await new AlterarStatusPessoa(factory).execute({
             codigo: membro.codigo,
-            status: StatusPessoa.ALUMNI,
+            status: StatusPessoa.INATIVO,
             dataSaida: saida,
             encerrarParticipacoes: false,
         });

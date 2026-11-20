@@ -12,6 +12,8 @@ export interface EntradaPerfilPessoa {
     calendarioUrl?: string | null;
     githubUrl?: string | null;
     curso?: string | null;
+    emailPessoal?: string | null;
+    fimTrainee?: Date | null;
     semestre?: number | null;
     dataEntrada?: Date | null;
     bio?: string | null;
@@ -30,6 +32,8 @@ export function resolverPerfilPessoa(entrada: EntradaPerfilPessoa): DetalhesPess
         "calendarioUrl",
         "githubUrl",
         "curso",
+        "emailPessoal",
+        "fimTrainee",
         "semestre",
         "dataEntrada",
         "bio",
@@ -51,7 +55,7 @@ export function exigirTraineeMembro(status: StatusPessoa | string, perfil: Perfi
 export function lerStatusPessoa(valor: unknown): StatusPessoa | undefined {
     if (valor === undefined || valor === null || valor === "") return undefined;
     if (!Object.values(StatusPessoa).includes(valor as StatusPessoa)) {
-        throw new ErroValidacao("Status de pessoa inválido. Use ativo, trainee, alumni ou inativo.", "STATUS_PESSOA_INVALIDO");
+        throw new ErroValidacao("Status de pessoa inválido. Use ativo, trainee ou inativo.", "STATUS_PESSOA_INVALIDO");
     }
     return valor as StatusPessoa;
 }
