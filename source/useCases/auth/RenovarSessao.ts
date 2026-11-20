@@ -16,7 +16,8 @@ export default class RenovarSessao {
         }
         const tokens = this.factory.criarRefreshTokenRepository();
         const registro = await tokens.buscarPorHash(hashToken(refreshToken));
-        if (!registro) throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
+        // O lembrete do "Manter conectado" só vale em POST /auth/retomar (cookie), nunca no corpo.
+        if (!registro || registro.lembrar) throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
 
         if (registro.revogadoEm) {
             await tokens.revogarTodosDoUsuario(registro.codigoUsuario);

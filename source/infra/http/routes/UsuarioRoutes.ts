@@ -6,6 +6,9 @@ import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import LoginUsuario, { criarLimitesLogin } from "../../../useCases/auth/LoginUsuario";
 import RenovarSessao from "../../../useCases/auth/RenovarSessao";
+import RetomarSessao from "../../../useCases/auth/RetomarSessao";
+import RespostaComCookies from "../RespostaComCookies";
+import { apagarCookieLembrete, cookieLembrete, NOME_COOKIE_LEMBRETE } from "../../../shared/seguranca/cookieLembrete";
 import EncerrarSessao from "../../../useCases/auth/EncerrarSessao";
 import AlterarSenha from "../../../useCases/auth/AlterarSenha";
 import GerirLinkSenha from "../../../useCases/auth/GerirLinkSenha";
@@ -118,9 +121,28 @@ export default class UsuarioRoutes implements ModelRoutes {
         // Sessão. Não há cadastro público: contas são criadas por diretores e gerentes.
         // Os limites ficam aqui (um por servidor), porque o caso de uso é criado a cada requisição.
         const limitesLogin = criarLimitesLogin();
-        this.http.route("post", "/auth/login", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) =>
-            new LoginUsuario(f, limitesLogin).execute({ email: body?.email, senha: body?.senha }, contexto?.ip),
-        );
+        // "Manter conectado": o cookie guarda só o lembrete; todo login certo troca ou apaga o cookie
+        // (uma conta lembrada por navegador). O lembrete nunca vai no corpo.
+        this.http.route("post", "/auth/login", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) => {
+            const { lembrete, ...sessao } = await new LoginUsuario(f, limitesLogin).execute(
+                { email: body?.email, senha: body?.senha, manterConectado: body?.manterConectado === true },
+                contexto?.ip,
+                contexto?.cookies?.[NOME_COOKIE_LEMBRETE],
+            );
+            return new RespostaComCookies(sessao, [lembrete ? cookieLembrete(lembrete.token, lembrete.expiraEm) : apagarCookieLembrete()]);
+        });
+
+        // Aba sem sessão troca o lembrete do cookie por uma sessão própria e um cookie novo (mesmo prazo).
+        // Falha responde 401 e apaga o cookie.
+        this.http.route("post", "/auth/retomar", false, async (_p: any, _b: any, _q: any, contexto: ContextoRequisicao) => {
+            try {
+                const { sessao, lembrete } = await new RetomarSessao(f).execute(contexto?.cookies?.[NOME_COOKIE_LEMBRETE]);
+                return new RespostaComCookies(sessao, [cookieLembrete(lembrete.token, lembrete.expiraEm)]);
+            } catch (erro) {
+                if (!(erro instanceof ErroAplicacao)) throw erro;
+                return new RespostaComCookies({ message: erro.message, codigo: erro.codigo }, [apagarCookieLembrete()], erro.codigoHttp);
+            }
+        });
 
         // Links de senha (convite e redefinição): rotas públicas; o token só vale uma vez.
         const limitePedidos = criarLimitePedidosSenha();
@@ -140,7 +162,10 @@ export default class UsuarioRoutes implements ModelRoutes {
                 throw new ErroMuitasTentativas(`Muitas tentativas. Tente de novo em ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`);
             }
             try {
-                return await new GerirLinkSenha(f).usar(params.token, body?.senha, body?.confirmacao);
+                // Usar o link revoga todas as sessões da pessoa: o cookie de lembrete sai junto.
+                return new RespostaComCookies(await new GerirLinkSenha(f).usar(params.token, body?.senha, body?.confirmacao), [
+                    apagarCookieLembrete(),
+                ]);
             } catch (erro) {
                 if (erro instanceof ErroValidacao) limiteLinks.registrarFalha(ip);
                 throw erro;
@@ -149,9 +174,9 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("post", "/auth/refresh", false, async (_p: any, body: any) => new RenovarSessao(f).execute(body.refreshToken));
 
-        this.http.route("post", "/auth/logout", false, async (_p: any, body: any) => {
-            await new EncerrarSessao(f).execute(body.refreshToken);
-            return { message: "Sessão encerrada." };
+        this.http.route("post", "/auth/logout", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) => {
+            await new EncerrarSessao(f).execute(body?.refreshToken, contexto?.cookies?.[NOME_COOKIE_LEMBRETE]);
+            return new RespostaComCookies({ message: "Sessão encerrada." }, [apagarCookieLembrete()]);
         });
 
         this.http.route("get", "/auth/me", true, async (_p: any, body: any) =>

@@ -6,6 +6,8 @@ import Auth from "./middleware/Auth";
 import Http, { OpcoesRota } from "./Http";
 import RespostaArquivo from "./RespostaArquivo";
 import RespostaSemConteudo from "./RespostaSemConteudo";
+import RespostaComCookies from "./RespostaComCookies";
+import { formatarCookie, lerCookies } from "../../shared/seguranca/cookieLembrete";
 import HttpMethods from "./HttpMethods";
 import { ErroAplicacao } from "../../shared/erros/ErroAplicacao";
 
@@ -80,7 +82,8 @@ export default class ExpressHttp implements Http {
         this.app.use(express.json({ limit: "2mb" }));
         const origensPermitidas = origensCors();
         // CORS feito à mão: só ecoa a origem se ela estiver na lista. Os cabeçalhos liberados incluem
-        // `access-token` (autenticação) e `X-Nome-Arquivo` (nome do arquivo nos uploads).
+        // `access-token` (autenticação) e `X-Nome-Arquivo` (nome do arquivo nos uploads). Credentials
+        // liberado só para essas origens: em dev (5173 -> 5002) o cookie do "Manter conectado" precisa dele.
         this.app.use((req: any, res: any, next: any) => {
             const origem = req.headers.origin;
             if (origem && origensPermitidas.includes(origem)) {
@@ -88,6 +91,7 @@ export default class ExpressHttp implements Http {
                 res.header("Vary", "Origin");
                 res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
                 res.header("Access-Control-Allow-Headers", "Content-Type, access-token, X-Nome-Arquivo");
+                res.header("Access-Control-Allow-Credentials", "true");
             }
             next();
         });
@@ -129,7 +133,10 @@ export default class ExpressHttp implements Http {
         if (opcoes?.arquivo) handlers.push(this.receberArquivo(opcoes.arquivo));
         handlers.push(async (req: any, res: any) => {
             try {
-                const result = await callback(req.params, req.body, req.query, { ip: String(req.ip ?? "desconhecido") });
+                const result = await callback(req.params, req.body, req.query, {
+                    ip: String(req.ip ?? "desconhecido"),
+                    cookies: lerCookies(req.headers.cookie),
+                });
                 if (result instanceof RespostaArquivo) {
                     // Sempre como download (attachment) e com nosniff: um arquivo enviado nunca é aberto
                     // pelo navegador como página do sistema. Sem cache, porque o conteúdo depende de permissão.
@@ -160,6 +167,15 @@ export default class ExpressHttp implements Http {
                     pipeline(result.conteudo, res, (erro) => {
                         if (erro) res.destroy(erro);
                     });
+                    return;
+                }
+                if (result instanceof RespostaComCookies) {
+                    // Resposta com cookie nunca vai para cache (leva sessão).
+                    res.setHeader("Cache-Control", "no-store");
+                    for (const cookie of result.cookies) res.append("Set-Cookie", formatarCookie(cookie));
+                    res.status(result.status).json(
+                        result.corpo === undefined ? { message: "Operação realizada com sucesso." } : result.corpo,
+                    );
                     return;
                 }
                 if (result instanceof RespostaSemConteudo) {

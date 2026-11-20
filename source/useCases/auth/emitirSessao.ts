@@ -9,6 +9,14 @@ import { obterChavePrivada } from "../../shared/seguranca/chavesJwt";
 export const DURACAO_ACESSO = process.env.JWT_ACCESS_TTL ?? "15m";
 /** Tempo de vida do refresh token, em dias (padrão 7). */
 export const DIAS_REFRESH = Number(process.env.REFRESH_TOKEN_DIAS ?? 7);
+/** "Manter conectado": o lembrete vale 15 dias contados do login (a rotação não renova o prazo). */
+export const DIAS_LEMBRETE = 15;
+
+export interface Lembrete {
+    /** Token opaco que vai só no cookie HttpOnly (nunca no corpo da resposta). */
+    token: string;
+    expiraEm: Date;
+}
 
 export interface Sessao {
     /** Token de acesso JWT, enviado no cabeçalho access-token. */
@@ -48,4 +56,31 @@ export async function emitirSessao(factory: RepositoryFactoryInterface, usuario:
         lembrar: false,
     });
     return { token: gerarTokenAcesso(usuario), refreshToken, refreshTokenExpiraEm: expiraEm, usuario };
+}
+
+/**
+ * Emite um token de lembrete (`lembrar = true`), separado dos refresh tokens de aba: o cookie guarda
+ * só ele, e cada aba troca o lembrete por uma sessão própria (POST /auth/retomar). Sem `expiraEm`,
+ * vale DIAS_LEMBRETE a partir de agora; na rotação, recebe o prazo do anterior.
+ */
+export async function emitirLembrete(factory: RepositoryFactoryInterface, usuario: Usuario, expiraEm?: Date): Promise<Lembrete> {
+    const token = randomBytes(48).toString("base64url");
+    const prazo = expiraEm ?? new Date(Date.now() + DIAS_LEMBRETE * 24 * 60 * 60 * 1000);
+    await factory.criarRefreshTokenRepository().criar({
+        codigo: uuid(),
+        codigoUsuario: usuario.codigo,
+        tokenHash: hashToken(token),
+        expiraEm: prazo,
+        revogadoEm: null,
+        lembrar: true,
+    });
+    return { token, expiraEm: prazo };
+}
+
+/** Revoga o lembrete informado (cookie), se for mesmo um lembrete. Não falha se já não valer. */
+export async function revogarLembrete(factory: RepositoryFactoryInterface, token?: string | null): Promise<void> {
+    if (!token || typeof token !== "string") return;
+    const tokens = factory.criarRefreshTokenRepository();
+    const registro = await tokens.buscarPorHash(hashToken(token));
+    if (registro?.lembrar) await tokens.revogar(registro.codigo);
 }

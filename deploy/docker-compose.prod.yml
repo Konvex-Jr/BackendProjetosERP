@@ -59,6 +59,17 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DATABASE: ${DB_NAME:-${DATABASE:-konvex_gestao}}
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:-${DATABASE:-konvex_gestao}}
+      # Sessão 25a. O navegador vê /api/auth (o Traefik tira o /api antes de chegar aqui).
+      COOKIE_CAMINHO: /api/auth
+      # E-mail de pessoa nova tem de ser do domínio; links de senha apontam para APP_URL.
+      EMAIL_DOMINIO: ${EMAIL_DOMINIO:-konvexjr.com.br}
+      APP_URL: https://${DOMINIO:-erp.konvexjr.com.br}
+      # Envio de e-mail (convite e redefinição). Sem SMTP_HOST, o envio conta como falho em produção.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORTA: ${SMTP_PORTA:-587}
+      SMTP_USUARIO: ${SMTP_USUARIO:-}
+      SMTP_SENHA: ${SMTP_SENHA:-}
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
       # Só usados por "npm run seed:admin" (primeiro diretor num banco vazio).
       ADMIN_NAME: ${ADMIN_NAME:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}

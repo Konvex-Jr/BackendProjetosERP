@@ -187,6 +187,7 @@ const swaggerSpecification = {
                     properties: {
                         email: { type: "string", format: "email" },
                         senha: { type: "string" },
+                        manterConectado: { type: "boolean", description: "Grava o cookie HttpOnly konvex_lembrar (15 dias)" },
                     },
                 }),
             }),
@@ -513,7 +514,19 @@ const periodo = {
 };
 const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/refresh": { post: operation(["Autenticação"], "Renovar a sessão com o refresh token", { security: [], ...json }) },
-    "/auth/logout": { post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token)", { security: [], ...json }) },
+    "/auth/logout": {
+        post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token e o lembrete do cookie; apaga o cookie)", {
+            security: [],
+            ...json,
+        }),
+    },
+    "/auth/retomar": {
+        post: operation(
+            ["Autenticação"],
+            "Abrir sessão de aba com o cookie konvex_lembrar (Manter conectado); devolve cookie novo com o mesmo prazo, 401 apaga o cookie",
+            { security: [] },
+        ),
+    },
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
     "/auth/esqueci-senha": {
