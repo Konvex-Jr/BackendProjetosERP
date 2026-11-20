@@ -37,6 +37,9 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/konvex_dev
       CORS_ORIGINS: http://localhost:5173,http://localhost:4173
       ANEXOS_DIR: /app/anexos
+      EMAIL_PASTA_DEV: /app/emails-dev
+      EMAIL_DOMINIO: dev.konvex
+      APP_URL: http://localhost:5173
       ADMIN_NAME: Diretora Dev
       ADMIN_EMAIL: dev@konvexjr.com.br
       ADMIN_PASSWORD: konvex-dev
@@ -46,6 +49,7 @@ services:
       - "127.0.0.1:${KONVEX_API_PORTA:-5001}:5001"
     volumes:
       - anexos_dev:/app/anexos
+      - ./.emails-dev:/app/emails-dev
 
 volumes:
   dados_dev:

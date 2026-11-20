@@ -1,3 +1,5 @@
+import EnvioEmailInterface from "../../domain/interfaces/EnvioEmailInterface";
+import criarEnvioEmail from "../email/criarEnvioEmail";
 import HorasDificuldadeRepositoryDatabase from "./database/HorasDificuldadeRepositoryDatabase";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
@@ -118,6 +120,13 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarArmazenamentoFotos() {
         return new ArmazenamentoFotosDisco();
+    }
+
+    /** Um só para o processo todo (a factory é recriada a cada transação). */
+    private static envioEmail?: EnvioEmailInterface;
+
+    criarEnvioEmail() {
+        return (DatabaseRepositoryFactory.envioEmail ??= criarEnvioEmail());
     }
 
     criarRefreshTokenRepository() {

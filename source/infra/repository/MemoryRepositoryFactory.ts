@@ -1,3 +1,4 @@
+import EnvioEmailMemoria from "../email/EnvioEmailMemoria";
 import HorasDificuldadeRepositoryMemory from "./memory/HorasDificuldadeRepositoryMemory";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
@@ -101,6 +102,13 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarArmazenamentoFotos() {
         return this.armazenamentoFotos;
+    }
+
+    /** Público para os testes conferirem os e-mails enviados. */
+    readonly envioEmail = new EnvioEmailMemoria();
+
+    criarEnvioEmail() {
+        return this.envioEmail;
     }
 
     /** Na memória não há transação: roda direto. Quem usa confere tudo o que pode falhar antes de gravar. */
