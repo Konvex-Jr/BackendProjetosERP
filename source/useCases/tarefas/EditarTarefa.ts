@@ -76,8 +76,15 @@ export default class EditarTarefa {
             input.dificuldade === undefined ? atual.dificuldade : input.dificuldade,
         );
         editada.exigirConclusaoCoerente();
-        // Corrigir a data só vale para quem pode mudar a situação e se a tarefa segue concluída (reabrir zera a data).
-        const corrigir = !input.manterSituacao && concluida && input.dataConclusao;
+        // Corrigir a data só vale para quem pode mudar a situação, se a tarefa já era concluída, segue concluída
+        // (reabrir zera a data) e a data mudou de fato; reenviar a mesma data não a revalida (a tarefa pode ter
+        // sido concluída antes do início).
+        const corrigir =
+            !input.manterSituacao &&
+            concluida &&
+            atual.status === StatusTarefa.CONCLUIDA &&
+            input.dataConclusao &&
+            input.dataConclusao.getTime() !== atual.dataConclusao?.getTime();
         return this.tarefas.editar(corrigir ? editada.comDataConclusao(input.dataConclusao as Date, hoje()) : editada);
     }
     private async criaCiclo(codigoAtual: string, codigoPredecessora: string): Promise<boolean> {

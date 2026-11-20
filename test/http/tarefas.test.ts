@@ -357,6 +357,49 @@ describe("Tarefas pela API", () => {
         });
     });
 
+    describe("sessão 24b: tarefa concluída antes do início", () => {
+        const futuro = (extra: object = {}) => ({
+            titulo: "Começa só depois",
+            dataInicio: "2099-01-10T12:00:00.000Z",
+            dataFim: "2099-01-20T12:00:00.000Z",
+            prioridade: "P2",
+            codigosResponsaveis: [colega.codigo],
+            ...extra,
+        });
+        const criar = async () => {
+            const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpo(futuro()) });
+            expect(r.status).toBe(200);
+            return r.corpo.codigo as string;
+        };
+
+        it("PUT que muda só a prioridade, com a mesma data de conclusão, dá 200", async () => {
+            const codigo = await criar();
+            const concluida = await servidor.chamar("patch", `/tarefas/${codigo}/status`, {
+                usuario: ctx.gerente,
+                corpo: { status: "concluida" },
+            });
+            expect(concluida.status).toBe(200);
+            const r = await servidor.chamar("put", `/tarefas/${codigo}`, {
+                usuario: ctx.gerente,
+                corpo: futuro({ prioridade: "P1", status: "concluida", dataConclusao: concluida.corpo.dataConclusao }),
+            });
+            expect(r.status).toBe(200);
+            expect(r.corpo.prioridade).toBe("P1");
+            expect(r.corpo.dataConclusao).toBe(concluida.corpo.dataConclusao);
+        });
+
+        it("PUT que conclui a tarefa pendente junto com outra mudança dá 200", async () => {
+            const codigo = await criar();
+            const r = await servidor.chamar("put", `/tarefas/${codigo}`, {
+                usuario: ctx.gerente,
+                corpo: futuro({ prioridade: "P1", status: "concluida", dataConclusao: hojeNoFuso().toISOString() }),
+            });
+            expect(r.status).toBe(200);
+            expect(r.corpo.status).toBe("concluida");
+            expect(r.corpo.prioridade).toBe("P1");
+        });
+    });
+
     describe("sessão 24b: checklist", () => {
         const criarComItens = async () =>
             (
