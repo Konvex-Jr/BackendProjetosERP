@@ -4,7 +4,6 @@
  */
 export const MENSAGENS_DE_ERRO = {
     VALIDACAO: {
-        SENHA_CURTA: "A senha deve possuir pelo menos 6 caracteres.",
         EMAIL_INVALIDO: "O e-mail informado é inválido.",
         CAMPO_OBRIGATORIO: "O campo é obrigatório.",
         NOME_OBRIGATORIO: "O nome do usuário é obrigatório.",
@@ -17,11 +16,14 @@ export const MENSAGENS_DE_ERRO = {
         CREDENCIAIS_INVALIDAS: "E-mail ou senha inválidos.",
         ACESSO_NAO_AUTORIZADO: "Acesso não autorizado.",
         TOKEN_EXPIRADO: "O token de acesso expirou.",
+        LINK_SENHA_INVALIDO: 'Este link não vale mais. Peça um novo em "Esqueci a senha".',
     },
 
     USUARIO: {
         SAIDA_NO_FUTURO: "A data de saída (dataSaida) não pode ser no futuro.",
         NAO_ENCONTRADO: "Usuário não encontrado.",
+        EMAIL_FORA_DO_DOMINIO: (dominio: string) => `Use o e-mail da Konvex (@${dominio}).`,
+        PESSOA_SEM_ACESSO: "Esta pessoa não tem acesso ao sistema.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
         TRAINEE_SO_MEMBRO: "Trainee tem sempre o perfil de membro: troque o perfil para membro ou o status para ativo.",
         STATUS_TRAINEE_SO_NA_ENTRADA: "Trainee é só a etapa de entrada; ninguém volta a ser trainee.",

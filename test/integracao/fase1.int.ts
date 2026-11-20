@@ -37,6 +37,13 @@ descrever("fase 1 contra PostgreSQL", () => {
         return { status: r.status, corpo: texto ? JSON.parse(texto) : null };
     }
 
+    /** Cadastra sem senha (como a API faz) e grava a senha direto no banco, para o teste poder entrar. */
+    async function criarPessoa(token: string, { senha, ...dados }: Record<string, unknown> & { senha: string; email: string }) {
+        const r = await chamar("POST", "/usuarios", token, dados);
+        await pool.query("UPDATE usuarios SET senha_hash = $1 WHERE email = $2", [await hash(senha, 4), dados.email]);
+        return r;
+    }
+
     async function entrar(email: string, senha: string) {
         const r = await chamar("POST", "/auth/login", undefined, { email, senha });
         return r;
@@ -97,28 +104,28 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(cargo.status).toBe(200);
 
         // Pessoas: membro e trainee, os dois com login
-        const membro = await chamar("POST", "/usuarios", dir, {
+        const membro = await criarPessoa(dir, {
             nome: "Membro",
             email: "membro@teste.com",
-            senha: "SenhaMembro1",
+            senha: "SenhaMembro@1",
             perfil: "membro",
             codigoSenioridade: "junior",
             codigoArea: area.corpo.codigo,
             codigoCargo: cargo.corpo.codigo,
         });
         expect(membro.status).toBe(200);
-        const trainee = await chamar("POST", "/usuarios", dir, {
+        const trainee = await criarPessoa(dir, {
             nome: "Trainee",
             email: "trainee@teste.com",
-            senha: "SenhaTrainee1",
+            senha: "SenhaTrainee@1",
             perfil: "membro",
             codigoSenioridade: "trainee",
             status: "trainee",
         });
         expect(trainee.status).toBe(200);
-        expect((await entrar("trainee@teste.com", "SenhaTrainee1")).status).toBe(200);
+        expect((await entrar("trainee@teste.com", "SenhaTrainee@1")).status).toBe(200);
 
-        const loginMembro = await entrar("membro@teste.com", "SenhaMembro1");
+        const loginMembro = await entrar("membro@teste.com", "SenhaMembro@1");
         expect(loginMembro.status).toBe(200);
         const mem = loginMembro.corpo.token as string;
         expect((await chamar("POST", "/areas", mem, { nome: "X" })).status).toBe(403);
@@ -183,7 +190,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(part.ativa).toBe(false);
         expect(part.dataSaida).toBeTruthy();
         expect((await chamar("GET", `/usuarios/${membro.corpo.codigo}/perfil`, dir)).status).toBe(200);
-        expect((await entrar("membro@teste.com", "SenhaMembro1")).status).not.toBe(200);
+        expect((await entrar("membro@teste.com", "SenhaMembro@1")).status).not.toBe(200);
 
         // Logout revoga o refresh token
         const novo = await entrar("diretora@teste.com", "SenhaDiretora1");
@@ -193,10 +200,10 @@ descrever("fase 1 contra PostgreSQL", () => {
 
     test("sessão 8b: líder, concluída por e comentários gravados no banco", async () => {
         const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        const lider = await chamar("POST", "/usuarios", dir, {
+        const lider = await criarPessoa(dir, {
             nome: "Lider",
             email: "lider@teste.com",
-            senha: "SenhaLider1",
+            senha: "SenhaLider@1",
             perfil: "membro",
             codigoSenioridade: "junior",
         });
@@ -213,7 +220,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(definido.status).toBe(200);
         expect((await chamar("GET", `/projetos/${cod}`, dir)).corpo.lider.codigo).toBe(lider.corpo.codigo);
 
-        const lid = (await entrar("lider@teste.com", "SenhaLider1")).corpo.token as string;
+        const lid = (await entrar("lider@teste.com", "SenhaLider@1")).corpo.token as string;
         const t = await chamar("POST", "/tarefas", lid, {
             codigoProjeto: cod,
             titulo: "T1",
@@ -242,14 +249,14 @@ descrever("fase 1 contra PostgreSQL", () => {
         process.env.ANEXOS_DIR = pasta;
         try {
             const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-            await chamar("POST", "/usuarios", dir, {
+            await criarPessoa(dir, {
                 nome: "Anexadora",
                 email: "anexadora@teste.com",
-                senha: "SenhaAnexa1",
+                senha: "SenhaAnexa@1",
                 perfil: "membro",
                 codigoSenioridade: "junior",
             });
-            const membro = (await entrar("anexadora@teste.com", "SenhaAnexa1")).corpo.token as string;
+            const membro = (await entrar("anexadora@teste.com", "SenhaAnexa@1")).corpo.token as string;
             const enviar = async (token: string, caminho: string, nome: string, bytes = Buffer.from("%PDF-1.4 teste")) => {
                 const r = await fetch(base + caminho, {
                     method: "POST",
@@ -298,14 +305,14 @@ descrever("fase 1 contra PostgreSQL", () => {
     test("sessão 13: capacitações com presença, avaliações e perfil completo no banco", async () => {
         const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
         const pessoa = async (nome: string, email: string) => {
-            const r = await chamar("POST", "/usuarios", dir, {
+            const r = await criarPessoa(dir, {
                 nome,
                 email,
-                senha: "SenhaCap123",
+                senha: "SenhaCap@123",
                 perfil: "membro",
                 codigoSenioridade: "junior",
             });
-            return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap123")).corpo.token as string };
+            return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap@123")).corpo.token as string };
         };
         const ines = await pessoa("Inês Instrutora", "ines@teste.com");
         const bia = await pessoa("Bia Cap", "bia.cap@teste.com");

@@ -7,3 +7,4 @@ dist/
 !*.example
 /anexos/
 coverage/
+/.emails-dev/

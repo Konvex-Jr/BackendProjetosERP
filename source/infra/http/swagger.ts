@@ -187,25 +187,29 @@ const swaggerSpecification = {
                     properties: {
                         email: { type: "string", format: "email" },
                         senha: { type: "string" },
+                        manterConectado: { type: "boolean", description: "Grava o cookie HttpOnly konvex_lembrar (15 dias)" },
                     },
                 }),
             }),
         },
         "/usuarios": {
             get: operation(["Usuários"], "Listar usuários"),
-            post: operation(["Usuários"], "Cadastrar usuário (somente diretor/gerente)", {
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["nome", "email", "senha", "perfil"],
-                    properties: {
-                        nome: { type: "string" },
-                        email: { type: "string", format: "email" },
-                        senha: { type: "string", minLength: 6 },
-                        perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
-                        senioridade: { type: "object", nullable: true },
-                    },
-                }),
-            }),
+            post: operation(
+                ["Usuários"],
+                "Cadastrar usuário sem senha (somente diretor/gerente); envia o convite por e-mail e devolve conviteEnviado",
+                {
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["nome", "email", "perfil"],
+                        properties: {
+                            nome: { type: "string" },
+                            email: { type: "string", format: "email" },
+                            perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
+                            senioridade: { type: "object", nullable: true },
+                        },
+                    }),
+                },
+            ),
         },
         "/senioridades": {
             get: operation(["Usuários"], "Listar senioridades e valores-hora"),
@@ -510,9 +514,47 @@ const periodo = {
 };
 const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/refresh": { post: operation(["Autenticação"], "Renovar a sessão com o refresh token", { security: [], ...json }) },
-    "/auth/logout": { post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token)", { security: [], ...json }) },
+    "/auth/logout": {
+        post: operation(["Autenticação"], "Encerrar a sessão (revoga o refresh token e o lembrete do cookie; apaga o cookie)", {
+            security: [],
+            ...json,
+        }),
+    },
+    "/auth/retomar": {
+        post: operation(
+            ["Autenticação"],
+            "Abrir sessão de aba com o cookie konvex_lembrar (Manter conectado); devolve cookie novo com o mesmo prazo, 401 apaga o cookie",
+            { security: [] },
+        ),
+    },
     "/auth/me": { get: operation(["Autenticação"], "Dados da pessoa logada") },
     "/auth/permissoes": { get: operation(["Autenticação"], "Ações liberadas e menu da pessoa logada") },
+    "/auth/esqueci-senha": {
+        post: operation(
+            ["Autenticação"],
+            "Pedir link de redefinição (resposta igual exista o e-mail ou não; 10 pedidos por IP em 15 min)",
+            {
+                security: [],
+                ...json,
+            },
+        ),
+    },
+    "/auth/link-senha/{token}": {
+        get: operation(["Autenticação"], "Consultar o link de senha (tipo e primeiro nome)", {
+            security: [],
+            parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+        }),
+        post: operation(["Autenticação"], "Definir a senha pelo link (uso único; devolve a sessão)", {
+            security: [],
+            parameters: [{ name: "token", in: "path", required: true, schema: { type: "string" } }],
+            ...json,
+        }),
+    },
+    "/usuarios/{codigo}/link-senha": {
+        post: operation(["Usuários"], "Reenviar convite ou mandar link de redefinição (gestão; nunca devolve o link)", {
+            parameters: [{ $ref: "#/components/parameters/codigo" }],
+        }),
+    },
     "/auth/senha": { put: operation(["Autenticação"], "Trocar a própria senha", json) },
     "/auth/foto": {
         put: operation(
@@ -558,7 +600,6 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/usuarios/{codigo}/status": {
         patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)),
     },
-    "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
         post: operation(["Configurações"], "Criar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }", json),

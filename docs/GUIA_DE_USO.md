@@ -1,6 +1,6 @@
 # Guia rápido de uso do ERP da Konvex
 
-Endereço: https://erp.konvexjr.com.br. Entre com o e-mail da Konvex e a senha que a gestão passou. Troque a senha em **Meu perfil**.
+Endereço: https://erp.konvexjr.com.br. Entre com o e-mail da Konvex e a senha que você criou pelo link do convite (seção **Primeiro acesso e senha**). Troque a senha em **Meu perfil**.
 
 O que cada pessoa vê depende do papel: **diretor**, **gerente** ou **membro**. Trainees fazem login com o acesso de membro, sem a Biblioteca (seção **Trainee**).
 
@@ -15,7 +15,15 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
   - **Android (Chrome)**: menu **⋮** → **Adicionar à tela inicial** (ou **Instalar app**).
   - **iPhone (Safari)**: botão **Compartilhar** → **Adicionar à Tela de Início**.
 
-**Errou a senha várias vezes?** Depois de 5 tentativas erradas seguidas, o login daquele e-mail fica bloqueado **por 15 minutos** naquele aparelho e rede. É uma proteção contra quem tenta adivinhar senhas. Espere o tempo indicado na mensagem ou peça à gestão para redefinir a senha.
+**Errou a senha várias vezes?** Depois de 5 tentativas erradas seguidas, o login daquele e-mail fica bloqueado **por 15 minutos** naquele aparelho e rede. É uma proteção contra quem tenta adivinhar senhas. Espere o tempo indicado na mensagem ou use **Esqueci a senha** (veja abaixo).
+
+## Primeiro acesso e senha
+
+- **Cadastro por convite**: a gestão cadastra só o nome e o e-mail da Konvex (o e-mail tem de terminar em `@konvexjr.com.br`). A pessoa recebe um e-mail de `nao-responda@` com um link para **criar a senha**. O link vale **72 horas** e só funciona **uma vez**. Se vencer ou não chegar (olhe o spam), a gestão reenvia o link pelo menu da pessoa em **Pessoas**.
+- **Regra da senha**: pelo menos 8 caracteres, com uma letra maiúscula, um número e um caractere especial (como `@`, `!` ou `#`). Vale ao criar e ao trocar a senha. Quem já tinha senha antiga continua entrando com ela.
+- **Esqueci a senha**: na tela de login, clique em **Esqueci a senha**, digite o e-mail e confirme. O sistema responde a mesma mensagem exista ou não o e-mail, e quem tem cadastro recebe um link que vale **1 hora**, de uso único. Ao criar a nova senha, todas as sessões abertas são encerradas.
+- **Manter conectado**: marque a opção no login para ficar entrando sozinho por **15 dias** (contados do login, sem renovar). Ele guarda um cookie seguro só naquele navegador; use apenas em aparelho seu. **Sair** apaga o cookie. Ao trocar a senha, os outros aparelhos pedem login de novo.
+- **Ninguém vê nem define a senha de outra pessoa**, nem a gestão: o link só chega ao e-mail da própria pessoa.
 
 ---
 
@@ -69,7 +77,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto e situação. Toda tarefa fica num projeto: o que era avulso vive no **projeto geral** da área. Anexa arquivos em qualquer tarefa, inclusive as do projeto geral, e exclui qualquer anexo de tarefa.
 
-**Pessoas**: a tabela tem a coluna **Ocupação** (percentual da semana atual, ordenável). Cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e redefine senhas de quem tem login (Ativo e Trainee). Quando alguém sai, as participações são encerradas, mas o histórico fica.
+**Pessoas**: a tabela tem a coluna **Ocupação** (percentual da semana atual, ordenável). Cadastra e edita pessoas (exceto diretores), muda o status (Ativo, Alumni ou Inativo; Trainee só no cadastro) e reenvia o link de senha (convite ou redefinição) de quem tem login (Ativo e Trainee); a gestão nunca vê nem define a senha. Quando alguém sai, as participações são encerradas, mas o histórico fica.
 - **Áreas e cargos** ficam no perfil da pessoa, não no formulário: na seção **Áreas e cargos**, adicione um período (área, cargo opcional, início e, se já terminou, o fim), corrija as datas ou exclua um lançamento errado. Nenhuma data pode ser no futuro, e dois períodos na mesma área não podem se sobrepor. Quando a pessoa sai da EJ, as áreas atuais dela são encerradas na data de saída; se ela voltar, lance um período novo.
 
 **Biblioteca**: lê todos os itens, de qualquer sigilo, e usa o sigilo **Só gestão**. Liga um item a qualquer projeto. Edita e exclui qualquer item (por exemplo, para corrigir tags ou tirar algo repetido) e os anexos dele.
@@ -97,7 +105,7 @@ Quem entra como trainee faz login como qualquer pessoa, com o acesso de **membro
 - Vê os projetos de que participa e as tarefas deles, as tarefas do projeto geral da área em que é responsável, o próprio perfil, a lista de pessoas, as capacitações e o Dashboard.
 - **Não vê a Biblioteca**: o item não aparece no menu, e abrir o endereço direto mostra erro de acesso.
 - **Não pode ser líder** de projeto.
-- A gestão cria a pessoa já como Trainee em **Pessoas**, **Nova pessoa**: escolhe o status **Trainee** e digita a **Senha inicial** (o perfil fica Membro, sem opção). Para trocar a senha depois, use **Redefinir senha** no menu da pessoa.
+- A gestão cria a pessoa já como Trainee em **Pessoas**, **Nova pessoa**: escolhe o status **Trainee** e recebe o convite por e-mail como as demais pessoas (o perfil fica Membro, sem opção). Se ela perder o acesso, a gestão reenvia o link pelo menu da pessoa.
 - Quando ela vira **Ativo**, a Biblioteca aparece ao recarregar a página ou entrar de novo. Trainee é só a etapa de entrada: depois de mudar o status, **não dá para voltar** a Trainee.
 
 ---
@@ -129,5 +137,5 @@ Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confi
 - **Sou trainee e não vejo a Biblioteca**: é assim mesmo; ela aparece quando a gestão mudar seu status para Ativo (recarregue a página ou entre de novo).
 - **"Você não tem acesso a este projeto"**: você não está (nem esteve) na equipe. Peça à gestão para incluir você.
 - **Não consigo concluir uma tarefa**: só o responsável, o líder e a gestão concluem. Peça para ser incluído como responsável.
-- **Esqueci a senha**: peça a um gerente ou diretor para redefinir.
+- **Esqueci a senha**: use **Esqueci a senha** na tela de login. Se o e-mail não chegar em alguns minutos, olhe o spam e peça à gestão para reenviar o link.
 - **Algo saiu errado na tela**: recarregue sem cache (Ctrl+Shift+R). Se continuar, avise a gestão com um print.

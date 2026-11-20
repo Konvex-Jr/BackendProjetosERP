@@ -1,3 +1,5 @@
+import LinkSenhaRepositoryInterface from "./LinkSenhaRepositoryInterface";
+import EnvioEmailInterface from "./EnvioEmailInterface";
 import HorasDificuldadeRepositoryInterface from "./HorasDificuldadeRepositoryInterface";
 import UsuarioRepositoryInterface from "./UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "./SenioridadeRepositoryInterface";
@@ -38,12 +40,15 @@ export default interface RepositoryFactoryInterface {
     criarPeriodoAreaRepository(): PeriodoAreaRepositoryInterface;
     criarHorasDificuldadeRepository(): HorasDificuldadeRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
+    criarLinkSenhaRepository(): LinkSenhaRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
     criarBibliotecaRepository(): BibliotecaRepositoryInterface;
     criarAnexoRepository(): AnexoRepositoryInterface;
     /** Bytes dos anexos (disco em produção, memória nos testes). */
     criarArmazenamentoAnexos(): ArmazenamentoAnexosInterface;
     criarArmazenamentoFotos(): ArmazenamentoFotosInterface;
+    /** Envio de e-mail (SMTP, log em dev; memória nos testes). */
+    criarEnvioEmail(): EnvioEmailInterface;
     /**
      * Roda a operação numa ação só, com os repositórios da factory que ela recebe. No banco: uma
      * transação (erro = ROLLBACK de tudo), e os arquivos de anexo excluídos só saem do disco depois

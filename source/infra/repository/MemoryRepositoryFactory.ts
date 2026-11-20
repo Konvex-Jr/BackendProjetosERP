@@ -1,3 +1,4 @@
+import EnvioEmailMemoria from "../email/EnvioEmailMemoria";
 import HorasDificuldadeRepositoryMemory from "./memory/HorasDificuldadeRepositoryMemory";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
@@ -21,6 +22,7 @@ import ArmazenamentoFotosMemoria from "../arquivos/ArmazenamentoFotosMemoria";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
 import PeriodoAreaRepositoryMemory from "./memory/PeriodoAreaRepositoryMemory";
+import LinkSenhaRepositoryMemory from "./memory/LinkSenhaRepositoryMemory";
 import RefreshTokenRepositoryMemory from "./memory/RefreshTokenRepositoryMemory";
 import ComentarioTarefaRepositoryMemory from "./memory/ComentarioTarefaRepositoryMemory";
 
@@ -82,6 +84,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
+    private readonly linkSenhaRepository = new LinkSenhaRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly bibliotecaRepository = new BibliotecaRepositoryMemory();
     private readonly anexoRepository = new AnexoRepositoryMemory();
@@ -101,6 +104,13 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarArmazenamentoFotos() {
         return this.armazenamentoFotos;
+    }
+
+    /** Público para os testes conferirem os e-mails enviados. */
+    readonly envioEmail = new EnvioEmailMemoria();
+
+    criarEnvioEmail() {
+        return this.envioEmail;
     }
 
     /** Na memória não há transação: roda direto. Quem usa confere tudo o que pode falhar antes de gravar. */
@@ -134,5 +144,9 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarRefreshTokenRepository() {
         return this.refreshTokenRepository;
+    }
+
+    criarLinkSenhaRepository() {
+        return this.linkSenhaRepository;
     }
 }

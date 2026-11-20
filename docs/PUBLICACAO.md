@@ -455,6 +455,61 @@ Os nomes dos gerais têm que estar sem a bolinha ("Inovação geral").
 
 **Rollback:** a 020 só acrescenta colunas e renomeia projetos, mas desligar o geral exclui um projeto. Voltar = restaurar o `.dump` da Parte 1 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 25a (conta: convite por e-mail, esqueci a senha e manter conectado): migração 021
+A migração `021_conta_senha.sql` cria a tabela de links de senha e acrescenta `refresh_tokens.lembrar`. A partir daqui **ninguém vê nem define a senha de outra pessoa**: a gestão cadastra só o e-mail e a pessoa cria a senha por um link enviado por e-mail (convite, validade de 72 h). "Esqueci a senha" gera um link de 1 h. "Manter conectado" guarda um cookie `HttpOnly` por 15 dias. Publicar **backend e frontend juntos**.
+
+**Parte 0, antes de tudo (administrador do Google Workspace, no navegador):**
+1. Criar o alias `nao-responda@` no domínio da Konvex (Admin → Diretório → Usuários → um usuário → Adicionar alias).
+2. Liberar o relay SMTP: Admin → Apps → Google Workspace → Gmail → Roteamento → **Serviço de redirecionamento SMTP** → Adicionar. Escolher "Apenas endereços do meu domínio" e autenticar por **endereço IP**, com o IP da VPS (veja em `curl -4 ifconfig.me` na própria VPS). Exigir TLS. Salvar (pode levar alguns minutos para valer).
+3. No `.env` da VPS (cópia `.bak` antes), acrescentar as variáveis. O relay por IP não usa usuário nem senha:
+```bash
+cd /docker/erp-konvex
+cp .env .env.bak
+cat >> .env <<'EOF'
+SMTP_HOST=smtp-relay.gmail.com
+SMTP_PORTA=587
+EMAIL_REMETENTE=Konvex Jr <nao-responda@konvexjr.com.br>
+EOF
+```
+`SMTP_USUARIO` e `SMTP_SENHA` ficam vazios. `EMAIL_DOMINIO` e `APP_URL` já têm valor padrão no compose (`konvexjr.com.br` e o domínio do ERP). Sem `SMTP_HOST`, em produção o envio conta como falho e o log escreve só destinatário e assunto.
+
+**Parte 1, compose novo:** este PR mudou `deploy/docker-compose.prod.yml` (cookie, domínio, SMTP). Depois do pull, copiar de novo:
+```bash
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+diff docker-compose.yml backend/deploy/docker-compose.prod.yml
+cp docker-compose.yml docker-compose.yml.bak && cp backend/deploy/docker-compose.prod.yml docker-compose.yml
+docker compose config > /dev/null && echo compose ok
+```
+
+**Parte 2, backup:** igual à Parte 1 da sessão 22 (`pg_dump` e `anexos`):
+```bash
+DATA=$(date +%F_%H%M); ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos
+```
+
+**Parte 3, construir e subir:**
+```bash
+docker compose build backend frontend
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 021_conta_senha.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir de fora:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/auth/permissoes                    # 401
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://erp.konvexjr.com.br/api/auth/retomar              # 401
+curl -s -X POST -H 'Content-Type: application/json' -d '{"email":"ninguem@konvexjr.com.br"}' https://erp.konvexjr.com.br/api/auth/esqueci-senha
+```
+A última tem que responder "Se o e-mail estiver cadastrado, você vai receber um link em instantes." (200, exista ou não o e-mail).
+
+**Parte 5, teste de convite real:** em **Pessoas → Nova pessoa**, cadastrar um e-mail da Konvex que você controla. Conferir que o e-mail chega (olhar também a caixa de spam), abrir o link, criar a senha e entrar. Depois usar o mesmo link de novo: tem que dar erro. Testar **Esqueci a senha** na tela de login e **Manter conectado** (fechar e abrir o navegador). Se o e-mail não chegar: `docker logs konvex-backend 2>&1 | grep -i "e-mail\|smtp"` e conferir a liberação do relay (Parte 0).
+
+**Quem já tem conta:** nada muda; as senhas atuais continuam entrando no login. A regra nova (8 caracteres, uma maiúscula, um número e um caractere especial) vale ao criar ou trocar a senha. O script `redefinir-senha.sh` continua servindo para emergência.
+
+**Rollback:** a 021 só acrescenta tabela e coluna. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
@@ -475,6 +530,7 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 - Chaves JWT persistentes: os arquivos montados (ver acima) ou `JWT_PRIVATE_KEY`/`JWT_PUBLIC_KEY`.
 - `ANEXOS_DIR=/app/anexos`: pasta dos arquivos anexados (montada como volume; ver seção 0). Sem ela, o backend usa `./anexos` dentro do container.
 - `NODE_ENV=production` desliga o Swagger (`SWAGGER_ENABLED=true` liga).
+- Conta (sessão 25a): `COOKIE_CAMINHO` (cookie "Manter conectado"; padrão `/auth`, produção `/api/auth`), `EMAIL_DOMINIO` (e-mails de pessoas têm de terminar nele; vazio = não confere), `APP_URL` (base dos links dos e-mails) e `SMTP_HOST`, `SMTP_PORTA`, `SMTP_USUARIO`, `SMTP_SENHA`, `EMAIL_REMETENTE` (sem `SMTP_HOST` o envio falha em produção).
 - Opcionais: `JWT_ACCESS_TTL` (padrão 15m), `REFRESH_TOKEN_DIAS` (padrão 7), `PORT` (padrão 5001).
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` só servem para `npm run seed:admin` (criar o primeiro diretor num banco vazio). Estão no `.env` da VPS, mas o compose não os repassa ao container. Duas formas de rodar:
   - Na hora, sem mexer no compose:

@@ -3,36 +3,24 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
+import { validarNovaSenha } from "../../shared/seguranca/regraSenha";
 
-export const TAMANHO_MINIMO_SENHA = 6;
-
-/** Regra única de senha nova, usada também no cadastro de pessoas. */
-export function validarNovaSenha(senha: unknown): string {
-    if (typeof senha !== "string" || senha.length < TAMANHO_MINIMO_SENHA) {
-        throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENHA_CURTA, "SENHA_CURTA");
-    }
-    return senha;
-}
-
-/**
- * Troca a senha. Quando `senhaAtual` é informada (a própria pessoa), ela é conferida;
- * quando um gestor redefine a senha de alguém, a conferência é dispensada pela rota.
- * Em ambos os casos, todas as sessões abertas são encerradas.
- */
+/** Troca a própria senha: confere a atual, aplica a regra nova e encerra todas as sessões abertas. */
 export default class AlterarSenha {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
-    async execute(input: { codigoUsuario: string; novaSenha: string; senhaAtual?: string; exigirSenhaAtual: boolean }): Promise<void> {
+    async execute(input: { codigoUsuario: string; senhaAtual: unknown; novaSenha: unknown }): Promise<void> {
         const usuarios = this.factory.criarUsuarioRepository();
         const usuario = await usuarios.buscarPorCodigo(input.codigoUsuario);
         if (!usuario) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.USUARIO.NAO_ENCONTRADO);
 
-        if (input.exigirSenhaAtual) {
-            const confere = typeof input.senhaAtual === "string" && (await compare(input.senhaAtual, usuario.senha));
-            if (!confere) throw new ErroValidacao("A senha atual não confere.", "SENHA_ATUAL_INCORRETA");
-        }
+        const confere = typeof input.senhaAtual === "string" && (await compare(input.senhaAtual, usuario.senha));
+        if (!confere) throw new ErroValidacao("A senha atual não confere.", "SENHA_ATUAL_INCORRETA");
 
-        const senha = await hash(validarNovaSenha(input.novaSenha), 10);
+        const nova = validarNovaSenha(input.novaSenha);
+        if (nova === input.senhaAtual) throw new ErroValidacao("A senha nova precisa ser diferente da atual.", "SENHA_IGUAL_ATUAL");
+
+        const senha = await hash(nova, 10);
         await usuarios.editar(usuario.copiar({ senha }));
         await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
     }

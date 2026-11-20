@@ -9,10 +9,16 @@
  *
  * NUNCA rode contra a produção.
  */
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 const API = (process.env.API_URL || "http://localhost:5001").replace(/\/$/, "");
 const EMAIL = process.env.ADMIN_EMAIL || "dev@konvexjr.com.br";
 const SENHA = process.env.ADMIN_PASSWORD || "konvex-dev";
-export const SENHA_FICTICIA = "Konvex123";
+export const SENHA_FICTICIA = "Konvex@123";
+// A API não aceita senha no cadastro: grava o e-mail de convite aqui (docker-compose.dev monta ./.emails-dev).
+const EMAILS_DEV = process.env.EMAILS_DEV || join(dirname(fileURLToPath(import.meta.url)), "..", ".emails-dev", "emails.jsonl");
 
 if (/konvexjr\.com\.br\/api|erp\.konvexjr/.test(API)) {
     console.error("Recusado: este script não roda contra a produção.");
@@ -78,6 +84,24 @@ function dia(deslocamento) {
     return d.toISOString().slice(0, 10);
 }
 
+/** Lê o último link de convite da pessoa no arquivo de e-mails de dev e define a senha fictícia por ele. */
+async function definirSenha(email) {
+    let token = null;
+    try {
+        const linhas = readFileSync(EMAILS_DEV, "utf8").trim().split("\n").reverse();
+        for (const linha of linhas) {
+            const e = JSON.parse(linha);
+            if (e.para !== email) continue;
+            token = /\/#\/senha\/([^\s"'<>]+)/.exec(e.texto)?.[1] ?? null;
+            if (token) break;
+        }
+    } catch (erro) {
+        throw new Error(`Não consegui ler ${EMAILS_DEV} (defina EMAILS_DEV): ${erro.message}`);
+    }
+    if (!token) throw new Error(`Sem e-mail de convite para ${email} em ${EMAILS_DEV}.`);
+    await exigir("POST", `/auth/link-senha/${token}`, undefined, { senha: SENHA_FICTICIA, confirmacao: SENHA_FICTICIA });
+}
+
 async function main() {
     const login = await exigir("POST", "/auth/login", undefined, { email: EMAIL, senha: SENHA });
     const dir = login.token;
@@ -91,11 +115,11 @@ async function main() {
         const criada = await exigir("POST", "/usuarios", dir, {
             nome,
             email,
-            senha: SENHA_FICTICIA,
             perfil,
             codigoSenioridade: "junior",
             ...extra,
         });
+        await definirSenha(email);
         console.log(`Pessoa criada: ${nome} (${perfil})`);
         return criada;
     }
@@ -149,7 +173,7 @@ async function main() {
             caio,
             [
                 [areaExecucao, assessor, -120, null],
-                [areaInovacao, assessor, -90, null],
+                [areaInovacao, null, -90, null], // sem cargo: só um período com cargo por vez (24a)
             ],
         ],
         [davi, [[areaCapacitacao, null, -10, null]]],
@@ -191,7 +215,7 @@ async function main() {
     if (!periodosCaio.some((p) => p.area.codigo === areaInovacao.codigo)) {
         await exigir("POST", `/usuarios/${caio.codigo}/periodos`, dir, {
             codigoArea: areaInovacao.codigo,
-            codigoCargo: assessor.codigo,
+            codigoCargo: null,
             inicio: dia(-90),
             fim: null,
         });

@@ -55,3 +55,12 @@ export function lerStatusPessoa(valor: unknown): StatusPessoa | undefined {
     }
     return valor as StatusPessoa;
 }
+
+/** E-mail de pessoa nova ou alterado tem de ser do domínio da Konvex. Sem `EMAIL_DOMINIO`, não confere. */
+export function exigirDominioKonvex(email: string): void {
+    const dominio = (process.env.EMAIL_DOMINIO ?? "").trim().toLowerCase().replace(/^@/, "");
+    if (!dominio) return;
+    if (!email.trim().toLowerCase().endsWith(`@${dominio}`)) {
+        throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.EMAIL_FORA_DO_DOMINIO(dominio), "EMAIL_FORA_DO_DOMINIO");
+    }
+}

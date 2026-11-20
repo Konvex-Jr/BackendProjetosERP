@@ -10,15 +10,15 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
 
     async criar(r: RegistroRefreshToken): Promise<void> {
         await this.conexao.consultar(
-            `INSERT INTO refresh_tokens (codigo, usuario_codigo, token_hash, expira_em, revogado_em)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [r.codigo, r.codigoUsuario, r.tokenHash, r.expiraEm, r.revogadoEm],
+            `INSERT INTO refresh_tokens (codigo, usuario_codigo, token_hash, expira_em, revogado_em, lembrar, girado)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [r.codigo, r.codigoUsuario, r.tokenHash, r.expiraEm, r.revogadoEm, r.lembrar, r.girado],
         );
     }
 
     async buscarPorHash(tokenHash: string): Promise<RegistroRefreshToken | null> {
         const linhas = await this.conexao.consultar(
-            "SELECT codigo, usuario_codigo, token_hash, expira_em, revogado_em FROM refresh_tokens WHERE token_hash = $1",
+            "SELECT codigo, usuario_codigo, token_hash, expira_em, revogado_em, lembrar, girado FROM refresh_tokens WHERE token_hash = $1",
             [tokenHash],
         );
         if (!linhas.length) return null;
@@ -29,11 +29,25 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
             tokenHash: l.token_hash,
             expiraEm: l.expira_em,
             revogadoEm: l.revogado_em,
+            lembrar: l.lembrar,
+            girado: l.girado,
         };
     }
 
-    async revogar(codigo: string): Promise<void> {
-        await this.conexao.consultar("UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL", [codigo]);
+    async revogar(codigo: string): Promise<boolean> {
+        const linhas = await this.conexao.consultar(
+            "UPDATE refresh_tokens SET revogado_em = now() WHERE codigo = $1 AND revogado_em IS NULL RETURNING codigo",
+            [codigo],
+        );
+        return linhas.length > 0;
+    }
+
+    async girar(codigo: string): Promise<boolean> {
+        const linhas = await this.conexao.consultar(
+            "UPDATE refresh_tokens SET revogado_em = now(), girado = TRUE WHERE codigo = $1 AND revogado_em IS NULL RETURNING codigo",
+            [codigo],
+        );
+        return linhas.length > 0;
     }
 
     async revogarTodosDoUsuario(codigoUsuario: string): Promise<void> {

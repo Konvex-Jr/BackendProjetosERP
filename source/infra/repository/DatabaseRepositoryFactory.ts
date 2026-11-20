@@ -1,3 +1,5 @@
+import EnvioEmailInterface from "../../domain/interfaces/EnvioEmailInterface";
+import criarEnvioEmail from "../email/criarEnvioEmail";
 import HorasDificuldadeRepositoryDatabase from "./database/HorasDificuldadeRepositoryDatabase";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
@@ -18,6 +20,7 @@ import ColunaProjetoRepositoryDatabase from "./database/ColunaProjetoRepositoryD
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
 import PeriodoAreaRepositoryDatabase from "./database/PeriodoAreaRepositoryDatabase";
+import LinkSenhaRepositoryDatabase from "./database/LinkSenhaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
@@ -120,7 +123,18 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
         return new ArmazenamentoFotosDisco();
     }
 
+    /** Um só para o processo todo (a factory é recriada a cada transação). */
+    private static envioEmail?: EnvioEmailInterface;
+
+    criarEnvioEmail() {
+        return (DatabaseRepositoryFactory.envioEmail ??= criarEnvioEmail());
+    }
+
     criarRefreshTokenRepository() {
         return new RefreshTokenRepositoryDatabase(this.conexao);
+    }
+
+    criarLinkSenhaRepository() {
+        return new LinkSenhaRepositoryDatabase(this.conexao);
     }
 }

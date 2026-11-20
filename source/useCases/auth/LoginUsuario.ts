@@ -3,7 +3,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import LoginUsuarioInput from "./LoginUsuarioInput";
 import LoginUsuarioOutput from "./LoginUsuarioOutput";
-import { emitirSessao } from "./emitirSessao";
+import { emitirLembrete, emitirSessao, revogarLembrete } from "./emitirSessao";
 import { ErroNaoAutorizado } from "../../shared/erros/ErroNaoAutorizado";
 import { ErroMuitasTentativas } from "../../shared/erros/ErroMuitasTentativas";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
@@ -27,7 +27,10 @@ export function criarLimitesLogin(): LimitesLogin {
     return { porEmailEIp: new LimiteTentativas(5, QUINZE_MINUTOS), porIp: new LimiteTentativas(30, QUINZE_MINUTOS) };
 }
 
-/** RF-001: login por e-mail e senha, com token de acesso e refresh token. */
+/**
+ * RF-001: login por e-mail e senha, com token de acesso e refresh token. Uma conta lembrada por
+ * navegador: login certo sempre revoga o lembrete do cookie recebido; com `manterConectado`, emite outro.
+ */
 export default class LoginUsuario {
     readonly usuarioRepository: UsuarioRepositoryInterface;
 
@@ -38,7 +41,7 @@ export default class LoginUsuario {
         this.usuarioRepository = repositoryFactory.criarUsuarioRepository();
     }
 
-    async execute(input: LoginUsuarioInput, ip = "desconhecido"): Promise<LoginUsuarioOutput> {
+    async execute(input: LoginUsuarioInput, ip = "desconhecido", lembreteAnterior?: string | null): Promise<LoginUsuarioOutput> {
         const email = String(input.email ?? "")
             .trim()
             .toLowerCase();
@@ -60,6 +63,9 @@ export default class LoginUsuario {
             throw new ErroNaoAutorizado(MENSAGEM_CREDENCIAIS_INVALIDAS);
         }
         this.limites.porEmailEIp.limpar(chavePar);
-        return emitirSessao(this.repositoryFactory, usuario);
+        await revogarLembrete(this.repositoryFactory, lembreteAnterior);
+        const sessao = await emitirSessao(this.repositoryFactory, usuario);
+        if (input.manterConectado !== true) return sessao;
+        return { ...sessao, lembrete: await emitirLembrete(this.repositoryFactory, usuario) };
     }
 }

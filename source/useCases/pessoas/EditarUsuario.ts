@@ -4,7 +4,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroConflito } from "../../shared/erros/ErroConflito";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirDominioKonvex, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
 import EditarUsuarioInput from "./EditarUsuarioInput";
 
 /**
@@ -22,6 +22,7 @@ export default class EditarUsuario {
         const email = String(input.email ?? atual.email)
             .trim()
             .toLowerCase();
+        if (email !== atual.email) exigirDominioKonvex(email);
         const porEmail = await usuarios.buscarPorEmail(email);
         if (porEmail && porEmail.codigo !== atual.codigo) {
             throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");

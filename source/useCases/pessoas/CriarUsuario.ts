@@ -1,5 +1,4 @@
 import { ErroConflito } from "../../shared/erros/ErroConflito";
-import { hash } from "bcrypt";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import Usuario from "../../domain/entity/Usuario";
@@ -8,8 +7,8 @@ import { hoje } from "../../domain/entity/Participacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
-import { validarNovaSenha } from "../auth/AlterarSenha";
+import { exigirDominioKonvex, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import GerirLinkSenha from "../auth/GerirLinkSenha";
 import CriarUsuarioInput from "./CriarUsuarioInput";
 import CriarUsuarioOutput from "./CriarUsuarioOutput";
 
@@ -24,10 +23,10 @@ export default class CriarUsuario {
     }
 
     async execute(input: CriarUsuarioInput): Promise<CriarUsuarioOutput> {
-        validarNovaSenha(input.senha);
         const email = String(input.email ?? "")
             .trim()
             .toLowerCase();
+        exigirDominioKonvex(email);
         if (await this.usuarioRepository.buscarPorEmail(email)) {
             throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
         }
@@ -52,7 +51,7 @@ export default class CriarUsuario {
             email,
             input.perfil,
             status !== StatusPessoa.INATIVO,
-            await hash(input.senha, 10),
+            "", // sem senha: a pessoa define pelo link do convite
             senioridade,
             undefined,
             { ...detalhes, status, dataEntrada: detalhes.dataEntrada ?? hoje() },
@@ -63,6 +62,7 @@ export default class CriarUsuario {
             throw new ErroConflito(MENSAGENS_DE_ERRO.USUARIO.EMAIL_JA_CADASTRADO, "EMAIL_JA_CADASTRADO");
         }
         // Área e cargo são períodos, abertos depois pela gestão (sessão 23a): a pessoa nasce sem áreas.
-        return usuario;
+        const conviteEnviado = usuario.ativo ? await new GerirLinkSenha(this.repositoryFactory).emitir(usuario, "convite") : false;
+        return { usuario, conviteEnviado };
     }
 }
