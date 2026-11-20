@@ -21,6 +21,7 @@ export const MENSAGENS_DE_ERRO = {
 
     USUARIO: {
         EMAIL_PESSOAL_INVALIDO: "O e-mail pessoal (emailPessoal) deve ser um e-mail válido de até 254 caracteres.",
+        MOTIVO_SAIDA_OBRIGATORIO: "Informe o motivo da saída (motivoSaida).",
         MOTIVO_SAIDA_LONGO: "O motivo da saída (motivoSaida) deve ter até 500 caracteres.",
         SAIDA_NO_FUTURO: "A data de saída (dataSaida) não pode ser no futuro.",
         NAO_ENCONTRADO: "Usuário não encontrado.",

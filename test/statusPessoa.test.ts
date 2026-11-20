@@ -5,6 +5,7 @@ import ObterPerfilPessoa from "../source/useCases/pessoas/ObterPerfilPessoa";
 import Area from "../source/domain/entity/Area";
 import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea from "../source/domain/entity/PeriodoArea";
+import { hoje } from "../source/domain/entity/Participacao";
 import { criarContexto, criarProjeto } from "./fixtures";
 
 describe("Status de pessoa (RF-011, RN-01)", () => {
@@ -34,7 +35,11 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
     it("a saída encerra as participações, mas o histórico continua no perfil (CT-012)", async () => {
         const { factory, membro } = await criarContexto();
         await criarProjeto(factory, membro);
-        const resultado = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.INATIVO });
+        const resultado = await new AlterarStatusPessoa(factory).execute({
+            codigo: membro.codigo,
+            status: StatusPessoa.INATIVO,
+            motivoSaida: "Formou-se",
+        });
         expect(resultado.participacoesEncerradas).toBe(1);
         expect(resultado.usuario.dataSaida).not.toBeNull();
 
@@ -56,6 +61,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         const resultado = await new AlterarStatusPessoa(factory).execute({
             codigo: membro.codigo,
             status: StatusPessoa.INATIVO,
+            motivoSaida: "Formou-se",
             dataSaida: saida,
             encerrarParticipacoes: false,
         });
@@ -79,9 +85,62 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         const resultado = await new AlterarStatusPessoa(factory).execute({
             codigo: membro.codigo,
             status: StatusPessoa.INATIVO,
+            motivoSaida: "Formou-se",
             dataSaida: saida,
             encerrarParticipacoes: false,
         });
         expect(resultado.periodosEncerrados).toBe(2);
+    });
+});
+
+describe("Motivo da saída e fim do trainee (25b)", () => {
+    const sair = (factory: any, codigo: string, extra: object = {}) =>
+        new AlterarStatusPessoa(factory).execute({ codigo, status: StatusPessoa.INATIVO, ...extra });
+
+    it.each([undefined, "", "   ", null])("Ativo -> Inativo sem motivo (%p) dá MOTIVO_SAIDA_OBRIGATORIO", async (motivo) => {
+        const { factory, membro } = await criarContexto();
+        await expect(sair(factory, membro.codigo, { motivoSaida: motivo })).rejects.toMatchObject({ codigo: "MOTIVO_SAIDA_OBRIGATORIO" });
+    });
+
+    it("com motivo grava motivo e data de saída", async () => {
+        const { factory, membro } = await criarContexto();
+        const { usuario } = await sair(factory, membro.codigo, { motivoSaida: "  Formou-se " });
+        expect(usuario.motivoSaida).toBe("Formou-se");
+        expect(usuario.dataSaida).not.toBeNull();
+    });
+
+    it("Inativo -> Inativo sem motivo mantém o antigo e com motivo novo troca", async () => {
+        const { factory, membro } = await criarContexto();
+        await sair(factory, membro.codigo, { motivoSaida: "Formou-se" });
+        const corrigida = new Date("2026-01-10T00:00:00.000Z");
+        const a = await sair(factory, membro.codigo, { dataSaida: corrigida });
+        expect(a.usuario.motivoSaida).toBe("Formou-se");
+        expect(a.usuario.dataSaida).toEqual(corrigida);
+        const b = await sair(factory, membro.codigo, { motivoSaida: "Mudou de cidade" });
+        expect(b.usuario.motivoSaida).toBe("Mudou de cidade");
+    });
+
+    it("Inativo -> Ativo apaga motivo e data de saída", async () => {
+        const { factory, membro } = await criarContexto();
+        await sair(factory, membro.codigo, { motivoSaida: "Formou-se" });
+        const { usuario } = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.ATIVO });
+        expect(usuario.motivoSaida).toBeNull();
+        expect(usuario.dataSaida).toBeNull();
+    });
+
+    it("Trainee -> Ativo grava fimTrainee; Ativo -> Ativo não mexe; Trainee -> Inativo não grava", async () => {
+        const { factory, membro } = await criarContexto();
+        const repo = factory.criarUsuarioRepository();
+        await repo.editar(membro.copiar({ status: StatusPessoa.TRAINEE }));
+        const { usuario } = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.ATIVO });
+        expect(usuario.fimTrainee).toEqual(hoje());
+        await repo.editar(usuario.copiar({ fimTrainee: new Date("2026-03-03T00:00:00.000Z") }));
+        const de = await new AlterarStatusPessoa(factory).execute({ codigo: membro.codigo, status: StatusPessoa.ATIVO });
+        expect(de.usuario.fimTrainee).toEqual(new Date("2026-03-03T00:00:00.000Z"));
+
+        const { factory: f2, membro: m2 } = await criarContexto();
+        await f2.criarUsuarioRepository().editar(m2.copiar({ status: StatusPessoa.TRAINEE }));
+        const s = await sair(f2, m2.codigo, { motivoSaida: "Desistiu" });
+        expect(s.usuario.fimTrainee).toBeNull();
     });
 });

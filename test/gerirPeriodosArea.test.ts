@@ -106,7 +106,12 @@ describe("GerirPeriodosArea", () => {
         const { factory, gerir, membro, gerente, projetos } = await contexto();
         await gerir.criar(membro.codigo, { codigoArea: projetos.codigo, inicio: dia("2025-02-01") }, gerente.codigo);
         const status = new AlterarStatusPessoa(factory);
-        await status.execute({ codigo: membro.codigo, status: StatusPessoa.INATIVO, dataSaida: dia("2025-12-01") });
+        await status.execute({
+            codigo: membro.codigo,
+            status: StatusPessoa.INATIVO,
+            motivoSaida: "Formou-se",
+            dataSaida: dia("2025-12-01"),
+        });
 
         // Fora da EJ, período em aberto é recusado.
         await expect(
@@ -155,6 +160,7 @@ describe("GerirPeriodosArea", () => {
             new AlterarStatusPessoa(factory).execute({
                 codigo: membro.codigo,
                 status: StatusPessoa.INATIVO,
+                motivoSaida: "Formou-se",
                 dataSaida: new Date(hoje().getTime() + 86_400_000),
             }),
         ).rejects.toMatchObject({ codigo: "SAIDA_NO_FUTURO" });

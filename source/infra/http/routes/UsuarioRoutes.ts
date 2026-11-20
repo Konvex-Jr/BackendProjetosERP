@@ -333,6 +333,7 @@ export default class UsuarioRoutes implements ModelRoutes {
                 codigo: alvo.codigo,
                 status: lerStatusPessoa(body.status)!,
                 dataSaida: lerData(body.dataSaida, "dataSaida"),
+                motivoSaida: body.motivoSaida,
                 encerrarParticipacoes: body.encerrarParticipacoes !== false,
             });
             // Trainee que vira Ativo continua nas áreas: a resposta traz as atuais.
@@ -344,7 +345,7 @@ export default class UsuarioRoutes implements ModelRoutes {
             const alvo = await this.buscarAlvo(params.codigo);
             const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
             if (gestor.codigo === alvo.codigo) throw new ErroProibido("Você não pode inativar a própria conta.");
-            await new AlterarStatusPessoa(f).execute({ codigo: alvo.codigo, status: StatusPessoa.INATIVO });
+            await new AlterarStatusPessoa(f).execute({ codigo: alvo.codigo, status: StatusPessoa.INATIVO, motivoSaida: body.motivoSaida });
             return { message: "Pessoa inativada. O histórico foi preservado." };
         });
     }

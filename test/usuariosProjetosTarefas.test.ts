@@ -47,7 +47,7 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
     });
 
     test("inativa usuário", async () => {
-        await new InativarUsuario(factory).execute(membro.codigo);
+        await new InativarUsuario(factory).execute(membro.codigo, "Formou-se");
         expect((await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo))?.ativo).toBe(false);
     });
 

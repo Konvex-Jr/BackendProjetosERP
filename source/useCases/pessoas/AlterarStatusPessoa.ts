@@ -11,6 +11,8 @@ export interface AlterarStatusPessoaInput {
     status: StatusPessoa;
     /** Data de saída para Inativo (padrão: hoje). */
     dataSaida?: Date | null;
+    /** Obrigatório ao mudar para Inativo; em Inativo → Inativo só troca se vier preenchido. */
+    motivoSaida?: string | null;
     /**
      * Se verdadeiro (padrão), encerra as participações em aberto com a mesma data de saída.
      * A decisão final está em aberto (QA-31); por isso a pessoa que faz a mudança escolhe.
@@ -50,8 +52,16 @@ export default class AlterarStatusPessoa {
         if (saindo && input.dataSaida && input.dataSaida.getTime() > hoje().getTime()) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.SAIDA_NO_FUTURO, "SAIDA_NO_FUTURO");
         }
+        const motivoInformado = input.motivoSaida === undefined || input.motivoSaida === null ? "" : String(input.motivoSaida).trim();
+        const entrandoNaSaida = !STATUS_DE_SAIDA.includes(atual.status) && saindo;
+        if (entrandoNaSaida && !motivoInformado) {
+            throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.MOTIVO_SAIDA_OBRIGATORIO, "MOTIVO_SAIDA_OBRIGATORIO");
+        }
         const dataSaida = saindo ? (input.dataSaida ?? atual.dataSaida ?? hoje()) : null;
-        const usuario = atual.copiar({ status: input.status, dataSaida });
+        const motivoSaida = saindo ? motivoInformado || atual.motivoSaida : null;
+        // O fim do período de trainee vale só na passagem de Trainee para Ativo.
+        const fimTrainee = atual.status === StatusPessoa.TRAINEE && input.status === StatusPessoa.ATIVO ? hoje() : undefined;
+        const usuario = atual.copiar({ status: input.status, dataSaida, motivoSaida, fimTrainee });
         await usuarios.editar(usuario);
 
         let participacoesEncerradas = 0;
