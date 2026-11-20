@@ -33,7 +33,8 @@ export interface DetalhesPessoa {
     motivoSaida?: string | null;
     /** Dia em que deixou de ser trainee. */
     fimTrainee?: Date | null;
-    semestre?: number | null;
+    /** Ingresso na faculdade, `AAAA/1` ou `AAAA/2` (conferido em dadosPessoa; sessão 25b). */
+    ingresso?: string | null;
     /** Vem dos períodos (preencherAreasAtuais); a pessoa não grava área nem cargo. */
     areas?: AreaAtual[];
     dataEntrada?: Date | null;
@@ -70,7 +71,7 @@ export default class Usuario {
     readonly emailPessoal: string | null;
     readonly motivoSaida: string | null;
     readonly fimTrainee: Date | null;
-    readonly semestre: number | null;
+    readonly ingresso: string | null;
     readonly areas: AreaAtual[];
     readonly dataEntrada: Date | null;
     readonly dataSaida: Date | null;
@@ -107,10 +108,7 @@ export default class Usuario {
         this.emailPessoal = emailPessoal ? emailPessoal.toLowerCase() : null;
         this.motivoSaida = textoOuNulo(detalhes.motivoSaida);
         this.fimTrainee = detalhes.fimTrainee ?? null;
-        this.semestre =
-            detalhes.semestre === undefined || detalhes.semestre === null || (detalhes.semestre as any) === ""
-                ? null
-                : Number(detalhes.semestre);
+        this.ingresso = textoOuNulo(detalhes.ingresso);
         this.areas = detalhes.areas ?? [];
         this.dataEntrada = detalhes.dataEntrada ?? null;
         this.dataSaida = detalhes.dataSaida ?? null;
@@ -150,7 +148,7 @@ export default class Usuario {
             emailPessoal: pick("emailPessoal"),
             motivoSaida: pick("motivoSaida"),
             fimTrainee: pick("fimTrainee"),
-            semestre: pick("semestre"),
+            ingresso: pick("ingresso"),
             areas: pick("areas"),
             dataEntrada: pick("dataEntrada"),
             dataSaida: pick("dataSaida"),
@@ -179,7 +177,7 @@ export default class Usuario {
             emailPessoal: this.emailPessoal,
             motivoSaida: this.motivoSaida,
             fimTrainee: this.fimTrainee,
-            semestre: this.semestre,
+            ingresso: this.ingresso,
             areas: this.areas,
             dataEntrada: this.dataEntrada,
             dataSaida: this.dataSaida,
@@ -212,10 +210,6 @@ export default class Usuario {
         // EditarUsuario exigem de todos os perfis cadastrados pela tela.
         if (this.perfil === PerfilUsuario.MEMBRO && !this.senioridade) {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
-        }
-
-        if (this.semestre !== null && (!Number.isInteger(this.semestre) || this.semestre < 1 || this.semestre > 20)) {
-            throw new ErroValidacao("O semestre deve ser um número entre 1 e 20.", "SEMESTRE_INVALIDO");
         }
 
         for (const [campo, valor] of [

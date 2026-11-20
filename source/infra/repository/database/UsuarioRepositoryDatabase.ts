@@ -9,7 +9,7 @@ import { normalizarBusca } from "../../../shared/texto";
 import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
 const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
-    nome_exibicao, foto, telefone, linkedin_url, curso, semestre,
+    nome_exibicao, foto, telefone, linkedin_url, curso, ingresso,
     data_entrada, data_saida, bio, calendario_url, github_url,
     email_pessoal, motivo_saida, fim_trainee`;
 
@@ -33,7 +33,7 @@ function valores(usuario: Usuario): unknown[] {
         usuario.telefone,
         usuario.linkedinUrl,
         usuario.curso,
-        usuario.semestre,
+        usuario.ingresso,
         dataParaSqlOuNulo(usuario.dataEntrada),
         dataParaSqlOuNulo(usuario.dataSaida),
         usuario.bio,

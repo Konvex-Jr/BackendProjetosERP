@@ -102,6 +102,8 @@ async function definirSenha(email) {
     await exigir("POST", `/auth/link-senha/${token}`, undefined, { senha: SENHA_FICTICIA, confirmacao: SENHA_FICTICIA });
 }
 
+const CURSOS_FICTICIOS = ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"];
+
 async function main() {
     const login = await exigir("POST", "/auth/login", undefined, { email: EMAIL, senha: SENHA });
     const dir = login.token;
@@ -110,10 +112,22 @@ async function main() {
     const pessoas = await exigir("GET", "/usuarios", dir);
     const porEmail = new Map(pessoas.map((p) => [p.email, p]));
 
-    // Curso é obrigatório na criação (sessão 25b): distribui os três; telefone mascarado; e-mail pessoal em parte.
-    const CURSOS = ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"];
+    // Perfil completo (sessão 25b): curso, telefone, e-mail pessoal, ingresso e calendário; quem fica sem
+    // eles cai na tela de completar o perfil (só a "Paula Pendente", de propósito). O diretor também.
+    // O diretor do seed nasce sem senioridade e a edição exige uma: define antes.
+    if (!login.usuario.senioridade) {
+        await exigir("PUT", `/usuarios/${login.usuario.codigo}`, dir, { codigoSenioridade: "senior" });
+    }
+    await exigir("PUT", "/auth/perfil", dir, {
+        curso: CURSOS_FICTICIOS[0],
+        telefone: "(11) 98888-0000",
+        emailPessoal: "dev.pessoal@exemplo.com",
+        ingresso: "2020/1",
+        calendarioUrl: "https://calendar.exemplo.com/dev",
+    });
+    const CURSOS = CURSOS_FICTICIOS;
     let contagemPessoas = 0;
-    async function pessoa(nome, email, perfil, extra = {}) {
+    async function pessoa(nome, email, perfil, extra = {}, soCurso = false) {
         if (porEmail.has(email)) return porEmail.get(email);
         const n = contagemPessoas++;
         const par = n % 2 === 0;
@@ -123,8 +137,14 @@ async function main() {
             perfil,
             codigoSenioridade: "junior",
             curso: CURSOS[n % CURSOS.length],
-            telefone: par ? `(11) 9${1000 + n}-${2000 + n}` : `(11) 3${100 + n}-${4000 + n}`,
-            ...(par ? { emailPessoal: `${email.split("@")[0]}@exemplo.com` } : {}),
+            ...(soCurso
+                ? {}
+                : {
+                      telefone: par ? `(11) 9${1000 + n}-${2000 + n}` : `(11) 3${100 + n}-${4000 + n}`,
+                      emailPessoal: `${email.split("@")[0]}@exemplo.com`,
+                      ingresso: `${2021 + (n % 4)}/${(n % 2) + 1}`,
+                      calendarioUrl: `https://calendar.exemplo.com/${email.split("@")[0]}`,
+                  }),
             ...extra,
         });
         await definirSenha(email);
@@ -154,6 +174,9 @@ async function main() {
             motivoSaida: "Mudou de cidade (fictício)",
         });
     }
+
+    // Perfil incompleto de propósito (tem curso; faltam telefone, e-mail pessoal, ingresso e calendário).
+    await pessoa("Paula Pendente", "paula@dev.konvex", "membro", {}, true);
 
     // Áreas, cargos e períodos (sessão 23a). Bia fica em duas áreas e tem um período antigo encerrado.
     const areasExistentes = await exigir("GET", "/areas", dir);

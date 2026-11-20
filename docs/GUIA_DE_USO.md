@@ -67,7 +67,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Na ficha de cada projeto, a aba **Biblioteca** mostra os itens ligados a ele que você pode ver.
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas no projeto geral de Inovação.
 
-**Meu perfil** (no menu): seus dados de contato e apresentação (telefone, e-mail pessoal, LinkedIn, GitHub, link do calendário, curso, semestre e bio), troca de senha e a sua foto.
+**Meu perfil** (no menu): seus dados de contato e apresentação (telefone, e-mail pessoal, LinkedIn, GitHub, link do calendário, curso, ingresso na faculdade e bio), troca de senha e a sua foto.
 - **Ocupação da semana**: percentual de horas da semana em relação ao teto do seu cargo (por padrão 10 h por semana; diretoria, presidência e vice-presidência, 20 h), com a barra (até 80% normal, de 81 a 100% atenção, acima disso alerta) e as setas para ver outras semanas. A lista mostra as tarefas que somam (título, projeto e horas na semana). Tarefa de projeto sigiloso a que você não tem acesso entra na linha **Outras tarefas**, só com as horas. O mesmo cartão aparece no perfil das outras pessoas.
 - **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
 - **Links**: GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.

@@ -1,10 +1,17 @@
 -- Migração 022 (sessão 25b): e-mail pessoal, motivo da saída, fim do trainee, cursos fixos e fim do status Alumni.
 -- Alumni antigo vira inativo com motivo 'Alumni' (a data de saída fica). A migração NÃO inventa fim_trainee:
 -- ninguém sabe a data real, então fica NULL até a gestão informar.
+-- Semestre atual sai; entra o ingresso na faculdade (AAAA/1 ou AAAA/2). O semestre antigo não vira
+-- ingresso: a pessoa preenche no primeiro acesso.
 ALTER TABLE usuarios
     ADD COLUMN IF NOT EXISTS email_pessoal VARCHAR(254),
     ADD COLUMN IF NOT EXISTS motivo_saida VARCHAR(500),
-    ADD COLUMN IF NOT EXISTS fim_trainee DATE;
+    ADD COLUMN IF NOT EXISTS fim_trainee DATE,
+    ADD COLUMN IF NOT EXISTS ingresso VARCHAR(6),
+    DROP COLUMN IF EXISTS semestre;
+
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_ingresso_formato;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_ingresso_formato CHECK (ingresso IS NULL OR ingresso ~ '^[0-9]{4}/[12]$');
 
 UPDATE usuarios SET motivo_saida = 'Alumni' WHERE status::text = 'alumni';
 

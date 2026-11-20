@@ -27,7 +27,7 @@ import PeriodoAreaRepositoryDatabase from "./PeriodoAreaRepositoryDatabase";
  */
 export const SELECT_USUARIO = `
     SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
-           u.nome_exibicao, u.foto, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.semestre,
+           u.nome_exibicao, u.foto, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.ingresso,
            u.data_entrada, u.data_saida, u.bio, u.email_pessoal, u.motivo_saida, u.fim_trainee,
            s.codigo AS senioridade_codigo,
            s.nome AS senioridade_nome,
@@ -79,7 +79,7 @@ export function usuarioDeLinha(linha: any): Usuario {
             calendarioUrl: linha.calendario_url,
             githubUrl: linha.github_url,
             curso: linha.curso,
-            semestre: linha.semestre,
+            ingresso: linha.ingresso,
             dataEntrada: linha.data_entrada,
             dataSaida: linha.data_saida,
             bio: linha.bio,

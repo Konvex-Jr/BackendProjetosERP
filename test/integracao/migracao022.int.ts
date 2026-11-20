@@ -83,16 +83,34 @@ descrever("migração 022 sobre a 021", () => {
         expect((await linha("Ati")).status).toBe("ativo");
     });
 
+    test("semestre sai, ingresso entra com CHECK do formato", async () => {
+        const colunas = (
+            await pool.query(
+                "SELECT column_name FROM information_schema.columns WHERE table_name = 'usuarios' AND column_name IN ('semestre', 'ingresso')",
+            )
+        ).rows.map((c) => c.column_name);
+        expect(colunas).toEqual(["ingresso"]);
+        expect((await linha("Ati")).ingresso).toBeNull();
+        await pool.query("UPDATE usuarios SET ingresso = '2025/2' WHERE nome = 'Ati'");
+        for (const ruim of ["2025/3", "25/1", "2025-1", "abc"]) {
+            await expect(pool.query("UPDATE usuarios SET ingresso = $1 WHERE nome = 'Ati'", [ruim])).rejects.toThrow(
+                /usuarios_ingresso_formato/,
+            );
+        }
+    });
+
     test("o repositório grava e lê e-mail pessoal, motivo e fim do trainee", async () => {
         const repo = new UsuarioRepositoryDatabase(new PgConexao(pool));
         const ina = await repo.buscarPorEmail("ina@x.com");
         const editado = ina!.copiar({
             emailPessoal: "Ina.Pessoal@Gmail.com",
+            ingresso: "2024/1",
             motivoSaida: "Mudou de cidade",
             fimTrainee: new Date("2025-06-10T12:00:00Z"),
         });
         await repo.editar(editado);
         const lido = await repo.buscarPorCodigo(ina!.codigo);
+        expect(lido!.ingresso).toBe("2024/1");
         expect(lido!.emailPessoal).toBe("ina.pessoal@gmail.com");
         expect(lido!.motivoSaida).toBe("Mudou de cidade");
         expect(lido!.fimTrainee!.toISOString().slice(0, 10)).toBe("2025-06-10");

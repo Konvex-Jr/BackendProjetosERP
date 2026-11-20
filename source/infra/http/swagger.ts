@@ -607,7 +607,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/perfil": {
         put: operation(
             ["Autenticação"],
-            "Editar os próprios dados (telefone, emailPessoal, LinkedIn, calendarioUrl, githubUrl, curso, semestre, bio)",
+            "Editar os próprios dados (telefone, emailPessoal, LinkedIn, calendarioUrl, githubUrl, curso, ingresso (AAAA/1 ou AAAA/2), bio)",
             json,
         ),
     },

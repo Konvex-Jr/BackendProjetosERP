@@ -511,7 +511,7 @@ A última tem que responder "Se o e-mail estiver cadastrado, você vai receber u
 **Rollback:** a 021 só acrescenta tabela e coluna. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
 
 ### Publicação da sessão 25b (pessoas: curso, e-mail pessoal, motivo da saída e fim do trainee): migração 022
-A migração `022_pessoas.sql` acrescenta `usuarios.email_pessoal`, `motivo_saida` e `fim_trainee`, normaliza os cursos e converte **Alumni em Inativo** (com `motivo_saida = 'Alumni'`). Daqui em diante só existem os status Ativo, Trainee e Inativo, e só três cursos: Ciência da Computação, Engenharia Mecânica e Engenharia Elétrica. Publicar **backend e frontend juntos**.
+A migração `022_pessoas.sql` acrescenta `usuarios.email_pessoal`, `motivo_saida` e `fim_trainee`, normaliza os cursos troca o semestre pelo ingresso e converte **Alumni em Inativo** (com `motivo_saida = 'Alumni'`). Daqui em diante só existem os status Ativo, Trainee e Inativo, e só três cursos: Ciência da Computação, Engenharia Mecânica e Engenharia Elétrica. Publicar **backend e frontend juntos**.
 
 **Parte 1, consulta antes (na VPS):**
 ```bash
@@ -556,7 +556,9 @@ Tem que aparecer `Migração aplicada: 022_pessoas.sql`. Depois repetir as duas 
 
 **Parte 5, gestão preenche os dados:** em **Pessoas**, preencher os cursos que ficaram vazios e o **fim do trainee** de quem já foi trainee (a data só é gravada sozinha daqui em diante). Conferir que quem era Alumni aparece como Inativo com o motivo "Alumni".
 
-**Rollback:** a 022 só acrescenta colunas e converte dados. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
+**Perfil obrigatório (avisar o time):** a 022 também **apaga o semestre** (`usuarios.semestre`; o ingresso na faculdade `AAAA/1` ou `AAAA/2` o substitui e começa vazio). Depois da publicação, **todos completam o perfil ao entrar** (curso, telefone, e-mail pessoal, ingresso e link do calendário), **inclusive a diretoria**: a tela bloqueia até preencher. Avisar o time antes, para ninguém estranhar.
+
+**Rollback:** a 022 acrescenta colunas, converte dados e apaga o semestre. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
 
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
