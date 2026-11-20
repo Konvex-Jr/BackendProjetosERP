@@ -4,6 +4,8 @@ export interface RegistroRefreshToken {
     tokenHash: string;
     expiraEm: Date;
     revogadoEm: Date | null;
+    /** "Manter conectado": o refresh vale 15 dias contados do login. */
+    lembrar: boolean;
 }
 
 /** Guarda só o hash do refresh token, nunca o token em si. */

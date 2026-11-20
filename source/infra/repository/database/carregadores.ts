@@ -62,20 +62,29 @@ export function usuarioDeLinha(linha: any): Usuario {
           )
         : null;
 
-    return new Usuario(linha.nome, linha.email, linha.perfil as PerfilUsuario, linha.ativo, linha.senha_hash, senioridade, linha.codigo, {
-        status: (linha.status as StatusPessoa) ?? undefined,
-        nomeExibicao: linha.nome_exibicao,
-        foto: linha.foto,
-        telefone: linha.telefone,
-        linkedinUrl: linha.linkedin_url,
-        calendarioUrl: linha.calendario_url,
-        githubUrl: linha.github_url,
-        curso: linha.curso,
-        semestre: linha.semestre,
-        dataEntrada: linha.data_entrada,
-        dataSaida: linha.data_saida,
-        bio: linha.bio,
-    });
+    return new Usuario(
+        linha.nome,
+        linha.email,
+        linha.perfil as PerfilUsuario,
+        linha.ativo,
+        linha.senha_hash ?? "",
+        senioridade,
+        linha.codigo,
+        {
+            status: (linha.status as StatusPessoa) ?? undefined,
+            nomeExibicao: linha.nome_exibicao,
+            foto: linha.foto,
+            telefone: linha.telefone,
+            linkedinUrl: linha.linkedin_url,
+            calendarioUrl: linha.calendario_url,
+            githubUrl: linha.github_url,
+            curso: linha.curso,
+            semestre: linha.semestre,
+            dataEntrada: linha.data_entrada,
+            dataSaida: linha.data_saida,
+            bio: linha.bio,
+        },
+    );
 }
 
 /** Pessoas pelos códigos, num Map por código. Códigos repetidos são consultados uma vez só. */

@@ -20,6 +20,7 @@ import ColunaProjetoRepositoryDatabase from "./database/ColunaProjetoRepositoryD
 import AreaRepositoryDatabase from "./database/AreaRepositoryDatabase";
 import CargoRepositoryDatabase from "./database/CargoRepositoryDatabase";
 import PeriodoAreaRepositoryDatabase from "./database/PeriodoAreaRepositoryDatabase";
+import LinkSenhaRepositoryDatabase from "./database/LinkSenhaRepositoryDatabase";
 import RefreshTokenRepositoryDatabase from "./database/RefreshTokenRepositoryDatabase";
 import ComentarioTarefaRepositoryDatabase from "./database/ComentarioTarefaRepositoryDatabase";
 import BibliotecaRepositoryDatabase from "./database/BibliotecaRepositoryDatabase";
@@ -131,5 +132,9 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarRefreshTokenRepository() {
         return new RefreshTokenRepositoryDatabase(this.conexao);
+    }
+
+    criarLinkSenhaRepository() {
+        return new LinkSenhaRepositoryDatabase(this.conexao);
     }
 }

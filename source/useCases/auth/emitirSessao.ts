@@ -45,6 +45,7 @@ export async function emitirSessao(factory: RepositoryFactoryInterface, usuario:
         tokenHash: hashToken(refreshToken),
         expiraEm,
         revogadoEm: null,
+        lembrar: false,
     });
     return { token: gerarTokenAcesso(usuario), refreshToken, refreshTokenExpiraEm: expiraEm, usuario };
 }

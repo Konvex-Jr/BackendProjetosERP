@@ -22,6 +22,7 @@ import ArmazenamentoFotosMemoria from "../arquivos/ArmazenamentoFotosMemoria";
 import AreaRepositoryMemory from "./memory/AreaRepositoryMemory";
 import CargoRepositoryMemory from "./memory/CargoRepositoryMemory";
 import PeriodoAreaRepositoryMemory from "./memory/PeriodoAreaRepositoryMemory";
+import LinkSenhaRepositoryMemory from "./memory/LinkSenhaRepositoryMemory";
 import RefreshTokenRepositoryMemory from "./memory/RefreshTokenRepositoryMemory";
 import ComentarioTarefaRepositoryMemory from "./memory/ComentarioTarefaRepositoryMemory";
 
@@ -83,6 +84,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
+    private readonly linkSenhaRepository = new LinkSenhaRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly bibliotecaRepository = new BibliotecaRepositoryMemory();
     private readonly anexoRepository = new AnexoRepositoryMemory();
@@ -142,5 +144,9 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarRefreshTokenRepository() {
         return this.refreshTokenRepository;
+    }
+
+    criarLinkSenhaRepository() {
+        return this.linkSenhaRepository;
     }
 }

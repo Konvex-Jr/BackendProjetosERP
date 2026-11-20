@@ -10,15 +10,15 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
 
     async criar(r: RegistroRefreshToken): Promise<void> {
         await this.conexao.consultar(
-            `INSERT INTO refresh_tokens (codigo, usuario_codigo, token_hash, expira_em, revogado_em)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [r.codigo, r.codigoUsuario, r.tokenHash, r.expiraEm, r.revogadoEm],
+            `INSERT INTO refresh_tokens (codigo, usuario_codigo, token_hash, expira_em, revogado_em, lembrar)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [r.codigo, r.codigoUsuario, r.tokenHash, r.expiraEm, r.revogadoEm, r.lembrar],
         );
     }
 
     async buscarPorHash(tokenHash: string): Promise<RegistroRefreshToken | null> {
         const linhas = await this.conexao.consultar(
-            "SELECT codigo, usuario_codigo, token_hash, expira_em, revogado_em FROM refresh_tokens WHERE token_hash = $1",
+            "SELECT codigo, usuario_codigo, token_hash, expira_em, revogado_em, lembrar FROM refresh_tokens WHERE token_hash = $1",
             [tokenHash],
         );
         if (!linhas.length) return null;
@@ -29,6 +29,7 @@ export default class RefreshTokenRepositoryDatabase implements RefreshTokenRepos
             tokenHash: l.token_hash,
             expiraEm: l.expira_em,
             revogadoEm: l.revogado_em,
+            lembrar: l.lembrar,
         };
     }
 
