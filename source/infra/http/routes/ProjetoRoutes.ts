@@ -26,7 +26,6 @@ import { hoje } from "../../../shared/datas";
 import { normalizarBusca } from "../../../shared/texto";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
-import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import GerirColunasProjeto from "../../../useCases/projetos/GerirColunasProjeto";
 import { papelNoProjeto } from "../../../shared/seguranca/regrasTarefa";
@@ -152,11 +151,8 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
-            const atual = await this.carregarParaEscrita(usuario, params.codigo);
+            await this.carregarParaEscrita(usuario, params.codigo);
             const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
-            if (sigiloso !== undefined && sigiloso !== atual.sigiloso && !podeGerirAcesso(usuario, atual)) {
-                throw new ErroAplicacao(MENSAGENS_DE_ERRO.PROJETO.SIGILO_SEM_PERMISSAO, "SIGILO_SEM_PERMISSAO", 403);
-            }
             return new EditarProjeto(f).execute({
                 codigo: params.codigo,
                 sigiloso,

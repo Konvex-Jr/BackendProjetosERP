@@ -115,8 +115,7 @@ const swaggerSpecification = {
                     codigosMembros: { type: "array", items: { type: "string" } },
                     sigiloso: {
                         type: "boolean",
-                        description:
-                            "Projeto sigiloso. Na edição, omitido mantém o atual; mudar só o diretor e quem criou o projeto (403 SIGILO_SEM_PERMISSAO).",
+                        description: "Projeto sigiloso. Na edição, omitido mantém o atual; quem edita o projeto pode marcar e desmarcar.",
                     },
                     acesso: {
                         type: "array",

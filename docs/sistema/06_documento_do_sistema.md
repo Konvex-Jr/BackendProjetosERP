@@ -85,7 +85,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
   - **Vê completo:** diretor (`projetos.verSigilosos`), quem criou o projeto, quem está na lista de acesso (`projeto_acesso`) e a **equipe atual**. Quem saiu da equipe **perde** o acesso (no projeto normal, ex-membro continua vendo).
   - **Gerente fora:** vê só o **resumo** (`resumo: true`) em `GET /projetos` e `GET /projetos/:codigo`: nome, situação, datas, contagem de tarefas, equipe e alocação; nunca cliente, descrição nem tarefas. As demais rotas respondem 403 `PROJETO_SIGILOSO`. Na lista, filtro por pessoa, área e responsável não vale para o resumo, e a busca é só pelo nome.
   - **Membro ou trainee fora:** 404, na lista e nas rotas do projeto.
-  - **Quem muda o sigilo e a lista de acesso:** diretor e quem criou (`podeGerirAcesso`; `PUT /projetos/:codigo/acesso` com `{ codigos }`; mudar `sigiloso` no `PUT /projetos/:codigo` por outra pessoa é 403 `SIGILO_SEM_PERMISSAO`). Gerente fora não edita nada do projeto.
+  - **Quem muda o sigilo e a lista de acesso:** marcar e desmarcar `sigiloso` (`PUT /projetos/:codigo`) é de quem edita o projeto (`projetos.editar` + acesso completo, como qualquer edição). A lista de acesso (`PUT /projetos/:codigo/acesso` com `{ codigos }`) segue só com diretor e quem criou (`podeGerirAcesso`). Gerente fora não edita nada do projeto.
   - **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`, `regrasTarefa.ts`). Membro ou trainee fora recebe o mesmo 404 da tarefa inexistente ("Tarefa não encontrada."); o gerente fora, 403. Anexos dessas tarefas: 404 para todos que não veem, gerente fora inclusive (decisão: esconde mais e segue a sessão 19).
   - **Biblioteca:** itens ligados a sigiloso que a pessoa não vê completo somem para todos os papéis, gestão inclusive, e ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
@@ -189,7 +189,8 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | Ver completo (ficha, tarefas, equipe, Biblioteca) | todos | se criou, está na lista de acesso ou na equipe atual | se está na lista de acesso ou na equipe atual (ex-membro: não) | `projetos.verSigilosos` / `acessoAoProjeto` |
 | Ver só o resumo (nome, situação, datas, contagem de tarefas, equipe e alocação) | — (vê completo) | se é gerente fora (demais rotas: 403) | ❌ (404) | `acessoAoProjeto` = `resumo` / `ProjetoRoutes.paraResposta` |
 | Criar projeto sigiloso e definir a lista de acesso inicial | ✅ | ✅ | ❌ | `projetos.editar` (`POST /projetos`) |
-| Mudar sigilo e lista de acesso | todos | se criou o projeto | ❌ | `podeGerirAcesso` / `projetos.verSigilosos` |
+| Marcar e desmarcar sigiloso (edição) | todos | se edita o projeto (acesso completo) | ❌ | `projetos.editar` (`PUT /projetos/:codigo`) |
+| Mudar a lista de acesso | todos | se criou o projeto | ❌ | `podeGerirAcesso` / `projetos.verSigilosos` |
 | Ver item da Biblioteca ligado ao sigiloso | só se vê completo | só se vê completo | trainee: sem Biblioteca; membro: só se vê completo | `regrasBiblioteca.ts` (sigiloso oculto) |
 | Tarefa do sigiloso (ver, editar, status, comentários) | ✅ | se vê completo (fora: 403) | se vê completo (fora: 404 igual ao da tarefa inexistente) | `regrasTarefa.ts` / `TarefaRoutes.carregar` |
 | Anexos de tarefa do sigiloso | ✅ | se vê completo (fora: **404**, não 403) | se vê completo (fora: 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |

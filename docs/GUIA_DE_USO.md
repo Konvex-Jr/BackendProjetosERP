@@ -128,7 +128,9 @@ Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confi
 
 **Itens da Biblioteca** ligados a um projeto sigiloso somem para quem não vê o projeto inteiro, inclusive para a gestão.
 
-**Mudar a lista de acesso ou tirar o sigilo:** só os diretores e quem criou o projeto. Na ficha do projeto, clique em **Editar**, mude **Visibilidade** ou **Quem mais pode ver o projeto** e salve (por trás, o sistema usa `PUT /projetos/:codigo/acesso`). A aba **Visão geral** mostra a visibilidade e **Quem mais vê**. Quem perdeu o login sai da lista no primeiro salvamento.
+**Marcar ou tirar o sigilo:** quem pode editar o projeto (acesso completo). Na ficha do projeto, clique em **Editar** e mude **Visibilidade**. Quem não está na equipe, nem é diretor, nem está na lista passa a ver só o resumo depois de marcar; o sistema pede confirmação antes.
+
+**Mudar a lista de acesso:** só os diretores e quem criou o projeto. Em **Editar**, mude **Quem mais pode ver o projeto** e salve (por trás, o sistema usa `PUT /projetos/:codigo/acesso`). A aba **Visão geral** mostra a visibilidade e **Quem mais vê**. Quem perdeu o login sai da lista no primeiro salvamento.
 
 ---
 

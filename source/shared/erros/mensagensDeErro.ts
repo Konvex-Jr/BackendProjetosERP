@@ -50,7 +50,6 @@ export const MENSAGENS_DE_ERRO = {
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
         SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
-        SIGILO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam o sigilo.",
         ACESSO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam a lista de acesso.",
         ACESSO_LISTA_INVALIDA: "A lista de acesso (codigos) deve ser uma lista de códigos de pessoas.",
         ACESSO_PESSOA_SEM_LOGIN: (codigo: string, nome?: string) =>
