@@ -4,7 +4,6 @@
  */
 export const MENSAGENS_DE_ERRO = {
     VALIDACAO: {
-        SENHA_CURTA: "A senha deve possuir pelo menos 6 caracteres.",
         EMAIL_INVALIDO: "O e-mail informado é inválido.",
         CAMPO_OBRIGATORIO: "O campo é obrigatório.",
         NOME_OBRIGATORIO: "O nome do usuário é obrigatório.",

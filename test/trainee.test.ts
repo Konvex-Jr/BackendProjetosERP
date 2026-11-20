@@ -29,7 +29,7 @@ describe("Trainee", () => {
             "tina@konvex.com.br",
             PerfilUsuario.MEMBRO,
             true,
-            await hash("senha-forte-1", 4),
+            await hash("Senha@forte1", 4),
             ctx.senioridade,
             "usr-tina",
             {
@@ -43,7 +43,7 @@ describe("Trainee", () => {
     afterEach(async () => servidor.fechar());
 
     it("faz login e renova a sessão", async () => {
-        const login = await servidor.chamar("post", "/auth/login", { corpo: { email: trainee.email, senha: "senha-forte-1" } });
+        const login = await servidor.chamar("post", "/auth/login", { corpo: { email: trainee.email, senha: "Senha@forte1" } });
         expect(login.status).toBe(200);
         const refresh = login.corpo.refreshToken;
         expect(refresh).toBeTruthy();
@@ -106,7 +106,7 @@ describe("Trainee", () => {
     });
 
     describe("sempre membro", () => {
-        const dados = { nome: "Novo", email: "novo@konvex.com.br", senha: "senha-forte-1", senioridade: { codigo: "pleno" } };
+        const dados = { nome: "Novo", email: "novo@konvex.com.br", senha: "Senha@forte1", senioridade: { codigo: "pleno" } };
 
         it("criar trainee gerente: 400 TRAINEE_SO_MEMBRO", async () => {
             const r = await servidor.chamar("post", "/usuarios", {

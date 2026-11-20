@@ -13,7 +13,7 @@ describe("Caso de uso LoginUsuario", () => {
     const dadosUsuario = {
         nome: "John",
         email: "john.doe@gmail.com.br",
-        senha: "senha123",
+        senha: "Konvex@123",
         perfil: PerfilUsuario.MEMBRO,
         senioridade: new SenioridadeUsuario("pleno", "Pleno", 75),
     };

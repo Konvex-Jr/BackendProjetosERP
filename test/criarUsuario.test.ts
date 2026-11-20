@@ -15,7 +15,7 @@ const senioridadePleno = new SenioridadeUsuario("pleno", "Pleno", 75);
 const inputValido = {
     nome: "John",
     email: "john.doe@konvex.com.br",
-    senha: "senha123",
+    senha: "Konvex@123",
     perfil: PerfilUsuario.MEMBRO,
     senioridade: senioridadePleno,
 };
@@ -39,10 +39,10 @@ test("Deve criar um usuário gerente com senioridade", async () => {
     expect(output.codigo).toBeTruthy();
 });
 
-test("Não deve criar um usuário com senha inferior a seis caracteres", async () => {
+test("Não deve criar um usuário com senha fraca", async () => {
     const promessa = criarUsuario.execute({ ...inputValido, senha: "12345" });
     await expect(promessa).rejects.toBeInstanceOf(ErroValidacao);
-    await expect(promessa).rejects.toThrow(MENSAGENS_DE_ERRO.VALIDACAO.SENHA_CURTA);
+    await expect(promessa).rejects.toThrow("A senha precisa ter pelo menos 8 caracteres");
 });
 
 test("Não deve criar um membro sem senioridade", async () => {

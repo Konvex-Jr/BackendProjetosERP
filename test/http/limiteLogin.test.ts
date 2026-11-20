@@ -12,7 +12,7 @@ describe("Limite de tentativas no login", () => {
         await new CriarUsuario(ctx.factory).execute({
             nome: "Carla",
             email: "carla@konvex.com.br",
-            senha: "senha-certa-123",
+            senha: "Senha@certa1",
             perfil: PerfilUsuario.GERENTE,
             senioridade: ctx.senioridade,
         });
@@ -25,7 +25,7 @@ describe("Limite de tentativas no login", () => {
 
     it("depois de 5 senhas erradas responde 429, mesmo com a senha certa", async () => {
         for (let i = 0; i < 5; i++) expect((await entrar("carla@konvex.com.br", "errada")).status).toBe(401);
-        const bloqueado = await entrar("carla@konvex.com.br", "senha-certa-123");
+        const bloqueado = await entrar("carla@konvex.com.br", "Senha@certa1");
         expect(bloqueado.status).toBe(429);
         expect(bloqueado.corpo.codigo).toBe("MUITAS_TENTATIVAS");
         expect(bloqueado.corpo.message).toMatch(/minuto/);
@@ -33,7 +33,7 @@ describe("Limite de tentativas no login", () => {
 
     it("o bloqueio vale só para o e-mail errado; login certo zera a contagem", async () => {
         for (let i = 0; i < 4; i++) await entrar("carla@konvex.com.br", "errada");
-        expect((await entrar("carla@konvex.com.br", "senha-certa-123")).status).toBe(200);
+        expect((await entrar("carla@konvex.com.br", "Senha@certa1")).status).toBe(200);
         for (let i = 0; i < 4; i++) expect((await entrar("carla@konvex.com.br", "errada")).status).toBe(401);
         expect((await entrar("outra@konvex.com.br", "errada")).status).toBe(401);
     });

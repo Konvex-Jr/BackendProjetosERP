@@ -100,7 +100,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         const membro = await chamar("POST", "/usuarios", dir, {
             nome: "Membro",
             email: "membro@teste.com",
-            senha: "SenhaMembro1",
+            senha: "SenhaMembro@1",
             perfil: "membro",
             codigoSenioridade: "junior",
             codigoArea: area.corpo.codigo,
@@ -110,15 +110,15 @@ descrever("fase 1 contra PostgreSQL", () => {
         const trainee = await chamar("POST", "/usuarios", dir, {
             nome: "Trainee",
             email: "trainee@teste.com",
-            senha: "SenhaTrainee1",
+            senha: "SenhaTrainee@1",
             perfil: "membro",
             codigoSenioridade: "trainee",
             status: "trainee",
         });
         expect(trainee.status).toBe(200);
-        expect((await entrar("trainee@teste.com", "SenhaTrainee1")).status).toBe(200);
+        expect((await entrar("trainee@teste.com", "SenhaTrainee@1")).status).toBe(200);
 
-        const loginMembro = await entrar("membro@teste.com", "SenhaMembro1");
+        const loginMembro = await entrar("membro@teste.com", "SenhaMembro@1");
         expect(loginMembro.status).toBe(200);
         const mem = loginMembro.corpo.token as string;
         expect((await chamar("POST", "/areas", mem, { nome: "X" })).status).toBe(403);
@@ -183,7 +183,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(part.ativa).toBe(false);
         expect(part.dataSaida).toBeTruthy();
         expect((await chamar("GET", `/usuarios/${membro.corpo.codigo}/perfil`, dir)).status).toBe(200);
-        expect((await entrar("membro@teste.com", "SenhaMembro1")).status).not.toBe(200);
+        expect((await entrar("membro@teste.com", "SenhaMembro@1")).status).not.toBe(200);
 
         // Logout revoga o refresh token
         const novo = await entrar("diretora@teste.com", "SenhaDiretora1");
@@ -301,11 +301,11 @@ descrever("fase 1 contra PostgreSQL", () => {
             const r = await chamar("POST", "/usuarios", dir, {
                 nome,
                 email,
-                senha: "SenhaCap123",
+                senha: "SenhaCap@123",
                 perfil: "membro",
                 codigoSenioridade: "junior",
             });
-            return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap123")).corpo.token as string };
+            return { codigo: r.corpo.codigo as string, token: (await entrar(email, "SenhaCap@123")).corpo.token as string };
         };
         const ines = await pessoa("Inês Instrutora", "ines@teste.com");
         const bia = await pessoa("Bia Cap", "bia.cap@teste.com");

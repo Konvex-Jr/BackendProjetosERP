@@ -134,7 +134,6 @@ export default class UsuarioRoutes implements ModelRoutes {
                 codigoUsuario: exigirAutenticado(body.user).codigo,
                 senhaAtual: body.senhaAtual,
                 novaSenha: body.novaSenha,
-                exigirSenhaAtual: true,
             });
             return { message: "Senha alterada. Entre novamente nos outros dispositivos." };
         });
@@ -275,13 +274,6 @@ export default class UsuarioRoutes implements ModelRoutes {
             });
             // Trainee que vira Ativo continua nas áreas: a resposta traz as atuais.
             return { ...resultado, usuario: await this.responderPessoa(resultado.usuario) };
-        });
-
-        this.http.route("put", "/usuarios/:codigo/senha", true, async (params: any, body: any) => {
-            const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
-            await new AlterarSenha(f).execute({ codigoUsuario: alvo.codigo, novaSenha: body.novaSenha, exigirSenhaAtual: false });
-            return { message: "Senha redefinida." };
         });
 
         // Compatibilidade: DELETE não exclui, só muda o status para Inativo (ADR-006).

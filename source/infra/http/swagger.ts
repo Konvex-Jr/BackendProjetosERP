@@ -558,7 +558,6 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/usuarios/{codigo}/status": {
         patch: operation(["Usuários"], "Mudar status: ativo, trainee, alumni, inativo (RF-011)", comCodigo(json)),
     },
-    "/usuarios/{codigo}/senha": { put: operation(["Usuários"], "Redefinir a senha de uma pessoa (gestores)", comCodigo(json)) },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
         post: operation(["Configurações"], "Criar área (diretores): { nome, codigoAreaPai?, ativa?, temGeral? }", json),

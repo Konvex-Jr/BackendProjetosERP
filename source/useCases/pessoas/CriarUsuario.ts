@@ -9,7 +9,7 @@ import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
-import { validarNovaSenha } from "../auth/AlterarSenha";
+import { validarNovaSenha } from "../../shared/seguranca/regraSenha";
 import CriarUsuarioInput from "./CriarUsuarioInput";
 import CriarUsuarioOutput from "./CriarUsuarioOutput";
 
