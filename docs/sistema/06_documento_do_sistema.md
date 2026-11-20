@@ -47,7 +47,13 @@
 Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações do catálogo e itens de menu). Ordem do menu: Dashboard, Tarefas, Projetos, Capacitações, Biblioteca, Visão Estratégica, Simular precificação, Pessoas, Configurações, Meu perfil.
 
 ### Pessoas (`/usuarios`, `/auth/*`, `/fotos`)
-- A gestão cadastra, edita, muda o status e redefine a senha. Criar, editar ou promover **diretor** exige também `pessoas.gerirDiretores` (`exigirPodeGerirPerfil`).
+- A gestão cadastra, edita, muda o status e **reenvia o link de senha**; ninguém vê nem define a senha de outra pessoa (`PUT /usuarios/:codigo/senha` saiu na 25a). Criar, editar ou promover **diretor** exige também `pessoas.gerirDiretores` (`exigirPodeGerirPerfil`).
+- **Conta e senha (sessão 25a, migração 021):** a pessoa nasce sem senha e recebe um **convite** por e-mail (`POST /usuarios`; reenvio em `POST /usuarios/:codigo/link-senha`, que vira redefinição quando já há senha). Quem cria a senha é ela, pelo link (`GET/POST /auth/link-senha/:token`, público).
+  - Link: token aleatório guardado só como hash, **uso único**, convite 72 h e redefinição 1 h. Link novo do mesmo tipo invalida os anteriores; usar um link invalida todos os da pessoa e revoga as sessões. O link vai só por e-mail: nunca na resposta da API nem em log de produção (`GerirLinkSenha`, `EnvioEmail*`).
+  - `POST /auth/esqueci-senha` (público, com limite por IP) responde sempre a mesma mensagem, 200, exista ou não o e-mail.
+  - Regra da senha nova (link e `PUT /auth/senha`): 8+ caracteres, maiúscula, número e caractere especial. O login não confere (senhas antigas entram).
+  - E-mail de pessoa nova ou alterado tem de terminar em `@${EMAIL_DOMINIO}` (sem a variável, não confere).
+  - "Manter conectado": cookie `konvex_lembrar` (`HttpOnly`, `SameSite=Strict`, `Secure` em produção, caminho `COOKIE_CAMINHO`), 15 dias do login, sem renovar o prazo. `POST /auth/retomar` troca o cookie por sessão nova e cookie novo; reapresentar um cookie já usado encerra todas as sessões da pessoa (e as duas chamadas simultâneas com o mesmo token são tratadas assim, `revogar` devolve se marcou).
 - Ninguém altera o próprio papel nem o próprio status, nem inativa a própria conta.
 - Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo. Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
@@ -152,10 +158,12 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 |---|---|---|---|---|
 | Ver lista de pessoas e perfis | ✅ | ✅ | ✅ | só login (`UsuarioRoutes`) |
 | Ver projetos no perfil de outra pessoa | todos | todos | só os em comum | `projetos.verTodos` + `participaOuParticipou` |
-| Editar o próprio contato e senha | ✅ | ✅ | ✅ | só login (`/auth/perfil`, `/auth/senha`) |
+| Editar o próprio contato e trocar a própria senha (regra de senha forte) | ✅ | ✅ | ✅ | só login (`/auth/perfil`, `/auth/senha`) |
 | Enviar, trocar e remover a própria foto | ✅ | ✅ | ✅ | só login (`/auth/foto`) |
 | Ver a foto de qualquer pessoa | ✅ (endereço público) | ✅ | ✅ | `GET /fotos/:arquivo`, sem login |
-| Cadastrar, editar, mudar status, redefinir senha de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
+| Cadastrar, editar, mudar status e reenviar o link de senha (convite ou redefinição) de membro ou gerente | ✅ | ✅ | ❌ | `pessoas.gerir` (`exigirPodeGerirPerfil`) |
+| Ver ou definir a senha de outra pessoa | ❌ | ❌ | ❌ | não existe rota; a senha só é criada pela própria pessoa, pelo link do e-mail |
+| Pedir "Esqueci a senha" e usar o link de convite/redefinição | qualquer pessoa, sem login | | | `/auth/esqueci-senha`, `/auth/link-senha/:token` (públicas, com limites) |
 | O mesmo para diretores (ou promover a diretor) | ✅ | ❌ | ❌ | `pessoas.gerirDiretores` |
 | Alterar o próprio papel ou status | ❌ | ❌ | ❌ | `UsuarioRoutes` (checagem explícita) |
 | Ver os períodos nas áreas de qualquer pessoa | ✅ | ✅ | ✅ | só login (`GET /usuarios/:codigo/periodos`) |
