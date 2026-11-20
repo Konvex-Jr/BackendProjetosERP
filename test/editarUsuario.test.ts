@@ -42,9 +42,11 @@ describe("curso, telefone e fim do trainee na edição (25b)", () => {
     test("pessoa sem curso edita só a bio; curso null ou vazio: CURSO_OBRIGATORIO", async () => {
         const { editar } = await pessoa();
         await expect(editar({ bio: "oi" })).resolves.toMatchObject({ bio: "oi" });
+        await expect(editar({ curso: null, bio: "a" })).resolves.toMatchObject({ curso: null });
+        await expect(editar({ curso: "", bio: "b" })).resolves.toMatchObject({ curso: null });
+        await expect(editar({ curso: "Engenharia Elétrica" })).resolves.toMatchObject({ curso: "Engenharia Elétrica" });
         await expect(editar({ curso: null })).rejects.toMatchObject({ codigo: "CURSO_OBRIGATORIO" });
         await expect(editar({ curso: "" })).rejects.toMatchObject({ codigo: "CURSO_OBRIGATORIO" });
-        await expect(editar({ curso: "Engenharia Elétrica" })).resolves.toMatchObject({ curso: "Engenharia Elétrica" });
     });
 
     test("telefone: máscara ou só dígitos passam; 123 barra; null limpa", async () => {
@@ -69,6 +71,11 @@ describe("curso, telefone e fim do trainee na edição (25b)", () => {
         await expect(editar({ dataEntrada: new Date(hojeSP().getTime() + 86_400_000) })).rejects.toMatchObject({
             codigo: "FIM_TRAINEE_ANTES_DA_ENTRADA",
         });
+    });
+
+    test("fimTrainee null limpa a data", async () => {
+        const { editar } = await pessoa({ dataEntrada: new Date("2026-01-10T00:00:00Z"), fimTrainee: new Date("2026-02-01T00:00:00Z") });
+        await expect(editar({ fimTrainee: null })).resolves.toMatchObject({ fimTrainee: null });
     });
 
     test("trainee com fimTrainee: 400 FIM_TRAINEE_COM_TRAINEE", async () => {

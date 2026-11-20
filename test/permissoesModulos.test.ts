@@ -134,6 +134,20 @@ describe("PUT /auth/perfil", () => {
         await expect(rotas["put /auth/perfil"]({}, { telefone: "1" })).rejects.toThrow(ErroNaoAutorizado);
     });
 
+    test("PUT /usuarios/:codigo (gestão) grava fimTrainee e devolve no corpo", async () => {
+        const { factory, membro: ana, gerente } = await criarContexto();
+        const rotas: Record<string, any> = {};
+        const http: any = { route: (m: string, u: string, _a: boolean, cb: any) => (rotas[`${m} ${u}`] = cb), swagger: () => undefined };
+        new Router(http, factory).init();
+        const r = await rotas["put /usuarios/:codigo"](
+            { codigo: ana.codigo },
+            { user: { codigo: gerente.codigo, perfil: gerente.perfil }, fimTrainee: "2026-11-10T15:00:00Z", dataEntrada: "2026-01-01" },
+        );
+        expect(new Date(r.fimTrainee).toISOString().slice(0, 10)).toBe("2026-11-10");
+        const lido = await factory.criarUsuarioRepository().buscarPorCodigo(ana.codigo);
+        expect(lido!.fimTrainee!.toISOString().slice(0, 10)).toBe("2026-11-10");
+    });
+
     test("e-mail pessoal grava e outro membro lê; fimTrainee da própria pessoa é ignorado", async () => {
         const { factory, membro: ana, gerente } = await criarContexto();
         const rotas: Record<string, any> = {};

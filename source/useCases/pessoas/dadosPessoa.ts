@@ -82,8 +82,10 @@ export function conferirCamposAlterados(atual: Usuario | null, detalhes: Detalhe
     const M = MENSAGENS_DE_ERRO.USUARIO;
     if (atual === null || detalhes.curso !== undefined) {
         const curso = typeof detalhes.curso === "string" ? detalhes.curso.trim() : "";
-        if (!curso) throw new ErroValidacao(M.CURSO_OBRIGATORIO, "CURSO_OBRIGATORIO");
-        if (curso !== (atual?.curso ?? null) && !ehCursoValido(curso)) {
+        // Vazio em quem já não tem curso = campo não mudou (tela antiga manda todos os campos).
+        const semMudanca = !curso && atual !== null && !atual.curso;
+        if (!curso && !semMudanca) throw new ErroValidacao(M.CURSO_OBRIGATORIO, "CURSO_OBRIGATORIO");
+        if (curso && curso !== (atual?.curso ?? null) && !ehCursoValido(curso)) {
             throw new ErroValidacao(M.CURSO_INVALIDO(CURSOS), "CURSO_INVALIDO");
         }
     }
