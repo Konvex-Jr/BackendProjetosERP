@@ -54,6 +54,7 @@ export async function emitirSessao(factory: RepositoryFactoryInterface, usuario:
         expiraEm,
         revogadoEm: null,
         lembrar: false,
+        girado: false,
     });
     return { token: gerarTokenAcesso(usuario), refreshToken, refreshTokenExpiraEm: expiraEm, usuario };
 }
@@ -73,6 +74,7 @@ export async function emitirLembrete(factory: RepositoryFactoryInterface, usuari
         expiraEm: prazo,
         revogadoEm: null,
         lembrar: true,
+        girado: false,
     });
     return { token, expiraEm: prazo };
 }

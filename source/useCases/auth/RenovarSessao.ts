@@ -4,7 +4,7 @@ import { emitirSessao, hashToken, Sessao } from "./emitirSessao";
 
 /**
  * Troca um refresh token válido por uma sessão nova. O token usado é revogado (rotação).
- * Se um token já revogado for reapresentado, todas as sessões da pessoa são encerradas,
+ * Se um token já girado for reapresentado, todas as sessões da pessoa são encerradas,
  * porque isso indica que o token pode ter vazado.
  */
 export default class RenovarSessao {
@@ -20,7 +20,8 @@ export default class RenovarSessao {
         if (!registro || registro.lembrar) throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
 
         if (registro.revogadoEm) {
-            await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
+            // Só o girado indica vazamento; revogado por logout, troca de senha ou inativação é só 401.
+            if (registro.girado) await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
             throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
         }
         if (registro.expiraEm.getTime() <= Date.now()) {
@@ -31,8 +32,9 @@ export default class RenovarSessao {
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(registro.codigoUsuario);
         // Revoga antes de conferir a pessoa: o token usado não vale de novo em nenhum caso.
         // Duas chamadas simultâneas com o mesmo token: só a primeira marca; a outra é reapresentação.
-        if (!(await tokens.revogar(registro.codigo))) {
-            await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
+        if (!(await tokens.girar(registro.codigo))) {
+            const atual = await tokens.buscarPorHash(registro.tokenHash);
+            if (atual?.girado) await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
             throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");
         }
         if (!usuario || !usuario.ativo) throw new ErroNaoAutorizado("Sessão expirada. Entre novamente.");

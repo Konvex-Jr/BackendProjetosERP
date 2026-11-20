@@ -5,6 +5,8 @@ import EncerrarSessao from "../source/useCases/auth/EncerrarSessao";
 import LoginUsuario from "../source/useCases/auth/LoginUsuario";
 import { DIAS_LEMBRETE, emitirLembrete, emitirSessao, hashToken } from "../source/useCases/auth/emitirSessao";
 import { ErroNaoAutorizado } from "../source/shared/erros/ErroNaoAutorizado";
+import AlterarSenha from "../source/useCases/auth/AlterarSenha";
+import GerirLinkSenha from "../source/useCases/auth/GerirLinkSenha";
 import { cadastrarComSenha, criarContexto } from "./fixtures";
 
 const SENHA = "Senha@forte1";
@@ -58,6 +60,43 @@ describe("RetomarSessao e lembrete", () => {
         await new RetomarSessao(ctx.factory).execute(inicial.token);
         await expect(new RetomarSessao(ctx.factory).execute(inicial.token)).rejects.toBeInstanceOf(ErroNaoAutorizado);
         expect((await repo().buscarPorHash(hashToken(aba.refreshToken)))?.revogadoEm).toBeTruthy();
+    });
+
+    it("lembrete revogado pelo link de senha: só 401, e a sessão nova continua renovando", async () => {
+        const notebook = await emitirLembrete(ctx.factory, ana);
+        const link = new GerirLinkSenha(ctx.factory);
+        await link.emitir(ana, "redefinir");
+        const celular = await link.usar(ctx.factory.envioEmail.ultimoLink("ana@dev.konvex") as string, "Nova@senha1", "Nova@senha1");
+        await expect(new RetomarSessao(ctx.factory).execute(notebook.token)).rejects.toBeInstanceOf(ErroNaoAutorizado);
+        expect((await repo().buscarPorHash(hashToken(celular.refreshToken)))?.revogadoEm).toBeNull();
+        await expect(new RenovarSessao(ctx.factory).execute(celular.refreshToken)).resolves.toBeDefined();
+    });
+
+    it("lembrete revogado pela troca de senha no perfil ou pelo logout: só 401", async () => {
+        const notebook = await emitirLembrete(ctx.factory, ana);
+        await new AlterarSenha(ctx.factory).execute({ codigoUsuario: ana.codigo, senhaAtual: SENHA, novaSenha: "Nova@senha1" });
+        const nova = await emitirSessao(ctx.factory, ana);
+        await expect(new RetomarSessao(ctx.factory).execute(notebook.token)).rejects.toBeInstanceOf(ErroNaoAutorizado);
+        const saiu = await emitirLembrete(ctx.factory, ana);
+        await new EncerrarSessao(ctx.factory).execute(undefined, saiu.token);
+        await expect(new RetomarSessao(ctx.factory).execute(saiu.token)).rejects.toBeInstanceOf(ErroNaoAutorizado);
+        expect((await repo().buscarPorHash(hashToken(nova.refreshToken)))?.revogadoEm).toBeNull();
+    });
+
+    it("refresh de aba revogado pela troca de senha: só 401, sem derrubar a sessão nova", async () => {
+        const outraAba = await emitirSessao(ctx.factory, ana);
+        await new AlterarSenha(ctx.factory).execute({ codigoUsuario: ana.codigo, senhaAtual: SENHA, novaSenha: "Nova@senha1" });
+        const nova = await emitirSessao(ctx.factory, ana);
+        await expect(new RenovarSessao(ctx.factory).execute(outraAba.refreshToken)).rejects.toBeInstanceOf(ErroNaoAutorizado);
+        expect((await repo().buscarPorHash(hashToken(nova.refreshToken)))?.revogadoEm).toBeNull();
+    });
+
+    it("refresh de aba girado e reapresentado revoga todas as sessões", async () => {
+        const aba = await emitirSessao(ctx.factory, ana);
+        const outra = await emitirSessao(ctx.factory, ana);
+        await new RenovarSessao(ctx.factory).execute(aba.refreshToken);
+        await expect(new RenovarSessao(ctx.factory).execute(aba.refreshToken)).rejects.toBeInstanceOf(ErroNaoAutorizado);
+        expect((await repo().buscarPorHash(hashToken(outra.refreshToken)))?.revogadoEm).toBeTruthy();
     });
 
     it("pessoa inativa não retoma", async () => {

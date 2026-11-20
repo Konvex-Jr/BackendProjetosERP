@@ -12,3 +12,15 @@ CREATE TABLE IF NOT EXISTS links_senha (
 CREATE INDEX IF NOT EXISTS idx_links_senha_usuario ON links_senha(usuario_codigo);
 
 ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS lembrar BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Revogado por rotação (girado) x por logout, troca de senha ou inativação. Só reapresentar um
+-- token girado indica vazamento e derruba todas as sessões. Tokens já revogados antes desta
+-- migração contam como girados (mantém a regra de antes); o bloco roda uma vez só.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'refresh_tokens' AND column_name = 'girado') THEN
+        ALTER TABLE refresh_tokens ADD COLUMN girado BOOLEAN NOT NULL DEFAULT FALSE;
+        UPDATE refresh_tokens SET girado = TRUE WHERE revogado_em IS NOT NULL;
+    END IF;
+END $$;

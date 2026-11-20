@@ -5,7 +5,7 @@ import { emitirLembrete, emitirSessao, hashToken, Lembrete, Sessao } from "./emi
 /**
  * "Manter conectado" (sessão 25a): troca o lembrete do cookie por uma sessão de aba nova e um
  * lembrete novo com o mesmo prazo (15 dias do login, sem renovar). O lembrete usado é revogado;
- * reapresentar um já revogado encerra todas as sessões da pessoa, como no refresh.
+ * reapresentar um já girado encerra todas as sessões da pessoa, como no refresh.
  */
 export default class RetomarSessao {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
@@ -19,7 +19,8 @@ export default class RetomarSessao {
         if (!registro || !registro.lembrar) throw expirada();
 
         if (registro.revogadoEm) {
-            await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
+            // Só o girado indica vazamento; revogado por logout, troca de senha ou inativação é só 401.
+            if (registro.girado) await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
             throw expirada();
         }
         if (registro.expiraEm.getTime() <= Date.now()) {
@@ -30,8 +31,9 @@ export default class RetomarSessao {
         const usuario = await this.factory.criarUsuarioRepository().buscarPorCodigo(registro.codigoUsuario);
         // Revoga antes de conferir a pessoa: o lembrete usado não vale de novo em nenhum caso.
         // Duas chamadas simultâneas com o mesmo token: só a primeira marca; a outra é reapresentação.
-        if (!(await tokens.revogar(registro.codigo))) {
-            await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
+        if (!(await tokens.girar(registro.codigo))) {
+            const atual = await tokens.buscarPorHash(registro.tokenHash);
+            if (atual?.girado) await tokens.revogarTodosDoUsuario(registro.codigoUsuario);
             throw expirada();
         }
         if (!usuario || !usuario.ativo) throw expirada();

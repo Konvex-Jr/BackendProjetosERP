@@ -38,6 +38,10 @@ descrever("migração 021 sobre a 020", () => {
             `INSERT INTO refresh_tokens (usuario_codigo, token_hash, expira_em) VALUES ($1, 'antigo', now() + interval '1 day')`,
             [pessoa],
         );
+        await pool.query(
+            `INSERT INTO refresh_tokens (usuario_codigo, token_hash, expira_em, revogado_em) VALUES ($1, 'usado', now() + interval '1 day', now())`,
+            [pessoa],
+        );
         await aplicarMigracoes(pool, PASTA, silencio);
     }, 60000);
 
@@ -48,6 +52,14 @@ descrever("migração 021 sobre a 020", () => {
 
     test("refresh token antigo ficou com lembrar false", async () => {
         expect((await pool.query("SELECT lembrar FROM refresh_tokens WHERE token_hash = 'antigo'")).rows).toEqual([{ lembrar: false }]);
+    });
+
+    test("token já revogado antes da 021 conta como girado; o válido não", async () => {
+        const linhas = (await pool.query("SELECT trim(token_hash) AS token_hash, girado FROM refresh_tokens ORDER BY token_hash")).rows;
+        expect(linhas).toEqual([
+            { token_hash: "antigo", girado: false },
+            { token_hash: "usado", girado: true },
+        ]);
     });
 
     test("repositório grava, busca, invalida e marca uso único", async () => {

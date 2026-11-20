@@ -19,6 +19,14 @@ export default class RefreshTokenRepositoryMemory implements RefreshTokenReposit
         return true;
     }
 
+    async girar(codigo: string): Promise<boolean> {
+        const registro = this.registros.find((r) => r.codigo === codigo);
+        if (!registro || registro.revogadoEm) return false;
+        registro.revogadoEm = new Date();
+        registro.girado = true;
+        return true;
+    }
+
     async revogarTodosDoUsuario(codigoUsuario: string): Promise<void> {
         for (const registro of this.registros) {
             if (registro.codigoUsuario === codigoUsuario && !registro.revogadoEm) registro.revogadoEm = new Date();
