@@ -510,6 +510,42 @@ A última tem que responder "Se o e-mail estiver cadastrado, você vai receber u
 
 **Rollback:** a 021 só acrescenta tabela e coluna. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 25b (pessoas: curso, e-mail pessoal, motivo da saída e fim do trainee): migração 022
+A migração `022_pessoas.sql` acrescenta `usuarios.email_pessoal`, `motivo_saida` e `fim_trainee`, normaliza os cursos e converte **Alumni em Inativo** (com `motivo_saida = 'Alumni'`). Daqui em diante só existem os status Ativo, Trainee e Inativo, e só três cursos: Ciência da Computação, Engenharia Mecânica e Engenharia Elétrica. Publicar **backend e frontend juntos**.
+
+**Parte 1, consulta antes (na VPS):**
+```bash
+cd /docker/erp-konvex
+docker exec konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT curso, count(*) FROM usuarios GROUP BY 1 ORDER BY 2 DESC"'
+docker exec konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "SELECT status, count(*) FROM usuarios GROUP BY 1"'
+```
+Se algum curso real não casar com o mapeamento da migração, **parar e avisar antes do deploy**. Anotar os números para comparar depois.
+
+**Parte 2, backup:**
+```bash
+DATA=$(date +%F_%H%M); ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos
+```
+
+**Parte 3, construir e subir:**
+```bash
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+docker compose build backend frontend
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -20
+```
+
+**Parte 4, conferir a migração:**
+```bash
+docker logs konvex-backend 2>&1 | grep 022
+```
+Tem que aparecer `Migração aplicada: 022_pessoas.sql`. Depois repetir as duas consultas da Parte 1: o total de pessoas não muda, não sobra status `alumni` e todo curso preenchido é um dos três.
+
+**Parte 5, gestão preenche os dados:** em **Pessoas**, preencher os cursos que ficaram vazios e o **fim do trainee** de quem já foi trainee (a data só é gravada sozinha daqui em diante). Conferir que quem era Alumni aparece como Inativo com o motivo "Alumni".
+
+**Rollback:** a 022 só acrescenta colunas e converte dados. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

@@ -110,13 +110,21 @@ async function main() {
     const pessoas = await exigir("GET", "/usuarios", dir);
     const porEmail = new Map(pessoas.map((p) => [p.email, p]));
 
+    // Curso é obrigatório na criação (sessão 25b): distribui os três; telefone mascarado; e-mail pessoal em parte.
+    const CURSOS = ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"];
+    let contagemPessoas = 0;
     async function pessoa(nome, email, perfil, extra = {}) {
         if (porEmail.has(email)) return porEmail.get(email);
+        const n = contagemPessoas++;
+        const par = n % 2 === 0;
         const criada = await exigir("POST", "/usuarios", dir, {
             nome,
             email,
             perfil,
             codigoSenioridade: "junior",
+            curso: CURSOS[n % CURSOS.length],
+            telefone: par ? `(11) 9${1000 + n}-${2000 + n}` : `(11) 3${100 + n}-${4000 + n}`,
+            ...(par ? { emailPessoal: `${email.split("@")[0]}@exemplo.com` } : {}),
             ...extra,
         });
         await definirSenha(email);
@@ -133,6 +141,19 @@ async function main() {
 
     // Trainee com login (papel membro, sem Biblioteca).
     const davi = await pessoa("Davi Trainee", "davi@dev.konvex", "membro", { status: "trainee" });
+
+    // Quem já foi trainee (fim do trainee gravado ao virar Ativo) e quem saiu com motivo (sessão 25b).
+    const evaNova = !porEmail.has("eva@dev.konvex");
+    const eva = await pessoa("Eva Egressa", "eva@dev.konvex", "membro", { status: "trainee" });
+    if (evaNova) await exigir("PATCH", `/usuarios/${eva.codigo}/status`, dir, { status: "ativo" });
+    const otoNovo = !porEmail.has("oto@dev.konvex");
+    const oto = await pessoa("Oto Inativo", "oto@dev.konvex", "membro");
+    if (otoNovo) {
+        await exigir("PATCH", `/usuarios/${oto.codigo}/status`, dir, {
+            status: "inativo",
+            motivoSaida: "Mudou de cidade (fictício)",
+        });
+    }
 
     // Áreas, cargos e períodos (sessão 23a). Bia fica em duas áreas e tem um período antigo encerrado.
     const areasExistentes = await exigir("GET", "/areas", dir);

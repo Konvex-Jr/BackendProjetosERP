@@ -206,6 +206,18 @@ const swaggerSpecification = {
                             email: { type: "string", format: "email" },
                             perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
                             senioridade: { type: "object", nullable: true },
+                            status: { type: "string", enum: ["ativo", "trainee"], description: "Status inicial (padrão ativo)" },
+                            curso: {
+                                type: "string",
+                                enum: ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"],
+                                description: "Obrigatório na criação (400 CURSO_OBRIGATORIO / CURSO_INVALIDO)",
+                            },
+                            telefone: {
+                                type: "string",
+                                example: "(11) 99999-9999",
+                                description: "10 ou 11 dígitos (400 TELEFONE_INVALIDO)",
+                            },
+                            emailPessoal: { type: "string", format: "email", maxLength: 254, description: "400 EMAIL_PESSOAL_INVALIDO" },
                         },
                     }),
                 },
@@ -225,11 +237,32 @@ const swaggerSpecification = {
                         email: { type: "string", format: "email" },
                         perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
                         senioridade: { type: "object", nullable: true },
+                        curso: {
+                            type: "string",
+                            enum: ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"],
+                            description: "Conferido só quando muda",
+                        },
+                        telefone: { type: "string", description: "10 ou 11 dígitos; conferido só quando muda" },
+                        emailPessoal: { type: "string", format: "email", maxLength: 254, nullable: true },
+                        fimTrainee: {
+                            type: "string",
+                            format: "date",
+                            nullable: true,
+                            description: "Só a gestão; não antes da entrada nem no futuro (a troca Trainee para Ativo grava hoje)",
+                        },
                     },
                 }),
             }),
-            delete: operation(["Usuários"], "Inativar usuário", {
+            delete: operation(["Usuários"], "Inativar usuário (motivo da saída obrigatório; ninguém é excluído)", {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
+                requestBody: jsonBody({
+                    type: "object",
+                    required: ["motivoSaida"],
+                    properties: {
+                        motivoSaida: { type: "string", maxLength: 500, description: "400 MOTIVO_SAIDA_OBRIGATORIO / MOTIVO_SAIDA_LONGO" },
+                        dataSaida: { type: "string", format: "date" },
+                    },
+                }),
             }),
         },
         "/projetos": {
@@ -575,7 +608,7 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/auth/perfil": {
         put: operation(
             ["Autenticação"],
-            "Editar os próprios dados (telefone, LinkedIn, calendarioUrl, githubUrl, curso, semestre, bio)",
+            "Editar os próprios dados (telefone, emailPessoal, LinkedIn, calendarioUrl, githubUrl, curso, semestre, bio)",
             json,
         ),
     },
@@ -598,7 +631,11 @@ const rotasFase1: Record<string, Record<string, object>> = {
         delete: operation(["Usuários"], "Excluir período (gestores)", periodo),
     },
     "/usuarios/{codigo}/status": {
-        patch: operation(["Usuários"], "Mudar status: ativo, trainee, inativo (RF-011)", comCodigo(json)),
+        patch: operation(
+            ["Usuários"],
+            "Mudar status: ativo, trainee, inativo (RF-011). { status, motivoSaida?, dataSaida?, encerrarParticipacoes? }: motivoSaida obrigatório ao mudar para inativo (até 500; 400 MOTIVO_SAIDA_OBRIGATORIO). Trainee para ativo grava fimTrainee; voltar a ativo apaga motivo e data de saída",
+            comCodigo(json),
+        ),
     },
     "/areas": {
         get: operation(["Configurações"], "Listar áreas"),
