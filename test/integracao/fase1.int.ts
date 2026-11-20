@@ -196,7 +196,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         const lider = await chamar("POST", "/usuarios", dir, {
             nome: "Lider",
             email: "lider@teste.com",
-            senha: "SenhaLider1",
+            senha: "SenhaLider@1",
             perfil: "membro",
             codigoSenioridade: "junior",
         });
@@ -213,7 +213,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(definido.status).toBe(200);
         expect((await chamar("GET", `/projetos/${cod}`, dir)).corpo.lider.codigo).toBe(lider.corpo.codigo);
 
-        const lid = (await entrar("lider@teste.com", "SenhaLider1")).corpo.token as string;
+        const lid = (await entrar("lider@teste.com", "SenhaLider@1")).corpo.token as string;
         const t = await chamar("POST", "/tarefas", lid, {
             codigoProjeto: cod,
             titulo: "T1",
@@ -245,11 +245,11 @@ descrever("fase 1 contra PostgreSQL", () => {
             await chamar("POST", "/usuarios", dir, {
                 nome: "Anexadora",
                 email: "anexadora@teste.com",
-                senha: "SenhaAnexa1",
+                senha: "SenhaAnexa@1",
                 perfil: "membro",
                 codigoSenioridade: "junior",
             });
-            const membro = (await entrar("anexadora@teste.com", "SenhaAnexa1")).corpo.token as string;
+            const membro = (await entrar("anexadora@teste.com", "SenhaAnexa@1")).corpo.token as string;
             const enviar = async (token: string, caminho: string, nome: string, bytes = Buffer.from("%PDF-1.4 teste")) => {
                 const r = await fetch(base + caminho, {
                     method: "POST",

@@ -17,6 +17,10 @@ export default class EnvioEmailSmtp implements EnvioEmailInterface {
             host: config.host,
             port: config.porta,
             secure: config.porta === 465,
+            requireTLS: config.porta !== 465,
+            connectionTimeout: 10_000,
+            greetingTimeout: 10_000,
+            socketTimeout: 10_000,
             auth: config.usuario ? { user: config.usuario, pass: config.senha ?? "" } : undefined,
         });
     }
