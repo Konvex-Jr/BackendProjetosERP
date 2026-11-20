@@ -132,7 +132,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect((await chamar("POST", "/projetos", mem, { nome: "X" })).status).toBe(403);
 
         // Perfil próprio
-        const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Eng. de Software", perfil: "diretor" });
+        const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Engenharia Elétrica", perfil: "diretor" });
         expect(perfil.status).toBe(200);
         expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBe("membro");
 
