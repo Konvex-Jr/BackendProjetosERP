@@ -1,6 +1,5 @@
-import CriarUsuario from "../../source/useCases/pessoas/CriarUsuario";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
-import { criarContexto } from "../fixtures";
+import { cadastrarComSenha, criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
 /** Auditoria de 13/11/2026: o login limita as tentativas erradas por e-mail e IP. */
@@ -9,13 +8,11 @@ describe("Limite de tentativas no login", () => {
 
     beforeEach(async () => {
         const ctx = await criarContexto();
-        await new CriarUsuario(ctx.factory).execute({
-            nome: "Carla",
-            email: "carla@konvex.com.br",
-            senha: "Senha@certa1",
-            perfil: PerfilUsuario.GERENTE,
-            senioridade: ctx.senioridade,
-        });
+        await cadastrarComSenha(
+            ctx.factory,
+            { nome: "Carla", email: "carla@konvex.com.br", perfil: PerfilUsuario.GERENTE, senioridade: ctx.senioridade },
+            "Senha@certa1",
+        );
         servidor = await subirServidor(ctx.factory);
     });
 

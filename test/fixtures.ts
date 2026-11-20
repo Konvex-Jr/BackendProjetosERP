@@ -1,3 +1,7 @@
+import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
+import CriarUsuarioInput from "../source/useCases/pessoas/CriarUsuarioInput";
+import GerirLinkSenha from "../source/useCases/auth/GerirLinkSenha";
+import EnvioEmailMemoria from "../source/infra/email/EnvioEmailMemoria";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Usuario from "../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
@@ -59,4 +63,13 @@ export async function criarTarefa(factory: MemoryRepositoryFactory, membro: Usua
         codigo,
     );
     return factory.criarTarefaRepository().criar(tarefa);
+}
+
+/** Cadastra a pessoa pelo convite e define a senha pelo link, como na vida real. */
+export async function cadastrarComSenha(factory: MemoryRepositoryFactory, input: CriarUsuarioInput, senha: string) {
+    const { usuario } = await new CriarUsuario(factory).execute(input);
+    const token = (factory.criarEnvioEmail() as EnvioEmailMemoria).ultimoLink(usuario.email);
+    if (!token) throw new Error("Convite não enviado.");
+    await new GerirLinkSenha(factory).usar(token, senha, senha);
+    return usuario;
 }

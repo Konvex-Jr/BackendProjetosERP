@@ -37,6 +37,13 @@ descrever("fase 1 contra PostgreSQL", () => {
         return { status: r.status, corpo: texto ? JSON.parse(texto) : null };
     }
 
+    /** Cadastra sem senha (como a API faz) e grava a senha direto no banco, para o teste poder entrar. */
+    async function criarPessoa(token: string, { senha, ...dados }: Record<string, unknown> & { senha: string; email: string }) {
+        const r = await chamar("POST", "/usuarios", token, dados);
+        await pool.query("UPDATE usuarios SET senha_hash = $1 WHERE email = $2", [await hash(senha, 4), dados.email]);
+        return r;
+    }
+
     async function entrar(email: string, senha: string) {
         const r = await chamar("POST", "/auth/login", undefined, { email, senha });
         return r;
@@ -97,7 +104,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect(cargo.status).toBe(200);
 
         // Pessoas: membro e trainee, os dois com login
-        const membro = await chamar("POST", "/usuarios", dir, {
+        const membro = await criarPessoa(dir, {
             nome: "Membro",
             email: "membro@teste.com",
             senha: "SenhaMembro@1",
@@ -107,7 +114,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             codigoCargo: cargo.corpo.codigo,
         });
         expect(membro.status).toBe(200);
-        const trainee = await chamar("POST", "/usuarios", dir, {
+        const trainee = await criarPessoa(dir, {
             nome: "Trainee",
             email: "trainee@teste.com",
             senha: "SenhaTrainee@1",
@@ -193,7 +200,7 @@ descrever("fase 1 contra PostgreSQL", () => {
 
     test("sessão 8b: líder, concluída por e comentários gravados no banco", async () => {
         const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-        const lider = await chamar("POST", "/usuarios", dir, {
+        const lider = await criarPessoa(dir, {
             nome: "Lider",
             email: "lider@teste.com",
             senha: "SenhaLider@1",
@@ -242,7 +249,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         process.env.ANEXOS_DIR = pasta;
         try {
             const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
-            await chamar("POST", "/usuarios", dir, {
+            await criarPessoa(dir, {
                 nome: "Anexadora",
                 email: "anexadora@teste.com",
                 senha: "SenhaAnexa@1",
@@ -298,7 +305,7 @@ descrever("fase 1 contra PostgreSQL", () => {
     test("sessão 13: capacitações com presença, avaliações e perfil completo no banco", async () => {
         const dir = (await entrar("diretora@teste.com", "SenhaDiretora1")).corpo.token as string;
         const pessoa = async (nome: string, email: string) => {
-            const r = await chamar("POST", "/usuarios", dir, {
+            const r = await criarPessoa(dir, {
                 nome,
                 email,
                 senha: "SenhaCap@123",

@@ -25,7 +25,7 @@ function valores(usuario: Usuario): unknown[] {
         usuario.perfil,
         usuario.senioridade?.codigo ?? null,
         usuario.ativo,
-        usuario.senha,
+        usuario.senha || null,
         usuario.status,
         usuario.nomeExibicao,
         usuario.foto,

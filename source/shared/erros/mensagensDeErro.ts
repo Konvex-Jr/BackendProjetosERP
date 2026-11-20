@@ -22,6 +22,8 @@ export const MENSAGENS_DE_ERRO = {
     USUARIO: {
         SAIDA_NO_FUTURO: "A data de saída (dataSaida) não pode ser no futuro.",
         NAO_ENCONTRADO: "Usuário não encontrado.",
+        EMAIL_FORA_DO_DOMINIO: (dominio: string) => `Use o e-mail da Konvex (@${dominio}).`,
+        PESSOA_SEM_ACESSO: "Esta pessoa não tem acesso ao sistema.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
         TRAINEE_SO_MEMBRO: "Trainee tem sempre o perfil de membro: troque o perfil para membro ou o status para ativo.",
         STATUS_TRAINEE_SO_NA_ENTRADA: "Trainee é só a etapa de entrada; ninguém volta a ser trainee.",

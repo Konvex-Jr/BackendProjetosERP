@@ -8,6 +8,10 @@ import LoginUsuario, { criarLimitesLogin } from "../../../useCases/auth/LoginUsu
 import RenovarSessao from "../../../useCases/auth/RenovarSessao";
 import EncerrarSessao from "../../../useCases/auth/EncerrarSessao";
 import AlterarSenha from "../../../useCases/auth/AlterarSenha";
+import GerirLinkSenha from "../../../useCases/auth/GerirLinkSenha";
+import PedirRedefinicaoSenha, { criarLimitePedidosSenha } from "../../../useCases/auth/PedirRedefinicaoSenha";
+import { LimiteTentativas } from "../../../shared/seguranca/limiteTentativas";
+import { ErroMuitasTentativas } from "../../../shared/erros/ErroMuitasTentativas";
 import CriarUsuario from "../../../useCases/pessoas/CriarUsuario";
 import EditarUsuario from "../../../useCases/pessoas/EditarUsuario";
 import ListarUsuarios from "../../../useCases/pessoas/ListarUsuarios";
@@ -117,6 +121,31 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("post", "/auth/login", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) =>
             new LoginUsuario(f, limitesLogin).execute({ email: body?.email, senha: body?.senha }, contexto?.ip),
         );
+
+        // Links de senha (convite e redefinição): rotas públicas; o token só vale uma vez.
+        const limitePedidos = criarLimitePedidosSenha();
+        const limiteLinks = new LimiteTentativas(20, 15 * 60 * 1000);
+        this.http.route("post", "/auth/esqueci-senha", false, async (_p: any, body: any, _q: any, contexto: ContextoRequisicao) => {
+            await new PedirRedefinicaoSenha(f, limitePedidos).execute(body?.email, contexto?.ip);
+            return { message: "Se o e-mail estiver cadastrado, você vai receber um link em instantes." };
+        });
+
+        this.http.route("get", "/auth/link-senha/:token", false, async (params: any) => new GerirLinkSenha(f).consultar(params.token));
+
+        this.http.route("post", "/auth/link-senha/:token", false, async (params: any, body: any, _q: any, contexto: ContextoRequisicao) => {
+            const ip = contexto?.ip ?? "desconhecido";
+            const espera = limiteLinks.segundosBloqueado(ip);
+            if (espera > 0) {
+                const minutos = Math.ceil(espera / 60);
+                throw new ErroMuitasTentativas(`Muitas tentativas. Tente de novo em ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`);
+            }
+            try {
+                return await new GerirLinkSenha(f).usar(params.token, body?.senha, body?.confirmacao);
+            } catch (erro) {
+                if (erro instanceof ErroValidacao) limiteLinks.registrarFalha(ip);
+                throw erro;
+            }
+        });
 
         this.http.route("post", "/auth/refresh", false, async (_p: any, body: any) => new RenovarSessao(f).execute(body.refreshToken));
 
@@ -235,13 +264,22 @@ export default class UsuarioRoutes implements ModelRoutes {
             const criado = await new CriarUsuario(f).execute({
                 nome: body.nome,
                 email: body.email,
-                senha: body.senha,
                 perfil,
                 senioridade: lerSenioridade(body),
                 status: lerStatusPessoa(body.status),
                 ...lerPerfil(body),
             });
-            return this.responderPessoa(criado);
+            const pessoa = await this.responderPessoa(criado.usuario);
+            return { ...pessoa.toJSON(), conviteEnviado: criado.conviteEnviado };
+        });
+
+        // Reenvia o convite (quem ainda não definiu senha) ou manda link de redefinição. A gestão nunca vê a senha nem o link.
+        this.http.route("post", "/usuarios/:codigo/link-senha", true, async (params: any, body: any) => {
+            const alvo = await this.buscarAlvo(params.codigo);
+            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            if (!alvo.ativo) throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.PESSOA_SEM_ACESSO, "PESSOA_SEM_ACESSO");
+            const tipo = alvo.convitePendente ? "convite" : "redefinir";
+            return { enviado: await new GerirLinkSenha(f).emitir(alvo, tipo), tipo };
         });
 
         this.http.route("put", "/usuarios/:codigo", true, async (params: any, body: any) => {

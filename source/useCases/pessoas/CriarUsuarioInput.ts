@@ -6,7 +6,6 @@ import { EntradaPerfilPessoa } from "./dadosPessoa";
 export default interface CriarUsuarioInput extends EntradaPerfilPessoa {
     nome: string;
     email: string;
-    senha: string;
     perfil: PerfilUsuario;
     senioridade?: SenioridadeUsuario | null;
     /** Mantido por compatibilidade; prefira `status`. */
