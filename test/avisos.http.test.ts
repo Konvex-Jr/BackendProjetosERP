@@ -159,6 +159,34 @@ describe("Avisos (HTTP)", () => {
         expect(d.corpo.situacao[0]).toMatchObject({ tipo: "tarefas_atrasadas" });
     });
 
+    it("gerente fora do sigiloso (acesso resumo): título não aparece nos gravados nem na situação", async () => {
+        await ctx.factory
+            .criarTarefaRepository()
+            .criar(
+                new Tarefa(
+                    sigiloso,
+                    "Título secreto",
+                    new Date(dia.getTime() - 10 * UM_DIA),
+                    new Date(dia.getTime() - 2 * UM_DIA),
+                    StatusTarefa.PENDENTE,
+                    PrioridadeTarefa.P2,
+                    null,
+                    null,
+                    null,
+                    [ctx.gerente],
+                    [],
+                    "t-res",
+                ),
+            );
+        await avisar(ctx.gerente.codigo, "t-res");
+        const r = await servidor.chamar("get", "/avisos", { usuario: ctx.gerente });
+        expect(r.status).toBe(200);
+        expect(r.corpo.naoLidos).toBe(0);
+        expect(r.corpo.gravados).toEqual([]);
+        expect(r.corpo.situacao.find((i: any) => i.tipo !== "sobrecarga")).toBeUndefined();
+        expect(JSON.stringify(r.corpo)).not.toContain("Título secreto");
+    });
+
     it("tarefa excluída: aviso some", async () => {
         await ctx.factory.criarTarefaRepository().criar(tarefa(normal, "Relatório", "t-1", [ctx.membro]));
         await avisar(ctx.membro.codigo, "t-1");

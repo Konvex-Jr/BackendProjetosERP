@@ -266,7 +266,7 @@ Perdas da sessão 17: a área **Inovação** não cria mais nada de forma especi
 | Visão Estratégica | ✅ | ✅ | ❌ | `estrategia.ver` (menu) |
 | Simular precificação | ✅ | ✅ | ❌ | `precificacao.simular` (menu) |
 | Avisos gravados (tarefa recebida, capacitação nova) e situação (atrasadas, a vencer, capacitação próxima) | ✅ | ✅ | ✅ | `GET /avisos` e `PATCH /avisos/lidos`: só login, sem permissão (`ConsultarAvisos.ts`) |
-| Aviso de sobrecarga (pessoas acima de 100% na semana) | ✅ | ✅ | ❌ | por papel (diretor e gerente) em `ConsultarAvisos.ts`; trainee e membro não recebem |
+| Aviso de sobrecarga (pessoas acima de 100% na semana) | ✅ | ✅ | ❌ | `projetos.verTodos` (hoje diretor e gerente) em `ConsultarAvisos.ts`; trainee e membro não recebem |
 
 Os avisos só falam de tarefas de projetos com acesso **completo**: quem saiu da equipe de um projeto sigiloso, mesmo seguindo como responsável, deixa de receber os avisos dessa tarefa (omitidos na leitura, não apagados). O aviso de tarefa excluída some. A lista traz no máximo 30; `naoLidos` conta só os visíveis; lidos há mais de 30 dias são apagados ao consultar. Marcar como lido só vale para os avisos da própria pessoa.
 

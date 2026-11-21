@@ -1,4 +1,3 @@
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { TipoAviso } from "../../domain/interfaces/AvisoRepositoryInterface";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { calcularSituacao, ItemSituacao, TarefaDoAviso, tarefaDoAviso } from "../../domain/service/situacaoAvisos";
@@ -6,7 +5,7 @@ import { hoje as hojeEmSaoPaulo } from "../../shared/datas";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { acessoAoProjeto } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
 import ConsultarOcupacao from "../tarefas/ConsultarOcupacao";
 
 const DIA = 86_400_000;
@@ -81,7 +80,7 @@ export default class ConsultarAvisos {
             if (gravados.length < MAXIMO_GRAVADOS) gravados.push({ ...base, autor: await autorDe(r.codigoAutor), ...alvo });
         }
 
-        const gestao = usuario.perfil === PerfilUsuario.DIRETOR || usuario.perfil === PerfilUsuario.GERENTE;
+        const gestao = podeVerTodosProjetos(usuario);
         const situacao = calcularSituacao({
             codigoUsuario: usuario.codigo,
             hoje: hojeEmSaoPaulo(),

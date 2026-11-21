@@ -387,7 +387,7 @@ const swaggerSpecification = {
         "/avisos": {
             get: operation(
                 ["Painel"],
-                "Central de avisos de quem está logado: { naoLidos, gravados (no máximo 30: tarefa recebida e capacitação nova), situacao (atrasadas, a vencer, capacitação próxima; sobrecarga só para diretor e gerente) }. Tarefas só de projetos com acesso completo",
+                "Central de avisos de quem está logado: { naoLidos, gravados (no máximo 30: tarefa recebida e capacitação nova), situacao (atrasadas, a vencer, capacitação próxima; sobrecarga só para a gestão, quem tem projetos.verTodos: hoje diretor e gerente) }. Tarefas só de projetos com acesso completo",
             ),
         },
         "/avisos/lidos": {
