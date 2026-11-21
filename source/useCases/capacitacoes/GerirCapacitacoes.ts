@@ -10,6 +10,7 @@ import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { acessoAosFeedbacks, ehInstrutor, podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
+import { avisarCapacitacaoNova } from "../avisos/registrarAvisos";
 import GerirAnexos from "../anexos/GerirAnexos";
 
 const M = MENSAGENS_DE_ERRO.CAPACITACAO;
@@ -127,7 +128,14 @@ export default class GerirCapacitacoes {
         // Só os campos enviados: na edição, campo ausente mantém o valor atual.
         const definidos = Object.fromEntries(Object.entries(entrada).filter(([k, v]) => v !== undefined && k !== "codigoInstrutor"));
         const nova = atual ? atual.com({ ...definidos, instrutor }) : new Capacitacao({ ...(definidos as any), instrutor: instrutor! });
-        const salva = atual ? await this.repo.editar(nova) : await this.repo.criar(nova);
+        // Capacitação nova e avisos saem juntos; edição não avisa ninguém.
+        const salva = atual
+            ? await this.repo.editar(nova)
+            : await this.factory.emTransacao(async (tx) => {
+                  const criada = await tx.criarCapacitacaoRepository().criar(nova);
+                  await avisarCapacitacaoNova(tx, criada, autenticado.codigo);
+                  return criada;
+              });
         return this.ficha(autenticado, salva.codigo);
     }
 

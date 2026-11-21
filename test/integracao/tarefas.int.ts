@@ -372,4 +372,79 @@ descrever("tarefas contra PostgreSQL", () => {
             await servidor.fechar();
         }
     });
+    test("avisos pelo banco: tarefa recebida na criação e na edição, capacitação nova para ativos na EJ", async () => {
+        const { subirServidor } = await import("../http/servidorTeste");
+        const { hoje } = await import("../../source/shared/datas");
+        const dia = hoje();
+        const inicio = new Date(dia.getTime() - 30 * 86_400_000);
+        const fim = new Date(dia.getTime() + 60 * 86_400_000);
+        const criar = async (nome: string, perfil: PerfilUsuario) => {
+            const u = new Usuario(
+                nome,
+                `${crypto.randomUUID()}@teste.com`,
+                perfil,
+                true,
+                "hash",
+                new SenioridadeUsuario("pleno", "Pleno", 75),
+            );
+            await factory.criarUsuarioRepository().criar(u);
+            return u;
+        };
+        const alvo = await criar("Alvo do Aviso", PerfilUsuario.MEMBRO);
+        const autor = await criar("Autor do Aviso", PerfilUsuario.DIRETOR);
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Projeto Avisos", "d", inicio, fim, undefined, [alvo], crypto.randomUUID()));
+        const servidor = await subirServidor(factory);
+        try {
+            const dataTarefa = dia.toISOString().slice(0, 10);
+            const corpo = {
+                codigoProjeto: projeto.codigo,
+                titulo: "Com aviso",
+                dataInicio: dataTarefa,
+                dataFim: dataTarefa,
+                prioridade: "P2",
+                codigosResponsaveis: [alvo.codigo],
+                status: "pendente",
+            };
+            const criada = await servidor.chamar("post", "/tarefas", { usuario: autor, corpo });
+            expect(criada.status).toBe(200);
+            const linhas = async () =>
+                (
+                    await pool.query("SELECT autor_codigo FROM avisos WHERE usuario_codigo = $1 AND tarefa_codigo = $2", [
+                        alvo.codigo,
+                        criada.corpo.codigo,
+                    ])
+                ).rows;
+            expect(await linhas()).toEqual([{ autor_codigo: autor.codigo }]);
+            const editada = await servidor.chamar("put", `/tarefas/${criada.corpo.codigo}`, { usuario: autor, corpo });
+            expect(editada.status).toBe(200);
+            expect(await linhas()).toHaveLength(1);
+
+            const cap = await servidor.chamar("post", "/capacitacoes", {
+                usuario: autor,
+                corpo: {
+                    titulo: "Capacitação com aviso",
+                    data: "2099-01-10",
+                    hora: "18:00",
+                    codigoInstrutor: autor.codigo,
+                    vagas: 5,
+                    tipo: "computacao",
+                    sala: "X",
+                },
+            });
+            expect(cap.status).toBe(200);
+            const esperado = (
+                await pool.query("SELECT count(*)::int AS n FROM usuarios WHERE status IN ('ativo','trainee') AND codigo <> $1", [
+                    autor.codigo,
+                ])
+            ).rows[0].n;
+            const gravados = await pool.query("SELECT usuario_codigo FROM avisos WHERE capacitacao_codigo = $1", [cap.corpo.codigo]);
+            expect(gravados.rows).toHaveLength(esperado);
+            expect(gravados.rows.map((r: any) => r.usuario_codigo)).toContain(alvo.codigo);
+            expect(gravados.rows.map((r: any) => r.usuario_codigo)).not.toContain(autor.codigo);
+        } finally {
+            await servidor.fechar();
+        }
+    });
 });

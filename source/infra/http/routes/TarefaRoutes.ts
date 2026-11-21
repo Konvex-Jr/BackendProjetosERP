@@ -26,6 +26,7 @@ import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
 import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
 import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
+import { avisarTarefaRecebida } from "../../../useCases/avisos/registrarAvisos";
 import ConsultarOcupacao from "../../../useCases/tarefas/ConsultarOcupacao";
 
 const TAREFA_NAO_ENCONTRADA = "Tarefa não encontrada.";
@@ -149,9 +150,10 @@ export default class TarefaRoutes implements ModelRoutes {
             if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
             // Participante cria e fica como responsável; o líder organiza depois.
             if (papel === "participante") codigosResponsaveis = [usuario.codigo];
-            return this.comAvisos(
-                null,
-                await new CriarTarefa(this.factory).execute({
+            const autor = await this.usuarioAtual(usuario);
+            // Tarefa e aviso saem juntos: se um falha, nenhum fica.
+            const criada = await this.factory.emTransacao(async (tx) => {
+                const nova = await new CriarTarefa(tx).execute({
                     codigoProjeto: body.codigoProjeto,
                     titulo: body.titulo ?? "",
                     dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
@@ -162,17 +164,20 @@ export default class TarefaRoutes implements ModelRoutes {
                     descricao: body.descricao ?? null,
                     codigosResponsaveis,
                     checklist: lerChecklist(body.checklist),
-                    criadaPor: await this.usuarioAtual(usuario),
-                }),
-            );
+                    criadaPor: autor,
+                });
+                await avisarTarefaRecebida(tx, null, nova, usuario.codigo);
+                return nova;
+            });
+            return this.comAvisos(null, criada);
         });
 
         this.http.route("put", "/tarefas/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             const { tarefa: antes, regras } = await this.exigirEditar(usuario, params.codigo);
-            return this.comAvisos(
-                antes,
-                await new EditarTarefa(this.factory).execute({
+            const quem = await this.usuarioAtual(usuario);
+            const editada = await this.factory.emTransacao(async (tx) => {
+                const nova = await new EditarTarefa(tx).execute({
                     codigo: params.codigo,
                     titulo: body.titulo,
                     dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
@@ -188,9 +193,12 @@ export default class TarefaRoutes implements ModelRoutes {
                     dataConclusao: body.dataConclusao ? lerDataObrigatoria(body.dataConclusao, "dataConclusao") : undefined,
                     codigoDependencia: body.codigoDependencia ?? null,
                     checklist: lerChecklist(body.checklist),
-                    quem: await this.usuarioAtual(usuario),
-                }),
-            );
+                    quem,
+                });
+                await avisarTarefaRecebida(tx, antes, nova, usuario.codigo);
+                return nova;
+            });
+            return this.comAvisos(antes, editada);
         });
 
         this.http.route("patch", "/tarefas/:codigo/status", true, async (params: any, body: any) => {
