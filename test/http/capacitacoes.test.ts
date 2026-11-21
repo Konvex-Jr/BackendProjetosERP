@@ -1,5 +1,6 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
+import { hoje } from "../../source/shared/datas";
 import { criarContexto } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
 
@@ -15,8 +16,9 @@ describe("Capacitações", () => {
     let caio: Usuario;
     let instrutora: Usuario;
 
-    const amanha = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    const ontem = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    // Dia de São Paulo, não de UTC: depois das 21 h, "ontem" em UTC era hoje no sistema.
+    const amanha = new Date(hoje().getTime() + 86_400_000).toISOString().slice(0, 10);
+    const ontem = new Date(hoje().getTime() - 86_400_000).toISOString().slice(0, 10);
     const corpo = (extra: Record<string, unknown> = {}) => ({
         titulo: "Git na prática",
         data: amanha,

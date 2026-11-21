@@ -4,6 +4,7 @@ import ModelRoutes from "../infra/http/routes/ModelRoutes";
 import UsuarioRoutes from "../infra/http/routes/UsuarioRoutes";
 import ProjetoRoutes from "../infra/http/routes/ProjetoRoutes";
 import TarefaRoutes from "../infra/http/routes/TarefaRoutes";
+import AvisoRoutes from "../infra/http/routes/AvisoRoutes";
 import OcupacaoRoutes from "../infra/http/routes/OcupacaoRoutes";
 import CapacitacaoRoutes from "../infra/http/routes/CapacitacaoRoutes";
 import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
@@ -47,7 +48,7 @@ export const MODULOS: Modulo[] = [
     {
         chave: "painel",
         nome: "Painel",
-        rotas: [],
+        rotas: [AvisoRoutes],
         permissoes: [Permissao.ESTRATEGIA_VER],
         menu: [
             { chave: "dashboard", rotulo: "Dashboard", caminho: "/", ordem: 10 },

@@ -1,3 +1,4 @@
+import AvisoRepositoryInterface from "./AvisoRepositoryInterface";
 import LinkSenhaRepositoryInterface from "./LinkSenhaRepositoryInterface";
 import EnvioEmailInterface from "./EnvioEmailInterface";
 import HorasDificuldadeRepositoryInterface from "./HorasDificuldadeRepositoryInterface";
@@ -41,6 +42,7 @@ export default interface RepositoryFactoryInterface {
     criarHorasDificuldadeRepository(): HorasDificuldadeRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarLinkSenhaRepository(): LinkSenhaRepositoryInterface;
+    criarAvisoRepository(): AvisoRepositoryInterface;
     criarComentarioTarefaRepository(): ComentarioTarefaRepositoryInterface;
     criarBibliotecaRepository(): BibliotecaRepositoryInterface;
     criarAnexoRepository(): AnexoRepositoryInterface;
