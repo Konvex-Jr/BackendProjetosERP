@@ -107,7 +107,7 @@ export async function carregarUsuarios(conexao: ConexaoBanco, codigos: string[])
 
 /**
  * Projetos com área, equipe (todas as participações, inclusive encerradas), responsável e líder.
- * São poucas consultas no total, seja um projeto ou cem: projetos, participações, acesso, colunas e pessoas.
+ * São poucas consultas no total, seja um projeto ou cem: projetos, participações, colunas e pessoas.
  * Se houver projeto geral na lista, mais três: os períodos das áreas deles, os períodos que lideram e as áreas.
  * A equipe do geral vem dos períodos (comEquipeDaArea), nunca de projeto_membros.
  */
@@ -136,11 +136,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
          FROM projeto_membros
          WHERE projeto_codigo = ANY($1::uuid[])
          ORDER BY data_entrada, codigo`,
-        [lista],
-    );
-
-    const acessos = await conexao.consultar(
-        `SELECT projeto_codigo, usuario_codigo FROM projeto_acesso WHERE projeto_codigo = ANY($1::uuid[]) ORDER BY usuario_codigo`,
         [lista],
     );
 
@@ -211,7 +206,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                 lider: linha.lider_codigo && !linha.geral_da_area ? (usuarios.get(linha.lider_codigo) ?? null) : null,
                 sigiloso: linha.sigiloso,
                 criadoPor: linha.criado_por_codigo,
-                acesso: acessos.filter((a) => a.projeto_codigo === linha.codigo).map((a) => a.usuario_codigo),
                 colunas: colunas
                     .filter((c) => c.projeto_codigo === linha.codigo)
                     .map((c) => new ColunaProjeto(c.nome, c.cor, c.papel, c.codigo)),

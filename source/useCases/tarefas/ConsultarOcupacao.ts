@@ -10,7 +10,7 @@ import { calcularOcupacao, noDia, segundaDaSemana, TarefaParaOcupacao } from "..
 import { hoje as hojeEmSaoPaulo } from "../../shared/datas";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { acessoAoProjeto } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
 
 const UMA_SEMANA = 7 * 86_400_000;
 
@@ -84,7 +84,8 @@ function mudouAConta(antes: Tarefa, depois: Tarefa): boolean {
 /**
  * Ocupação semanal (spec 24a, seções 5 e 7): horas das tarefas abertas sobre o teto do cargo.
  * O total de todos é público para quem está logado; o detalhe respeita `acessoAoProjeto`
- * (completo = linha por tarefa; resumo = linha por projeto, sem título; nada = uma linha "outras").
+ * (completo = linha por tarefa; cartão para a gestão = linha por projeto, sem título; cartão para os demais
+ * ou projeto sumido = uma linha "outras").
  */
 export default class ConsultarOcupacao {
     constructor(
@@ -126,7 +127,7 @@ export default class ConsultarOcupacao {
         for (const item of o.tarefas) {
             const tarefa = porCodigo.get(item.codigo)!;
             const projeto = projetos.get(tarefa.projeto.codigo);
-            const acesso = projeto ? acessoAoProjeto(usuario, projeto) : "nada";
+            const acesso = projeto ? acessoAoProjeto(usuario, projeto) : null;
             if (acesso === "completo") {
                 itens.push({
                     tipo: "tarefa",
@@ -135,7 +136,7 @@ export default class ConsultarOcupacao {
                     projeto: { codigo: projeto!.codigo, nome: projeto!.nome },
                     horas: item.horas,
                 });
-            } else if (acesso === "resumo") {
+            } else if (acesso === "cartao" && podeVerTodosProjetos(usuario)) {
                 const linha = porProjeto.get(projeto!.codigo) ?? {
                     tipo: "projeto" as const,
                     projeto: { codigo: projeto!.codigo, nome: projeto!.nome },

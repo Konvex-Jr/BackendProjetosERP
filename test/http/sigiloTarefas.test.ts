@@ -11,7 +11,7 @@ describe("Tarefas de projeto sigiloso", () => {
     let equipe: Usuario; // equipe atual
     let ex: Usuario; // saiu do sigiloso, não é responsável por nada
     let exResponsavel: Usuario; // saiu do sigiloso e ainda é responsável por uma tarefa
-    let naLista: Usuario; // membro na lista de acesso, fora da equipe
+    let criadorFora: Usuario; // membro que criou o sigiloso, fora da equipe
     let fora: Usuario; // membro sem relação
     let gerenteFora: Usuario;
     let diretor: Usuario;
@@ -31,7 +31,7 @@ describe("Tarefas de projeto sigiloso", () => {
         equipe = ctx.membro;
         ex = await novo("Eva", PerfilUsuario.MEMBRO, "usr-eva");
         exResponsavel = await novo("Ruy", PerfilUsuario.MEMBRO, "usr-ruy");
-        naLista = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
+        criadorFora = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
         fora = await novo("Fê", PerfilUsuario.MEMBRO, "usr-fe");
         gerenteFora = await novo("Gui", PerfilUsuario.GERENTE, "usr-gui");
         diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
@@ -40,8 +40,7 @@ describe("Tarefas de projeto sigiloso", () => {
         const sigiloso = await projetos.criar(
             new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe, ex, exResponsavel], "proj-sig", {
                 sigiloso: true,
-                criadoPor: "usr-dora",
-                acesso: [naLista.codigo],
+                criadoPor: criadorFora.codigo,
             }),
         );
         await projetos.criar(new Projeto("Normal", "d", dataInicio, dataFim, undefined, [equipe], "proj-nor"));
@@ -81,9 +80,9 @@ describe("Tarefas de projeto sigiloso", () => {
             expect(codigos(q.corpo)).toEqual([]);
         });
 
-        it("membro na lista de acesso, fora da equipe, recebe todas do sigiloso", async () => {
-            const r = await chamar("get", "/tarefas", naLista);
-            expect(codigos(r.corpo)).toEqual(["t-sig", "t-sig-ex"]);
+        it("membro que só criou o sigiloso (fora da equipe) não recebe tarefa dele (sessão 27a)", async () => {
+            const r = await chamar("get", "/tarefas", criadorFora);
+            expect(codigos(r.corpo)).toEqual([]);
         });
 
         it("equipe atual recebe todas do sigiloso e as normais", async () => {
@@ -113,8 +112,8 @@ describe("Tarefas de projeto sigiloso", () => {
             ["post", "/tarefas/t-sig/comentarios", () => ({ texto: "oi" })],
         ];
 
-        it.each(rotas)("%s %s: membro fora, ex-membro e ex-responsável recebem 404", async (metodo, caminho, corpo) => {
-            for (const u of [fora, ex, exResponsavel]) {
+        it.each(rotas)("%s %s: membro fora, ex-membro, ex-responsável e criador fora recebem 404", async (metodo, caminho, corpo) => {
+            for (const u of [fora, ex, exResponsavel, criadorFora]) {
                 const r = await chamar(metodo, caminho, u, corpo());
                 expect(r.status).toBe(404);
             }
@@ -128,23 +127,18 @@ describe("Tarefas de projeto sigiloso", () => {
             expect(r.corpo).toEqual(inexistente.corpo);
         });
 
-        it.each(rotas)("%s %s: gerente fora recebe 403", async (metodo, caminho, corpo) => {
+        it.each(rotas)("%s %s: gerente fora recebe o mesmo 404 (sessão 27a; antes 403)", async (metodo, caminho, corpo) => {
+            const inexistente = await chamar(metodo, caminho.replace("t-sig", "t-nao-existe"), gerenteFora, corpo());
             const r = await chamar(metodo, caminho, gerenteFora, corpo());
-            expect(r.status).toBe(403);
+            expect(r.status).toBe(404);
+            expect(r.corpo).toEqual(inexistente.corpo);
         });
 
         it("anexos da tarefa: 404 para quem não vê, qualquer papel", async () => {
-            for (const u of [fora, ex, exResponsavel, gerenteFora]) {
+            for (const u of [fora, ex, exResponsavel, gerenteFora, criadorFora]) {
                 const r = await chamar("get", "/tarefas/t-sig/anexos", u);
                 expect(r.status).toBe(404);
             }
-        });
-
-        it("membro da lista de acesso lê comentários e anexos, mas não comenta nem muda status", async () => {
-            expect((await chamar("get", "/tarefas/t-sig/comentarios", naLista)).status).toBe(200);
-            expect((await chamar("get", "/tarefas/t-sig/anexos", naLista)).status).toBe(200);
-            expect((await chamar("post", "/tarefas/t-sig/comentarios", naLista, { texto: "oi" })).status).toBe(403);
-            expect((await chamar("patch", "/tarefas/t-sig/status", naLista, { status: "concluida" })).status).toBe(403);
         });
 
         it("equipe atual comenta; tarefa normal segue como antes (gerente organiza)", async () => {
@@ -155,9 +149,12 @@ describe("Tarefas de projeto sigiloso", () => {
 
     describe("POST /tarefas em projeto sigiloso", () => {
         const corpo = { codigoProjeto: "proj-sig", titulo: "nova", dataInicio, dataFim, prioridade: "p2" };
-        it("membro fora 404; gerente fora 403", async () => {
-            expect((await chamar("post", "/tarefas", fora, corpo)).status).toBe(404);
-            expect((await chamar("post", "/tarefas", gerenteFora, corpo)).status).toBe(403);
+        it("membro e gerente fora: 403 PROJETO_SEM_ACESSO (o nome do projeto é público desde a sessão 27a)", async () => {
+            for (const u of [fora, gerenteFora]) {
+                const r = await chamar("post", "/tarefas", u, corpo);
+                expect(r.status).toBe(403);
+                expect(r.corpo.codigo).toBe("PROJETO_SEM_ACESSO");
+            }
         });
     });
 });

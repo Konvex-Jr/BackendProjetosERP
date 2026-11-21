@@ -387,7 +387,7 @@ async function main() {
         }
     }
 
-    // Projeto sigiloso: Ines (gerente) na lista de acesso; Bia e Davi na equipe; Caio (membro fora) não o vê.
+    // Projeto sigiloso: Bia e Davi na equipe; Inês (gerente) e Caio (membro), fora, veem só o cartão (sessão 27a).
     let sigiloso = projetos.find((p) => p.nome === "Proposta confidencial (fictício)");
     if (!sigiloso) {
         sigiloso = await exigir("POST", "/projetos", dir, {
@@ -397,11 +397,10 @@ async function main() {
             dataFim: dia(60),
             status: "em_execucao",
             sigiloso: true,
-            acesso: [ines.codigo],
         });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio" });
-        console.log("Projeto sigiloso (acesso: Inês; equipe: Bia e Davi) criado.");
+        console.log("Projeto sigiloso (equipe: Bia e Davi) criado.");
     }
     if ((await exigir("GET", `/tarefas?codigoProjeto=${sigiloso.codigo}`, dir)).length === 0) {
         await exigir("POST", "/tarefas", dir, {

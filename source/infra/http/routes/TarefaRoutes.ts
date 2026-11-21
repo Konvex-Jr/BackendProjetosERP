@@ -64,11 +64,10 @@ export default class TarefaRoutes implements ModelRoutes {
 
     private async carregar(usuario: UsuarioAutenticado, codigo: string): Promise<{ tarefa: Tarefa; regras: RegrasTarefa }> {
         const { tarefa, projeto, regras } = await carregarTarefa(this.factory, usuario, codigo);
-        if (projeto?.sigiloso && !regras.ver) {
-            // Quem não vê nada do sigiloso recebe o mesmo 404 da tarefa inexistente: "Projeto não encontrado."
-            // revelaria que a tarefa existe. O gerente fora (resumo) recebe 403, como nas rotas do projeto.
-            if (acessoAoProjeto(usuario, projeto) === "nada") throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
-            exigirAcessoCompleto(usuario, projeto);
+        // Quem só vê o cartão do projeto (normal ou sigiloso; no sigiloso, inclusive o gerente de fora) e não é
+        // responsável recebe o mesmo 404 da tarefa inexistente: a tarefa e o que há nela não são revelados.
+        if (projeto && !regras.ver && acessoAoProjeto(usuario, projeto) !== "completo") {
+            throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
         }
         return { tarefa, regras };
     }

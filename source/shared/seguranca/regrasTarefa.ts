@@ -12,10 +12,9 @@ import { acessoAoProjeto } from "./visibilidadeProjetos";
  *   também a edita e exclui (`editar`, sessão 24b), sem trocar responsáveis nem situação (isso é de `organizar` e `mudarStatus`);
  * - nenhum: só vê se for responsável ou tiver participado do projeto.
  *
- * Projeto sigiloso (sessão 20): quem não tem acesso completo ao projeto (`acessoAoProjeto`) não vê nem faz
- * nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso completo sempre vê. A gestão com
- * acesso completo (diretor, gerente da lista de acesso ou que criou) organiza como em qualquer projeto; quem não
- * é da gestão e está fora da equipe atual (membro da lista de acesso) só lê: não comenta nem muda status.
+ * Projeto sigiloso (sessão 20; regra da 27a): quem não tem acesso completo ao projeto (`acessoAoProjeto`: diretor
+ * ou equipe atual) não vê nem faz nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso
+ * completo sempre vê e organiza como em qualquer projeto.
  *
  * Projeto geral da área (sessão 23b): a equipe vem dos períodos na área (aberto = equipe atual, encerrado = ex-equipe)
  * e quem tem cargo que lidera a área (`lideresDaArea`) conta como líder: organiza tudo, mas não entra como

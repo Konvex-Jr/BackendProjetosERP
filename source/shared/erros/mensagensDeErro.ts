@@ -50,13 +50,12 @@ export const MENSAGENS_DE_ERRO = {
         GERAL_SIGILOSO: "O projeto geral da área não pode ser sigiloso.",
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
-        SIGILOSO: "Este projeto é sigiloso; você vê só o resumo.",
-        ACESSO_SEM_PERMISSAO: "Só o diretor e quem criou o projeto mudam a lista de acesso.",
-        ACESSO_LISTA_INVALIDA: "A lista de acesso (codigos) deve ser uma lista de códigos de pessoas.",
-        ACESSO_PESSOA_SEM_LOGIN: (codigo: string, nome?: string) =>
-            nome
-                ? `${nome} (${codigo}) não tem login: só pessoas Ativas ou Trainees entram na lista de acesso.`
-                : `Pessoa não encontrada na lista de acesso: ${codigo}.`,
+        SEM_ACESSO: (sigiloso: boolean) =>
+            sigiloso
+                ? "Este projeto é sigiloso: só a equipe atual e os diretores veem os detalhes."
+                : "Só a equipe do projeto e a gestão veem os detalhes deste projeto.",
+        SIGILOSO_SEM_VOCE:
+            "Você ficaria sem acesso ao projeto sigiloso: só a equipe atual e os diretores o veem. Coloque-se na equipe ou peça a um diretor.",
         GERAL_COM_TAREFAS: (quantidade: number) =>
             `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
     },

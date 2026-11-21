@@ -79,7 +79,7 @@ describe("Trainee", () => {
         expect(envio.status).toBe(403);
     });
 
-    it("projetos e tarefas só da equipe; capacitações e pessoas liberadas", async () => {
+    it("projetos alheios só como cartão e tarefas só da equipe; capacitações e pessoas liberadas", async () => {
         const meu = await criarProjeto(ctx.factory, trainee);
         await criarTarefa(ctx.factory, trainee, meu, "tarefa-dele");
         await ctx.factory
@@ -87,7 +87,11 @@ describe("Trainee", () => {
             .criar(new Projeto("Alheio", "Sem o trainee", dataInicio, dataFim, undefined, [ctx.membro], "projeto-alheio"));
         const projetos = await servidor.chamar("get", "/projetos", { usuario: trainee });
         expect(projetos.status).toBe(200);
-        expect(projetos.corpo.map((p: any) => p.codigo)).toEqual([meu.codigo]);
+        // Sessão 27a: o trainee recebe o cartão dos projetos alheios.
+        const porCodigo = new Map(projetos.corpo.map((p: any) => [p.codigo, p]));
+        expect([...porCodigo.keys()].sort()).toEqual([meu.codigo, "projeto-alheio"].sort());
+        expect((porCodigo.get(meu.codigo) as any).cartao).toBeUndefined();
+        expect((porCodigo.get("projeto-alheio") as any).cartao).toBe(true);
         const tarefas = await servidor.chamar("get", "/tarefas", { usuario: trainee });
         expect(tarefas.status).toBe(200);
         expect(tarefas.corpo.map((t: any) => t.codigo)).toEqual(["tarefa-dele"]);

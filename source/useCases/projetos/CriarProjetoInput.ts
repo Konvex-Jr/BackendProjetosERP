@@ -9,9 +9,7 @@ export default interface CriarProjetoInput extends EntradaDetalhesProjeto {
     status?: StatusProjeto;
     /** Pessoas que entram na equipe sem função nem alocação; detalhe pela aba Equipe. */
     codigosMembros?: string[];
-    /** Quem está criando (a rota preenche). Mantém o acesso ao projeto sigiloso. */
+    /** Quem está criando (a rota preenche). Só histórico: não dá acesso ao projeto (sessão 27a). */
     criadoPor?: string | null;
     sigiloso?: boolean;
-    /** Códigos de quem vê o projeto sigiloso além da equipe. */
-    acesso?: string[];
 }

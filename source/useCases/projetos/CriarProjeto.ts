@@ -4,7 +4,6 @@ import Participacao from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { resolverDetalhesProjeto } from "./dadosProjeto";
 import CriarProjetoInput from "./CriarProjetoInput";
-import { validarCodigosAcesso } from "./DefinirAcessoProjeto";
 
 /** RF-020: cadastra um projeto. */
 export default class CriarProjeto {
@@ -21,7 +20,6 @@ export default class CriarProjeto {
         const detalhes = await resolverDetalhesProjeto(this.factory, input);
         detalhes.criadoPor = input.criadoPor ?? null;
         if (input.sigiloso !== undefined) detalhes.sigiloso = input.sigiloso;
-        if (input.acesso !== undefined) detalhes.acesso = await validarCodigosAcesso(this.factory, input.acesso);
         const projeto = new Projeto(
             String(input.nome ?? "").trim(),
             String(input.descricao ?? "").trim(),

@@ -590,6 +590,51 @@ curl -s -o /dev/null -w "%{http_code}\n" -X PATCH -H 'Content-Type: application/
 
 **Voltar:** a 023 só acrescenta uma tabela. Voltar backend e frontend para o commit anterior basta (a tabela fica sem uso). Restaurar o `pg_dump` só se algo der errado no banco.
 
+### Publicação da sessão 27a (visibilidade de projetos): migração 024
+A migração `024_visibilidade_projetos.sql` apaga a tabela `projeto_acesso` (lista de acesso). Daqui em diante todos veem o cartão de todos os projetos; a ficha completa é da equipe e da gestão (sigiloso: diretor e equipe atual). Publicar **backend e frontend juntos**.
+
+**Parte 1, consulta prévia (antes do deploy; guarde a saída):** lista quem hoje vê projeto sigiloso só pela lista de acesso ou por ter criado, e depois do deploy deixa de ver.
+```bash
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT p.nome AS projeto, u.nome AS pessoa, 'lista de acesso' AS origem
+FROM projeto_acesso a JOIN projetos p ON p.codigo = a.projeto_codigo JOIN usuarios u ON u.codigo = a.usuario_codigo
+WHERE p.sigiloso AND u.perfil <> 'diretor'
+  AND NOT EXISTS (SELECT 1 FROM projeto_membros m WHERE m.projeto_codigo = p.codigo AND m.usuario_codigo = u.codigo AND m.data_saida IS NULL)
+UNION
+SELECT p.nome, u.nome, 'criou'
+FROM projetos p JOIN usuarios u ON u.codigo = p.criado_por_codigo
+WHERE p.sigiloso AND u.perfil <> 'diretor'
+  AND NOT EXISTS (SELECT 1 FROM projeto_membros m WHERE m.projeto_codigo = p.codigo AND m.usuario_codigo = u.codigo AND m.data_saida IS NULL)
+ORDER BY 1, 2;
+SQL
+```
+
+**Parte 2, backup:**
+```bash
+cd /docker/erp-konvex
+DATA=$(date +%F_%H%M); ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos
+```
+
+**Parte 3, construir e subir:**
+```bash
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+docker compose build backend frontend
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 024_visibilidade_projetos.sql` e `API disponível na porta 5001`.
+
+**Parte 4, conferir de fora:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X PUT -H 'Content-Type: application/json' -d '{}' https://erp.konvexjr.com.br/api/projetos/1/acesso   # 404 (a rota saiu)
+```
+
+**Parte 5, depois:** a gestão coloca na equipe quem ainda precisar ver algum sigiloso (a saída da Parte 1 diz quem). Teste pela tela: um membro fora de um sigiloso vê o cartão com o selo, sem clique.
+
+**Voltar:** a 024 apaga a tabela, então voltar só o código não restaura a lista de acesso. Restaurar o `pg_dump` e voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

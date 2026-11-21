@@ -74,8 +74,9 @@ describe("Segurança da API", () => {
         expect(excluir.status).toBe(403);
 
         const tarefaDoMembro = await criarTarefa(ctx.factory, ctx.membro, projeto);
+        // Fora do projeto (só o cartão): 404, como a tarefa inexistente (sessão 27a; antes, 403).
         const porOutro = await servidor.chamar("delete", `/tarefas/${tarefaDoMembro.codigo}`, { usuario: outroMembro });
-        expect(porOutro.status).toBe(403);
+        expect(porOutro.status).toBe(404);
 
         const peloDono = await servidor.chamar("patch", `/tarefas/${tarefaDoMembro.codigo}/status`, {
             usuario: ctx.membro,

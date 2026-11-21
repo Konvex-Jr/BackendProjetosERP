@@ -47,7 +47,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
-            await this.gravarAcesso(conexao, projeto);
             await this.gravarColunas(conexao, projeto);
         });
         return projeto;
@@ -102,18 +101,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         return [...(await this.hidratar(linhas.map((l) => l.codigo))), ...dosGerais];
     }
 
-    async listarComAcesso(codigoUsuario: string): Promise<Projeto[]> {
-        const linhas = await this.conexao.consultar(
-            `SELECT p.codigo FROM projetos p
-             WHERE p.sigiloso
-               AND (p.criado_por_codigo = $1
-                    OR EXISTS (SELECT 1 FROM projeto_acesso pa WHERE pa.projeto_codigo = p.codigo AND pa.usuario_codigo = $1))
-             ORDER BY p.data_inicio, p.nome`,
-            [codigoUsuario],
-        );
-        return this.hidratar(linhas.map((l) => l.codigo));
-    }
-
     async listarSigilosos(): Promise<Projeto[]> {
         const linhas = await this.conexao.consultar("SELECT codigo FROM projetos WHERE sigiloso ORDER BY data_inicio, nome");
         return this.hidratar(linhas.map((l) => l.codigo));
@@ -141,7 +128,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             );
             if (linhas.length === 0) throw new ErroNaoEncontrado("Projeto não encontrado.");
             await this.gravarParticipacoes(conexao, projeto);
-            await this.gravarAcesso(conexao, projeto);
         });
         return projeto;
     }
@@ -184,17 +170,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
                 [c.codigo, projeto.codigo, c.nome, c.cor, ordem, c.papel],
             );
         }
-    }
-
-    /** Regrava a lista de acesso do projeto sigiloso: apaga e insere. */
-    private async gravarAcesso(conexao: ConexaoBanco, projeto: Projeto): Promise<void> {
-        await conexao.consultar("DELETE FROM projeto_acesso WHERE projeto_codigo = $1", [projeto.codigo]);
-        if (projeto.acesso.length === 0) return;
-        await conexao.consultar(
-            `INSERT INTO projeto_acesso (projeto_codigo, usuario_codigo)
-             SELECT $1, unnest($2::uuid[])`,
-            [projeto.codigo, projeto.acesso],
-        );
     }
 
     /**

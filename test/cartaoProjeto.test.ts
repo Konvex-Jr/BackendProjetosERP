@@ -2,31 +2,69 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
-import { resumoProjeto } from "../source/useCases/projetos/resumoProjeto";
+import { cartaoProjeto } from "../source/useCases/projetos/cartaoProjeto";
+import Area from "../source/domain/entity/Area";
+import TipoProjeto from "../source/domain/enum/TipoProjeto";
 import { fimDaSemana } from "../source/shared/datas";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
 
-describe("resumoProjeto", () => {
-    it("tem só os campos permitidos e nada do cliente", async () => {
+describe("cartaoProjeto", () => {
+    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "nome", "sigiloso", "status", "tipo"];
+
+    it("tem só os campos da lista fechada e nada do cliente, das datas ou da equipe", async () => {
         const { membro } = await criarContexto();
+        const area = new Area("Projetos", null, true, "area-1");
         const projeto = new Projeto("Sigiloso", "descrição secreta", dataInicio, dataFim, undefined, [membro], "p-1", {
             sigiloso: true,
             clienteNome: "Cliente Secreto",
             referencia: "REF-77",
+            area,
+            lider: membro,
         });
-        const resumo = resumoProjeto(projeto, { total: 2, concluidas: 1, atrasadas: 0, semana: 1 });
-        expect(Object.keys(resumo).sort()).toEqual(
-            ["codigo", "dataFim", "dataInicio", "nome", "participacoes", "resumo", "sigiloso", "status", "tarefas", "tipo"].sort(),
-        );
-        expect(resumo.resumo).toBe(true);
-        expect(resumo.sigiloso).toBe(true);
-        expect(resumo.tipo).toBe("cliente");
-        expect(Object.keys(resumo.participacoes[0]).sort()).toEqual(["ativa", "dataEntrada", "dataSaida", "usuario"]);
-        expect(Object.keys(resumo.participacoes[0].usuario).sort()).toEqual(["codigo", "nome"]);
-        const json = JSON.stringify(resumo);
-        for (const proibido of ["clienteNome", "Cliente Secreto", "descricao", "descrição secreta", "referencia", "REF-77", "funcao"]) {
+        const cartao = cartaoProjeto(projeto);
+        expect(Object.keys(cartao).sort()).toEqual(chaves);
+        expect(cartao.cartao).toBe(true);
+        expect(cartao.sigiloso).toBe(true);
+        expect(cartao.tipo).toBe("cliente");
+        expect(cartao.geralDaArea).toBe(false);
+        const json = JSON.stringify(cartao);
+        for (const proibido of [
+            "clienteNome",
+            "Cliente Secreto",
+            "descricao",
+            "descrição secreta",
+            "referencia",
+            "REF-77",
+            "dataInicio",
+            "dataFim",
+            "participacoes",
+            "membros",
+            "tarefas",
+            "colunas",
+            membro.email,
+        ]) {
             expect(json).not.toContain(proibido);
         }
+    });
+
+    it("projeto cliente com área: área nula", () => {
+        const area = new Area("Projetos", null, true, "area-1");
+        const projeto = new Projeto("Cliente", "d", dataInicio, dataFim, undefined, [], "p-1", { area });
+        expect(cartaoProjeto(projeto).area).toBeNull();
+    });
+
+    it("projeto interno: área com código e nome", () => {
+        const area = new Area("Projetos", null, true, "area-1");
+        const projeto = new Projeto("Interno", "d", dataInicio, dataFim, undefined, [], "p-1", { area, tipo: TipoProjeto.INTERNO });
+        expect(cartaoProjeto(projeto).area).toEqual({ codigo: "area-1", nome: "Projetos" });
+    });
+
+    it("sem líder: líder nulo; com líder: só código e nome", async () => {
+        const { membro } = await criarContexto();
+        const semLider = new Projeto("P", "d", dataInicio, dataFim, undefined, [membro], "p-1");
+        expect(cartaoProjeto(semLider).lider).toBeNull();
+        const comLider = semLider.copiar({ lider: membro });
+        expect(cartaoProjeto(comLider).lider).toEqual({ codigo: membro.codigo, nome: membro.nome });
     });
 });
 

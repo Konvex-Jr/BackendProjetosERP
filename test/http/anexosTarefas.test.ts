@@ -150,10 +150,10 @@ describe("Anexos nas tarefas", () => {
         expect(r.headers.get("x-content-type-options")).toBe("nosniff");
     });
 
-    it("comentários de tarefa de projeto que a pessoa não vê continuam 403 (regressão)", async () => {
-        expect((await servidor.chamar("get", `/tarefas/${TAREFA}/comentarios`, { usuario: deFora })).status).toBe(403);
+    it("comentários de tarefa de projeto que a pessoa não vê: 404, como os anexos (sessão 27a; antes, 403)", async () => {
+        expect((await servidor.chamar("get", `/tarefas/${TAREFA}/comentarios`, { usuario: deFora })).status).toBe(404);
         expect((await servidor.chamar("post", `/tarefas/${TAREFA}/comentarios`, { usuario: deFora, corpo: { texto: "oi" } })).status).toBe(
-            403,
+            404,
         );
     });
 
