@@ -31,6 +31,8 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Dashboard**: suas tarefas abertas e atrasadas, o andamento delas (burndown) e as capacitações em que você se inscreveu.
 
+**Avisos**: a API de avisos (`GET /avisos`, `PATCH /avisos/lidos`) traz, para quem está logado, os avisos gravados (tarefa que você recebeu e capacitação nova; no máximo 30, com o número de não lidos) e a situação do momento: tarefas atrasadas, tarefas que vencem hoje ou amanhã e capacitações de hoje ou amanhã. Só entram tarefas de projetos que você pode ver por inteiro. Diretor e gerente recebem também a lista de pessoas acima de 100% de ocupação na semana. Avisos lidos somem depois de 30 dias.
+
 **Tarefas**: abre em "Minhas tarefas" (de projetos, inclusive o geral da sua área). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois. A janela de criação é a mesma da tarefa e já aceita **descrição**, **checklist** (cada item pode ter um responsável, escolhido entre os responsáveis da tarefa) e **anexos** (os arquivos escolhidos sobem depois que a tarefa é criada; se algum falhar, o aviso diz quais e a tarefa fica criada para você reenviar).
 - **Editar e excluir o que você criou**: se você criou a tarefa e ainda está na equipe do projeto, edita e exclui a tarefa. Você não troca os responsáveis nem a situação dela (isso segue com o líder e com os responsáveis). Quem saiu da equipe perde essa edição.
