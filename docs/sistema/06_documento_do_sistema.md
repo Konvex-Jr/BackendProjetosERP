@@ -30,7 +30,7 @@
 
 | Arquivo | Decide |
 |---|---|
-| `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `acessoAoProjeto`, `exigirAcessoCompleto`, `podeGerirAcesso`, `projetosVisiveisPara`) |
+| `visibilidadeProjetos.ts` | Quais projetos a pessoa vê (`participaOuParticipou`, `acessoAoProjeto`, `exigirAcessoCompleto`, `projetosVisiveisPara`) |
 | `regrasTarefa.ts` | Ver, organizar, editar, mudar status e comentar em cada tarefa (`papelNoProjeto`, `regrasTarefa`) |
 | `regrasBiblioteca.ts` | Quem lê e quem altera um item da Biblioteca, e quem pode usar sigilo e projeto (`podeVerItem`, `podeAlterarItem`, `exigirPodeUsarSigiloEProjeto`) |
 | `regrasCapacitacao.ts` | Gestão de capacitações e acesso às avaliações (`podeGerirCapacitacoes`, `acessoAosFeedbacks`) |
@@ -38,7 +38,7 @@
 ### Detalhes que valem para tudo
 - O papel é lido do banco **a cada requisição**, não do token: mudar o papel de alguém vale na chamada seguinte (`UsuarioAutenticado` em `permissoes.ts`).
 - Papel desconhecido recebe lista vazia (na dúvida, nega: `permissoesDoPapel`).
-- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa de projeto sigiloso que ela não vê, anexo de item que ela não lê, projeto sigiloso que ela não vê.
+- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa de projeto que ela não vê completo (normal ou sigiloso), anexo de item que ela não lê. O projeto em si não some: quem não vê completo recebe só o cartão (nome, tipo, área do interno, situação, líder e selo); as demais rotas do projeto respondem 403 `PROJETO_SEM_ACESSO`.
 - A API devolve booleanos por item (`podeAlterar`, `podeGerir`, `podeInscrever`…) e a tela obedece. O menu vem de `GET /auth/permissoes`, montado por `menuDoUsuario` em `source/modulos/registro.ts`; o `Layout` do frontend só abre telas que vieram no menu.
 - Login: 5 falhas bloqueiam aquele e-mail naquele IP, e 30 falhas bloqueiam o IP inteiro, por 15 minutos (429; `limiteTentativas.ts`, limites em `LoginUsuario.ts`). Sessão: JWT de 15 min + refresh de 7 dias.
 
@@ -56,7 +56,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
   - "Manter conectado": cookie `konvex_lembrar` (`HttpOnly`, `SameSite=Strict`, `Secure` em produção, caminho `COOKIE_CAMINHO`), 15 dias do login, sem renovar o prazo. `POST /auth/retomar` troca o cookie por sessão nova e cookie novo; reapresentar um cookie (ou refresh) já girado encerra todas as sessões da pessoa (duas chamadas simultâneas com o mesmo token também, `girar` devolve se marcou); token revogado por logout, troca de senha, link de senha ou inativação só recebe 401 (coluna `refresh_tokens.girado`, migração 021).
 - Ninguém altera o próprio papel nem o próprio status, nem inativa a própria conta.
 - **Sessão 25b (migração 022):** o status **Alumni deixou de existir** (a 022 converteu em Inativo com `motivo_saida = 'Alumni'`); só `ativo`, `trainee`, `inativo`. **Motivo da saída**: obrigatório ao mudar **para** Inativo (`PATCH /usuarios/:codigo/status` e `DELETE`; 400 `MOTIVO_SAIDA_OBRIGATORIO`, até 500 caracteres, `MOTIVO_SAIDA_LONGO`); Inativo para Inativo (corrigir a data) não pede de novo; voltar a Ativo apaga motivo e data; sem motivo aparece "Não informado". **Fim do trainee** (`fim_trainee`): gravado com a data de hoje na troca Trainee para Ativo; só a gestão o edita (`PUT /usuarios/:codigo`, `exigirPodeGerirPerfil`), nunca a própria pessoa; não antes da entrada nem no futuro. **E-mail pessoal** (opcional, até 254, `EMAIL_PESSOAL_INVALIDO`): visível a todos; edita a própria pessoa (`PUT /auth/perfil`) ou a gestão. **Curso** (só os três cursos: Ciência da Computação, Engenharia Mecânica, Engenharia Elétrica; obrigatório na criação) e **telefone** (10 ou 11 dígitos, `TELEFONE_INVALIDO`) são conferidos **só quando o campo muda**: pessoa antiga com valor fora da regra edita outros campos normalmente; editam a pessoa e a gestão. **Ingresso na faculdade** (`ingresso`, `AAAA/1` ou `AAAA/2`, de 2000 até o semestre atual, `INGRESSO_INVALIDO`; substitui o semestre, que saiu; também só conferido quando muda). **Perfil obrigatório**: curso, telefone, e-mail pessoal, ingresso e link do calendário; a API devolve `pendenciasPerfil` (lista de campos faltando, `[]` para inativo) em `GET /auth/me`, `PUT /auth/perfil`, login, retomar e criar senha, e a **tela** bloqueia até completar (o back só informa, não bloqueia rotas).
-- Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição. A lista de acesso de projeto sigiloso só aceita pessoas com login (`ACESSO_PESSOA_SEM_LOGIN`).
+- Criar pessoa: o status inicial é Ativo ou Trainee (`STATUS_INICIAL_INVALIDO` nos outros casos). Trainee com papel diferente de membro é 400 (`TRAINEE_SO_MEMBRO`), na criação e na edição.
 - Ninguém é excluído (ADR-006): `DELETE /usuarios/:codigo` só muda o status para Inativo (o corpo traz `motivoSaida`). Quando alguém sai, as participações em projetos são encerradas e o histórico fica.
 - **Áreas e cargos por período** (sessão 23a, migração 017): a pessoa pode estar em várias áreas ao mesmo tempo, cada uma com um cargo opcional e um período `[início, fim)` (fim vazio = atual). A pessoa não grava mais área nem cargo; as "áreas atuais" (`areas` na resposta) são os períodos em aberto. Se uma tela antiga ainda mandar `codigoArea` ou `codigoCargo` no `PUT /usuarios/:codigo`, os campos são ignorados.
   - A gestão lança, corrige e exclui períodos em `/usuarios/:codigo/periodos` (mesma regra de editar a pessoa: `exigirPodeGerirPerfil`; ninguém altera os próprios períodos, exceto o diretor). Todos os logados leem.
@@ -78,16 +78,16 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - `valor_hora` da senioridade ainda é 0: a precificação pela API espera a diretoria definir as taxas.
 
 ### Projetos (`/projetos`)
-- A gestão vê todos (`projetos.verTodos`). O membro vê só os projetos de que participa **ou participou**: quem saiu continua vendo o histórico.
+- Todos veem **todos** os projetos na lista: completo ou só o **cartão** (sessão 27a). Vê completo (`acessoAoProjeto` = `completo`) quem tem `projetos.verTodos` (diretor e gerente) ou participa **ou participou** da equipe (quem saiu continua vendo o histórico), e o líder da área no projeto geral. Os demais veem o cartão (`cartao: true`): `codigo`, `nome`, `tipo`, `area` (só de projeto interno), `status`, `lider`, `sigiloso` e `geralDaArea`.
 - A gestão cria e edita, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder (`projetos.editar`). Um líder por projeto, escolhido na equipe.
 - O sistema avisa quando a alocação de alguém passa de 100%.
-- **Projeto sigiloso (sessão 20).** Quem cria (`projetos.editar`) pode marcar `sigiloso: true` e já informar `acesso` (códigos de pessoas com login). Regra única em `acessoAoProjeto` (`visibilidadeProjetos.ts`):
-  - **Vê completo:** diretor (`projetos.verSigilosos`), quem criou o projeto, quem está na lista de acesso (`projeto_acesso`) e a **equipe atual**. Quem saiu da equipe **perde** o acesso (no projeto normal, ex-membro continua vendo).
-  - **Gerente fora:** vê só o **resumo** (`resumo: true`) em `GET /projetos` e `GET /projetos/:codigo`: nome, situação, datas, contagem de tarefas, equipe e alocação; nunca cliente, descrição nem tarefas. As demais rotas respondem 403 `PROJETO_SIGILOSO`. Na lista, filtro por pessoa, área e responsável não vale para o resumo, e a busca é só pelo nome.
-  - **Membro ou trainee fora:** 404, na lista e nas rotas do projeto.
-  - **Quem muda o sigilo e a lista de acesso:** marcar e desmarcar `sigiloso` (`PUT /projetos/:codigo`) é de quem edita o projeto (`projetos.editar` + acesso completo, como qualquer edição). A lista de acesso (`PUT /projetos/:codigo/acesso` com `{ codigos }`) segue só com diretor e quem criou (`podeGerirAcesso`). Gerente fora não edita nada do projeto.
-  - **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`, `regrasTarefa.ts`). Membro ou trainee fora recebe o mesmo 404 da tarefa inexistente ("Tarefa não encontrada."); o gerente fora, 403. Anexos dessas tarefas: 404 para todos que não veem, gerente fora inclusive (decisão: esconde mais e segue a sessão 19).
-  - **Biblioteca:** itens ligados a sigiloso que a pessoa não vê completo somem para todos os papéis, gestão inclusive, e ninguém liga item a ele (`regrasBiblioteca.ts`).
+- **Projeto sigiloso (sessões 20 e 27a).** Quem cria (`projetos.editar`) pode marcar `sigiloso: true`. A lista de acesso (`projeto_acesso`, `PUT /projetos/:codigo/acesso`, campo `acesso`) acabou; a migração 024 apagou a tabela. Regra única em `acessoAoProjeto` (`visibilidadeProjetos.ts`), com dois resultados, `completo` ou `cartao`:
+  - **Vê completo:** diretor (`projetos.verSigilosos`) e a **equipe atual**. Quem saiu da equipe **perde** o acesso (no projeto normal, ex-membro continua vendo). Quem criou o projeto e não está na equipe **não** vê.
+  - **Cartão:** todos os demais, gerente inclusive, em `GET /projetos` e `GET /projetos/:codigo` (200). Demais rotas do projeto (equipe, colunas, status, edição): 403 `PROJETO_SEM_ACESSO`. Na lista, filtro por pessoa e por responsável descarta os cartões; filtro de área só mantém cartões de projeto interno (o cartão de cliente não mostra área; decisão do Claude, 20/11); a busca do cartão é só pelo nome.
+  - **Quem marca o sigilo:** marcar e desmarcar `sigiloso` (`POST` e `PUT /projetos/:codigo`) é de quem edita o projeto (`projetos.editar` + acesso completo). Quem não é diretor só marca se ficar na equipe atual (depois da gravação, no PUT); senão 400 `SIGILOSO_SEM_VOCE`.
+  - **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`, `regrasTarefa.ts`). Tarefa, comentários e anexos de projeto que a pessoa não vê completo respondem o mesmo 404 da tarefa inexistente ("Tarefa não encontrada."), em projeto normal ou sigiloso, para todos os papéis (a gestão vê o normal completo; o gerente fora de sigiloso recebe 404). Quem saiu do projeto e segue como responsável continua vendo a própria tarefa conforme `regrasTarefa.ts`.
+  - **Ocupação:** o cartão não revela tarefas. A gestão vê uma linha com o nome do projeto e as horas; membro e trainee veem "Outras tarefas".
+  - **Biblioteca, perfil e avisos:** itens, projetos do perfil e avisos ligados a projeto que a pessoa não vê completo seguem ocultos como antes; ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
 - **Projeto interno (sessão 23b).** `tipo` é `cliente` (padrão) ou `interno`; outro valor é 400 `TIPO_PROJETO_INVALIDO`. Interno sempre tem área (400 `AREA_OBRIGATORIA_INTERNO`). `GET /projetos?tipo=interno|cliente` filtra.
@@ -179,23 +179,23 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 ### Projetos
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
-| Ver projetos (normais) | todos | todos | os que participa ou participou | `projetos.verTodos` / `visibilidadeProjetos.ts` |
+| Ver a ficha completa (projeto normal) | todos | todos | os que participa ou participou | `projetos.verTodos` / `acessoAoProjeto` |
+| Ver o cartão (nome, tipo, área do interno, situação, líder, selo) de qualquer projeto | ✅ | ✅ | ✅ (os que não vê completo; demais rotas: 403 `PROJETO_SEM_ACESSO`) | `cartaoProjeto.ts` / `GET /projetos` |
 | Criar, editar, mudar situação, montar equipe, escolher líder | ✅ | ✅ | ❌ | `projetos.editar` |
 | Excluir projeto | ✅ | ❌ | ❌ | `projetos.excluir` |
 
 ### Projeto sigiloso
 | Ação | Diretor | Gerente | Membro / trainee | Código |
 |---|---|---|---|---|
-| Ver completo (ficha, tarefas, equipe, Biblioteca) | todos | se criou, está na lista de acesso ou na equipe atual | se está na lista de acesso ou na equipe atual (ex-membro: não) | `projetos.verSigilosos` / `acessoAoProjeto` |
-| Ver só o resumo (nome, situação, datas, contagem de tarefas, equipe e alocação) | — (vê completo) | se é gerente fora (demais rotas: 403) | ❌ (404) | `acessoAoProjeto` = `resumo` / `ProjetoRoutes.paraResposta` |
-| Criar projeto sigiloso e definir a lista de acesso inicial | ✅ | ✅ | ❌ | `projetos.editar` (`POST /projetos`) |
-| Marcar e desmarcar sigiloso (edição) | todos | se edita o projeto (acesso completo) | ❌ | `projetos.editar` (`PUT /projetos/:codigo`) |
-| Mudar a lista de acesso | todos | se criou o projeto | ❌ | `podeGerirAcesso` / `projetos.verSigilosos` |
+| Ver completo (ficha, tarefas, equipe, Biblioteca) | todos | se está na equipe atual | se está na equipe atual (ex-membro e quem só criou: não) | `projetos.verSigilosos` / `acessoAoProjeto` |
+| Ver só o cartão (nome, tipo, área do interno, situação, líder, selo) | — (vê completo) | se está fora (demais rotas: 403 `PROJETO_SEM_ACESSO`) | se está fora (idem) | `acessoAoProjeto` = `cartao` / `cartaoProjeto.ts` |
+| Criar projeto sigiloso ou marcar o sigilo na edição | ✅ | se fica na equipe atual (senão 400 `SIGILOSO_SEM_VOCE`) | ❌ | `projetos.editar` (`POST` e `PUT /projetos/:codigo`) |
+| Desmarcar sigiloso (edição) | todos | se edita o projeto (acesso completo) | ❌ | `projetos.editar` (`PUT /projetos/:codigo`) |
 | Ver item da Biblioteca ligado ao sigiloso | só se vê completo | só se vê completo | trainee: sem Biblioteca; membro: só se vê completo | `regrasBiblioteca.ts` (sigiloso oculto) |
-| Tarefa do sigiloso (ver, editar, status, comentários) | ✅ | se vê completo (fora: 403) | se vê completo (fora: 404 igual ao da tarefa inexistente) | `regrasTarefa.ts` / `TarefaRoutes.carregar` |
-| Anexos de tarefa do sigiloso | ✅ | se vê completo (fora: **404**, não 403) | se vê completo (fora: 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
+| Tarefa do sigiloso (ver, editar, status, comentários) | ✅ | se vê completo (fora: 404 igual ao da tarefa inexistente) | se vê completo (fora: 404) | `regrasTarefa.ts` / `TarefaRoutes.carregar` |
+| Anexos de tarefa do sigiloso | ✅ | se vê completo (fora: 404) | se vê completo (fora: 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
 
-Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: esconde mais que o 403 das outras rotas e segue a regra dos anexos de tarefa da sessão 19 (quem não vê a tarefa recebe 404).
+A lista de acesso deixou de existir na sessão 27a (decisão do usuário, 20/11): a regra é só equipe atual e diretor. Gerente fora de sigiloso recebe 404 em tarefa e anexo, mesmo regra do membro, porque o cartão já mostra o projeto e esconde o resto.
 
 ### Trainee
 | Ação | Trainee | Código |
@@ -209,7 +209,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 ### Tarefas
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
-| Ver tarefas de projeto | todas | todas | dos seus projetos (atuais e anteriores; no geral, se tem ou teve período na área ou lidera a área) e as que é responsável | `projetos.verTodos` + `regrasTarefa().ver` (`acessoAoProjeto`) |
+| Ver tarefas de projeto | todas dos projetos normais (sigiloso: só se vê completo) | todas dos projetos normais (sigiloso: só se vê completo) | dos seus projetos (atuais e anteriores; no geral, se tem ou teve período na área ou lidera a área) e as que é responsável | `projetos.verTodos` + `regrasTarefa().ver` (`acessoAoProjeto`) |
 | Criar tarefa (sempre num projeto; sem projeto: 400 `PROJETO_OBRIGATORIO`) | ✅ | ✅ | se é da equipe atual (fica responsável); se é líder, para qualquer pessoa da equipe | `tarefas.gerirTodas` / `papelNoProjeto` |
 | Editar, atribuir, excluir tarefa de projeto | ✅ | ✅ | se é líder do projeto (no geral: se tem cargo que lidera a área) | `regrasTarefa().organizar` / `Projeto.ehLider` |
 | Editar e excluir a tarefa que criou (sem trocar responsáveis nem situação) | ✅ | ✅ | se é da equipe atual e criou a tarefa | `regrasTarefa().editar` |
@@ -218,7 +218,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Concluir ou reabrir tarefa de projeto | ✅ | ✅ | se é líder, ou participante e responsável | `regrasTarefa().mudarStatus` |
 | Mover tarefa de projeto entre as colunas | ✅ | ✅ | se é líder, ou participante e responsável (mesma regra de concluir e reabrir) | `PATCH /tarefas/:codigo/coluna` / `regrasTarefa().mudarStatus` |
 | Editar as colunas do quadro do projeto (criar, renomear, reordenar, cor, papel, excluir) | ✅ | ✅ | se é líder do projeto (no geral: se lidera a área) | `PUT /projetos/:codigo/colunas` / `papelNoProjeto` = `gestao` ou `lider` (sem ação nova no catálogo) |
-| Ver as colunas do projeto | todas | todas (sigiloso fora: não vê) | dos projetos que vê por completo | acesso completo (`acessoAoProjeto`) |
+| Ver as colunas do projeto | todas | todas (sigiloso fora: 403 `PROJETO_SEM_ACESSO`) | dos projetos que vê por completo | acesso completo (`acessoAoProjeto`) |
 | Comentar em tarefa de projeto | ✅ | ✅ | se é da equipe atual (no geral: período aberto na área) ou líder | `regrasTarefa().comentar` |
 | Ver e baixar anexo de tarefa | ✅ | ✅ | se vê a tarefa (senão 404) | `regrasTarefa().ver` / `GerirAnexos.acesso` |
 | Anexar arquivo na tarefa | ✅ | ✅ | se é da equipe atual ou líder | `regrasTarefa().comentar` / `GerirAnexos.acesso` |
@@ -228,7 +228,7 @@ Anexo de tarefa de sigiloso responde 404 também ao gerente fora, por decisão: 
 | Ver o detalhe da ocupação de uma pessoa | ✅ | ✅ | ✅ (trainee também) | `GET /ocupacao/:codigoUsuario` / `ConsultarOcupacao.dePessoa` (`acessoAoProjeto` por tarefa) |
 | Receber aviso de ocupação acima de 100% ao salvar tarefa | quem salva | quem salva | quem salva | `avisosOcupacao` em POST/PUT `/tarefas`, PATCH status e coluna (não bloqueia) |
 
-Sessão 24a (ocupação): o total de cada pessoa é visível a todo logado, porque soma todas as tarefas abertas com dificuldade (inclusive as de projetos que quem pede não vê). O detalhe mostra cada tarefa pelo acesso de quem pede ao projeto dela: `completo` = linha da tarefa (título, projeto e horas); `resumo` (gerente fora de sigiloso) = uma linha por projeto com o nome e as horas somadas, sem títulos; `nada` (membro fora do projeto, ex-membro de sigiloso, inclusive a própria pessoa) = tudo numa linha "Outras tarefas", sem título, código nem projeto. O aviso ao salvar só traz nome e números dos responsáveis.
+Sessão 24a (ocupação): o total de cada pessoa é visível a todo logado, porque soma todas as tarefas abertas com dificuldade (inclusive as de projetos que quem pede não vê). O detalhe mostra cada tarefa pelo acesso de quem pede ao projeto dela: `completo` = linha da tarefa (título, projeto e horas); `cartao` com gestão (sessão 27a) = uma linha por projeto com o nome e as horas somadas, sem títulos; `cartao` com membro ou trainee (fora do projeto, ex-membro de sigiloso, inclusive a própria pessoa) = tudo numa linha "Outras tarefas", sem título, código nem projeto. O aviso ao salvar só traz nome e números dos responsáveis.
 
 Sessão 23b: a tarefa avulsa acabou e a ação `tarefas.atribuir` saiu do catálogo (a gestão organiza qualquer tarefa com `tarefas.gerirTodas`). No projeto geral da área, quem tem período aberto é a equipe atual, quem teve é ex-participante e quem tem cargo que lidera a área é líder, mesmo com papel membro (organiza, mas não é responsável).
 

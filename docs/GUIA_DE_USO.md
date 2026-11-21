@@ -46,7 +46,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Comente em qualquer tarefa dos seus projetos. Você apaga só os seus comentários.
 - **Anexos na tarefa**: no modal, a seção **Anexos** (acima dos comentários) guarda a entrega da tarefa. Quem vê a tarefa vê e baixa os arquivos; quem é da equipe atual do projeto anexa (no projeto geral da área, só o responsável); o **líder do projeto** anexa e exclui qualquer anexo das tarefas do projeto; os demais excluem só o que enviaram. Tarefa nova só aceita anexo depois de salva. Nos cartões do Kanban e nas listas, um **clipe** com um número mostra quantos arquivos a tarefa tem.
 
-**Projetos**: só os projetos de que você participa ou participou, mais o **projeto geral** de cada área em que você tem ou teve período. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
+**Projetos**: a lista mostra **todos** os projetos. Dos que você participa ou participou (e do **projeto geral** de cada área em que você tem ou teve período) você abre a ficha inteira; dos demais aparece só o **cartão** (nome, tipo, área, situação, líder e selo de sigiloso), sem clique. Dentro do projeto: Tarefas (kanban por etapa e cronograma), Visão geral e Equipe.
 - **Kanban por etapa**: as colunas são as etapas do trabalho daquele projeto (por padrão, A fazer, Fazendo, Revisando e Concluído). Cada cartão mostra o prazo, mas o prazo não depende da coluna.
 - **Mover uma tarefa**: arraste o cartão para outra coluna, ou use **Mover para...** no menu do cartão (no celular, o menu é o caminho). Você move as tarefas em que é responsável; o líder move qualquer uma. No modal da tarefa, o campo **Etapa** faz o mesmo. Entrar na coluna marcada como concluída conta a tarefa como concluída; sair dela a reabre.
 - **Projeto interno e projeto geral da área**: projeto **interno** é da própria EJ (não é de cliente) e sempre pertence a uma área; na lista dá para filtrar por tipo. Cada área tem um **projeto geral** ("Área geral"), criado pelo sistema, onde ficam as tarefas que antes eram avulsas. Nele a equipe é quem tem período na área (você não monta a equipe), quem lidera a área organiza o quadro e as tarefas, e ele não pode ser editado, excluído, arquivado à mão nem ficar sigiloso (só as colunas do quadro mudam). Ele é arquivado quando a área é inativada e volta quando ela é reativada.
@@ -70,7 +70,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - Ideia de inovação? Cadastre como item da Biblioteca (sugestão: tag `inovacao`). Quem acompanha o trabalho é a gestão, com tarefas no projeto geral de Inovação.
 
 **Meu perfil** (no menu): seus dados de contato e apresentação (telefone, e-mail pessoal, LinkedIn, GitHub, link do calendário, curso, ingresso na faculdade e bio), troca de senha e a sua foto.
-- **Ocupação da semana**: percentual de horas da semana em relação ao teto do seu cargo (por padrão 10 h por semana; diretoria, presidência e vice-presidência, 20 h), com a barra (até 80% normal, de 81 a 100% atenção, acima disso alerta) e as setas para ver outras semanas. A lista mostra as tarefas que somam (título, projeto e horas na semana). Tarefa de projeto sigiloso a que você não tem acesso entra na linha **Outras tarefas**, só com as horas. O mesmo cartão aparece no perfil das outras pessoas.
+- **Ocupação da semana**: percentual de horas da semana em relação ao teto do seu cargo (por padrão 10 h por semana; diretoria, presidência e vice-presidência, 20 h), com a barra (até 80% normal, de 81 a 100% atenção, acima disso alerta) e as setas para ver outras semanas. A lista mostra as tarefas que somam (título, projeto e horas na semana). Tarefa de projeto que você não vê por completo entra na linha **Outras tarefas**, só com as horas (a gestão vê o nome do projeto e as horas). O mesmo cartão aparece no perfil das outras pessoas.
 - **Foto**: clique no círculo da foto (ou em **Trocar foto**), escolha uma imagem JPEG, PNG ou WebP de até 5 MB, ajuste o recorte quadrado e salve. **Remover foto** volta às iniciais. A foto aparece no topo, nas listas de pessoas, nas equipes e nos cartões de tarefa.
 - **Links**: GitHub, LinkedIn e calendário aparecem como cartões com o logo de cada um; clique para abrir. Não há mais a seção de tecnologias.
 - **Áreas e cargos**: suas áreas atuais (você pode estar em mais de uma, cada uma com o seu cargo) e a trajetória anterior, com as datas. Quem lança e corrige é a gestão; no seu perfil a seção é só leitura.
@@ -116,28 +116,20 @@ Quem entra como trainee faz login como qualquer pessoa, com o acesso de **membro
 
 Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confidencial).
 
-**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, escolha **Visibilidade: Sigiloso** e preencha **Quem mais pode ver o projeto**, além da equipe. A lista aceita só pessoas que têm login. Quem cria o projeto sempre o vê.
-
 **Quem vê o projeto inteiro** (ficha, tarefas, equipe e itens da Biblioteca ligados a ele):
 - os diretores;
-- quem criou o projeto;
-- quem está na lista de acesso;
-- a **equipe atual**. Quem sai da equipe perde o acesso (num projeto normal, o histórico continua visível).
+- a **equipe atual**. Quem sai da equipe perde o acesso (num projeto normal, o histórico continua visível). Quem só criou o projeto e não está na equipe não vê.
 
-**Gerente que não está nessas listas** vê só o **resumo**: nome, situação, datas, quantas tarefas há (e quantas estão concluídas ou atrasadas), a equipe (sem a ocupação). Não vê descrição, tarefas nem Biblioteca, e não edita nada do projeto.
+**Todas as outras pessoas, inclusive gerentes**, veem só o **cartão** na lista: nome, tipo, área (no projeto interno), situação, líder e o selo de sigiloso. Não abrem a ficha e não veem tarefas, equipe, datas nem Biblioteca. Tarefa de projeto que você não vê responde "não encontrada".
 
-**Membro e trainee fora do projeto** não o veem: ele nem aparece na lista, e abrir o endereço direto mostra "projeto não encontrado".
+**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, escolha **Visibilidade: Sigiloso** e monte a equipe. Quem não é diretor precisa estar na equipe: senão o sistema não deixa salvar (aviso `SIGILOSO_SEM_VOCE`).
 
-**Itens da Biblioteca** ligados a um projeto sigiloso somem para quem não vê o projeto inteiro, inclusive para a gestão.
-
-**Marcar ou tirar o sigilo:** quem pode editar o projeto (acesso completo). Na ficha do projeto, clique em **Editar** e mude **Visibilidade**. Quem não está na equipe, nem é diretor, nem está na lista passa a ver só o resumo depois de marcar; o sistema pede confirmação antes.
-
-**Mudar a lista de acesso:** só os diretores e quem criou o projeto. Em **Editar**, mude **Quem mais pode ver o projeto** e salve (por trás, o sistema usa `PUT /projetos/:codigo/acesso`). A aba **Visão geral** mostra a visibilidade e **Quem mais vê**. Quem perdeu o login sai da lista no primeiro salvamento.
+**Marcar ou tirar o sigilo:** quem pode editar o projeto. Na ficha, clique em **Editar** e mude **Visibilidade**. Ao marcar, o sistema avisa que quem não é diretor nem está na equipe passa a ver só o cartão, e pede confirmação. Não existe mais lista de acesso: para alguém ver, coloque a pessoa na equipe.
 
 ---
 
 ## Dúvidas comuns
-- **Projeto sigiloso sumiu da lista ou diz "não encontrado"**: você não está na equipe atual nem na lista de acesso. Peça a quem criou o projeto ou a um diretor.
+- **Projeto sigiloso aparece só como cartão**: você não está na equipe atual. Peça a um diretor ou à gestão para incluir você na equipe.
 - **Sou trainee e não vejo a Biblioteca**: é assim mesmo; ela aparece quando a gestão mudar seu status para Ativo (recarregue a página ou entre de novo).
 - **"Você não tem acesso a este projeto"**: você não está (nem esteve) na equipe. Peça à gestão para incluir você.
 - **Não consigo concluir uma tarefa**: só o responsável, o líder e a gestão concluem. Peça para ser incluído como responsável.
