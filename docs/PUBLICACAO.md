@@ -560,6 +560,36 @@ Tem que aparecer `Migração aplicada: 022_pessoas.sql`. Depois repetir as duas 
 
 **Rollback:** a 022 acrescenta colunas, converte dados e apaga o semestre. Voltar = restaurar o `.dump` da Parte 2 (seção 6) e voltar **backend e frontend juntos**.
 
+### Publicação da sessão 26a (central de avisos e ocupação no Dashboard): migração 023
+A migração `023_avisos.sql` cria a tabela `avisos` (tarefa recebida e capacitação nova). Não mexe em dados que já existem. O sininho aparece para todos; o cartão "Ocupação da semana" só para a gestão. Sem e-mail. Publicar **backend e frontend juntos**.
+
+**Parte 1, backup:**
+```bash
+cd /docker/erp-konvex
+DATA=$(date +%F_%H%M); ARQ=/root/backup-konvex/konvex_$DATA.dump
+docker exec konvex-db sh -c 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$ARQ" && ls -lh "$ARQ"
+tar -czf /root/backup-konvex/anexos_$DATA.tar.gz anexos
+```
+
+**Parte 2, construir e subir:**
+```bash
+git -C backend pull --ff-only && git -C frontend pull --ff-only
+docker compose build backend frontend
+docker compose up -d
+docker logs konvex-backend 2>&1 | tail -20
+```
+No log tem que aparecer `Migração aplicada: 023_avisos.sql` e `API disponível na porta 5001`.
+
+**Parte 3, conferir de fora:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/avisos                    # 401
+curl -s -o /dev/null -w "%{http_code}\n" -X PATCH -H 'Content-Type: application/json' -d '{}' https://erp.konvexjr.com.br/api/avisos/lidos   # 401
+```
+
+**Parte 4, teste pela tela:** um gerente dá uma tarefa a um membro; o membro entra e vê o número no sininho; clicar no aviso abre a tarefa e zera o número. Diretor vê "Ocupação da semana" no Dashboard; membro não.
+
+**Voltar:** a 023 só acrescenta uma tabela. Voltar backend e frontend para o commit anterior basta (a tabela fica sem uso). Restaurar o `pg_dump` só se algo der errado no banco.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
