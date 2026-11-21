@@ -110,6 +110,7 @@ Tarefas de projeto concluído ou arquivado não contam (mesma regra da ocupaçã
 - Número do sininho só conta gravados não lidos.
 - "A vencer" = hoje ou amanhã; "Livres" = abaixo de 50%.
 - Capacitação nova avisa todo mundo na EJ com login, inclusive trainee.
+- O sininho usa estado próprio e descarta resposta de outra pessoa, sem memória por aba (não usa `useCarregar` com `{ chave }`).
 - Atualização a cada 2 minutos, sem WebSocket.
 - `naoLidos` só conta o que a pessoa vê; responsável sem acesso ao projeto não recebe avisos da tarefa.
 - Tarefa abre pela tela Tarefas com `?tarefa=`; casos de uso de tarefa e capacitação passam a usar `emTransacao`.

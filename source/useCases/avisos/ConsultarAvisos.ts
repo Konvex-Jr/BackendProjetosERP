@@ -57,7 +57,7 @@ export default class ConsultarAvisos {
             if (!codigo) return null;
             if (!autores.has(codigo)) {
                 const u = await usuarios.buscarPorCodigo(codigo);
-                autores.set(codigo, u ? { codigo: u.codigo, nome: u.nome } : null);
+                autores.set(codigo, u ? { codigo: u.codigo, nome: u.nomeExibicao || u.nome } : null);
             }
             return autores.get(codigo)!;
         };

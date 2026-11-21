@@ -31,7 +31,7 @@ export async function avisarCapacitacaoNova(
     codigoAutor: string,
 ): Promise<void> {
     const pessoas = await factory.criarUsuarioRepository().listar({ status: STATUS_NA_EJ });
-    const alvos = pessoas.filter((p) => p.ativo && p.codigo !== codigoAutor);
+    const alvos = pessoas.filter((p) => p.ativo && !p.convitePendente && p.codigo !== codigoAutor);
     if (!alvos.length) return;
     await factory.criarAvisoRepository().criarVarios(
         alvos.map((p) => ({

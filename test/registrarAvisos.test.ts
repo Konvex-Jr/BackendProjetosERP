@@ -13,13 +13,13 @@ import Projeto from "../source/domain/entity/Projeto";
 async function cenario() {
     const ctx = await criarContexto();
     const { factory, membro, gerente, senioridade } = ctx;
-    const mk = async (nome: string, codigo: string, status = StatusPessoa.ATIVO) => {
+    const mk = async (nome: string, codigo: string, status = StatusPessoa.ATIVO, senha = "h") => {
         const u = new Usuario(
             nome,
             `${codigo}@konvex.com.br`,
             PerfilUsuario.MEMBRO,
             status !== StatusPessoa.INATIVO,
-            "h",
+            senha,
             senioridade,
             codigo,
             { status },
@@ -96,10 +96,11 @@ describe("aviso de tarefa recebida", () => {
 });
 
 describe("aviso de capacitação nova", () => {
-    test("avisa ativos na EJ menos o autor; inativo e ex-membro ficam de fora; editar não avisa", async () => {
+    test("avisa ativos com login na EJ menos o autor; inativo, convite pendente e ex-membro ficam de fora; editar não avisa", async () => {
         const { factory, membro, gerente, mk, c } = await cenario();
         const inativo = await mk("Ivo", "usr-ivo", StatusPessoa.INATIVO);
         const trainee = await mk("Tito", "usr-tito", StatusPessoa.TRAINEE);
+        const convidado = await mk("Cida", "usr-cida", StatusPessoa.ATIVO, "");
         const gestao = { codigo: gerente.codigo, perfil: PerfilUsuario.DIRETOR } as any;
         const servico = new GerirCapacitacoes(factory);
         const ficha = await servico.salvar(gestao, {
@@ -117,6 +118,7 @@ describe("aviso de capacitação nova", () => {
             expect(await avisos.listarDoUsuario(u.codigo)).toMatchObject([{ tipo: "capacitacao_nova", codigoCapacitacao: ficha.codigo }]);
         }
         expect(await avisos.listarDoUsuario(inativo.codigo)).toHaveLength(0);
+        expect(await avisos.listarDoUsuario(convidado.codigo)).toHaveLength(0);
         await servico.salvar(gestao, { titulo: "Editada" }, ficha.codigo);
         expect(await avisos.listarDoUsuario(membro.codigo)).toHaveLength(1);
     });
