@@ -293,6 +293,20 @@ describe("Visibilidade de projetos (HTTP)", () => {
             expect(r.corpo.codigo).toBe("SIGILOSO_SEM_VOCE");
         });
 
+        it("PUT que liga o sigilo no geral da área por gerente fora da equipe: erro do geral, não SIGILOSO_SEM_VOCE", async () => {
+            const area = (await ctx.factory.criarAreaRepository().buscarPorCodigo("area-mkt"))!;
+            await ctx.factory.criarProjetoRepository().criar(
+                new Projeto("Marketing geral", "d", inicio, fim, undefined, [], "p-g", {
+                    tipo: TipoProjeto.INTERNO,
+                    area,
+                    geralDaArea: true,
+                }),
+            );
+            const r = await servidor.chamar("put", "/projetos/p-g", { usuario: g, corpo: corpoEdicao({ sigiloso: true }) });
+            expect(r.status).toBe(400);
+            expect(r.corpo.codigo).toBe("PROJETO_GERAL_FIXO");
+        });
+
         it("PUT de outro campo em sigiloso já existente por quem vê completo: 200; desligar o sigilo: 200", async () => {
             const corpo = { nome: "Sigiloso Beta 2", descricao: "d", dataInicio: iso(inicio), dataFim: iso(fim) };
             const outro = await servidor.chamar("put", "/projetos/p-s", { usuario: gs, corpo: { ...corpo, sigiloso: true } });

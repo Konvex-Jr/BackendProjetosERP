@@ -153,7 +153,8 @@ export default class ProjetoRoutes implements ModelRoutes {
             const codigosMembros = body.codigosMembros === undefined ? undefined : lerLista(body.codigosMembros);
             // Só quando liga o sigilo: mexer em outro campo de um sigiloso existente (ou sair da equipe dele)
             // não barra ninguém. A equipe que vale é a que fica depois da gravação: a do corpo, se veio.
-            if (sigiloso === true && !projeto.sigiloso) {
+            // O geral da área não passa por aqui: o caso de uso responde com o motivo certo (projeto fixo).
+            if (sigiloso === true && !projeto.sigiloso && !projeto.geralDaArea) {
                 const equipe = codigosMembros ?? projeto.membros.map((m) => m.codigo);
                 exigirNaoSeTrancar(usuario, equipe);
             }

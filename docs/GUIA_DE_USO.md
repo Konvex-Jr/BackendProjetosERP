@@ -122,7 +122,7 @@ Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confi
 
 **Todas as outras pessoas, inclusive gerentes**, veem só o **cartão** na lista: nome, tipo, área (no projeto interno), situação, líder e o selo de sigiloso. Não abrem a ficha e não veem tarefas, equipe, datas nem Biblioteca. Tarefa de projeto que você não vê responde "não encontrada".
 
-**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, escolha **Visibilidade: Sigiloso** e monte a equipe. Quem não é diretor precisa estar na equipe: senão o sistema não deixa salvar (aviso `SIGILOSO_SEM_VOCE`).
+**Como criar (diretor ou gerente):** em **Projetos**, **Novo projeto**, escolha **Visibilidade: Sigiloso** e monte a equipe. Quem não é diretor precisa estar na equipe: senão o sistema não deixa salvar (o aviso é: "Você ficaria sem acesso ao projeto sigiloso: só a equipe atual e os diretores o veem. Coloque-se na equipe ou peça a um diretor.").
 
 **Marcar ou tirar o sigilo:** quem pode editar o projeto. Na ficha, clique em **Editar** e mude **Visibilidade**. Ao marcar, o sistema avisa que quem não é diretor nem está na equipe passa a ver só o cartão, e pede confirmação. Não existe mais lista de acesso: para alguém ver, coloque a pessoa na equipe.
 
