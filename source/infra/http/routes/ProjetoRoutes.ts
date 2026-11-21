@@ -129,8 +129,9 @@ export default class ProjetoRoutes implements ModelRoutes {
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
-            // A equipe inicial do corpo; lerLista não deixa um texto passar por lista (includes de substring).
-            if (sigiloso) exigirNaoSeTrancar(usuario, lerLista(body.codigosMembros));
+            // Lida uma vez: a mesma equipe inicial vale para a regra do sigilo e para a gravação.
+            const codigosMembros = lerLista(body.codigosMembros);
+            if (sigiloso) exigirNaoSeTrancar(usuario, codigosMembros);
             return new CriarProjeto(f).execute({
                 criadoPor: usuario.codigo,
                 sigiloso,
@@ -139,7 +140,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                 dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
                 dataFim: lerDataObrigatoria(body.dataFim, "dataFim"),
                 status: lerEnum(body.status, StatusProjeto, "status"),
-                codigosMembros: body.codigosMembros ?? [],
+                codigosMembros,
                 ...lerDetalhes(body),
             });
         });
@@ -148,10 +149,12 @@ export default class ProjetoRoutes implements ModelRoutes {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             const projeto = await this.carregarParaEscrita(usuario, params.codigo);
             const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
+            // Ausente = não mexe na equipe; presente = a equipe que fica (lida uma vez, para a regra e a gravação).
+            const codigosMembros = body.codigosMembros === undefined ? undefined : lerLista(body.codigosMembros);
             // Só quando liga o sigilo: mexer em outro campo de um sigiloso existente (ou sair da equipe dele)
             // não barra ninguém. A equipe que vale é a que fica depois da gravação: a do corpo, se veio.
             if (sigiloso === true && !projeto.sigiloso) {
-                const equipe = body.codigosMembros !== undefined ? lerLista(body.codigosMembros) : projeto.membros.map((m) => m.codigo);
+                const equipe = codigosMembros ?? projeto.membros.map((m) => m.codigo);
                 exigirNaoSeTrancar(usuario, equipe);
             }
             return new EditarProjeto(f).execute({
@@ -162,7 +165,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                 dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
                 dataFim: lerDataObrigatoria(body.dataFim, "dataFim"),
                 status: lerEnum(body.status, StatusProjeto, "status"),
-                codigosMembros: body.codigosMembros,
+                codigosMembros,
                 ...lerDetalhes(body),
             });
         });

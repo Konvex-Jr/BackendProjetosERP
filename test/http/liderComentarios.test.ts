@@ -116,10 +116,11 @@ describe("Líder e comentários pela API", () => {
             (await servidor.chamar("patch", `/tarefas/${codigo}/status`, { usuario: lider, corpo: { status: "concluida" } })).status,
         ).toBe(403);
         expect((await servidor.chamar("post", "/tarefas", { usuario: deFora, corpo: corpoTarefa() })).status).toBe(403);
+        // Sessão 27a: tarefa de projeto que a pessoa só vê pelo cartão = 404, como a inexistente (antes, 403).
         expect((await servidor.chamar("post", `/tarefas/${codigo}/comentarios`, { usuario: deFora, corpo: { texto: "oi" } })).status).toBe(
-            403,
+            404,
         );
-        expect((await servidor.chamar("get", `/tarefas/${codigo}/comentarios`, { usuario: deFora })).status).toBe(403);
+        expect((await servidor.chamar("get", `/tarefas/${codigo}/comentarios`, { usuario: deFora })).status).toBe(404);
     });
 
     it("comentários: equipe comenta; cada um apaga o seu; líder e gestão apagam qualquer um", async () => {

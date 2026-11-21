@@ -222,9 +222,14 @@ describe("Visibilidade de projetos (HTTP)", () => {
     });
 
     describe("tarefas de projeto que a pessoa só vê pelo cartão", () => {
-        it("membro de fora em tarefa de normal: 404", async () => {
-            const r = await servidor.chamar("get", "/tarefas/t-n/anexos", { usuario: m });
+        it("membro de fora em tarefa de normal: o mesmo 404 da tarefa inexistente (anexos e comentários)", async () => {
+            expect((await servidor.chamar("get", "/tarefas/t-n/anexos", { usuario: m })).status).toBe(404);
+            const inexistente = await servidor.chamar("get", "/tarefas/t-nao-existe/comentarios", { usuario: m });
+            const r = await servidor.chamar("get", "/tarefas/t-n/comentarios", { usuario: m });
             expect(r.status).toBe(404);
+            expect(r.corpo).toEqual(inexistente.corpo);
+            // Gestão segue vendo.
+            expect((await servidor.chamar("get", "/tarefas/t-n/comentarios", { usuario: g })).status).toBe(200);
         });
 
         it("gerente de fora em tarefa de sigiloso: 404 (anexos e comentários)", async () => {
