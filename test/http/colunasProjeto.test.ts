@@ -65,9 +65,12 @@ describe("Colunas do projeto", () => {
         expect((await gravar("nao-existe", ctx.gerente)).status).toBe(404);
     });
 
-    it("sigiloso: membro de fora 404, gerente de fora 403, diretor 200", async () => {
-        expect((await gravar("proj-sig", deFora)).status).toBe(404);
-        expect((await gravar("proj-sig", ctx.gerente)).status).toBe(403);
+    it("sigiloso: membro e gerente de fora 403 PROJETO_SEM_ACESSO (sessão 27a; antes o membro tinha 404), diretor 200", async () => {
+        for (const quem of [deFora, ctx.gerente]) {
+            const r = await gravar("proj-sig", quem);
+            expect(r.status).toBe(403);
+            expect(r.corpo.codigo).toBe("PROJETO_SEM_ACESSO");
+        }
         const dele = (await servidor.chamar("get", "/projetos/proj-sig", { usuario: diretor })).corpo.colunas;
         expect((await gravar("proj-sig", diretor, { colunas: dele })).status).toBe(200);
     });
@@ -107,18 +110,18 @@ describe("Colunas do projeto", () => {
         expect(lida.coluna.nome).toBe("Revisando");
     });
 
-    it("GET traz colunas na versão completa e não no resumo do sigiloso", async () => {
+    it("GET traz colunas na versão completa e não no cartão do sigiloso", async () => {
         const completo = await servidor.chamar("get", "/projetos/proj-nor", { usuario: ctx.gerente });
         expect(completo.corpo.colunas).toHaveLength(4);
         const lista = await servidor.chamar("get", "/projetos", { usuario: ctx.gerente });
         expect(lista.corpo.find((p: any) => p.codigo === "proj-nor").colunas).toHaveLength(4);
-        const resumo = await servidor.chamar("get", "/projetos/proj-sig", { usuario: ctx.gerente });
-        expect(resumo.corpo.resumo).toBe(true);
-        expect(resumo.corpo.colunas).toBeUndefined();
-        const resumoLista = (await servidor.chamar("get", "/projetos", { usuario: ctx.gerente })).corpo.find(
+        const cartao = await servidor.chamar("get", "/projetos/proj-sig", { usuario: ctx.gerente });
+        expect(cartao.corpo.cartao).toBe(true);
+        expect(cartao.corpo.colunas).toBeUndefined();
+        const cartaoLista = (await servidor.chamar("get", "/projetos", { usuario: ctx.gerente })).corpo.find(
             (p: any) => p.codigo === "proj-sig",
         );
-        expect(resumoLista.colunas).toBeUndefined();
+        expect(cartaoLista.colunas).toBeUndefined();
     });
 
     it("POST /projetos devolve o projeto com as quatro colunas padrão", async () => {

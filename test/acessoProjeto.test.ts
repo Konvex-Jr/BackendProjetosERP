@@ -1,64 +1,65 @@
 import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
+import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { ErroAplicacao } from "../source/shared/erros/ErroAplicacao";
-import { acessoAoProjeto, exigirAcessoCompleto, podeGerirAcesso, ProjetoParaAcesso } from "../source/shared/seguranca/visibilidadeProjetos";
+import { UsuarioAutenticado } from "../source/shared/seguranca/permissoes";
+import {
+    acessoAoProjeto,
+    exigirAcessoCompleto,
+    exigirNaoSeTrancar,
+    ProjetoParaAcesso,
+} from "../source/shared/seguranca/visibilidadeProjetos";
 
-const usuario = (codigo: string, perfil: PerfilUsuario) => ({ codigo, perfil });
+const usuario = (codigo: string, perfil: PerfilUsuario, status?: StatusPessoa): UsuarioAutenticado => ({ codigo, perfil, status });
 const diretor = usuario("d", PerfilUsuario.DIRETOR);
 const gerente = usuario("g", PerfilUsuario.GERENTE);
-const gerenteNaLista = usuario("gl", PerfilUsuario.GERENTE);
-const criador = usuario("c", PerfilUsuario.MEMBRO);
-const naLista = usuario("l", PerfilUsuario.MEMBRO);
 const equipe = usuario("e", PerfilUsuario.MEMBRO);
 const exEquipe = usuario("x", PerfilUsuario.MEMBRO);
 const fora = usuario("f", PerfilUsuario.MEMBRO);
+const trainee = usuario("t", PerfilUsuario.MEMBRO, StatusPessoa.TRAINEE);
+// Criou o projeto, mas não está na equipe: `criadoPor` não dá acesso (sessão 27a).
+const criador = usuario("c", PerfilUsuario.MEMBRO);
+const liderDaArea = usuario("la", PerfilUsuario.MEMBRO);
 
 const participacoes = [
     { usuario: { codigo: "e" }, ativa: true },
     { usuario: { codigo: "x" }, ativa: false },
 ];
-const sigiloso: ProjetoParaAcesso = { sigiloso: true, criadoPor: "c", acesso: ["l", "gl"], participacoes };
-const normal: ProjetoParaAcesso = { sigiloso: false, criadoPor: "c", acesso: [], participacoes };
+const normal: ProjetoParaAcesso = { sigiloso: false, participacoes, lideresDaArea: ["la"] };
+const sigiloso: ProjetoParaAcesso = { sigiloso: true, participacoes };
 
-describe("acessoAoProjeto", () => {
+describe("acessoAoProjeto (sessão 27a: completo ou cartão)", () => {
     test.each([
         ["diretor", diretor, "completo"],
-        ["criador", criador, "completo"],
-        ["pessoa na lista de acesso", naLista, "completo"],
-        ["equipe atual", equipe, "completo"],
-        ["ex-equipe", exEquipe, "nada"],
-        ["gerente fora", gerente, "resumo"],
-        ["membro fora", fora, "nada"],
-    ])("projeto sigiloso: %s", (_nome, quem, esperado) => {
-        expect(acessoAoProjeto(quem, sigiloso)).toBe(esperado);
-    });
-
-    test.each([
         ["gerente", gerente, "completo"],
+        ["equipe atual", equipe, "completo"],
         ["ex-equipe (participou)", exEquipe, "completo"],
-        ["membro fora", fora, "nada"],
+        ["líder da área (projeto geral)", liderDaArea, "completo"],
+        ["membro fora", fora, "cartao"],
+        ["trainee fora", trainee, "cartao"],
+        ["criador fora da equipe", criador, "cartao"],
     ])("projeto normal: %s", (_nome, quem, esperado) => {
         expect(acessoAoProjeto(quem, normal)).toBe(esperado);
     });
 
-    test("projeto geral (sessão 23b): quem lidera a área tem acesso completo sem estar na equipe", () => {
-        const geral: ProjetoParaAcesso = { ...normal, participacoes: [], lideresDaArea: ["f"] };
-        expect(acessoAoProjeto(fora, geral)).toBe("completo");
-        expect(acessoAoProjeto(equipe, geral)).toBe("nada");
-    });
-});
-
-describe("podeGerirAcesso", () => {
     test.each([
-        ["diretor", diretor, true],
-        ["criador", criador, true],
-        ["gerente na lista", gerenteNaLista, false],
-    ])("%s", (_nome, quem, esperado) => {
-        expect(podeGerirAcesso(quem, sigiloso)).toBe(esperado);
+        ["diretor", diretor, "completo"],
+        ["equipe atual", equipe, "completo"],
+        ["gerente fora", gerente, "cartao"],
+        ["ex-equipe", exEquipe, "cartao"],
+        ["criador fora da equipe", criador, "cartao"],
+        ["membro fora", fora, "cartao"],
+        ["trainee fora", trainee, "cartao"],
+    ])("projeto sigiloso: %s", (_nome, quem, esperado) => {
+        expect(acessoAoProjeto(quem, sigiloso)).toBe(esperado);
+    });
+
+    test("líder da área não vê completo o projeto de que não é líder da área", () => {
+        expect(acessoAoProjeto(liderDaArea, { ...normal, lideresDaArea: [] })).toBe("cartao");
     });
 });
 
 describe("exigirAcessoCompleto", () => {
-    function erroDe(quem: typeof fora, projeto: ProjetoParaAcesso): ErroAplicacao {
+    function erroDe(quem: UsuarioAutenticado, projeto: ProjetoParaAcesso): ErroAplicacao {
         try {
             exigirAcessoCompleto(quem, projeto);
         } catch (e) {
@@ -67,21 +68,47 @@ describe("exigirAcessoCompleto", () => {
         throw new Error("Era esperado um erro.");
     }
 
-    test("membro fora de sigiloso recebe 404", () => {
-        expect(erroDe(fora, sigiloso).codigoHttp).toBe(404);
-    });
-
-    test("gerente fora de sigiloso recebe 403 PROJETO_SIGILOSO", () => {
-        const erro = erroDe(gerente, sigiloso);
+    test.each([
+        ["membro fora de projeto normal", fora, normal],
+        ["membro fora de sigiloso", fora, sigiloso],
+        ["gerente fora de sigiloso", gerente, sigiloso],
+    ])("%s recebe 403 PROJETO_SEM_ACESSO", (_nome, quem, projeto) => {
+        const erro = erroDe(quem, projeto);
         expect(erro.codigoHttp).toBe(403);
-        expect(erro.codigo).toBe("PROJETO_SIGILOSO");
+        expect(erro.codigo).toBe("PROJETO_SEM_ACESSO");
     });
 
-    test("membro fora de projeto normal recebe 403", () => {
-        expect(erroDe(fora, normal).codigoHttp).toBe(403);
+    test("a mensagem diz quem vê os detalhes (gestão no normal, diretores no sigiloso)", () => {
+        expect(erroDe(fora, normal).message).toMatch(/gestão/);
+        expect(erroDe(fora, sigiloso).message).toMatch(/diretores/);
     });
 
     test("quem tem acesso completo recebe o usuário de volta", () => {
         expect(exigirAcessoCompleto(equipe, sigiloso)).toBe(equipe);
+    });
+});
+
+describe("exigirNaoSeTrancar", () => {
+    function erroDe(quem: UsuarioAutenticado, equipeAtual: string[]): ErroAplicacao | null {
+        try {
+            exigirNaoSeTrancar(quem, equipeAtual);
+            return null;
+        } catch (e) {
+            return e as ErroAplicacao;
+        }
+    }
+
+    test("gerente fora da equipe: 400 SIGILOSO_SEM_VOCE", () => {
+        const erro = erroDe(gerente, ["e"]);
+        expect(erro?.codigoHttp).toBe(400);
+        expect(erro?.codigo).toBe("SIGILOSO_SEM_VOCE");
+    });
+
+    test("gerente na equipe passa", () => {
+        expect(erroDe(gerente, ["e", "g"])).toBeNull();
+    });
+
+    test("diretor fora da equipe passa", () => {
+        expect(erroDe(diretor, [])).toBeNull();
     });
 });

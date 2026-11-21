@@ -7,7 +7,10 @@ import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
-/** Decisão de 30/10/2026: gerente e diretor veem todos os projetos; membro só os de que participa ou participou. */
+/**
+ * Decisão de 30/10/2026, revista na sessão 27a: gerente e diretor veem todos os projetos completos; o membro vê
+ * completos os de que participa ou participou e os demais como cartão.
+ */
 describe("Visibilidade de projetos", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
@@ -25,18 +28,24 @@ describe("Visibilidade de projetos", () => {
 
     afterEach(async () => servidor.fechar());
 
-    it("membro lista só os próprios projetos, mesmo pedindo os de outra pessoa", async () => {
+    it("membro lista todos: os próprios completos e os alheios como cartão; filtro de outra pessoa não revela a equipe", async () => {
         const lista = await servidor.chamar("get", "/projetos", { usuario: ctx.membro });
         expect(lista.status).toBe(200);
-        expect(lista.corpo.map((p: any) => p.codigo)).toEqual(["proj-meu"]);
+        const porCodigo = new Map(lista.corpo.map((p: any) => [p.codigo, p]));
+        expect([...porCodigo.keys()].sort()).toEqual(["proj-alheio", "proj-meu"]);
+        expect((porCodigo.get("proj-meu") as any).cartao).toBeUndefined();
+        expect((porCodigo.get("proj-alheio") as any).cartao).toBe(true);
 
         const deOutro = await servidor.chamar("get", `/projetos?codigoUsuario=${outroMembro.codigo}`, { usuario: ctx.membro });
-        expect(deOutro.corpo.map((p: any) => p.codigo)).toEqual(["proj-meu"]);
+        expect(deOutro.corpo).toEqual([]);
     });
 
-    it("membro não abre projeto de que não participa", async () => {
-        expect((await servidor.chamar("get", "/projetos/proj-meu", { usuario: ctx.membro })).status).toBe(200);
-        expect((await servidor.chamar("get", "/projetos/proj-alheio", { usuario: ctx.membro })).status).toBe(403);
+    it("membro abre o próprio projeto completo e o alheio só como cartão", async () => {
+        expect((await servidor.chamar("get", "/projetos/proj-meu", { usuario: ctx.membro })).corpo.cartao).toBeUndefined();
+        const alheio = await servidor.chamar("get", "/projetos/proj-alheio", { usuario: ctx.membro });
+        expect(alheio.status).toBe(200);
+        expect(alheio.corpo.cartao).toBe(true);
+        expect(alheio.corpo.participacoes).toBeUndefined();
     });
 
     it("gerente vê todos e pode filtrar por pessoa", async () => {

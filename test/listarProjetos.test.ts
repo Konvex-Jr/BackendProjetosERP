@@ -12,18 +12,16 @@ test("lista projetos associados a um membro", async () => {
     expect(projetos[0].codigo).toBe("projeto-teste");
 });
 
-test("com codigoUsuario, une os projetos da equipe e os sigilosos com acesso, sem repetir", async () => {
+test("com codigoUsuario, só os projetos da equipe (quem só criou o sigiloso não o recebe)", async () => {
     const { factory, membro } = await criarContexto();
     const repo = factory.criarProjetoRepository();
+    await repo.criar(new Projeto("Meu", "d", dataInicio, dataFim, undefined, [membro], "p-meu", { sigiloso: true }));
     await repo.criar(
-        new Projeto("Meu", "d", dataInicio, dataFim, undefined, [membro], "p-meu", { sigiloso: true, acesso: [membro.codigo] }),
-    );
-    await repo.criar(
-        new Projeto("Liberado", "d", dataInicio, dataFim, undefined, [], "p-lib", { sigiloso: true, acesso: [membro.codigo] }),
+        new Projeto("Criado por ele", "d", dataInicio, dataFim, undefined, [], "p-criado", { sigiloso: true, criadoPor: membro.codigo }),
     );
     await repo.criar(new Projeto("Alheio", "d", dataInicio, dataFim, undefined, [], "p-alheio", { sigiloso: true }));
 
     const projetos = await new ListarProjetos(factory).execute(membro.codigo);
 
-    expect(projetos.map((p) => p.codigo).sort()).toEqual(["p-lib", "p-meu"]);
+    expect(projetos.map((p) => p.codigo)).toEqual(["p-meu"]);
 });

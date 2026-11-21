@@ -214,7 +214,6 @@ descrever("tarefas contra PostgreSQL", () => {
             new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), {
                 sigiloso: true,
                 criadoPor: null,
-                acesso: [],
             }),
         );
         const tarefa = await factory
@@ -227,7 +226,8 @@ descrever("tarefas contra PostgreSQL", () => {
             expect(doGerente.corpo.map((t: any) => t.codigo)).not.toContain(tarefa.codigo);
             const daEquipe = await servidor.chamar("get", "/tarefas", { usuario: equipe });
             expect(daEquipe.corpo.map((t: any) => t.codigo)).toContain(tarefa.codigo);
-            expect((await servidor.chamar("get", `/tarefas/${tarefa.codigo}/comentarios`, { usuario: gerenteFora })).status).toBe(403);
+            // Sessão 27a: o gerente fora do sigiloso recebe o mesmo 404 da tarefa inexistente (antes, 403).
+            expect((await servidor.chamar("get", `/tarefas/${tarefa.codigo}/comentarios`, { usuario: gerenteFora })).status).toBe(404);
         } finally {
             await servidor.fechar();
         }
@@ -307,7 +307,6 @@ descrever("tarefas contra PostgreSQL", () => {
             new Projeto("Sigiloso Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID(), {
                 sigiloso: true,
                 criadoPor: null,
-                acesso: [],
             }),
         );
         const normal = await projetos.criar(new Projeto("Normal Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID()));

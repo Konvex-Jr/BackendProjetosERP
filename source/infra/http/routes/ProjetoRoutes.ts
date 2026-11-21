@@ -14,14 +14,9 @@ import AlternarStatusProjeto from "../../../useCases/projetos/AlternarStatusProj
 import { AdicionarParticipante, DefinirLider, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/projetos/dadosProjeto";
 import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
-import {
-    acessoAoProjeto,
-    exigirAcessoCompleto,
-    podeGerirAcesso,
-    projetosVisiveisPara,
-} from "../../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, exigirAcessoCompleto, exigirNaoSeTrancar } from "../../../shared/seguranca/visibilidadeProjetos";
 import { lerBooleano, lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
-import { resumoProjeto } from "../../../useCases/projetos/resumoProjeto";
+import { cartaoProjeto } from "../../../useCases/projetos/cartaoProjeto";
 import { hoje } from "../../../shared/datas";
 import { normalizarBusca } from "../../../shared/texto";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
@@ -29,8 +24,6 @@ import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import GerirColunasProjeto from "../../../useCases/projetos/GerirColunasProjeto";
 import { papelNoProjeto } from "../../../shared/seguranca/regrasTarefa";
-import { exigirNaoGeral } from "../../../useCases/projetos/sincronizarGeral";
-import DefinirAcessoProjeto from "../../../useCases/projetos/DefinirAcessoProjeto";
 
 /** Tipo vindo da API (ausente = não informado); outro valor é 400 TIPO_PROJETO_INVALIDO. */
 function lerTipo(valor: unknown): TipoProjeto | undefined {
@@ -63,38 +56,38 @@ export default class ProjetoRoutes implements ModelRoutes {
     ) {}
 
     /**
-     * Monta a resposta de cada projeto conforme o acesso da pessoa: completo (`toJSON` + contagem de
-     * tarefas + `podeGerirAcesso`), resumo (gerente fora de projeto sigiloso) ou nada (some da lista).
+     * Monta a resposta de cada projeto conforme o acesso da pessoa (sessão 27a): completo (`toJSON` + contagem
+     * de tarefas) ou cartão (`cartaoProjeto`, lista fechada).
      * O frontend calcula o progresso com a contagem de todas as tarefas do projeto; antes usava só as
      * carregadas, e o membro, que recebe só as dele, via outro % (revisão de 12/11/2026).
-     * Resumo não tem área, responsável nem pessoa (filtrar por pessoa revelaria a lista de acesso), e a busca só vale pelo nome (referência e cliente não
-     * podem servir de pista), então esses filtros o descartam.
+     * Cartão: filtros de pessoa e responsável o descartam (revelariam a equipe); o de área vale só para o
+     * interno (só ele mostra a área no cartão); a busca só vale pelo nome (referência e cliente não podem servir de pista).
      */
     private async paraResposta(
         usuario: UsuarioAutenticado,
         projetos: Projeto[],
-        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string; tipo?: TipoProjeto } = {},
+        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
     ) {
         const acessos = projetos.map((p) => ({ projeto: p, acesso: acessoAoProjeto(usuario, p) }));
         const busca = normalizarBusca(filtro.busca);
-        const resumoServe = (p: Projeto) =>
-            !filtro.codigoUsuario && !filtro.codigoArea && !filtro.codigoResponsavel && (!busca || normalizarBusca(p.nome).includes(busca));
-        const visiveis = acessos.filter((a) => a.acesso === "completo" || (a.acesso === "resumo" && resumoServe(a.projeto)));
-        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(
-            visiveis.map((a) => a.projeto.codigo),
-            hoje(),
-        );
+        const cartaoServe = (p: Projeto) =>
+            !filtro.codigoUsuario &&
+            !filtro.codigoResponsavel &&
+            (!filtro.codigoArea || p.tipo === TipoProjeto.INTERNO) &&
+            (!busca || normalizarBusca(p.nome).includes(busca));
+        const visiveis = acessos.filter((a) => a.acesso === "completo" || cartaoServe(a.projeto));
+        const completos = visiveis.filter((a) => a.acesso === "completo").map((a) => a.projeto.codigo);
+        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(completos, hoje());
         return visiveis.map(({ projeto, acesso }) => {
+            if (acesso !== "completo") return cartaoProjeto(projeto);
             const tarefas = contagem.get(projeto.codigo) ?? { total: 0, concluidas: 0, atrasadas: 0, semana: 0 };
-            return acesso === "resumo"
-                ? resumoProjeto(projeto, tarefas)
-                : { ...projeto.toJSON(), tarefas, podeGerirAcesso: podeGerirAcesso(usuario, projeto) };
+            return { ...projeto.toJSON(), tarefas };
         });
     }
 
     /**
      * Rotas de escrita: carrega o projeto (404 se não existe) e exige o acesso completo, depois da
-     * permissão da ação. Sigiloso: fora da lista o membro recebe 404 e o gerente, 403.
+     * permissão da ação. Quem só tem o cartão recebe 403 PROJETO_SEM_ACESSO.
      */
     private async carregarParaEscrita(usuario: UsuarioAutenticado, codigo: string): Promise<Projeto> {
         const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(codigo);
@@ -115,11 +108,12 @@ export default class ProjetoRoutes implements ModelRoutes {
                 busca: query?.busca || undefined,
             };
             const tipo = lerTipo(query?.tipo);
+            // Todos os projetos (sessão 27a): cada um sai completo ou como cartão. O filtro de pessoa vale
+            // como veio; os cartões que ele traria são descartados em paraResposta.
             const projetos = await new ListarProjetos(f).execute({
                 status: lerLista(query?.status).map((s) => lerEnum(s, StatusProjeto, "status")!),
                 ...filtro,
                 tipo,
-                codigoUsuario: projetosVisiveisPara(usuario, filtro.codigoUsuario),
             });
             return this.paraResposta(usuario, projetos, filtro);
         });
@@ -128,17 +122,18 @@ export default class ProjetoRoutes implements ModelRoutes {
             const usuario = exigirAutenticado(body?.user);
             const projeto = await f.criarProjetoRepository().buscarPorCodigo(params.codigo);
             if (!projeto) throw new ErroNaoEncontrado("Projeto não encontrado.");
-            // Quem não vê nada recebe 404 (sigiloso) ou 403 (normal), pela regra central.
-            if (acessoAoProjeto(usuario, projeto) === "nada") exigirAcessoCompleto(usuario, projeto);
+            // Completo ou cartão, sempre 200: o nome do projeto é público para quem está logado.
             return (await this.paraResposta(usuario, [projeto]))[0];
         });
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
+            const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
+            // A equipe inicial do corpo; lerLista não deixa um texto passar por lista (includes de substring).
+            if (sigiloso) exigirNaoSeTrancar(usuario, lerLista(body.codigosMembros));
             return new CriarProjeto(f).execute({
                 criadoPor: usuario.codigo,
-                sigiloso: lerBooleano(body.sigiloso, "sigiloso"),
-                acesso: body.acesso,
+                sigiloso,
                 nome: body.nome,
                 descricao: body.descricao,
                 dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
@@ -151,8 +146,14 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
-            await this.carregarParaEscrita(usuario, params.codigo);
+            const projeto = await this.carregarParaEscrita(usuario, params.codigo);
             const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
+            // Só quando liga o sigilo: mexer em outro campo de um sigiloso existente (ou sair da equipe dele)
+            // não barra ninguém. A equipe que vale é a que fica depois da gravação: a do corpo, se veio.
+            if (sigiloso === true && !projeto.sigiloso) {
+                const equipe = body.codigosMembros !== undefined ? lerLista(body.codigosMembros) : projeto.membros.map((m) => m.codigo);
+                exigirNaoSeTrancar(usuario, equipe);
+            }
             return new EditarProjeto(f).execute({
                 codigo: params.codigo,
                 sigiloso,
@@ -181,15 +182,6 @@ export default class ProjetoRoutes implements ModelRoutes {
             );
             await this.carregarParaEscrita(usuario, params.codigo);
             return new ExcluirProjeto(f).execute(params.codigo);
-        });
-
-        // Lista de acesso do projeto sigiloso (sessão 20): só o diretor e quem criou o projeto.
-        this.http.route("put", "/projetos/:codigo/acesso", true, async (params: any, body: any) => {
-            const usuario = exigirAutenticado(body?.user);
-            const projeto = await this.carregarParaEscrita(usuario, params.codigo);
-            exigirNaoGeral(projeto);
-            if (!podeGerirAcesso(usuario, projeto)) throw new ErroProibido(MENSAGENS_DE_ERRO.PROJETO.ACESSO_SEM_PERMISSAO);
-            return new DefinirAcessoProjeto(f).execute({ codigoProjeto: params.codigo, codigos: body.codigos });
         });
 
         // Colunas do quadro (sessão 21): o líder e a gestão. `destinos` diz para onde vão as tarefas das colunas excluídas.

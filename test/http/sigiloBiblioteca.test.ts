@@ -4,12 +4,12 @@ import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
 
-/** Sessão 20: itens da Biblioteca ligados a projeto sigiloso só aparecem para quem vê o projeto. */
+/** Sessão 20 (regra da 27a): itens da Biblioteca ligados a projeto sigiloso só aparecem para quem vê o projeto. */
 describe("Biblioteca e projeto sigiloso", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
     let equipe: Usuario;
-    let naLista: Usuario;
+    let criadorFora: Usuario; // criou o sigiloso, mas não está na equipe
     let fora: Usuario;
     let gerenteFora: Usuario;
     let diretor: Usuario;
@@ -33,7 +33,7 @@ describe("Biblioteca e projeto sigiloso", () => {
             return u;
         };
         equipe = ctx.membro;
-        naLista = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
+        criadorFora = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
         fora = await novo("Fê", PerfilUsuario.MEMBRO, "usr-fe");
         gerenteFora = await novo("Gui", PerfilUsuario.GERENTE, "usr-gui");
         diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
@@ -41,8 +41,7 @@ describe("Biblioteca e projeto sigiloso", () => {
         await projetos.criar(
             new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe], "proj-sig", {
                 sigiloso: true,
-                criadoPor: diretor.codigo,
-                acesso: [naLista.codigo],
+                criadoPor: criadorFora.codigo,
             }),
         );
         await projetos.criar(new Projeto("Normal", "d", dataInicio, dataFim, undefined, [equipe], "proj-nor"));
@@ -79,16 +78,19 @@ describe("Biblioteca e projeto sigiloso", () => {
         expect(await titulos(gerenteFora, "?projeto=proj-sig")).toEqual([]);
     });
 
-    it("equipe, lista de acesso e diretor veem os itens e baixam", async () => {
-        for (const u of [equipe, naLista, diretor]) {
+    it("equipe e diretor veem os itens e baixam", async () => {
+        for (const u of [equipe, diretor]) {
             expect(await titulos(u)).toEqual(["Aberto no sigiloso", "Da equipe", "Normal"]);
             expect((await ver(u, itemTodos.codigo)).status).toBe(200);
             expect(await baixar(u, codigoAnexo)).toBe(200);
         }
     });
 
-    it("item sigilo projeto: pessoa só na lista de acesso vê", async () => {
-        expect((await ver(naLista, itemProjeto.codigo)).status).toBe(200);
+    it("quem só criou o sigiloso (fora da equipe) não vê os itens nem baixa (sessão 27a)", async () => {
+        expect(await titulos(criadorFora)).toEqual(["Normal"]);
+        expect((await ver(criadorFora, itemTodos.codigo)).status).toBe(404);
+        expect((await ver(criadorFora, itemProjeto.codigo)).status).toBe(404);
+        expect(await baixar(criadorFora, codigoAnexo)).toBe(404);
         expect((await ver(fora, itemProjeto.codigo)).status).toBe(404);
     });
 
@@ -97,7 +99,7 @@ describe("Biblioteca e projeto sigiloso", () => {
         expect(r.corpo.every((i: any) => i.projeto?.codigo !== "proj-sig")).toBe(true);
     });
 
-    it("gerente com biblioteca.gerir fora da lista não liga item ao sigiloso (403)", async () => {
+    it("gerente com biblioteca.gerir fora da equipe não liga item ao sigiloso (403)", async () => {
         const r = await servidor.chamar("post", "/biblioteca", {
             usuario: gerenteFora,
             corpo: { titulo: "Tentativa", sigilo: "todos", codigoProjeto: "proj-sig" },

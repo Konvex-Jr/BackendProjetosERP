@@ -20,8 +20,6 @@ export default interface ProjetoRepositoryInterface {
     listar(filtro?: FiltroProjetos): Promise<Projeto[]>;
     /** Projetos em que a pessoa participa ou já participou, mais os gerais das áreas em que tem ou teve período, ou que lidera. */
     listarPorMembro(codigoUsuario: string): Promise<Projeto[]>;
-    /** Projetos sigilosos em que a pessoa está na lista de acesso ou é a criadora. */
-    listarComAcesso(codigoUsuario: string): Promise<Projeto[]>;
     /** Todos os projetos sigilosos. */
     listarSigilosos(): Promise<Projeto[]>;
     buscarPorCodigo(codigo: string): Promise<Projeto | null>;

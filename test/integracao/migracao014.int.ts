@@ -72,31 +72,6 @@ descrever("migração 014 sobre a 013", () => {
         expect(u).toEqual({ perfil: "membro", ativo: true });
     });
 
-    test("o repositório grava e lê sigilo, criador e lista de acesso", async () => {
-        await aplicarMigracoes(pool, PASTA, silencio); // o repositório grava colunas (015)
-        const conexao = PgConexao.criar(URL_TESTE!);
-        try {
-            const repo = new DatabaseRepositoryFactory(conexao).criarProjetoRepository();
-            const secreto = new Projeto("Secreto", "Descrição", new Date("2026-01-01"), new Date("2026-12-31"), undefined, [], undefined, {
-                sigiloso: true,
-                criadoPor: trainee,
-                acesso: [trainee],
-            });
-            await repo.criar(secreto);
-            const lido = (await repo.buscarPorCodigo(secreto.codigo))!;
-            expect([lido.sigiloso, lido.criadoPor, lido.acesso]).toEqual([true, trainee, [trainee]]);
-            expect((await repo.listarComAcesso(trainee)).map((p) => p.codigo)).toEqual([secreto.codigo]);
-            expect((await repo.listarSigilosos()).map((p) => p.codigo)).toEqual([secreto.codigo]);
-
-            await repo.editar(secreto.copiar({ acesso: [] }));
-            expect((await repo.buscarPorCodigo(secreto.codigo))!.acesso).toEqual([]);
-            expect((await repo.listarComAcesso(trainee)).map((p) => p.codigo)).toEqual([secreto.codigo]);
-            await repo.excluir(secreto.codigo);
-        } finally {
-            await conexao.encerrar();
-        }
-    });
-
     test("projeto_acesso tem chave composta e some junto com o projeto", async () => {
         await pool.query("INSERT INTO projeto_acesso (projeto_codigo, usuario_codigo) VALUES ($1, $2)", [projeto, trainee]);
         await expect(
@@ -105,6 +80,26 @@ descrever("migração 014 sobre a 013", () => {
 
         await pool.query("DELETE FROM projetos WHERE codigo = $1", [projeto]);
         expect((await pool.query("SELECT 1 FROM projeto_acesso")).rowCount).toBe(0);
+    });
+
+    // Depois do teste da tabela: aplicar todas as migrações roda a 024, que apaga a projeto_acesso (sessão 27a).
+    test("o repositório grava e lê sigilo e criador", async () => {
+        await aplicarMigracoes(pool, PASTA, silencio); // o repositório grava colunas (015)
+        const conexao = PgConexao.criar(URL_TESTE!);
+        try {
+            const repo = new DatabaseRepositoryFactory(conexao).criarProjetoRepository();
+            const secreto = new Projeto("Secreto", "Descrição", new Date("2026-01-01"), new Date("2026-12-31"), undefined, [], undefined, {
+                sigiloso: true,
+                criadoPor: trainee,
+            });
+            await repo.criar(secreto);
+            const lido = (await repo.buscarPorCodigo(secreto.codigo))!;
+            expect([lido.sigiloso, lido.criadoPor]).toEqual([true, trainee]);
+            expect((await repo.listarSigilosos()).map((p) => p.codigo)).toEqual([secreto.codigo]);
+            await repo.excluir(secreto.codigo);
+        } finally {
+            await conexao.encerrar();
+        }
     });
 
     test("rodar o SQL da 014 de novo não quebra", async () => {

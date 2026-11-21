@@ -23,12 +23,10 @@ export interface DetalhesProjeto {
     tags?: string[];
     /** Líder do projeto (sessão 8b). Só vale se estiver na equipe atual; senão o projeto fica sem líder. */
     lider?: Usuario | null;
-    /** Projeto sigiloso (sessão 20): só diretor, criador, lista de acesso e equipe atual veem o projeto inteiro. */
+    /** Projeto sigiloso (sessão 20; regra da 27a): só diretor e equipe atual veem o projeto inteiro. */
     sigiloso?: boolean;
-    /** Código de quem criou o projeto; mantém o acesso ao sigiloso. */
+    /** Código de quem criou o projeto (histórico; não dá acesso desde a sessão 27a). */
     criadoPor?: string | null;
-    /** Códigos das pessoas com acesso ao projeto sigiloso, além da equipe. */
-    acesso?: string[];
     /** Colunas do kanban, em ordem (sessão 21). Ausente = as quatro padrão. */
     colunas?: ColunaProjeto[];
     /** Cliente (padrão) ou interno (sessão 23b); o interno exige área. */
@@ -65,7 +63,6 @@ export default class Projeto {
     readonly lider: Usuario | null;
     readonly sigiloso: boolean;
     readonly criadoPor: string | null;
-    readonly acesso: string[];
     readonly colunas: ColunaProjeto[];
     readonly tipo: TipoProjeto;
     readonly geralDaArea: boolean;
@@ -103,8 +100,7 @@ export default class Projeto {
         this.lider = codigoLider ? (this.membros.find((m) => m.codigo === codigoLider) ?? null) : null;
         this.sigiloso = detalhes.sigiloso ?? false;
         this.criadoPor = detalhes.criadoPor ?? null;
-        this.acesso = [...new Set(detalhes.acesso ?? [])];
-        // Cópia, como tags e acesso; lista vazia (dado estranho) volta às quatro padrão, para a tarefa sempre ter coluna.
+        // Cópia, como as tags; lista vazia (dado estranho) volta às quatro padrão, para a tarefa sempre ter coluna.
         this.colunas = detalhes.colunas?.length ? [...detalhes.colunas] : colunasPadrao();
         this.tipo = detalhes.tipo ?? TipoProjeto.CLIENTE;
         this.geralDaArea = detalhes.geralDaArea ?? false;
@@ -185,7 +181,6 @@ export default class Projeto {
                 lider: pick("lider"),
                 sigiloso: pick("sigiloso"),
                 criadoPor: pick("criadoPor"),
-                acesso: pick("acesso"),
                 colunas: pick("colunas"),
                 tipo: pick("tipo"),
                 geralDaArea: pick("geralDaArea"),
@@ -214,7 +209,6 @@ export default class Projeto {
             tags: this.tags,
             lider: this.lider,
             sigiloso: this.sigiloso,
-            acesso: this.acesso,
             colunas: this.colunas.map((c) => c.toJSON()),
             tipo: this.tipo,
             geralDaArea: this.geralDaArea,

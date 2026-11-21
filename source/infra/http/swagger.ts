@@ -115,13 +115,8 @@ const swaggerSpecification = {
                     codigosMembros: { type: "array", items: { type: "string" } },
                     sigiloso: {
                         type: "boolean",
-                        description: "Projeto sigiloso. Na edição, omitido mantém o atual; quem edita o projeto pode marcar e desmarcar.",
-                    },
-                    acesso: {
-                        type: "array",
-                        items: { type: "string" },
                         description:
-                            "Só na criação: códigos de quem vê o sigiloso além da equipe. Só pessoas com login (400 ACESSO_PESSOA_SEM_LOGIN).",
+                            "Projeto sigiloso. Na edição, omitido mantém o atual; quem edita o projeto pode marcar e desmarcar. Ligar o sigilo (criar sigiloso ou marcar um que não era) sem ser diretor e sem estar na equipe que fica: 400 SIGILOSO_SEM_VOCE.",
                     },
                 },
             },
@@ -265,9 +260,13 @@ const swaggerSpecification = {
             }),
         },
         "/projetos": {
-            get: operation(["Projetos"], "Listar projetos", {
-                parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
-            }),
+            get: operation(
+                ["Projetos"],
+                "Listar todos os projetos (sessão 27a): completo (com `tarefas`) para a equipe e a gestão (no sigiloso, equipe atual e diretores); para os demais, cartão { codigo, nome, tipo, area, status, lider, sigiloso, geralDaArea, cartao: true }. Filtros de pessoa e responsável descartam os cartões; busca no cartão só pelo nome",
+                {
+                    parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
+                },
+            ),
             post: operation(["Projetos"], "Criar projeto", {
                 requestBody: jsonBody({ $ref: "#/components/schemas/ProjetoInput" }),
             }),
@@ -412,7 +411,7 @@ const swaggerSpecification = {
         "/ocupacao/{codigoUsuario}": {
             get: operation(
                 ["Tarefas"],
-                "Ocupação semanal de uma pessoa: { codigoUsuario, horas, teto, percentual, semana, itens }. Itens pelo acesso de quem pede ao projeto: tarefa (título e projeto), projeto (só nome e horas somadas, gestão fora de sigiloso) ou outras (tudo somado, sem título nem projeto). 404 pessoa inexistente",
+                "Ocupação semanal de uma pessoa: { codigoUsuario, horas, teto, percentual, semana, itens }. Itens pelo acesso de quem pede ao projeto: tarefa (título e projeto), projeto (só nome e horas somadas: gestão com só o cartão, ou seja, fora de sigiloso) ou outras (tudo somado, sem título nem projeto). 404 pessoa inexistente",
                 {
                     parameters: [{ name: "codigoUsuario", in: "path", required: true, schema: { type: "string" } }, SEMANA_OCUPACAO],
                 },
@@ -682,17 +681,10 @@ const rotasFase1: Record<string, Record<string, object>> = {
     "/projetos/{codigo}/membros/{codigoParticipacao}/encerrar": {
         post: operation(["Projetos"], "Encerrar participação", { ...participacao, ...json }),
     },
-    "/projetos/{codigo}/acesso": {
-        put: operation(
-            ["Projetos"],
-            "Definir a lista de acesso do projeto sigiloso ({ codigos }; só o diretor e quem criou; 404 para membro fora, 400 ACESSO_PESSOA_SEM_LOGIN)",
-            comCodigo(json),
-        ),
-    },
     "/projetos/{codigo}/colunas": {
         put: operation(
             ["Projetos"],
-            "Gravar as colunas do quadro ({ colunas: [{ codigo?, nome, cor, papel }] na ordem, destinos?: { codigoDaColunaExcluida: codigoDoDestino } }; só o líder e a gestão; 2 a 12 colunas, uma entrada e uma concluida; 400 DESTINO_COLUNA_OBRIGATORIO, 409 QUADRO_MUDOU). Devolve as colunas gravadas. O projeto (GET /projetos e /projetos/{codigo}) traz `colunas`; o resumo do sigiloso não.",
+            "Gravar as colunas do quadro ({ colunas: [{ codigo?, nome, cor, papel }] na ordem, destinos?: { codigoDaColunaExcluida: codigoDoDestino } }; só o líder e a gestão; 2 a 12 colunas, uma entrada e uma concluida; 400 DESTINO_COLUNA_OBRIGATORIO, 409 QUADRO_MUDOU). Devolve as colunas gravadas. O projeto (GET /projetos e /projetos/{codigo}) traz `colunas`; o cartão não. Quem só tem o cartão: 403 PROJETO_SEM_ACESSO.",
             comCodigo(json),
         ),
     },
@@ -719,11 +711,10 @@ for (const [caminho, metodos] of Object.entries(rotasFase1)) {
 caminhos["/senioridades"].post = operation(["Configurações"], "Criar senioridade (diretores)", json);
 caminhos["/projetos/{codigo}"] = {
     ...(caminhos["/projetos/{codigo}"] ?? {}),
-    get: operation(["Projetos"], "Consultar projeto", {
+    get: operation(["Projetos"], "Consultar projeto: completo ou cartão (sessão 27a), sempre 200 para quem está logado", {
         ...comCodigo(),
         responses: {
             ...operation([], "").responses,
-            "403": { description: "Membro fora da equipe atual ou passada do projeto." },
             "404": { description: "Projeto não encontrado." },
         },
     }),

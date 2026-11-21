@@ -98,7 +98,6 @@ describe("Projetos internos e geral da área", () => {
             ["put", "", () => corpo({ tipo: "interno", codigoArea: juridico.codigo })],
             ["delete", "", () => undefined],
             ["patch", "/status", () => ({ status: "arquivado" })],
-            ["put", "/acesso", () => ({ codigos: [ana.codigo] })],
             ["post", "/membros", () => ({ codigoUsuario: ana.codigo })],
             ["put", "/membros/qualquer", () => ({ funcao: "x" })],
             ["post", "/membros/qualquer/encerrar", () => ({})],

@@ -10,7 +10,7 @@ import { acessoAoProjeto } from "./visibilidadeProjetos";
 
 /** Projetos da pessoa e projetos sigilosos que ela não pode ver (sessão 20). */
 export interface ContextoProjetos {
-    /** Projetos com acesso completo vindos de participação (atual ou passada), criação ou lista de acesso. */
+    /** Projetos com acesso completo vindos de participação (atual ou passada). */
     meus: Set<string>;
     /** Projetos sigilosos que a pessoa não vê por inteiro: itens ligados a eles somem, para todos os papéis. */
     ocultos: Set<string>;
@@ -41,8 +41,8 @@ export function podeAlterarItem(usuario: UsuarioAutenticado | null | undefined, 
 }
 
 /**
- * Projetos da pessoa (`meus`: acesso completo entre os de que participa ou participou, os sigilosos
- * que criou e os da lista de acesso) e sigilosos ocultos. `meus` fica vazio para quem tem
+ * Projetos da pessoa (`meus`: acesso completo entre os de que participa ou participou) e sigilosos
+ * ocultos. `meus` fica vazio para quem tem
  * biblioteca.verTodos, que não precisa dele; `ocultos` é calculado para todos.
  */
 export async function contextoProjetos(usuario: UsuarioAutenticado, factory: RepositoryFactoryInterface): Promise<ContextoProjetos> {
@@ -50,8 +50,7 @@ export async function contextoProjetos(usuario: UsuarioAutenticado, factory: Rep
     const ocultos = new Set((await repo.listarSigilosos()).filter((p) => acessoAoProjeto(usuario, p) !== "completo").map((p) => p.codigo));
     const meus = new Set<string>();
     if (!podeVerTodosItens(usuario)) {
-        const projetos = [...(await repo.listarPorMembro(usuario.codigo)), ...(await repo.listarComAcesso(usuario.codigo))];
-        for (const p of projetos) if (acessoAoProjeto(usuario, p) === "completo") meus.add(p.codigo);
+        for (const p of await repo.listarPorMembro(usuario.codigo)) if (acessoAoProjeto(usuario, p) === "completo") meus.add(p.codigo);
     }
     return { meus, ocultos };
 }
