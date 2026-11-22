@@ -49,10 +49,9 @@ export interface PerfilPessoa {
 
 /**
  * RF-013: perfil com projetos atuais e anteriores, períodos nas áreas e capacitações.
- * Projetos seguem a visibilidade (decisão de 30/10/2026): o membro que olha o perfil de outra
- * pessoa só vê os projetos de que ele mesmo participa ou participou.
- * Projeto sigiloso: quem não tem acesso completo vê só o nome e as datas (item `restrito`), se a
- * gestão ou a própria pessoa olha; o membro olhando outra pessoa não vê o projeto.
+ * Todos veem os projetos da pessoa (sessão 27b; antes o membro só via os que ele mesmo via completos).
+ * Projeto que quem lê não vê completo sai `restrito`: nome e datas aparecem, referência e função não;
+ * a passagem antiga por ele só aparece à gestão e à própria pessoa.
  */
 export default class ObterPerfilPessoa {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
@@ -63,14 +62,14 @@ export default class ObterPerfilPessoa {
         const usuario = await comAreasAtuais(this.factory, lido);
 
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
-        const veTudo = quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
         const acessoDe = (projeto: Projeto) => acessoAoProjeto(quemPede, projeto);
-        const projetos = veTudo ? todosOsProjetos : todosOsProjetos.filter((p) => acessoDe(p) === "completo");
+        // Como no cartão (sem ex-membros): passagem antiga por projeto restrito só aparece à gestão e à própria pessoa.
+        const veAnteriores = quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
-        for (const projeto of projetos) {
+        for (const projeto of todosOsProjetos) {
             const restrito = acessoDe(projeto) !== "completo";
-            for (const p of projeto.participacoes.filter((x) => x.usuario.codigo === codigo)) {
+            for (const p of projeto.participacoes.filter((x) => x.usuario.codigo === codigo && (x.ativa || !restrito || veAnteriores))) {
                 const item: ProjetoNoPerfil = {
                     codigo: projeto.codigo,
                     nome: projeto.nome,

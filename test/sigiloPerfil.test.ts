@@ -64,18 +64,35 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         expect(JSON.stringify(antigo)).not.toContain("REF-SECRETA");
     });
 
-    it("membro olhando outro vê só normal em comum e sigiloso a que tem acesso completo", async () => {
+    it("membro olhando outro vê todos os projetos dele; sem acesso completo = restrito (sessão 27b)", async () => {
         const { factory, membro, outro, auth } = await montar();
         const perfil = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(membro));
         const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
-        // Ana está na equipe atual de p-sig (completo); em p-sig-antigo saiu (nada): some.
-        expect(todos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig"]);
-        expect(todos.every((p) => !p.restrito)).toBe(true);
+        // Ana está na equipe atual de p-sig (completo); em p-sig-antigo Ana saiu e o outro segue: aparece restrito.
+        expect(todos.map((p) => [p.codigo, p.restrito]).sort()).toEqual([
+            ["p-normal", false],
+            ["p-sig", false],
+            ["p-sig-antigo", true],
+        ]);
+        expect(todos.find((p) => p.codigo === "p-sig-antigo")).toMatchObject({ referencia: null, funcao: null });
         expect(perfil.ocupacao).toMatchObject({ percentual: 0, horas: 0, itens: [] });
         expect("alocacao" in perfil).toBe(false);
     });
 
-    it("ocupação total conta todos os projetos, e os itens só os visíveis", async () => {
+    it("membro não vê a passagem antiga de outra pessoa por projeto que não vê completo (como no cartão)", async () => {
+        const { factory, membro, auth } = await montar();
+        const terceiro = new Usuario("Caio", "caio@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", membro.senioridade, "usr-caio");
+        await factory.criarUsuarioRepository().criar(terceiro);
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(terceiro));
+        // Atuais aparecem restritos; a saída de Ana do "Sigiloso antigo" não aparece.
+        expect(perfil.projetosAtuais.map((p) => [p.codigo, p.restrito]).sort()).toEqual([
+            ["p-normal", true],
+            ["p-sig", true],
+        ]);
+        expect(perfil.projetosAnteriores).toEqual([]);
+    });
+
+    it("ocupação: sigiloso alheio vira linha do projeto, sem título da tarefa (sessão 27b)", async () => {
         const { factory, membro, outro, auth } = await montar();
         const hojeSp = hoje();
         const dia = 86_400_000;
@@ -102,7 +119,9 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         await factory.criarTarefaRepository().criar(tarefa);
         const perfil = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(membro));
         expect(perfil.ocupacao.horas).toBeGreaterThan(0);
-        expect(perfil.ocupacao.itens.every((i) => i.tipo === "outras")).toBe(true);
+        expect(perfil.ocupacao.itens).toEqual([
+            expect.objectContaining({ tipo: "projeto", projeto: { codigo: "p-oculto", nome: "Oculto" } }),
+        ]);
         expect(JSON.stringify(perfil.ocupacao)).not.toContain("Secreta");
         // A própria pessoa (está no projeto) vê a linha da tarefa.
         const completo = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(outro));

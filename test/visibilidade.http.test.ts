@@ -13,7 +13,7 @@ import { criarContexto } from "./fixtures";
 import { subirServidor } from "./http/servidorTeste";
 
 const UM_DIA = 86_400_000;
-const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "nome", "sigiloso", "status", "tipo"];
+const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "sigiloso", "status", "tipo"];
 
 /**
  * Sessão 27a: todo logado recebe o cartão de todos os projetos; o completo é da equipe e da gestão
@@ -115,8 +115,12 @@ describe("Visibilidade de projetos (HTTP)", () => {
                 lider: { codigo: m2.codigo, nome: m2.nome },
                 sigiloso: false,
                 geralDaArea: false,
+                membros: projetos.get("p-n").membros,
                 cartao: true,
             });
+            // Equipe atual com nome e foto, sem função (sessão 27b).
+            for (const membro of projetos.get("p-n").membros) expect(Object.keys(membro).sort()).toEqual(["codigo", "foto", "nome"]);
+            expect(projetos.get("p-n").membros.map((x: any) => x.codigo)).toContain(m2.codigo);
             expect(projetos.get("p-s").sigiloso).toBe(true);
             expect(projetos.get("p-i").area).toEqual({ codigo: "area-mkt", nome: "Marketing" });
             const texto = JSON.stringify([...projetos.values()]);
@@ -319,12 +323,13 @@ describe("Visibilidade de projetos (HTTP)", () => {
     });
 
     describe("ocupação com sigiloso alheio", () => {
-        it("gerente: linha do projeto; membro: em outras", async () => {
+        it("gerente e membro: linha do projeto com o nome (sessão 27b)", async () => {
             const gerente = await servidor.chamar("get", `/ocupacao/${m2.codigo}`, { usuario: g });
             expect(gerente.status).toBe(200);
             expect(gerente.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 4 });
             const membro = await servidor.chamar("get", `/ocupacao/${m2.codigo}`, { usuario: m });
-            expect(membro.corpo.itens).toEqual([{ tipo: "outras", horas: 8 }]);
+            expect(membro.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 4 });
+            expect(membro.corpo.itens.some((i: any) => i.tipo === "outras")).toBe(false);
         });
     });
 });

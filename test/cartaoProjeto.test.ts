@@ -9,9 +9,9 @@ import { fimDaSemana } from "../source/shared/datas";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
 
 describe("cartaoProjeto", () => {
-    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "nome", "sigiloso", "status", "tipo"];
+    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "sigiloso", "status", "tipo"];
 
-    it("tem só os campos da lista fechada e nada do cliente, das datas ou da equipe", async () => {
+    it("tem só os campos da lista fechada e nada do cliente, das datas ou das funções", async () => {
         const { membro } = await criarContexto();
         const area = new Area("Projetos", null, true, "area-1");
         const projeto = new Projeto("Sigiloso", "descrição secreta", dataInicio, dataFim, undefined, [membro], "p-1", {
@@ -27,6 +27,7 @@ describe("cartaoProjeto", () => {
         expect(cartao.sigiloso).toBe(true);
         expect(cartao.tipo).toBe("cliente");
         expect(cartao.geralDaArea).toBe(false);
+        expect(cartao.membros).toEqual([{ codigo: membro.codigo, nome: membro.nome, foto: null }]);
         const json = JSON.stringify(cartao);
         for (const proibido of [
             "clienteNome",
@@ -38,7 +39,7 @@ describe("cartaoProjeto", () => {
             "dataInicio",
             "dataFim",
             "participacoes",
-            "membros",
+            "funcao",
             "tarefas",
             "colunas",
             membro.email,

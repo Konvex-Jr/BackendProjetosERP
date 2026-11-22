@@ -18,7 +18,6 @@ export interface DetalhesProjeto {
     clienteNome?: string | null;
     prioridade?: PrioridadeProjeto;
     progresso?: number;
-    responsavel?: Usuario | null;
     area?: Area | null;
     tags?: string[];
     /** Líder do projeto (sessão 8b). Só vale se estiver na equipe atual; senão o projeto fica sem líder. */
@@ -57,7 +56,6 @@ export default class Projeto {
     readonly clienteNome: string | null;
     readonly prioridade: PrioridadeProjeto;
     readonly progresso: number;
-    readonly responsavel: Usuario | null;
     readonly area: Area | null;
     readonly tags: string[];
     readonly lider: Usuario | null;
@@ -93,7 +91,6 @@ export default class Projeto {
         this.clienteNome = detalhes.clienteNome?.trim() || null;
         this.prioridade = detalhes.prioridade ?? PrioridadeProjeto.MEDIA;
         this.progresso = detalhes.progresso === undefined || detalhes.progresso === null ? 0 : Number(detalhes.progresso);
-        this.responsavel = detalhes.responsavel ?? null;
         this.area = detalhes.area ?? null;
         this.tags = [...new Set((detalhes.tags ?? []).map((t) => String(t).trim()).filter(Boolean))];
         const codigoLider = detalhes.lider?.codigo;
@@ -175,7 +172,6 @@ export default class Projeto {
                 clienteNome: pick("clienteNome"),
                 prioridade: pick("prioridade"),
                 progresso: pick("progresso"),
-                responsavel: pick("responsavel"),
                 area: pick("area"),
                 tags: pick("tags"),
                 lider: pick("lider"),
@@ -204,7 +200,6 @@ export default class Projeto {
             clienteNome: this.clienteNome,
             prioridade: this.prioridade,
             progresso: this.progresso,
-            responsavel: this.responsavel,
             area: this.area,
             tags: this.tags,
             lider: this.lider,

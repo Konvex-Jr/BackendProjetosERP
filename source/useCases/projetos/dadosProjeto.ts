@@ -13,7 +13,6 @@ export interface EntradaDetalhesProjeto {
     prioridade?: PrioridadeProjeto;
     tipo?: TipoProjeto;
     progresso?: number;
-    codigoResponsavel?: string | null;
     codigoArea?: string | null;
     tags?: string[];
 }
@@ -31,18 +30,6 @@ export async function resolverDetalhesProjeto(
             throw new ErroValidacao("Etiquetas devem ser uma lista com até 20 itens.", "TAGS_INVALIDAS");
         }
         detalhes.tags = entrada.tags;
-    }
-    if (entrada.codigoResponsavel !== undefined) {
-        if (entrada.codigoResponsavel) {
-            const responsavel = await factory.criarUsuarioRepository().buscarPorCodigo(entrada.codigoResponsavel);
-            if (!responsavel) throw new ErroNaoEncontrado("Responsável não encontrado.");
-            if (!responsavel.naEj) {
-                throw new ErroValidacao("O responsável precisa estar Ativo ou Trainee.", "RESPONSAVEL_INATIVO");
-            }
-            detalhes.responsavel = responsavel;
-        } else {
-            detalhes.responsavel = null;
-        }
     }
     if (entrada.codigoArea !== undefined) {
         if (entrada.codigoArea) {

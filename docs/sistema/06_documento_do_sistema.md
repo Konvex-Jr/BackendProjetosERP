@@ -38,7 +38,7 @@
 ### Detalhes que valem para tudo
 - O papel é lido do banco **a cada requisição**, não do token: mudar o papel de alguém vale na chamada seguinte (`UsuarioAutenticado` em `permissoes.ts`).
 - Papel desconhecido recebe lista vazia (na dúvida, nega: `permissoesDoPapel`).
-- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa de projeto que ela não vê completo (normal ou sigiloso), anexo de item que ela não lê. O projeto em si não some: quem não vê completo recebe só o cartão (nome, tipo, área do interno, situação, líder e selo); as demais rotas do projeto respondem 403 `PROJETO_SEM_ACESSO`.
+- 401 sem login, 403 sem permissão. Itens que a pessoa nem pode saber que existem respondem **404**: item da Biblioteca que ela não lê, tarefa de projeto que ela não vê completo (normal ou sigiloso), anexo de item que ela não lê. O projeto em si não some: quem não vê completo recebe só o cartão (nome, tipo, área do interno, situação, líder, equipe atual e selo); as demais rotas do projeto respondem 403 `PROJETO_SEM_ACESSO`.
 - A API devolve booleanos por item (`podeAlterar`, `podeGerir`, `podeInscrever`…) e a tela obedece. O menu vem de `GET /auth/permissoes`, montado por `menuDoUsuario` em `source/modulos/registro.ts`; o `Layout` do frontend só abre telas que vieram no menu.
 - Login: 5 falhas bloqueiam aquele e-mail naquele IP, e 30 falhas bloqueiam o IP inteiro, por 15 minutos (429; `limiteTentativas.ts`, limites em `LoginUsuario.ts`). Sessão: JWT de 15 min + refresh de 7 dias.
 
@@ -78,15 +78,15 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - `valor_hora` da senioridade ainda é 0: a precificação pela API espera a diretoria definir as taxas.
 
 ### Projetos (`/projetos`)
-- Todos veem **todos** os projetos na lista: completo ou só o **cartão** (sessão 27a). Vê completo (`acessoAoProjeto` = `completo`) quem tem `projetos.verTodos` (diretor e gerente) ou participa **ou participou** da equipe (quem saiu continua vendo o histórico), e o líder da área no projeto geral. Os demais veem o cartão (`cartao: true`): `codigo`, `nome`, `tipo`, `area` (só de projeto interno), `status`, `lider`, `sigiloso` e `geralDaArea`.
+- Todos veem **todos** os projetos na lista: completo ou só o **cartão** (sessão 27a). Vê completo (`acessoAoProjeto` = `completo`) quem tem `projetos.verTodos` (diretor e gerente) ou participa **ou participou** da equipe (quem saiu continua vendo o histórico), e o líder da área no projeto geral. Os demais veem o cartão (`cartao: true`): `codigo`, `nome`, `tipo`, `area` (só de projeto interno), `status`, `lider`, `membros` (equipe atual: código, nome e foto; sem função nem ex-membros; sessão 27b), `sigiloso` e `geralDaArea`. O projeto só tem **líder** (o campo responsável saiu na 27b, migração 025); o líder pode ser escolhido já na criação (`codigoLider`: ativo na EJ, não trainee; entra na equipe junto e conta como equipe para o sigiloso).
 - A gestão cria e edita, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, alocação, entrada e saída) e escolhe o líder (`projetos.editar`). Um líder por projeto, escolhido na equipe.
 - O sistema avisa quando a alocação de alguém passa de 100%.
 - **Projeto sigiloso (sessões 20 e 27a).** Quem cria (`projetos.editar`) pode marcar `sigiloso: true`. A lista de acesso (`projeto_acesso`, `PUT /projetos/:codigo/acesso`, campo `acesso`) acabou; a migração 024 apagou a tabela. Regra única em `acessoAoProjeto` (`visibilidadeProjetos.ts`), com dois resultados, `completo` ou `cartao`:
   - **Vê completo:** diretor (`projetos.verSigilosos`) e a **equipe atual**. Quem saiu da equipe **perde** o acesso (no projeto normal, ex-membro continua vendo). Quem criou o projeto e não está na equipe **não** vê.
-  - **Cartão:** todos os demais, gerente inclusive, em `GET /projetos` e `GET /projetos/:codigo` (200). Demais rotas do projeto (equipe, colunas, status, edição): 403 `PROJETO_SEM_ACESSO`. Na lista, filtro por pessoa e por responsável descarta os cartões; filtro de área só mantém cartões de projeto interno (o cartão de cliente não mostra área; decisão do Claude, 20/11); a busca do cartão é só pelo nome.
+  - **Cartão:** todos os demais, gerente inclusive, em `GET /projetos` e `GET /projetos/:codigo` (200). Demais rotas do projeto (equipe, colunas, status, edição): 403 `PROJETO_SEM_ACESSO`. Na lista, filtro por pessoa descarta os cartões; filtro por líder (`codigoLider`) os mantém (o líder está no cartão); filtro de área só mantém cartões de projeto interno (o cartão de cliente não mostra área; decisão do Claude, 20/11); a busca do cartão é só pelo nome.
   - **Quem marca o sigilo:** marcar e desmarcar `sigiloso` (`POST` e `PUT /projetos/:codigo`) é de quem edita o projeto (`projetos.editar` + acesso completo). Quem não é diretor só marca se ficar na equipe atual (depois da gravação, no PUT); senão 400 `SIGILOSO_SEM_VOCE`.
   - **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`, `regrasTarefa.ts`). Tarefa, comentários e anexos de projeto que a pessoa não vê completo respondem o mesmo 404 da tarefa inexistente ("Tarefa não encontrada."), em projeto normal ou sigiloso, para todos os papéis (a gestão vê o normal completo; o gerente fora de sigiloso recebe 404). Quem saiu do projeto e segue como responsável continua vendo a própria tarefa conforme `regrasTarefa.ts`.
-  - **Ocupação:** o cartão não revela tarefas. A gestão vê uma linha com o nome do projeto e as horas; membro e trainee veem "Outras tarefas".
+  - **Ocupação:** o cartão não revela tarefas. Todos veem uma linha com o nome do projeto e as horas (sessão 27b). **Perfil:** todos veem os projetos da pessoa; os que quem lê não vê completo saem `restrito` (sem referência nem função); a passagem antiga por projeto restrito só aparece à gestão e à própria pessoa.
   - **Biblioteca, perfil e avisos:** itens, projetos do perfil e avisos ligados a projeto que a pessoa não vê completo seguem ocultos como antes; ninguém liga item a ele (`regrasBiblioteca.ts`).
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
@@ -180,7 +180,7 @@ Trainee (status `Trainee`, papel sempre membro) segue a coluna **Membro** em tod
 | Ação | Diretor | Gerente | Membro | Código |
 |---|---|---|---|---|
 | Ver a ficha completa (projeto normal) | todos | todos | os que participa ou participou | `projetos.verTodos` / `acessoAoProjeto` |
-| Ver o cartão (nome, tipo, área do interno, situação, líder, selo) de qualquer projeto | ✅ | ✅ | ✅ (os que não vê completo; demais rotas: 403 `PROJETO_SEM_ACESSO`) | `cartaoProjeto.ts` / `GET /projetos` |
+| Ver o cartão (nome, tipo, área do interno, situação, líder, equipe atual, selo) de qualquer projeto | ✅ | ✅ | ✅ (os que não vê completo; demais rotas: 403 `PROJETO_SEM_ACESSO`) | `cartaoProjeto.ts` / `GET /projetos` |
 | Criar, editar, mudar situação, montar equipe, escolher líder | ✅ | ✅ | ❌ | `projetos.editar` |
 | Excluir projeto | ✅ | ❌ | ❌ | `projetos.excluir` |
 

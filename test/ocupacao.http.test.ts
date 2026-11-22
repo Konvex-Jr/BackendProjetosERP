@@ -136,17 +136,15 @@ describe("Ocupação semanal (HTTP)", () => {
     });
 
     describe("GET /ocupacao/:codigoUsuario (detalhe)", () => {
-        it("membro de fora do sigiloso: uma linha 'outras', sem título nem projeto em lugar nenhum", async () => {
+        it("membro de fora do sigiloso: linha do projeto com o nome, sem título (sessão 27b)", async () => {
             const r = await servidor.chamar("get", "/ocupacao/usr-ivo", { usuario: fora });
             expect(r.status).toBe(200);
             expect(r.corpo).toMatchObject({ codigoUsuario: "usr-ivo", horas: 4, teto: 10, percentual: 40 });
-            expect(r.corpo.itens).toEqual([{ tipo: "outras", horas: 4 }]);
+            expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 4 }]);
             const texto = JSON.stringify(r.corpo);
             expect(texto).not.toContain("Título secreto");
-            expect(texto).not.toContain("Projeto Secreto");
             expect(texto).not.toContain("titulo");
             expect(texto).not.toContain("t-sig");
-            expect(texto).not.toContain("p-sig");
         });
 
         it("gerente fora do sigiloso: linha do projeto com o nome, sem título", async () => {
