@@ -6,7 +6,8 @@ import TipoProjeto from "../enum/TipoProjeto";
 export interface FiltroProjetos {
     status?: StatusProjeto[];
     codigoArea?: string;
-    codigoResponsavel?: string;
+    /** Projetos liderados pela pessoa (sessão 27b; era o responsável). */
+    codigoLider?: string;
     busca?: string;
     tipo?: TipoProjeto;
 }

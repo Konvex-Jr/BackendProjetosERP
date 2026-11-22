@@ -56,10 +56,10 @@ describe("Visibilidade de projetos", () => {
         expect((await servidor.chamar("get", "/projetos/proj-alheio", { usuario: ctx.gerente })).status).toBe(200);
     });
 
-    it("perfil de outra pessoa não mostra ao membro projetos de que ele não participa", async () => {
+    it("perfil de outra pessoa mostra ao membro os projetos dela, restritos (sessão 27b)", async () => {
         const visto = await servidor.chamar("get", `/usuarios/${outroMembro.codigo}/perfil`, { usuario: ctx.membro });
         expect(visto.status).toBe(200);
-        expect(visto.corpo.projetosAtuais).toEqual([]);
+        expect(visto.corpo.projetosAtuais.map((p: any) => [p.codigo, p.restrito, p.funcao])).toEqual([["proj-alheio", true, null]]);
         expect(visto.corpo.projetosAnteriores).toEqual([]);
         expect(visto.corpo.ocupacao.percentual).toBe(0);
         expect(visto.corpo.ocupacao.itens).toEqual([]);

@@ -9,7 +9,7 @@ import { carregarProjetos } from "./carregadores";
 import { validarColunas } from "../../../domain/entity/ColunaProjeto";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
-    prioridade, progresso, responsavel_codigo, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo,
+    prioridade, progresso, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo,
     tipo, geral_da_area`;
 
 function valores(projeto: Projeto): unknown[] {
@@ -24,7 +24,6 @@ function valores(projeto: Projeto): unknown[] {
         projeto.clienteNome,
         projeto.prioridade,
         projeto.progresso,
-        projeto.responsavel?.codigo ?? null,
         projeto.area?.codigo ?? null,
         projeto.tags,
         // O geral não tem líder gravado: quem lidera vem dos períodos da área.
@@ -43,7 +42,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
@@ -67,9 +66,9 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
             parametros.push(filtro.tipo);
             condicoes.push(`tipo = $${parametros.length}`);
         }
-        if (filtro.codigoResponsavel) {
-            parametros.push(filtro.codigoResponsavel);
-            condicoes.push(`responsavel_codigo = $${parametros.length}`);
+        if (filtro.codigoLider) {
+            parametros.push(filtro.codigoLider);
+            condicoes.push(`lider_codigo = $${parametros.length}`);
         }
         const busca = normalizarBusca(filtro.busca);
         if (busca) {
@@ -121,7 +120,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],

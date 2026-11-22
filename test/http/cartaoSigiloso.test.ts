@@ -25,7 +25,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
                 undefined,
                 [ctx.membro, new Participacao(exEquipe, { dataEntrada: dataInicio, dataSaida: new Date("2026-10-20T00:00:00.000Z") })],
                 "proj-sig",
-                { sigiloso: true, clienteNome: "Cliente Zeta" },
+                { sigiloso: true, clienteNome: "Cliente Zeta", lider: ctx.membro },
             ),
         );
         servidor = await subirServidor(ctx.factory);
@@ -64,9 +64,12 @@ describe("Cartão de projeto sigiloso na leitura", () => {
         expect(porNome.corpo[0].cartao).toBe(true);
     });
 
-    it("filtro por responsável descarta o cartão", async () => {
-        const r = await servidor.chamar("get", "/projetos?codigoResponsavel=usr-joao", { usuario: ctx.gerente });
-        expect(codigos(r)).toEqual([]);
+    it("filtro por líder mantém o cartão (o líder está no cartão; sessão 27b)", async () => {
+        const r = await servidor.chamar("get", `/projetos?codigoLider=${ctx.membro.codigo}`, { usuario: ctx.gerente });
+        expect(codigos(r)).toEqual(["proj-sig"]);
+        expect(r.corpo[0].cartao).toBe(true);
+        const outro = await servidor.chamar("get", "/projetos?codigoLider=usr-joao", { usuario: ctx.gerente });
+        expect(codigos(outro)).toEqual([]);
     });
 
     it("filtro por pessoa não revela a equipe do sigiloso ao gerente fora", async () => {

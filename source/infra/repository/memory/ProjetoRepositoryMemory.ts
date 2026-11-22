@@ -35,7 +35,7 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
             this.projetos
                 .filter((p) => !filtro.status?.length || filtro.status.includes(p.status))
                 .filter((p) => !filtro.codigoArea || p.area?.codigo === filtro.codigoArea)
-                .filter((p) => !filtro.codigoResponsavel || p.responsavel?.codigo === filtro.codigoResponsavel)
+                .filter((p) => !filtro.codigoLider || p.lider?.codigo === filtro.codigoLider)
                 .filter((p) => !filtro.tipo || p.tipo === filtro.tipo)
                 .filter((p) => !busca || normalizarBusca(`${p.nome} ${p.referencia ?? ""} ${p.clienteNome ?? ""}`).includes(busca)),
         );

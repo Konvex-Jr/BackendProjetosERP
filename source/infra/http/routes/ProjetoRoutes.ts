@@ -42,7 +42,6 @@ function lerDetalhes(body: any): EntradaDetalhesProjeto {
         prioridade: lerEnum(body.prioridade, PrioridadeProjeto, "prioridade"),
         tipo: lerTipo(body.tipo),
         progresso: lerInteiro(body.progresso, "progresso"),
-        codigoResponsavel: body.codigoResponsavel,
         codigoArea: body.codigoArea,
         tags: body.tags === undefined ? undefined : lerLista(body.tags),
     };
@@ -60,19 +59,19 @@ export default class ProjetoRoutes implements ModelRoutes {
      * de tarefas) ou cartão (`cartaoProjeto`, lista fechada).
      * O frontend calcula o progresso com a contagem de todas as tarefas do projeto; antes usava só as
      * carregadas, e o membro, que recebe só as dele, via outro % (revisão de 12/11/2026).
-     * Cartão: filtros de pessoa e responsável o descartam (revelariam a equipe); o de área vale só para o
+     * Cartão: o filtro de pessoa o descarta (revelaria a equipe); o de líder o mantém (o líder está no
+     * cartão, sessão 27b); o de área vale só para o
      * interno (só ele mostra a área no cartão); a busca só vale pelo nome (referência e cliente não podem servir de pista).
      */
     private async paraResposta(
         usuario: UsuarioAutenticado,
         projetos: Projeto[],
-        filtro: { codigoUsuario?: string; codigoArea?: string; codigoResponsavel?: string; busca?: string } = {},
+        filtro: { codigoUsuario?: string; codigoArea?: string; codigoLider?: string; busca?: string } = {},
     ) {
         const acessos = projetos.map((p) => ({ projeto: p, acesso: acessoAoProjeto(usuario, p) }));
         const busca = normalizarBusca(filtro.busca);
         const cartaoServe = (p: Projeto) =>
             !filtro.codigoUsuario &&
-            !filtro.codigoResponsavel &&
             (!filtro.codigoArea || p.tipo === TipoProjeto.INTERNO) &&
             (!busca || normalizarBusca(p.nome).includes(busca));
         const visiveis = acessos.filter((a) => a.acesso === "completo" || cartaoServe(a.projeto));
@@ -104,7 +103,7 @@ export default class ProjetoRoutes implements ModelRoutes {
             const filtro = {
                 codigoUsuario: query?.codigoUsuario || undefined,
                 codigoArea: query?.codigoArea || undefined,
-                codigoResponsavel: query?.codigoResponsavel || undefined,
+                codigoLider: query?.codigoLider || undefined,
                 busca: query?.busca || undefined,
             };
             const tipo = lerTipo(query?.tipo);
@@ -130,7 +129,9 @@ export default class ProjetoRoutes implements ModelRoutes {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
             // Lida uma vez: a mesma equipe inicial vale para a regra do sigilo e para a gravação.
-            const codigosMembros = lerLista(body.codigosMembros);
+            // Líder na criação (sessão 27b): entra na equipe junto, então conta para a regra do sigilo.
+            const codigoLider = body.codigoLider ? String(body.codigoLider) : undefined;
+            const codigosMembros = [...new Set([...lerLista(body.codigosMembros), ...(codigoLider ? [codigoLider] : [])])];
             if (sigiloso) exigirNaoSeTrancar(usuario, codigosMembros);
             return new CriarProjeto(f).execute({
                 criadoPor: usuario.codigo,
@@ -141,6 +142,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                 dataFim: lerDataObrigatoria(body.dataFim, "dataFim"),
                 status: lerEnum(body.status, StatusProjeto, "status"),
                 codigosMembros,
+                codigoLider,
                 ...lerDetalhes(body),
             });
         });

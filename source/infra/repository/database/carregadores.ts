@@ -122,7 +122,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
-                p.responsavel_codigo, p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
+                p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
                 p.tipo, p.geral_da_area,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa, a.tem_geral AS area_tem_geral
          FROM projetos p
@@ -162,7 +162,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     const usuarios = await carregarUsuarios(conexao, [
         ...periodosDosGerais.map((p) => p.codigoUsuario),
         ...vinculos.map((v) => v.usuario_codigo),
-        ...linhas.map((l) => l.responsavel_codigo).filter(Boolean),
         ...linhas.map((l) => l.lider_codigo).filter(Boolean),
     ]);
 
@@ -200,7 +199,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                 clienteNome: linha.cliente_nome,
                 prioridade: linha.prioridade as PrioridadeProjeto,
                 progresso: Number(linha.progresso),
-                responsavel: linha.responsavel_codigo ? (usuarios.get(linha.responsavel_codigo) ?? null) : null,
                 area: areaDeLinha(linha),
                 tags: linha.tags ?? [],
                 lider: linha.lider_codigo && !linha.geral_da_area ? (usuarios.get(linha.lider_codigo) ?? null) : null,
