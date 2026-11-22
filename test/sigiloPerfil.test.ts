@@ -68,7 +68,7 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         const { factory, membro, outro, auth } = await montar();
         const perfil = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(membro));
         const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
-        // Ana está na equipe atual de p-sig (completo); em p-sig-antigo saiu: aparece restrito.
+        // Ana está na equipe atual de p-sig (completo); em p-sig-antigo Ana saiu e o outro segue: aparece restrito.
         expect(todos.map((p) => [p.codigo, p.restrito]).sort()).toEqual([
             ["p-normal", false],
             ["p-sig", false],
@@ -77,6 +77,19 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         expect(todos.find((p) => p.codigo === "p-sig-antigo")).toMatchObject({ referencia: null, funcao: null });
         expect(perfil.ocupacao).toMatchObject({ percentual: 0, horas: 0, itens: [] });
         expect("alocacao" in perfil).toBe(false);
+    });
+
+    it("membro não vê a passagem antiga de outra pessoa por projeto que não vê completo (como no cartão)", async () => {
+        const { factory, membro, auth } = await montar();
+        const terceiro = new Usuario("Caio", "caio@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", membro.senioridade, "usr-caio");
+        await factory.criarUsuarioRepository().criar(terceiro);
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(terceiro));
+        // Atuais aparecem restritos; a saída de Ana do "Sigiloso antigo" não aparece.
+        expect(perfil.projetosAtuais.map((p) => [p.codigo, p.restrito]).sort()).toEqual([
+            ["p-normal", true],
+            ["p-sig", true],
+        ]);
+        expect(perfil.projetosAnteriores).toEqual([]);
     });
 
     it("ocupação: sigiloso alheio vira linha do projeto, sem título da tarefa (sessão 27b)", async () => {
