@@ -162,7 +162,10 @@ describe("Capacitações", () => {
 
         // Média para todos; avaliações individuais: gestão com nome, instrutora sem nome, membro não vê.
         const lista = await servidor.chamar("get", "/capacitacoes", { usuario: caio });
-        expect(lista.corpo[0]).toMatchObject({ avaliacao: { media: 4, total: 1 }, podeVerAvaliacoes: false });
+        expect(lista.corpo.find((x: any) => x.codigo === c.codigo)).toMatchObject({
+            avaliacao: { media: 4, total: 1 },
+            podeVerAvaliacoes: false,
+        });
         expect((await servidor.chamar("get", `/capacitacoes/${c.codigo}/avaliacoes`, { usuario: caio })).status).toBe(403);
         const gestao = await servidor.chamar("get", `/capacitacoes/${c.codigo}/avaliacoes`, { usuario: ctx.gerente });
         expect(gestao.corpo[0]).toMatchObject({ usuario: { codigo: "usr-bia" }, nota: 4 });
