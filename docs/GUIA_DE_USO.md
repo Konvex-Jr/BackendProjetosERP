@@ -76,6 +76,9 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 - **Áreas e cargos**: suas áreas atuais (você pode estar em mais de uma, cada uma com o seu cargo) e a trajetória anterior, com as datas. Quem lança e corrige é a gestão; no seu perfil a seção é só leitura.
 
 **Projetos**: vê todos. Cria e edita projetos, muda a situação (Em andamento, Atenção, Bloqueado, Concluído, Arquivado), monta a equipe (função, entrada e saída) e escolhe o líder. A equipe mostra a **ocupação na semana** de cada pessoa (calculada das tarefas, sem edição); não existe mais percentual de alocação digitado à mão.
+- **Adicionar à equipe**: cada nome da lista mostra a ocupação da semana atual (ex.: "Ana · 80%"); quem passa de 100% aparece com "(acima do teto)".
+- **Visão Alocação** (botão **Alocação** em Projetos, só diretor e gerente): uma linha por pessoa na EJ, com a ocupação da semana atual, os projetos ativos de que participa (o líder aparece marcado) e um filtro "Só quem passa de 100%". Os projetos gerais das áreas não entram.
+- **Visão Campinho** (botão **Campinho** em Projetos, só diretor e gerente): cada projeto ativo é um campo de futebol com a equipe atual como botões (foto ou iniciais). O líder tem a braçadeira **C**; os demais ficam em colunas pela **função no projeto** (quem não tem função vai para "Sem função"). O número no botão diz em quantos projetos ativos a pessoa está, e a borda vermelha marca quem passa de 100% na semana. Os filtros de situação, tipo e área valem aqui; os projetos gerais das áreas não entram. Num sigiloso de que você não participa, a função não aparece.
 
 **Tarefas**: vê e organiza todas. Filtra por pessoa, projeto e situação. Toda tarefa fica num projeto: o que era avulso vive no **projeto geral** da área. Anexa arquivos em qualquer tarefa, inclusive as do projeto geral, e exclui qualquer anexo de tarefa.
 
