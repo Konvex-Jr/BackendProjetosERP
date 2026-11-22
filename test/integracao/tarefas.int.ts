@@ -344,7 +344,10 @@ descrever("tarefas contra PostgreSQL", () => {
                 percentual: 40,
             });
             const detalhe = await servidor.chamar("get", `/ocupacao/${assessor.codigo}`, { usuario: fora });
-            expect(detalhe.corpo.itens).toEqual([{ tipo: "outras", horas: 4 }]);
+            // Sessão 27b: quem está fora também vê o nome do projeto (sem o título da tarefa).
+            expect(detalhe.corpo.itens).toEqual([
+                { tipo: "projeto", projeto: { codigo: sigiloso.codigo, nome: "Sigiloso Ocupação" }, horas: 4 },
+            ]);
             expect(JSON.stringify(detalhe.corpo)).not.toContain("Segredo");
             const doGerente = await servidor.chamar("get", `/ocupacao/${assessor.codigo}`, { usuario: gerente });
             expect(doGerente.corpo.itens).toEqual([
