@@ -635,6 +635,27 @@ curl -s -o /dev/null -w "%{http_code}\n" -X PUT -H 'Content-Type: application/js
 
 **Voltar:** a 024 apaga a tabela, então voltar só o código não restaura a lista de acesso. Restaurar o `pg_dump` e voltar backend e frontend juntos.
 
+### Publicação da sessão 27b (só o líder e equipe no cartão): migração 025
+A migração `025_so_lider.sql` apaga a coluna `projetos.responsavel_codigo`. Projeto sem líder recebe o antigo responsável como líder se ele estiver na equipe atual e ativo (não trainee). Publicar **backend e frontend juntos**.
+
+**Parte 1, consulta prévia (antes do deploy; guarde a saída):** projetos que vão ficar sem líder (a gestão escolhe pela aba Equipe depois).
+```bash
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT p.nome AS projeto, u.nome AS responsavel_antigo
+FROM projetos p LEFT JOIN usuarios u ON u.codigo = p.responsavel_codigo
+WHERE p.lider_codigo IS NULL AND NOT p.geral_da_area
+  AND NOT (p.responsavel_codigo IS NOT NULL AND u.status = 'ativo' AND EXISTS (
+      SELECT 1 FROM projeto_membros m WHERE m.projeto_codigo = p.codigo AND m.usuario_codigo = p.responsavel_codigo AND m.data_saida IS NULL))
+ORDER BY 1;
+SQL
+```
+
+**Parte 2, backup** e **Parte 3, construir e subir:** iguais às da 27a. No log tem que aparecer `Migração aplicada: 025_so_lider.sql`.
+
+**Parte 4, conferir pela tela:** "Novo projeto" tem o campo Líder (sem Responsável); um membro vê a equipe nos cartões dos projetos de que não participa.
+
+**Voltar:** a 025 apaga a coluna. Restaurar o `pg_dump` e voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
