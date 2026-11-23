@@ -153,7 +153,8 @@ Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência 
 
 ### Painel, Visão Estratégica e Precificação (só no frontend)
 - **Dashboard**, para todos: tarefas abertas e atrasadas da pessoa, burndown e capacitações inscritas. A faixa com os **sete indicadores** (projetos ativos, em atenção, concluídos, membros ativos, capacitações próximas, tarefas da semana e atrasadas) aparece só com `projetos.verTodos` (`Dashboard.jsx`).
-- **Visão Estratégica** (`estrategia.ver`) e **Simular precificação** (`precificacao.simular`): gestão. Não têm rota na API; o controle é o item de menu. A precificação calcula no navegador.
+- **Visão Estratégica** (`estrategia.ver`): gestão. Não tem rota na API; o controle é o item de menu.
+- **Simular precificação** (`precificacao.simular`): gestão. O cálculo fica no navegador (`src/lib/precificacao.js`) e nada é gravado. As regras ficam no banco (`regras_precificacao`, migração 027, uma linha em JSONB; sem linha, o padrão de `RegrasPrecificacao.ts`): `GET /config/precificacao` exige `precificacao.simular` (membro: 403); `PUT /config/precificacao` exige `configuracoes.editar` (só diretor), com todos os campos obrigatórios e faixas fixas (400 `REGRA_PRECIFICACAO_INVALIDA`, dizendo o campo; margem mínima não passa da padrão). O desconto acima do teto ou sem justificativa só barra o PDF na tela.
 
 ## 3. Matriz papel × o que vê e o que faz
 
@@ -280,7 +281,8 @@ Perdas da sessão 17: a área **Inovação** não cria mais nada de forma especi
 | Dashboard pessoal | ✅ | ✅ | ✅ | menu sem permissão (`registro.ts`) |
 | Sete indicadores no Dashboard | ✅ | ✅ | ❌ | `projetos.verTodos` (`Dashboard.jsx`) |
 | Visão Estratégica | ✅ | ✅ | ❌ | `estrategia.ver` (menu) |
-| Simular precificação | ✅ | ✅ | ❌ | `precificacao.simular` (menu) |
+| Simular precificação | ✅ | ✅ | ❌ | `precificacao.simular` (menu e `GET /config/precificacao`) |
+| Alterar as regras da precificação | ✅ | ❌ | ❌ | `configuracoes.editar` (`PUT /config/precificacao`) |
 | Avisos gravados (tarefa recebida, capacitação nova) e situação (atrasadas, a vencer, capacitação próxima) | ✅ | ✅ | ✅ | `GET /avisos` e `PATCH /avisos/lidos`: só login, sem permissão (`ConsultarAvisos.ts`) |
 | Aviso de sobrecarga (pessoas acima de 100% na semana) | ✅ | ✅ | ❌ | `projetos.verTodos` (hoje diretor e gerente) em `ConsultarAvisos.ts`; trainee e membro não recebem |
 
