@@ -4,6 +4,7 @@ import ModelRoutes from "./ModelRoutes";
 import SalvarArea from "../../../useCases/config/SalvarArea";
 import SalvarCargo from "../../../useCases/config/SalvarCargo";
 import SalvarHorasDificuldade from "../../../useCases/config/SalvarHorasDificuldade";
+import SalvarRegrasPrecificacao from "../../../useCases/config/SalvarRegrasPrecificacao";
 import SalvarSenioridade from "../../../useCases/config/SalvarSenioridade";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import { lerBooleano, lerInteiro } from "../../../shared/entradas";
@@ -66,6 +67,14 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("put", "/config/horas-dificuldade", true, async (_p: any, body: any) => {
             const { user, ...horas } = body;
             return new SalvarHorasDificuldade(f).execute({ horas, quem: user });
+        });
+
+        this.http.route("get", "/config/precificacao", true, async (_p: any, body: any) =>
+            new SalvarRegrasPrecificacao(f).obter(body.user),
+        );
+        this.http.route("put", "/config/precificacao", true, async (_p: any, body: any) => {
+            const { user, ...regras } = body;
+            return new SalvarRegrasPrecificacao(f).execute({ regras, quem: user });
         });
 
         this.http.route("post", "/senioridades", true, async (_p: any, body: any) => {

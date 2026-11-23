@@ -3,6 +3,7 @@ import ReuniaoRepositoryInterface from "./ReuniaoRepositoryInterface";
 import LinkSenhaRepositoryInterface from "./LinkSenhaRepositoryInterface";
 import EnvioEmailInterface from "./EnvioEmailInterface";
 import HorasDificuldadeRepositoryInterface from "./HorasDificuldadeRepositoryInterface";
+import RegrasPrecificacaoRepositoryInterface from "./RegrasPrecificacaoRepositoryInterface";
 import UsuarioRepositoryInterface from "./UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "./SenioridadeRepositoryInterface";
 import ProjetoRepositoryInterface from "./ProjetoRepositoryInterface";
@@ -41,6 +42,7 @@ export default interface RepositoryFactoryInterface {
     criarCargoRepository(): CargoRepositoryInterface;
     criarPeriodoAreaRepository(): PeriodoAreaRepositoryInterface;
     criarHorasDificuldadeRepository(): HorasDificuldadeRepositoryInterface;
+    criarRegrasPrecificacaoRepository(): RegrasPrecificacaoRepositoryInterface;
     criarRefreshTokenRepository(): RefreshTokenRepositoryInterface;
     criarLinkSenhaRepository(): LinkSenhaRepositoryInterface;
     criarAvisoRepository(): AvisoRepositoryInterface;

@@ -64,6 +64,12 @@ export const MENSAGENS_DE_ERRO = {
         INVALIDAS: (nivel: string) => `As horas do nível "${nivel}" devem ser um número de 0,5 a 40.`,
     },
 
+    PRECIFICACAO: {
+        REGRA_INVALIDA: (campo: string, minimo: number, maximo: number, inteiro: boolean) =>
+            `A regra "${campo}" deve ser um número ${inteiro ? "inteiro " : ""}de ${minimo} a ${maximo}.`,
+        MARGEM_MINIMA_ACIMA: "A margem mínima (margemMinima) não pode ser maior que a margem padrão (margem).",
+    },
+
     CARGO: {
         TETO_INVALIDO: "O teto semanal do cargo (tetoSemanalHoras) deve ser um número inteiro de 1 a 40 horas.",
     },
