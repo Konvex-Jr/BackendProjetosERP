@@ -39,6 +39,7 @@ describe("campos novos da pessoa (25b)", () => {
     it("status sem Alumni; cursos", () => {
         expect(Object.values(StatusPessoa)).toEqual(["ativo", "trainee", "inativo"]);
         expect(ehCursoValido("Engenharia Elétrica")).toBe(true);
+        expect(ehCursoValido("Análise e Desenvolvimento de Sistemas")).toBe(true);
         expect(ehCursoValido("Eng. de Software")).toBe(false);
     });
 });

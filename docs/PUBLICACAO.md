@@ -689,6 +689,17 @@ curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/config/
 
 **Voltar:** a tabela nova não atrapalha o backend antigo; voltar backend e frontend juntos basta.
 
+### Publicação do curso ADS: migração 028
+A migração `028_curso_ads.sql` só troca o CHECK de `usuarios.curso` para aceitar **Análise e Desenvolvimento de Sistemas** (não apaga nada). Publicar **backend e frontend juntos**.
+
+**Parte 1, backup:** igual ao bloco "Publicação" do início (banco e anexos).
+
+**Parte 2, construir e subir:** `git -C backend pull --ff-only && git -C frontend pull --ff-only`, `docker compose build backend frontend && docker compose up -d`. No log tem que aparecer `Migração aplicada: 028_curso_ads.sql`.
+
+**Parte 3, pela tela:** em Meu perfil (ou Pessoas), escolher o curso novo e salvar.
+
+**Voltar:** com alguém já gravado no curso novo, o backend antigo segue carregando a pessoa (dado fora da lista carrega), mas não deixa escolher o curso; voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
