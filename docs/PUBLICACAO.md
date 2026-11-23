@@ -656,6 +656,23 @@ SQL
 
 **Voltar:** a 025 apaga a coluna. Restaurar o `pg_dump` e voltar backend e frontend juntos.
 
+### Publicação da sessão 28b (agenda, reuniões e chamada): migração 026
+A migração `026_reunioes.sql` só **cria** as tabelas `reunioes` e `reuniao_participantes` (não apaga nada). Publicar **backend e frontend juntos**.
+
+**Parte 1, backup:** igual ao bloco "Publicação" do início (banco e anexos).
+
+**Parte 2, construir e subir:** `git -C backend pull --ff-only && git -C frontend pull --ff-only`, `docker compose build backend frontend && docker compose up -d`. No log tem que aparecer `Migração aplicada: 026_reunioes.sql`.
+
+**Parte 3, conferir de fora:**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" "https://erp.konvexjr.com.br/api/agenda?de=2026-11-01&ate=2026-11-30"   # 401
+curl -s -o /dev/null -w "%{http_code}\n" -X POST -H 'Content-Type: application/json' -d '{}' https://erp.konvexjr.com.br/api/reunioes   # 401
+```
+
+**Parte 4, pela tela:** "Agenda" no menu; criar uma reunião de teste com uma pessoa, abrir "Criar no Google Agenda" (não precisa salvar no Google) e excluir a reunião.
+
+**Voltar:** as tabelas novas não atrapalham o backend antigo; voltar backend e frontend juntos basta (as reuniões criadas ficam no banco sem uso).
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
