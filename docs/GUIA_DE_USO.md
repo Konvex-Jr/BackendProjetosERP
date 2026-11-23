@@ -15,6 +15,12 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
   - **Android (Chrome)**: menu **⋮** → **Adicionar à tela inicial** (ou **Instalar app**).
   - **iPhone (Safari)**: botão **Compartilhar** → **Adicionar à Tela de Início**.
 
+**Botões e avisos da tela:**
+- O botão **⋯** (ou **≡**) de cada linha ou cartão gira e abre a lista de ações com o nome de cada uma (Editar, Excluir...). Esc fecha.
+- As mensagens de confirmação ("Tarefa salva", por exemplo) aparecem **embaixo, à direita** (no celular, logo acima da barra do menu) e somem sozinhas.
+- **Sair** pede confirmação antes de encerrar a sessão.
+- Endereço errado mostra **"Essa página não existe"**; tela que não é do seu papel mostra **"Esta tela não está liberada para você"**. Nas duas, o botão leva ao início.
+
 **Errou a senha várias vezes?** Depois de 5 tentativas erradas seguidas, o login daquele e-mail fica bloqueado **por 15 minutos** naquele aparelho e rede. É uma proteção contra quem tenta adivinhar senhas. Espere o tempo indicado na mensagem ou use **Esqueci a senha** (veja abaixo).
 
 ## Primeiro acesso e senha
@@ -36,7 +42,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 **Tarefas**: abre em "Minhas tarefas" (de projetos, inclusive o geral da sua área). Alterne para "Tudo o que vejo" para ver as tarefas dos seus projetos.
 - **Nova tarefa**: só em projeto do qual você faz parte. Você fica como responsável; o líder organiza depois. A janela de criação é a mesma da tarefa e já aceita **descrição**, **checklist** (cada item pode ter um responsável, escolhido entre os responsáveis da tarefa) e **anexos** (os arquivos escolhidos sobem depois que a tarefa é criada; se algum falhar, o aviso diz quais e a tarefa fica criada para você reenviar).
 - **Editar e excluir o que você criou**: se você criou a tarefa e ainda está na equipe do projeto, edita e exclui a tarefa. Você não troca os responsáveis nem a situação dela (isso segue com o líder e com os responsáveis). Quem saiu da equipe perde essa edição.
-- **Checklist**: marque os itens direto na tarefa; a marcação grava na hora, sem precisar de **Salvar**. Marcam os responsáveis da tarefa, o líder e a gestão (qualquer item, não só os seus). Quem edita a tarefa também muda o texto e o responsável de cada item. Se alguém sai dos responsáveis da tarefa, os itens dele ficam sem responsável.
+- **Checklist**: marque os itens direto na tarefa; a marcação grava na hora, sem precisar de **Salvar**. Marcam os responsáveis da tarefa, o líder e a gestão (qualquer item, não só os seus). Quem edita a tarefa também muda o texto e o responsável de cada item. O responsável aparece só pela foto ou pelas iniciais (o nome aparece ao passar o mouse); para trocar, clique no círculo ao lado do item. Se alguém sai dos responsáveis da tarefa, os itens dele ficam sem responsável.
 - **Concluída em**: tarefa concluída mostra a data de conclusão, que o responsável, o líder, a gestão (ou quem criou a tarefa e está na equipe) pode corrigir. A data não pode ser futura nem anterior ao início da tarefa, e quem concluiu não muda. Os indicadores e o burndown passam a usar a data corrigida.
 - **Aviso ao fechar**: se você mexeu na tarefa e fecha a janela (X, Esc, clicar fora ou Cancelar), o sistema pergunta se quer descartar as alterações.
 - **Filtros guardados**: os filtros da tela Tarefas (pessoa, origem, situação, prazo e visão) ficam guardados enquanto a aba estiver aberta, só para você; somem ao sair, trocar de conta ou recarregar a página.
@@ -145,4 +151,4 @@ Para projetos que só algumas pessoas devem ver (por exemplo, uma proposta confi
 - **"Você não tem acesso a este projeto"**: você não está (nem esteve) na equipe. Peça à gestão para incluir você.
 - **Não consigo concluir uma tarefa**: só o responsável, o líder e a gestão concluem. Peça para ser incluído como responsável.
 - **Esqueci a senha**: use **Esqueci a senha** na tela de login. Se o e-mail não chegar em alguns minutos, olhe o spam e peça à gestão para reenviar o link.
-- **Algo saiu errado na tela**: recarregue sem cache (Ctrl+Shift+R). Se continuar, avise a gestão com um print.
+- **Algo saiu errado na tela** ("Algo deu errado do nosso lado"): recarregue sem cache (Ctrl+Shift+R). Se continuar, avise a Inovação com um print.
