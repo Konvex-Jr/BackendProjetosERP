@@ -1,4 +1,5 @@
 import AvisoRepositoryDatabase from "./database/AvisoRepositoryDatabase";
+import ReuniaoRepositoryDatabase from "./database/ReuniaoRepositoryDatabase";
 import EnvioEmailInterface from "../../domain/interfaces/EnvioEmailInterface";
 import criarEnvioEmail from "../email/criarEnvioEmail";
 import HorasDificuldadeRepositoryDatabase from "./database/HorasDificuldadeRepositoryDatabase";
@@ -141,5 +142,9 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarAvisoRepository() {
         return new AvisoRepositoryDatabase(this.conexao);
+    }
+
+    criarReuniaoRepository() {
+        return new ReuniaoRepositoryDatabase(this.conexao);
     }
 }

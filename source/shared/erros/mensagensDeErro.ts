@@ -103,6 +103,28 @@ export const MENSAGENS_DE_ERRO = {
         SEM_PERMISSAO_MOVER: "Só o responsável pela tarefa, o líder do projeto e a gestão podem mover a tarefa.",
     },
 
+    REUNIAO: {
+        TITULO_OBRIGATORIO: "Informe o título da reunião.",
+        TITULO_LONGO: "O título da reunião deve ter no máximo 200 caracteres.",
+        DESCRICAO_LONGA: "A descrição da reunião deve ter no máximo 5.000 caracteres.",
+        DATA_INVALIDA: "Data da reunião inválida. Use AAAA-MM-DD.",
+        HORA_INVALIDA: "Hora da reunião inválida. Use HH:MM (por exemplo, 14:00).",
+        DURACAO_INVALIDA: "A duração da reunião (duracaoMinutos) deve ser um número inteiro de 5 a 720 minutos.",
+        LOCAL_LONGO: "O local da reunião deve ter no máximo 300 caracteres.",
+        SEM_CRIADOR: "A reunião precisa de quem a criou.",
+        MUITOS_PARTICIPANTES: "Uma reunião pode ter no máximo 100 participantes.",
+        PARTICIPANTES_INVALIDOS: "Envie `participantes` como uma lista de códigos de pessoas.",
+        PARTICIPANTE_INVALIDO: "Participante inválido: só pessoas ativas na EJ podem ser convidadas.",
+        NAO_ENCONTRADA: "Reunião não encontrada.",
+        SEM_PERMISSAO: "Só quem criou a reunião ou a gestão pode alterá-la ou excluí-la.",
+    },
+
+    AGENDA: {
+        PERIODO_INVALIDO: "Período inválido. Envie de e ate como AAAA-MM-DD, com ate depois de de e no máximo 62 dias.",
+        OUTRA_PESSOA: "Só a gestão pode ver a agenda de outra pessoa.",
+        PESSOA_NAO_ENCONTRADA: "Pessoa não encontrada.",
+    },
+
     AVISOS: {
         CODIGOS_INVALIDOS: "Os códigos (codigos) devem ser uma lista de textos.",
     },
