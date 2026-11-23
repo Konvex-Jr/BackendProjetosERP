@@ -88,6 +88,7 @@ export default class GerirCapacitacoes {
             inscritos: gestao || instrutor ? c.inscricoes.map((i) => ({ ...i.usuario, presente: i.presente })) : undefined,
             avaliacao: resumo ?? { media: null, total: 0 },
             podeGerir: gestao,
+            podeFazerChamada: (gestao || instrutor) && comecou,
             podeInscrever: !minha && !comecou && c.vagasRestantes > 0,
             podeCancelar: Boolean(minha) && !comecou,
             podeAvaliar: comecou && minha?.presente === true,
@@ -164,7 +165,11 @@ export default class GerirCapacitacoes {
             throw new ErroConflito(M.JA_COMECOU, "CAPACITACAO_JA_COMECOU");
         if (c.inscricaoDe(alvo)) throw new ErroConflito(M.JA_INSCRITO, "USUARIO_JA_INSCRITO");
         // A checagem final de vaga fica no banco (repo.inscrever), não em vagasRestantes, que pode estar velho.
-        const ok = await this.repo.inscrever(codigo, { codigo: pessoa.codigo, nome: pessoa.nomeExibicao || pessoa.nome });
+        const ok = await this.repo.inscrever(codigo, {
+            codigo: pessoa.codigo,
+            nome: pessoa.nomeExibicao || pessoa.nome,
+            foto: pessoa.foto,
+        });
         if (!ok) throw new ErroConflito(M.LOTADA, "CAPACITACAO_LOTADA");
         return this.ficha(autenticado, codigo);
     }
@@ -181,10 +186,11 @@ export default class GerirCapacitacoes {
         return this.ficha(autenticado, codigo);
     }
 
-    /** A gestão marca quem compareceu (os demais inscritos ficam como ausentes). */
+    /** Chamada: a gestão ou quem ministra marca quem compareceu (os demais inscritos ficam como ausentes). Sessão 28b. */
     async marcarPresencas(usuario: Usuario, codigo: string, presentes: unknown) {
-        const autenticado = this.exigirGestao(usuario);
+        const autenticado = exigirAutenticado(usuario);
         const c = await this.buscar(codigo);
+        if (!podeGerirCapacitacoes(autenticado) && !ehInstrutor(autenticado, c)) throw new ErroProibido(M.CHAMADA_SEM_PERMISSAO);
         if (!Array.isArray(presentes) || presentes.some((p) => typeof p !== "string")) {
             throw new ErroValidacao("Envie `presentes` como uma lista de códigos de pessoas.", "PRESENTES_INVALIDOS");
         }
