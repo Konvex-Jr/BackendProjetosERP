@@ -14,7 +14,7 @@ const SELECT = `
            c.duracao_horas, c.vagas, c.tipo, c.sala,
            c.instrutor_codigo, (SELECT ${NOME} FROM usuarios u WHERE u.codigo = c.instrutor_codigo) AS instrutor_nome,
            COALESCE((
-               SELECT json_agg(json_build_object('codigo', u.codigo, 'nome', ${NOME}, 'presente', i.presente) ORDER BY i.inscrito_em)
+               SELECT json_agg(json_build_object('codigo', u.codigo, 'nome', ${NOME}, 'foto', u.foto, 'presente', i.presente) ORDER BY i.inscrito_em)
                FROM capacitacao_inscricoes i JOIN usuarios u ON u.codigo = i.usuario_codigo
                WHERE i.capacitacao_codigo = c.codigo
            ), '[]'::json) AS inscricoes
@@ -33,7 +33,10 @@ function deLinha(l: any): Capacitacao {
         vagas: l.vagas,
         tipo: l.tipo,
         sala: l.sala,
-        inscricoes: (l.inscricoes ?? []).map((i: any) => ({ usuario: { codigo: i.codigo, nome: i.nome }, presente: i.presente })),
+        inscricoes: (l.inscricoes ?? []).map((i: any) => ({
+            usuario: { codigo: i.codigo, nome: i.nome, foto: i.foto ?? null },
+            presente: i.presente,
+        })),
     });
 }
 

@@ -120,12 +120,19 @@ Lista (`GET /tarefas`): a gestão recebe todas; o membro recebe as dos projetos 
 
 ### Capacitações (`/capacitacoes`)
 - Todos os logados veem a lista e a ficha, com média e número de avaliações.
-- Só a gestão cria, edita, exclui, anexa material, marca presença e inscreve ou tira outra pessoa (`capacitacoes.gerir`).
+- Só a gestão cria, edita, exclui, anexa material e inscreve ou tira outra pessoa (`capacitacoes.gerir`).
+- Chamada (presença): a gestão ou quem ministra, depois do início (sessão 28b; `podeFazerChamada`).
 - A própria pessoa se inscreve e cancela **até a hora de início**, se houver vaga. A gestão inscreve e tira a qualquer momento. A vaga é conferida no banco (inscrições simultâneas não estouram o limite).
 - Presença só depois do início. Só quem teve presença marcada avalia (nota de 1 a 5, "bom" e "melhorar"); avaliar de novo substitui a anterior.
 - Avaliações individuais: a gestão lê com o nome; quem ministrou lê sem o nome (ordenadas pela nota); os demais veem só a média (`acessoAosFeedbacks`).
 - A lista de inscritos aparece só para a gestão e para quem ministra.
 - Horas no perfil contam só com presença marcada.
+
+### Agenda e reuniões (`/agenda`, `/reunioes`; sessão 28b)
+- `GET /agenda?de&ate` junta, num período de até 62 dias, as reuniões da pessoa, os prazos das tarefas em que ela é responsável e todas as capacitações (com `inscrito` e `ministra`).
+- Cada um vê a própria agenda; a gestão (`projetos.verTodos`) usa `pessoa` para ver a de outra. Prazo de tarefa de projeto sem acesso completo vem sem título e sem código, só com o projeto.
+- Reunião: qualquer pessoa logada cria; quem cria é participante. Participantes novos precisam estar ativos na EJ (quem já estava fica, mesmo se saiu). Quem não participa recebe 404 (a gestão vê todas). Só quem criou e a gestão editam e excluem.
+- A ficha traz o e-mail de login dos participantes, usado pela tela para montar o link do Google Agenda (sem integração com a API do Google).
 
 ### Biblioteca (`/biblioteca`)
 Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência e Iniciativas. Guarda o material da Konvex: pesquisas, decisões, aprendizados, documentos, ideias.
@@ -240,9 +247,18 @@ Sessão 23b: a tarefa avulsa acabou e a ação `tarefas.atribuir` saiu do catál
 | Inscrever-se e cancelar | a qualquer hora | a qualquer hora | até o início, com vaga | `GerirCapacitacoes.inscrever/cancelar` |
 | Inscrever ou tirar outra pessoa | ✅ | ✅ | ❌ | `capacitacoes.gerir` |
 | Ver inscritos | ✅ | ✅ | se ministra | `podeGerirCapacitacoes` / `ehInstrutor` |
-| Marcar presença (depois do início) | ✅ | ✅ | ❌ | `capacitacoes.gerir` |
+| Fazer a chamada (depois do início) | ✅ | ✅ | se ministra | `capacitacoes.gerir` / `ehInstrutor` |
 | Avaliar | se presente | se presente | se presente | `GerirCapacitacoes.avaliar` (presença) |
 | Ler avaliações individuais | com nome | com nome | sem nome, se ministrou | `acessoAosFeedbacks` |
+
+### Agenda e reuniões
+| Ação | Diretor | Gerente | Membro | Código |
+|---|---|---|---|---|
+| Ver a própria agenda | ✅ | ✅ | ✅ | só login (`GerirAgenda.agenda`) |
+| Ver a agenda de outra pessoa | ✅ | ✅ | ❌ | `projetos.verTodos` |
+| Criar reunião | ✅ | ✅ | ✅ | só login |
+| Ver reunião | todas | todas | se participa | `GerirAgenda.buscarVisivel` (404) |
+| Editar e excluir reunião | todas | todas | se criou | `GerirAgenda.podeAlterar` |
 
 ### Biblioteca
 | Ação | Diretor | Gerente | Membro | Código |
@@ -289,4 +305,4 @@ A pessoa passou a ter **foto de perfil** (no lugar do campo `avatar_url`) e os l
 - Spec: `docs/superpowers/specs/2026-11-18-areas-design.md`.
 
 ## 5. O que ainda não existe
-Homologação, auditoria (quem mudou o quê), LGPD e retenção, precificação pela API, Google Calendar, e-mails, busca global, Board Tático, CRM. Ver o `.konvex/roteiro.md` (fases 6 e 7).
+Homologação, auditoria (quem mudou o quê), LGPD e retenção, precificação pela API, integração com a API do Google Calendar (a agenda só gera o link do Google), e-mails, busca global, Board Tático, CRM. Ver o `.konvex/roteiro.md` (fases 6 e 7).

@@ -383,6 +383,58 @@ const swaggerSpecification = {
                 },
             ),
         },
+        "/agenda": {
+            get: operation(
+                ["Agenda"],
+                "Agenda unificada de um período: { pessoa, de, ate, itens }. Itens: reuniao (da pessoa), prazo (tarefas em que a pessoa é responsável; sem título nem código se quem pede não vê o projeto completo), capacitacao (todas, com inscrito e ministra). Só a gestão (projetos.verTodos) usa `pessoa`. 400 AGENDA_PERIODO_INVALIDO (no máximo 62 dias), 403, 404",
+                {
+                    parameters: [
+                        { name: "de", in: "query", required: true, schema: { type: "string", example: "2026-12-01" } },
+                        { name: "ate", in: "query", required: true, schema: { type: "string", example: "2026-12-31" } },
+                        { name: "pessoa", in: "query", required: false, schema: { type: "string" } },
+                    ],
+                },
+            ),
+        },
+        "/reunioes": {
+            post: operation(
+                ["Agenda"],
+                "Criar reunião (todo logado): { titulo, descricao?, data AAAA-MM-DD, hora HH:MM, duracaoMinutos (5 a 720), local?, participantes: códigos de pessoas ativas na EJ }. Quem cria entra como participante. 400 PARTICIPANTE_INVALIDO",
+                {
+                    requestBody: jsonBody({
+                        type: "object",
+                        properties: {
+                            titulo: { type: "string" },
+                            descricao: { type: "string" },
+                            data: { type: "string" },
+                            hora: { type: "string" },
+                            duracaoMinutos: { type: "integer" },
+                            local: { type: "string" },
+                            participantes: { type: "array", items: { type: "string" } },
+                        },
+                    }),
+                },
+            ),
+        },
+        "/reunioes/{codigo}": {
+            get: operation(
+                ["Agenda"],
+                "Ficha da reunião com participantes (e-mail para o convite do Google Agenda) e podeAlterar. 404 para quem não participa (a gestão vê todas)",
+                {
+                    parameters: [{ name: "codigo", in: "path", required: true, schema: { type: "string" } }],
+                },
+            ),
+            put: operation(
+                ["Agenda"],
+                "Editar a reunião (quem criou ou a gestão; campo ausente mantém o valor; quem criou não sai). 403 sem permissão",
+                {
+                    parameters: [{ name: "codigo", in: "path", required: true, schema: { type: "string" } }],
+                },
+            ),
+            delete: operation(["Agenda"], "Excluir a reunião (quem criou ou a gestão). 204", {
+                parameters: [{ name: "codigo", in: "path", required: true, schema: { type: "string" } }],
+            }),
+        },
         "/avisos": {
             get: operation(
                 ["Painel"],
@@ -449,14 +501,18 @@ const swaggerSpecification = {
             }),
         },
         "/capacitacoes/{codigo}/presencas": {
-            put: operation(["Capacitações"], "Marcar presença depois do início (gestão); os inscritos fora da lista ficam ausentes", {
-                parameters: [codigo],
-                requestBody: jsonBody({
-                    type: "object",
-                    required: ["presentes"],
-                    properties: { presentes: { type: "array", items: { type: "string" } } },
-                }),
-            }),
+            put: operation(
+                ["Capacitações"],
+                "Chamada: marcar presença depois do início (gestão ou quem ministra, sessão 28b); os inscritos fora da lista ficam ausentes",
+                {
+                    parameters: [codigo],
+                    requestBody: jsonBody({
+                        type: "object",
+                        required: ["presentes"],
+                        properties: { presentes: { type: "array", items: { type: "string" } } },
+                    }),
+                },
+            ),
         },
         "/capacitacoes/{codigo}/avaliacao": {
             put: operation(["Capacitações"], "Avaliar (só quem compareceu, depois do início); avaliar de novo substitui", {

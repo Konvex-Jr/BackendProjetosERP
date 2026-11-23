@@ -5,6 +5,7 @@ import UsuarioRoutes from "../infra/http/routes/UsuarioRoutes";
 import ProjetoRoutes from "../infra/http/routes/ProjetoRoutes";
 import TarefaRoutes from "../infra/http/routes/TarefaRoutes";
 import AvisoRoutes from "../infra/http/routes/AvisoRoutes";
+import AgendaRoutes from "../infra/http/routes/AgendaRoutes";
 import OcupacaoRoutes from "../infra/http/routes/OcupacaoRoutes";
 import CapacitacaoRoutes from "../infra/http/routes/CapacitacaoRoutes";
 import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
@@ -95,6 +96,14 @@ export const MODULOS: Modulo[] = [
         // Painel global (sessão 8c): as tarefas dos meus projetos, inclusive o geral da minha área (sessão 23b);
         // a gestão filtra por pessoa.
         menu: [{ chave: "tarefas", rotulo: "Tarefas", caminho: "/tarefas", ordem: 15 }],
+    },
+    {
+        // Sessão 28b: agenda unificada (reuniões, prazos das tarefas e capacitações). Todos veem a própria.
+        chave: "agenda",
+        nome: "Agenda",
+        rotas: [AgendaRoutes],
+        permissoes: [],
+        menu: [{ chave: "agenda", rotulo: "Agenda", caminho: "/agenda", ordem: 25 }],
     },
     {
         chave: "capacitacoes",

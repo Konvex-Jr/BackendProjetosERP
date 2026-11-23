@@ -57,6 +57,7 @@ describe("Registro de módulos", () => {
             "dashboard",
             "tarefas",
             "projetos",
+            "agenda",
             "capacitacoes",
             "biblioteca",
             "estrategia",
@@ -65,7 +66,7 @@ describe("Registro de módulos", () => {
             "configuracoes",
         ]);
         expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
-        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "biblioteca"]);
+        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "agenda", "capacitacoes", "biblioteca"]);
         // Biblioteca (sessão 17): sem permissão no menu; o membro vê o módulo.
         expect(menuDoUsuario(membro).find((m) => m.chave === "biblioteca")?.itens).toEqual([
             { chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca" },

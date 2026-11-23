@@ -118,6 +118,37 @@ describe("Capacitações", () => {
         expect((await inscrever(bia, passada.codigo)).corpo.codigo).toBe("CAPACITACAO_JA_COMECOU");
     });
 
+    it("sessão 28b: quem ministra faz a chamada (só depois do início); outro membro não", async () => {
+        const futura = await criar({ vagas: 5 });
+        await inscrever(bia, futura.codigo);
+        const antes = await servidor.chamar("get", `/capacitacoes/${futura.codigo}`, { usuario: instrutora });
+        expect(antes.corpo.podeFazerChamada).toBe(false);
+        const cedo = await servidor.chamar("put", `/capacitacoes/${futura.codigo}/presencas`, {
+            usuario: instrutora,
+            corpo: { presentes: ["usr-bia"] },
+        });
+        expect(cedo.corpo.codigo).toBe("PRESENCA_ANTES_DO_INICIO");
+
+        const c = await criar({ data: ontem, vagas: 5 });
+        for (const u of [bia, caio]) await inscrever(ctx.gerente, c.codigo, { codigoUsuario: u.codigo });
+        const ficha = await servidor.chamar("get", `/capacitacoes/${c.codigo}`, { usuario: instrutora });
+        expect(ficha.corpo.podeFazerChamada).toBe(true);
+        expect(ficha.corpo.inscritos[0]).toEqual({ codigo: "usr-bia", nome: "Bia", foto: null, presente: null });
+        expect((await servidor.chamar("get", `/capacitacoes/${c.codigo}`, { usuario: bia })).corpo.podeFazerChamada).toBe(false);
+
+        const negado = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, { usuario: caio, corpo: { presentes: [] } });
+        expect(negado.status).toBe(403);
+        const chamada = await servidor.chamar("put", `/capacitacoes/${c.codigo}/presencas`, {
+            usuario: instrutora,
+            corpo: { presentes: ["usr-caio"] },
+        });
+        expect(chamada.status).toBe(200);
+        expect(chamada.corpo.inscritos.map((i: any) => [i.nome, i.presente])).toEqual([
+            ["Bia", false],
+            ["Caio", true],
+        ]);
+    });
+
     it("a gestão marca presença; só quem compareceu avalia; feedback com nome só para a gestão", async () => {
         const c = await criar({ data: ontem, vagas: 5 });
         for (const u of [bia, caio]) await inscrever(ctx.gerente, c.codigo, { codigoUsuario: u.codigo });

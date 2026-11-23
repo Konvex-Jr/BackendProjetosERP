@@ -1,4 +1,5 @@
 import AvisoRepositoryMemory from "./memory/AvisoRepositoryMemory";
+import ReuniaoRepositoryMemory from "./memory/ReuniaoRepositoryMemory";
 import EnvioEmailMemoria from "../email/EnvioEmailMemoria";
 import HorasDificuldadeRepositoryMemory from "./memory/HorasDificuldadeRepositoryMemory";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
@@ -87,6 +88,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly linkSenhaRepository = new LinkSenhaRepositoryMemory();
     private readonly avisoRepository = new AvisoRepositoryMemory();
+    private readonly reuniaoRepository = new ReuniaoRepositoryMemory();
     private readonly comentarioTarefaRepository = new ComentarioTarefaRepositoryMemory();
     private readonly bibliotecaRepository = new BibliotecaRepositoryMemory();
     private readonly anexoRepository = new AnexoRepositoryMemory();
@@ -154,5 +156,9 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarAvisoRepository() {
         return this.avisoRepository;
+    }
+
+    criarReuniaoRepository() {
+        return this.reuniaoRepository;
     }
 }
