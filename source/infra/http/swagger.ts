@@ -203,7 +203,12 @@ const swaggerSpecification = {
                             status: { type: "string", enum: ["ativo", "trainee"], description: "Status inicial (padrão ativo)" },
                             curso: {
                                 type: "string",
-                                enum: ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"],
+                                enum: [
+                                    "Análise e Desenvolvimento de Sistemas",
+                                    "Ciência da Computação",
+                                    "Engenharia Elétrica",
+                                    "Engenharia Mecânica",
+                                ],
                                 description: "Obrigatório na criação (400 CURSO_OBRIGATORIO / CURSO_INVALIDO)",
                             },
                             telefone: {
@@ -233,7 +238,12 @@ const swaggerSpecification = {
                         senioridade: { type: "object", nullable: true },
                         curso: {
                             type: "string",
-                            enum: ["Ciência da Computação", "Engenharia Mecânica", "Engenharia Elétrica"],
+                            enum: [
+                                "Análise e Desenvolvimento de Sistemas",
+                                "Ciência da Computação",
+                                "Engenharia Elétrica",
+                                "Engenharia Mecânica",
+                            ],
                             description: "Conferido só quando muda",
                         },
                         telefone: { type: "string", description: "10 ou 11 dígitos; conferido só quando muda" },
