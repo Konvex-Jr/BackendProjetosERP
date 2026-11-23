@@ -43,7 +43,7 @@ Navegador ──HTTPS──> Traefik (evolution-traefik, rede traefik-public)
 | biblioteca | Itens com anexos, tags, projeto e sigilo (substituiu Gestão, Base e Iniciativas) | `/biblioteca` |
 | anexos | Upload, download e exclusão de arquivos dos outros módulos | `/anexos`, `/<dono>/:codigo/anexos` |
 | capacitacoes | Capacitações, inscrição, presença, avaliações | `/capacitacoes` |
-| painel, precificação | Dashboard e Visão Estratégica (calculados no front); precificação ainda local no navegador | — |
+| painel, precificação | Dashboard e Visão Estratégica (calculados no front); precificação calculada no navegador; regras da diretoria em `/config/precificacao` | `regras_precificacao` |
 
 Swagger em `/api-docs` (desligado em produção).
 

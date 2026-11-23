@@ -3,6 +3,7 @@ import ReuniaoRepositoryDatabase from "./database/ReuniaoRepositoryDatabase";
 import EnvioEmailInterface from "../../domain/interfaces/EnvioEmailInterface";
 import criarEnvioEmail from "../email/criarEnvioEmail";
 import HorasDificuldadeRepositoryDatabase from "./database/HorasDificuldadeRepositoryDatabase";
+import RegrasPrecificacaoRepositoryDatabase from "./database/RegrasPrecificacaoRepositoryDatabase";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "../../domain/interfaces/SenioridadeRepositoryInterface";
@@ -97,6 +98,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarHorasDificuldadeRepository() {
         return new HorasDificuldadeRepositoryDatabase(this.conexao);
+    }
+
+    criarRegrasPrecificacaoRepository() {
+        return new RegrasPrecificacaoRepositoryDatabase(this.conexao);
     }
 
     criarPeriodoAreaRepository() {

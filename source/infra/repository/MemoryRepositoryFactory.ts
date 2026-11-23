@@ -2,6 +2,7 @@ import AvisoRepositoryMemory from "./memory/AvisoRepositoryMemory";
 import ReuniaoRepositoryMemory from "./memory/ReuniaoRepositoryMemory";
 import EnvioEmailMemoria from "../email/EnvioEmailMemoria";
 import HorasDificuldadeRepositoryMemory from "./memory/HorasDificuldadeRepositoryMemory";
+import RegrasPrecificacaoRepositoryMemory from "./memory/RegrasPrecificacaoRepositoryMemory";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import UsuarioRepositoryInterface from "../../domain/interfaces/UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "../../domain/interfaces/SenioridadeRepositoryInterface";
@@ -84,6 +85,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
     private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
+    private readonly regrasPrecificacaoRepository = new RegrasPrecificacaoRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
     private readonly linkSenhaRepository = new LinkSenhaRepositoryMemory();
@@ -136,6 +138,10 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarHorasDificuldadeRepository() {
         return this.horasDificuldadeRepository;
+    }
+
+    criarRegrasPrecificacaoRepository() {
+        return this.regrasPrecificacaoRepository;
     }
 
     criarPeriodoAreaRepository() {

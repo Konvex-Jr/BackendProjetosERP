@@ -33,7 +33,7 @@ type CriarRotas = new (http: Http, factory: RepositoryFactoryInterface) => Model
 export interface Modulo {
     chave: string;
     nome: string;
-    /** Vazio nos módulos só de tela (painel e precificação são calculados no frontend). */
+    /** Vazio nos módulos só de tela (painel e precificação são calculados no frontend; as regras da precificação ficam em /config/precificacao). */
     rotas: CriarRotas[];
     /** Ações do catálogo que pertencem a este módulo. */
     permissoes: Permissao[];

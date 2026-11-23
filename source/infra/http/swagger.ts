@@ -729,6 +729,14 @@ const rotasFase1: Record<string, Record<string, object>> = {
         get: operation(["Configurações"], "Horas de cada nível de dificuldade da tarefa"),
         put: operation(["Configurações"], "Gravar as horas por dificuldade (diretores)", json),
     },
+    "/config/precificacao": {
+        get: operation(["Configurações"], "Regras da simulação de precificação (quem tem precificacao.simular)"),
+        put: operation(
+            ["Configurações"],
+            "Gravar as regras da precificação (diretores; todos os campos obrigatórios; 400 REGRA_PRECIFICACAO_INVALIDA)",
+            json,
+        ),
+    },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {

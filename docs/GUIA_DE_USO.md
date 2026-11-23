@@ -103,7 +103,9 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 
 **Capacitações**: use **Nova capacitação** (título, quem ministra, data, início, duração em horas, tipo, sala ou local, vagas e descrição). Na ficha: editar, excluir, anexar **material** (slides, apostila; vários arquivos de uma vez, arrastando e soltando), ver e tirar inscritos e **inscrever pessoa** (inclusive depois do início, para quem apareceu sem inscrição). Depois que a capacitação começa, marque quem compareceu e clique em **Salvar presença**: isso libera a avaliação e conta as horas no perfil de cada um. Em **Avaliações individuais** você lê cada avaliação com o nome.
 
-**Visão Estratégica** e **Simular precificação**: disponíveis no menu.
+**Visão Estratégica**: disponível no menu.
+
+**Simular precificação**: informe as **horas estimadas por senioridade** e o **valor-hora** de cada uma (o valor-hora vale só para a simulação). Em **Regras desta proposta**, escolha a complexidade técnica, marque os riscos (escopo pouco definido, tecnologia nova, dependência de terceiros) e a urgência, escolha o tipo de cliente, os meses de suporte pós-entrega, a margem e, se houver, o desconto comercial (até o teto, com justificativa obrigatória). A **memória de cálculo** mostra quanto cada regra somou; se o valor líquido ficar abaixo do custo mais a margem mínima, aparece um alerta. **Gerar PDF** abre a impressão do navegador: escolha **Salvar como PDF**. O documento sai marcado como preliminar, com seu nome, a data, a validade, as premissas, as horas e as regras aplicadas. Nada fica gravado no sistema.
 
 ---
 
@@ -112,6 +114,7 @@ O sistema **não aparece no Google**, e é de propósito: ele é só para membro
 Tudo o que o gerente faz, mais:
 - **Tarefas**: como a gerência, anexa arquivos em qualquer tarefa (inclusive as do projeto geral) e exclui qualquer anexo de tarefa.
 - **Pessoas**: cadastra e edita outros diretores.
+- **Simular precificação → Regras**: define os percentuais de cada regra (complexidade, riscos, urgência, tipo de cliente), a contingência sobre as horas, as horas de suporte por mês, os impostos e taxas da EJ, a margem padrão e a mínima, o teto do desconto e a validade do documento. Vale para todos que simulam.
 - **Projetos**: exclui projetos (leva junto os itens da Biblioteca com sigilo Equipe do projeto). Prefira **Arquivar**, que mantém o histórico.
 - **Configurações → Áreas**: a opção **Projeto geral** (Sim ou Não) diz se a área tem projeto geral. Desligar exclui o projeto geral da área, mas só se ele não tiver tarefas (senão o sistema avisa quantas são: mova ou exclua antes); ligar de novo cria um projeto geral novo e vazio. Quem já gere áreas em Configurações faz isso.
 - **Configurações**: áreas, cargos e senioridades, mais as **Horas por dificuldade** (quantas horas vale cada nível: padrão Rápida 1, Fácil 2, Média 4, Difícil 8) e o **Teto semanal (h)** de cada cargo, de 1 a 40. Mudar as horas ou o teto vale na hora, também para as semanas já passadas. Criar uma área cria o projeto geral dela; renomear a área renomeia o geral, e inativar arquiva. No cargo, marque **Lidera a área** para gerentes e diretores de área: quem tem esse cargo numa área passa a liderá-la, junto com as áreas abaixo dela (regra provisória, que vai ser usada nas próximas versões).
