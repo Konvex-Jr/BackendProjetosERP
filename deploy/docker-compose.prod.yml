@@ -69,6 +69,7 @@ services:
       SMTP_PORTA: ${SMTP_PORTA:-587}
       SMTP_USUARIO: ${SMTP_USUARIO:-}
       SMTP_SENHA: ${SMTP_SENHA:-}
+      SMTP_NOME: ${SMTP_NOME:-}
       EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
       # Só usados por "npm run seed:admin" (primeiro diretor num banco vazio).
       ADMIN_NAME: ${ADMIN_NAME:-}

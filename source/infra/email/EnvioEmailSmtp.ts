@@ -6,6 +6,8 @@ export interface ConfiguracaoSmtp {
     porta: number;
     usuario?: string;
     senha?: string;
+    /** Nome no EHLO. O relay do Google recusa (421) o nome do container. */
+    nome?: string;
     de: string;
 }
 
@@ -15,6 +17,7 @@ export default class EnvioEmailSmtp implements EnvioEmailInterface {
     constructor(private readonly config: ConfiguracaoSmtp) {
         this.transporte = createTransport({
             host: config.host,
+            name: config.nome,
             port: config.porta,
             secure: config.porta === 465,
             requireTLS: config.porta !== 465,

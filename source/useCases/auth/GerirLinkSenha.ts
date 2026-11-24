@@ -37,8 +37,8 @@ export default class GerirLinkSenha {
         try {
             await this.factory.criarEnvioEmail().enviar({ para: usuario.email, ...texto(usuario.nome, linkSenha(token)) });
             return true;
-        } catch {
-            console.error(`Falha ao enviar e-mail de ${tipo} para ${usuario.codigo}`);
+        } catch (erro) {
+            console.error(`Falha ao enviar e-mail de ${tipo} para ${usuario.codigo}: ${codigoErro(erro)}`);
             return false;
         }
     }
@@ -61,8 +61,8 @@ export default class GerirLinkSenha {
         await this.factory.criarRefreshTokenRepository().revogarTodosDoUsuario(usuario.codigo);
         try {
             await this.factory.criarEnvioEmail().enviar({ para: usuario.email, ...emailSenhaAlterada(usuario.nome) });
-        } catch {
-            console.error(`Falha ao enviar aviso de senha alterada para ${usuario.codigo}`);
+        } catch (erro) {
+            console.error(`Falha ao enviar aviso de senha alterada para ${usuario.codigo}: ${codigoErro(erro)}`);
         }
         return emitirSessao(this.factory, salva);
     }
@@ -79,4 +79,10 @@ export default class GerirLinkSenha {
 
 function invalido(): ErroValidacao {
     return new ErroValidacao(MENSAGENS_DE_ERRO.AUTENTICACAO.LINK_SENHA_INVALIDO, "LINK_SENHA_INVALIDO");
+}
+
+/** Só o código do erro (ex.: 421, ECONNECTION): a mensagem do servidor pode trazer o destinatário. */
+function codigoErro(erro: unknown): string {
+    const e = erro as { responseCode?: number; code?: string } | null;
+    return String(e?.responseCode ?? e?.code ?? "sem código");
 }
