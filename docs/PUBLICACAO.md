@@ -471,7 +471,7 @@ SMTP_PORTA=587
 EMAIL_REMETENTE=Konvex Jr <nao-responda@konvexjr.com.br>
 EOF
 ```
-`SMTP_USUARIO` e `SMTP_SENHA` ficam vazios. `EMAIL_DOMINIO` e `APP_URL` já têm valor padrão no compose (`konvexjr.com.br` e o domínio do ERP). Sem `SMTP_HOST`, em produção o envio conta como falho e o log escreve só destinatário e assunto.
+`SMTP_USUARIO` e `SMTP_SENHA` ficam vazios. O backend se apresenta ao relay com o domínio do `APP_URL` (`SMTP_NOME` troca); sem isso o Google responde `421 4.7.0 Try again later (EHLO)`. `EMAIL_DOMINIO` e `APP_URL` já têm valor padrão no compose (`konvexjr.com.br` e o domínio do ERP). Sem `SMTP_HOST`, em produção o envio conta como falho e o log escreve só destinatário e assunto.
 
 **Parte 1, compose novo:** este PR mudou `deploy/docker-compose.prod.yml` (cookie, domínio, SMTP). Depois do pull, copiar de novo:
 ```bash
@@ -700,6 +700,22 @@ A migração `028_curso_ads.sql` só troca o CHECK de `usuarios.curso` para acei
 
 **Voltar:** com alguém já gravado no curso novo, o backend antigo segue carregando a pessoa (dado fora da lista carrega), mas não deixa escolher o curso; voltar backend e frontend juntos.
 
+### Publicação da correção do e-mail (EHLO): sem migração
+
+Só o backend. O PR muda `deploy/docker-compose.prod.yml` (linha `SMTP_NOME`): copiar de novo depois do pull.
+
+```bash
+cd /docker/erp-konvex
+git -C backend pull --ff-only
+cp docker-compose.yml docker-compose.yml.bak
+cp backend/deploy/docker-compose.prod.yml docker-compose.yml
+docker compose config > /dev/null && echo compose ok
+docker compose build backend && docker compose up -d backend
+sleep 5; docker logs konvex-backend 2>&1 | tail -5
+```
+
+Testar "Esqueci a senha" pela tela. Falha aparece no log com o código (ex.: `421`, `550`).
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
@@ -720,7 +736,7 @@ Para acessar do seu computador (DBeaver, pgAdmin), use um túnel SSH: `ssh -L 54
 - Chaves JWT persistentes: os arquivos montados (ver acima) ou `JWT_PRIVATE_KEY`/`JWT_PUBLIC_KEY`.
 - `ANEXOS_DIR=/app/anexos`: pasta dos arquivos anexados (montada como volume; ver seção 0). Sem ela, o backend usa `./anexos` dentro do container.
 - `NODE_ENV=production` desliga o Swagger (`SWAGGER_ENABLED=true` liga).
-- Conta (sessão 25a): `COOKIE_CAMINHO` (cookie "Manter conectado"; padrão `/auth`, produção `/api/auth`), `EMAIL_DOMINIO` (e-mails de pessoas têm de terminar nele; vazio = não confere), `APP_URL` (base dos links dos e-mails) e `SMTP_HOST`, `SMTP_PORTA`, `SMTP_USUARIO`, `SMTP_SENHA`, `EMAIL_REMETENTE` (sem `SMTP_HOST` o envio falha em produção).
+- Conta (sessão 25a): `COOKIE_CAMINHO` (cookie "Manter conectado"; padrão `/auth`, produção `/api/auth`), `EMAIL_DOMINIO` (e-mails de pessoas têm de terminar nele; vazio = não confere), `APP_URL` (base dos links dos e-mails) e `SMTP_HOST`, `SMTP_PORTA`, `SMTP_USUARIO`, `SMTP_SENHA`, `EMAIL_REMETENTE` (sem `SMTP_HOST` o envio falha em produção) e `SMTP_NOME` (nome no EHLO; padrão: domínio do `APP_URL`).
 - Opcionais: `JWT_ACCESS_TTL` (padrão 15m), `REFRESH_TOKEN_DIAS` (padrão 7), `PORT` (padrão 5001).
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` só servem para `npm run seed:admin` (criar o primeiro diretor num banco vazio). Estão no `.env` da VPS, mas o compose não os repassa ao container. Duas formas de rodar:
   - Na hora, sem mexer no compose:

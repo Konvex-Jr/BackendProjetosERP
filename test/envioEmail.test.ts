@@ -3,12 +3,20 @@ import { tmpdir } from "os";
 import { join } from "path";
 import EnvioEmailLog from "../source/infra/email/EnvioEmailLog";
 import EnvioEmailMemoria from "../source/infra/email/EnvioEmailMemoria";
+import { nomeEhlo } from "../source/infra/email/criarEnvioEmail";
 import { emailConvite, emailRedefinir, emailSenhaAlterada, linkSenha } from "../source/useCases/auth/textosEmail";
 
 const email = { para: "ana@dev.konvex", assunto: "Assunto", texto: "corpo secreto https://x/#/senha/abc123", html: "<p>x</p>" };
 
 describe("envio de e-mail", () => {
     afterEach(() => jest.restoreAllMocks());
+
+    it("EHLO usa SMTP_NOME ou o domínio do APP_URL", () => {
+        expect(nomeEhlo({ SMTP_NOME: " smtp.x.br ", APP_URL: "https://erp.konvexjr.com.br" })).toBe("smtp.x.br");
+        expect(nomeEhlo({ APP_URL: "https://erp.konvexjr.com.br" })).toBe("erp.konvexjr.com.br");
+        expect(nomeEhlo({ APP_URL: "não é url" })).toBeUndefined();
+        expect(nomeEhlo({})).toBeUndefined();
+    });
 
     it("log fora de produção grava a linha na pasta", async () => {
         jest.spyOn(console, "log").mockImplementation(() => undefined);
