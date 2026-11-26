@@ -3,7 +3,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Projeto from "../../domain/entity/Projeto";
 import Participacao from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { resolverDetalhesProjeto } from "./dadosProjeto";
+import { exigirClasseEArea, resolverDetalhesProjeto } from "./dadosProjeto";
 import CriarProjetoInput from "./CriarProjetoInput";
 
 /** RF-020: cadastra um projeto. */
@@ -37,6 +37,7 @@ export default class CriarProjeto {
             undefined,
             detalhes,
         );
+        exigirClasseEArea(null, projeto);
         return this.factory.criarProjetoRepository().criar(projeto);
     }
 }

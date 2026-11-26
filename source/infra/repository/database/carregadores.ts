@@ -1,3 +1,4 @@
+import ClasseProjeto from "../../../domain/entity/ClasseProjeto";
 import ConexaoBanco from "../../database/ConexaoBanco";
 import Usuario from "../../../domain/entity/Usuario";
 import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
@@ -111,12 +112,14 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
 
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
-                p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
+                p.referencia, p.objetivo, p.clientes, p.prioridade, p.progresso,
                 p.tags, p.lider_codigo, p.criado_por_codigo,
                 p.tipo, p.geral_da_area,
+                cl.codigo AS classe_codigo, cl.nome AS classe_nome, cl.ordem AS classe_ordem,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa, a.tem_geral AS area_tem_geral
          FROM projetos p
          LEFT JOIN areas a ON a.codigo = p.area_codigo
+         LEFT JOIN classes_projeto cl ON cl.codigo = p.classe_codigo
          WHERE p.codigo = ANY($1::uuid[])`,
         [lista],
     );
@@ -186,7 +189,8 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
             {
                 referencia: linha.referencia,
                 objetivo: linha.objetivo,
-                clienteNome: linha.cliente_nome,
+                clientes: linha.clientes ?? [],
+                classe: linha.classe_codigo ? new ClasseProjeto(linha.classe_codigo, linha.classe_nome, Number(linha.classe_ordem)) : null,
                 prioridade: linha.prioridade as PrioridadeProjeto,
                 progresso: Number(linha.progresso),
                 area: areaDeLinha(linha),

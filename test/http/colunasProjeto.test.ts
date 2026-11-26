@@ -1,7 +1,7 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
-import { criarContexto, dataFim, dataInicio } from "../fixtures";
+import { criarContexto, dataFim, dataInicio, obrigatoriosDoProjeto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 import { Papel, comPapel } from "../papel";
 
@@ -132,7 +132,7 @@ describe("Colunas do projeto", () => {
     it("POST /projetos devolve o projeto com as quatro colunas padrão", async () => {
         const r = await servidor.chamar("post", "/projetos", {
             usuario: ctx.gerente,
-            corpo: { nome: "Novo", descricao: "d", dataInicio, dataFim },
+            corpo: { nome: "Novo", descricao: "d", dataInicio, dataFim, ...(await obrigatoriosDoProjeto(ctx.factory)) },
         });
         expect(r.status).toBe(200);
         expect(r.corpo.colunas.map((c: any) => [c.nome, c.papel])).toEqual([

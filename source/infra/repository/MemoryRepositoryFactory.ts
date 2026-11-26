@@ -15,6 +15,7 @@ import ColunaProjetoRepositoryInterface from "../../domain/interfaces/ColunaProj
 import ColunaProjetoRepositoryMemory from "./memory/ColunaProjetoRepositoryMemory";
 import UsuarioRepositoryMemory from "./memory/UsuarioRepositoryMemory";
 import SenioridadeRepositoryMemory from "./memory/SenioridadeRepositoryMemory";
+import ClasseProjetoRepositoryMemory from "./memory/ClasseProjetoRepositoryMemory";
 import ProjetoRepositoryMemory from "./memory/ProjetoRepositoryMemory";
 import TarefaRepositoryMemory from "./memory/TarefaRepositoryMemory";
 import CapacitacaoRepositoryMemory from "./memory/CapacitacaoRepositoryMemory";
@@ -87,6 +88,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
     private readonly cargoRepository = new CargoRepositoryMemory();
     private readonly permissoesRepository = new PermissoesRepositoryMemory();
     private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
+    private readonly classeProjetoRepository = new ClasseProjetoRepositoryMemory();
     private readonly regrasPrecificacaoRepository = new RegrasPrecificacaoRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
     private readonly refreshTokenRepository = new RefreshTokenRepositoryMemory();
@@ -144,6 +146,10 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarHorasDificuldadeRepository() {
         return this.horasDificuldadeRepository;
+    }
+
+    criarClasseProjetoRepository() {
+        return this.classeProjetoRepository;
     }
 
     criarRegrasPrecificacaoRepository() {

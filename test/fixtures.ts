@@ -1,3 +1,4 @@
+import Area from "../source/domain/entity/Area";
 import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
 import CriarUsuarioInput from "../source/useCases/pessoas/CriarUsuarioInput";
 import GerirLinkSenha from "../source/useCases/auth/GerirLinkSenha";
@@ -72,4 +73,17 @@ export async function cadastrarComSenha(factory: MemoryRepositoryFactory, input:
     if (!token) throw new Error("Convite não enviado.");
     await new GerirLinkSenha(factory).usar(token, senha, senha);
     return usuario;
+}
+
+/**
+ * Sessão 31b: projeto novo exige classe e, se for de cliente, área. Cria a área "Clientes (teste)"
+ * na primeira chamada e devolve os dois campos para espalhar no corpo do POST ou no input de CriarProjeto.
+ */
+export async function obrigatoriosDoProjeto(factory: {
+    criarAreaRepository(): any;
+}): Promise<{ codigoClasse: string; codigoArea: string }> {
+    const codigoArea = "area-clientes-teste";
+    const areas = factory.criarAreaRepository();
+    if (!(await areas.buscarPorCodigo(codigoArea))) await areas.criar(new Area("Clientes (teste)", null, true, codigoArea));
+    return { codigoClasse: "outro", codigoArea };
 }

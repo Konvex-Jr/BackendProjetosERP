@@ -13,7 +13,7 @@ import ExcluirProjeto from "../../../useCases/projetos/ExcluirProjeto";
 import AlternarStatusProjeto from "../../../useCases/projetos/AlternarStatusProjeto";
 import { AdicionarParticipante, DefinirLider, EditarParticipacao, EncerrarParticipacao } from "../../../useCases/projetos/Equipe";
 import { EntradaDetalhesProjeto } from "../../../useCases/projetos/dadosProjeto";
-import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirPermissao, Permissao, temPermissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { acessoAoProjeto, exigirAcessoCompleto, exigirNaoSeTrancar } from "../../../shared/seguranca/visibilidadeProjetos";
 import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
 import { cartaoProjeto } from "../../../useCases/projetos/cartaoProjeto";
@@ -38,13 +38,21 @@ function lerDetalhes(body: any): EntradaDetalhesProjeto {
     return {
         referencia: body.referencia,
         objetivo: body.objetivo,
-        clienteNome: body.clienteNome,
+        clientes: body.clientes,
+        codigoClasse: body.codigoClasse === undefined ? undefined : body.codigoClasse ? String(body.codigoClasse) : null,
         prioridade: lerEnum(body.prioridade, PrioridadeProjeto, "prioridade"),
         tipo: lerTipo(body.tipo),
         progresso: lerInteiro(body.progresso, "progresso"),
         codigoArea: body.codigoArea,
         tags: body.tags === undefined ? undefined : lerLista(body.tags),
     };
+}
+
+/** Clientes (31b): só quem tem clientes.ver manda a lista (que traz telefone e e-mail). */
+function exigirPodeAlterarClientes(usuario: UsuarioAutenticado, body: any): void {
+    if (body?.clientes !== undefined && !temPermissao(usuario, Permissao.CLIENTES_VER)) {
+        throw new ErroProibido(MENSAGENS_DE_ERRO.PROJETO.CLIENTES_SEM_PERMISSAO);
+    }
 }
 
 /** Projetos e equipe (RF-020 a RF-024). Gestores veem todos; membro vê os de que participa ou participou. Escrita para gestores. */
@@ -75,12 +83,17 @@ export default class ProjetoRoutes implements ModelRoutes {
             (!filtro.codigoArea || p.tipo === TipoProjeto.INTERNO) &&
             (!busca || normalizarBusca(p.nome).includes(busca));
         const visiveis = acessos.filter((a) => a.acesso === "completo" || cartaoServe(a.projeto));
-        const completos = visiveis.filter((a) => a.acesso === "completo").map((a) => a.projeto.codigo);
-        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(completos, hoje());
+        // Contagem de todos os visíveis: o cartão também mostra o % de progresso (31b).
+        const contagem = await this.factory.criarTarefaRepository().contarPorProjetos(
+            visiveis.map((a) => a.projeto.codigo),
+            hoje(),
+        );
+        const veContatos = temPermissao(usuario, Permissao.CLIENTES_VER);
         return visiveis.map(({ projeto, acesso }) => {
-            if (acesso !== "completo") return cartaoProjeto(projeto);
             const tarefas = contagem.get(projeto.codigo) ?? { total: 0, concluidas: 0, atrasadas: 0, semana: 0 };
-            return { ...projeto.toJSON(), tarefas };
+            if (acesso !== "completo") return cartaoProjeto(projeto, tarefas);
+            // Telefone e e-mail dos clientes só para quem tem clientes.ver (toJSON manda só nome e empresa).
+            return { ...projeto.toJSON(), ...(veContatos ? { clientes: projeto.clientes } : {}), tarefas };
         });
     }
 
@@ -127,6 +140,7 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
+            exigirPodeAlterarClientes(usuario, body);
             // Líder na criação (sessão 27b): entra na equipe junto.
             const codigoLider = body.codigoLider ? String(body.codigoLider) : undefined;
             const codigosMembros = [...new Set([...lerLista(body.codigosMembros), ...(codigoLider ? [codigoLider] : [])])];
@@ -135,7 +149,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                 participacoes: codigosMembros.map((codigo) => ({ usuario: { codigo }, ativa: true })),
                 area: body.codigoArea ? { codigo: String(body.codigoArea) } : null,
             });
-            return new CriarProjeto(f).execute({
+            const criado = await new CriarProjeto(f).execute({
                 criadoPor: usuario.codigo,
                 nome: body.nome,
                 descricao: body.descricao,
@@ -146,11 +160,13 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigoLider,
                 ...lerDetalhes(body),
             });
+            return (await this.paraResposta(usuario, [criado]))[0];
         });
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
             const projeto = await this.carregarParaEscrita(usuario, params.codigo);
+            exigirPodeAlterarClientes(usuario, body);
             // Ausente = não mexe na equipe; presente = a equipe que fica.
             const codigosMembros = body.codigosMembros === undefined ? undefined : lerLista(body.codigosMembros);
             // Sessão 31a (revisão): trocar a área não pode deixar quem edita sem acesso ao projeto.
@@ -165,7 +181,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                     geralDaArea: projeto.geralDaArea,
                 });
             }
-            return new EditarProjeto(f).execute({
+            const editado = await new EditarProjeto(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,
                 descricao: body.descricao,
@@ -175,6 +191,7 @@ export default class ProjetoRoutes implements ModelRoutes {
                 codigosMembros,
                 ...lerDetalhes(body),
             });
+            return (await this.paraResposta(usuario, [editado]))[0];
         });
 
         this.http.route("patch", "/projetos/:codigo/status", true, async (params: any, body: any) => {

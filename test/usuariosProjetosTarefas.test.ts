@@ -1,3 +1,4 @@
+import { obrigatoriosDoProjeto } from "./fixtures";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Usuario from "../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
@@ -53,6 +54,7 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
     test("cria, lista, edita, conclui e reabre projeto", async () => {
         const criar = new CriarProjeto(factory);
         const projeto = await criar.execute({
+            ...(await obrigatoriosDoProjeto(factory)),
             nome: " Projeto A ",
             descricao: " Descrição ",
             dataInicio: inicio,
@@ -77,6 +79,7 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
 
     test("cria, filtra, edita, conclui e exclui tarefa", async () => {
         const projeto = await new CriarProjeto(factory).execute({
+            ...(await obrigatoriosDoProjeto(factory)),
             nome: "Projeto",
             descricao: "Descrição",
             dataInicio: inicio,
@@ -117,6 +120,7 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
 
     test("exclui projeto e suas tarefas", async () => {
         const projeto = await new CriarProjeto(factory).execute({
+            ...(await obrigatoriosDoProjeto(factory)),
             nome: "Projeto",
             descricao: "Descrição",
             dataInicio: inicio,

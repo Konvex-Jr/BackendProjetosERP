@@ -4,7 +4,7 @@ import PeriodoArea from "../../source/domain/entity/PeriodoArea";
 import Usuario from "../../source/domain/entity/Usuario";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import { PADRAO_GERENTE, PADRAO_MEMBRO, Permissao } from "../../source/shared/seguranca/catalogoPermissoes";
-import { criarContexto, dataFim, dataInicio } from "../fixtures";
+import { criarContexto, dataFim, dataInicio, obrigatoriosDoProjeto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
 /**
@@ -25,6 +25,7 @@ describe("Regras fixas que viraram permissão (31a)", () => {
             new Usuario("Téo", "teo@konvex.com.br", true, "x", ctx.senioridade, "usr-teo", { status: StatusPessoa.TRAINEE }),
         ))!;
         membro = (await usuarios.criar(new Usuario("Mel", "mel@konvex.com.br", true, "x", ctx.senioridade, "usr-mel")))!;
+        await obrigatoriosDoProjeto(ctx.factory);
         servidor = await subirServidor(ctx.factory);
     });
 
@@ -64,6 +65,8 @@ describe("Regras fixas que viraram permissão (31a)", () => {
             dataInicio: dataInicio.toISOString().slice(0, 10),
             dataFim: dataFim.toISOString().slice(0, 10),
             codigoLider,
+            codigoClasse: "outro",
+            codigoArea: "area-clientes-teste",
         });
         const r = await chamar("post", "/projetos", diretor!, corpo(trainee.codigo));
         expect(r.status).toBe(400);

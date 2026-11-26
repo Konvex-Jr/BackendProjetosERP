@@ -10,12 +10,17 @@ import StatusTarefa from "../enum/StatusTarefa";
 import { PapelColuna } from "../enum/ColunaProjeto";
 import ColunaProjeto, { colunasPadrao } from "./ColunaProjeto";
 import TipoProjeto from "../enum/TipoProjeto";
+import ClasseProjeto from "./ClasseProjeto";
+import { ClienteProjeto, clientesSemContato, montarClientes } from "./ClienteProjeto";
 
 /** Campos do projeto além de nome, descrição e período (RF-020). */
 export interface DetalhesProjeto {
     referencia?: string | null;
     objetivo?: string | null;
-    clienteNome?: string | null;
+    /** Clientes do projeto (sessão 31b); contatos só para quem tem clientes.ver. */
+    clientes?: ClienteProjeto[];
+    /** Classe (landing page, CRM...; sessão 31b). Projetos antigos e o geral ficam sem. */
+    classe?: ClasseProjeto | null;
     prioridade?: PrioridadeProjeto;
     progresso?: number;
     area?: Area | null;
@@ -51,7 +56,8 @@ export default class Projeto {
     /** Código do projeto (ex.: COD-001). Chamado "code" no doc 04. */
     readonly referencia: string | null;
     readonly objetivo: string | null;
-    readonly clienteNome: string | null;
+    readonly clientes: ClienteProjeto[];
+    readonly classe: ClasseProjeto | null;
     readonly prioridade: PrioridadeProjeto;
     readonly progresso: number;
     readonly area: Area | null;
@@ -85,7 +91,8 @@ export default class Projeto {
         this.participacoes = membros.map((m) => (m instanceof Participacao ? m : new Participacao(m, { dataEntrada: dataInicio })));
         this.referencia = detalhes.referencia?.trim() || null;
         this.objetivo = detalhes.objetivo?.trim() || null;
-        this.clienteNome = detalhes.clienteNome?.trim() || null;
+        this.clientes = montarClientes(detalhes.clientes ?? []);
+        this.classe = detalhes.classe ?? null;
         this.prioridade = detalhes.prioridade ?? PrioridadeProjeto.MEDIA;
         this.progresso = detalhes.progresso === undefined || detalhes.progresso === null ? 0 : Number(detalhes.progresso);
         this.area = detalhes.area ?? null;
@@ -165,7 +172,8 @@ export default class Projeto {
             {
                 referencia: pick("referencia"),
                 objetivo: pick("objetivo"),
-                clienteNome: pick("clienteNome"),
+                clientes: pick("clientes"),
+                classe: pick("classe"),
                 prioridade: pick("prioridade"),
                 progresso: pick("progresso"),
                 area: pick("area"),
@@ -192,7 +200,9 @@ export default class Projeto {
             participacoes: this.participacoes,
             referencia: this.referencia,
             objetivo: this.objetivo,
-            clienteNome: this.clienteNome,
+            // Sem contatos: quem tem clientes.ver recebe a lista completa pela rota (ProjetoRoutes).
+            clientes: clientesSemContato(this.clientes),
+            classe: this.classe,
             prioridade: this.prioridade,
             progresso: this.progresso,
             area: this.area,

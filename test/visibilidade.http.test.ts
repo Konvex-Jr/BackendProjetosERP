@@ -13,7 +13,7 @@ import { subirServidor } from "./http/servidorTeste";
 import { Papel, comPapel } from "./papel";
 
 const UM_DIA = 86_400_000;
-const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "status", "tipo"];
+const CHAVES_DO_CARTAO = ["area", "cartao", "classe", "codigo", "geralDaArea", "lider", "membros", "nome", "progresso", "status", "tipo"];
 
 /**
  * Sessão 27a: todo logado recebe o cartão de todos os projetos; o completo é da equipe e da gestão
@@ -73,7 +73,7 @@ describe("Visibilidade de projetos (HTTP)", () => {
         const projetos = ctx.factory.criarProjetoRepository();
         const n = await projetos.criar(
             new Projeto("Normal Alfa", "descrição sem pista zebra", inicio, fim, undefined, [m2], "p-n", {
-                clienteNome: "Cliente X",
+                clientes: [{ nome: "Cliente X", empresa: null, telefone: null, email: null }],
                 referencia: "REF-1",
                 lider: m2,
             }),
@@ -114,6 +114,8 @@ describe("Visibilidade de projetos (HTTP)", () => {
                 lider: { codigo: m2.codigo, nome: m2.nome },
                 geralDaArea: false,
                 membros: projetos.get("p-n").membros,
+                progresso: 0,
+                classe: null,
                 cartao: true,
             });
             // Equipe atual com nome e foto, sem função (sessão 27b).

@@ -296,6 +296,7 @@ async function main() {
             status: "em_execucao",
             tipo: "interno",
             codigoArea: areaInovacao.codigo,
+            codigoClasse: "outro",
         });
         console.log("Projeto interno Robô (Inovação) criado.");
     }
@@ -308,6 +309,12 @@ async function main() {
             dataFim: dia(40),
             status: "em_execucao",
             codigoArea: areaProjetos.codigo,
+            codigoClasse: "site-institucional",
+            // Sessão 31b: dois clientes; telefone e e-mail só a diretoria vê.
+            clientes: [
+                { nome: "Ana Souza", empresa: "Padaria Sol (fictícia)", telefone: "(34) 99999-1111", email: "ana@exemplo.com" },
+                { nome: "Bruno Lima", empresa: "Sol Delivery (fictícia)", telefone: "(34) 98888-2222", email: "bruno@exemplo.com" },
+            ],
         });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: caio.codigo, funcao: "Design" });
@@ -424,6 +431,7 @@ async function main() {
             dataFim: dia(60),
             status: "em_execucao",
             codigoArea: areaProjetos.codigo,
+            codigoClasse: "crm",
         });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio" });
@@ -491,6 +499,17 @@ async function main() {
                 sigilo: "todos",
             },
             { arquivo: "ata-da-reuniao.pdf" },
+        ],
+        [
+            dir,
+            {
+                titulo: "Contrato do site institucional (fictício)",
+                conteudo: "Contrato assinado com a Padaria Sol. Sigilo Só diretoria (31b).",
+                tags: ["contrato"],
+                sigilo: "diretoria",
+                codigoProjeto: projeto.codigo,
+            },
+            { arquivo: "contrato.pdf" },
         ],
         [
             tokenBia,

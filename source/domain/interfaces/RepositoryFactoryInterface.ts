@@ -7,6 +7,7 @@ import HorasDificuldadeRepositoryInterface from "./HorasDificuldadeRepositoryInt
 import RegrasPrecificacaoRepositoryInterface from "./RegrasPrecificacaoRepositoryInterface";
 import UsuarioRepositoryInterface from "./UsuarioRepositoryInterface";
 import SenioridadeRepositoryInterface from "./SenioridadeRepositoryInterface";
+import ClasseProjetoRepositoryInterface from "./ClasseProjetoRepositoryInterface";
 import ProjetoRepositoryInterface from "./ProjetoRepositoryInterface";
 import TarefaRepositoryInterface from "./TarefaRepositoryInterface";
 import CapacitacaoRepositoryInterface from "./CapacitacaoRepositoryInterface";
@@ -34,6 +35,8 @@ import ArmazenamentoFotosInterface from "./ArmazenamentoFotosInterface";
 export default interface RepositoryFactoryInterface {
     criarUsuarioRepository(): UsuarioRepositoryInterface;
     criarSenioridadeRepository(): SenioridadeRepositoryInterface;
+    /** Classes de projeto (sessão 31b). */
+    criarClasseProjetoRepository(): ClasseProjetoRepositoryInterface;
     criarProjetoRepository(): ProjetoRepositoryInterface;
     criarTarefaRepository(): TarefaRepositoryInterface;
     criarColunaProjetoRepository(): ColunaProjetoRepositoryInterface;

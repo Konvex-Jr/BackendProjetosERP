@@ -27,6 +27,8 @@ export function podeVerItem(usuario: UsuarioAutenticado, item: ItemBiblioteca, c
     if (item.sigilo === SigiloBiblioteca.TODOS) return true;
     // "Equipe do projeto" exige abrir o projeto, para todos (31a: nem biblioteca.verTodos passa por cima do projeto fechado).
     if (item.sigilo === SigiloBiblioteca.PROJETO) return !!item.projeto && ctx.completos.has(item.projeto.codigo);
+    // "Só diretoria" (31b): contratos; nem biblioteca.verTodos passa por cima.
+    if (item.sigilo === SigiloBiblioteca.DIRETORIA) return temPermissao(usuario, Permissao.CLIENTES_VER);
     if (podeVerTodosItens(usuario)) return true;
     // Sigilo "gestao" (ou valor desconhecido): só quem passou na primeira checagem.
     return false;
@@ -67,6 +69,7 @@ export function exigirAlterarItem(usuario: UsuarioAutenticado | null | undefined
 
 /**
  * Impede o membro de escalar privilégio ao criar ou editar: sigilo "gestao" só com biblioteca.gerir;
+ * "diretoria" só com clientes.ver (31b);
  * ligar a um projeto exige abri-lo (sessão 31a).
  */
 export async function exigirPodeUsarSigiloEProjeto(
@@ -78,6 +81,9 @@ export async function exigirPodeUsarSigiloEProjeto(
     const autenticado = exigirAutenticado(usuario);
     const gere = temPermissao(autenticado, Permissao.BIBLIOTECA_GERIR);
     if (!gere && sigilo === SigiloBiblioteca.GESTAO) throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.SIGILO_SEM_PERMISSAO);
+    if (sigilo === SigiloBiblioteca.DIRETORIA && !temPermissao(autenticado, Permissao.CLIENTES_VER)) {
+        throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.SIGILO_DIRETORIA_SEM_PERMISSAO);
+    }
     if (!codigoProjeto) return;
     // Ligar a projeto: só a um que a pessoa abre (vale também para quem gere a Biblioteca). Inexistente: 404 para
     // quem gere; para os demais, o mesmo 403 do projeto alheio (como antes da 31a).

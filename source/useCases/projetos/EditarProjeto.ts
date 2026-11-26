@@ -2,7 +2,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import Projeto from "../../domain/entity/Projeto";
 import Participacao, { hoje } from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { resolverDetalhesProjeto } from "./dadosProjeto";
+import { exigirClasseEArea, resolverDetalhesProjeto } from "./dadosProjeto";
 import { exigirNaoGeral } from "./sincronizarGeral";
 import EditarProjetoInput from "./EditarProjetoInput";
 
@@ -42,6 +42,7 @@ export default class EditarProjeto {
             participacoes,
             ...detalhes,
         });
+        exigirClasseEArea(atual, editado);
         return projetos.editar(editado);
     }
 }
