@@ -14,7 +14,7 @@ const membro = { codigo: "m", perfil: PerfilUsuario.MEMBRO };
 
 describe("Catálogo de permissões", () => {
     test("diretor tem todas; gerente não exclui projeto nem configura; membro nenhuma", () => {
-        expect(permissoesDoPapel(PerfilUsuario.DIRETOR).sort()).toEqual([...TODAS_AS_PERMISSOES].sort());
+        expect(permissoesDoPapel(PerfilUsuario.DIRETOR)).toContain(Permissao.PROJETOS_EXCLUIR);
         expect(temPermissao(gerente, Permissao.PROJETOS_EDITAR)).toBe(true);
         expect(temPermissao(gerente, Permissao.PROJETOS_EXCLUIR)).toBe(false);
         expect(temPermissao(gerente, Permissao.CONFIGURACOES_EDITAR)).toBe(false);

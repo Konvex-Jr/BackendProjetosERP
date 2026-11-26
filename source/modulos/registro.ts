@@ -55,7 +55,7 @@ export const MODULOS: Modulo[] = [
         chave: "painel",
         nome: "Painel",
         rotas: [AvisoRoutes],
-        permissoes: [Permissao.ESTRATEGIA_VER],
+        permissoes: [Permissao.ESTRATEGIA_VER, Permissao.GESTAO_VISOES, Permissao.AREAS_LIDERAR_TODAS],
         menu: [
             { chave: "dashboard", rotulo: "Dashboard", caminho: "/", ordem: 10, grupo: "Trabalho" },
             {
@@ -88,7 +88,7 @@ export const MODULOS: Modulo[] = [
         chave: "pessoas",
         nome: "Pessoas",
         rotas: [UsuarioRoutes],
-        permissoes: [Permissao.PESSOAS_GERIR, Permissao.PESSOAS_GERIR_DIRETORES],
+        permissoes: [Permissao.PESSOAS_VER, Permissao.PESSOAS_GERIR],
         menu: [
             // "Meu perfil" saiu do menu na sessão 22: abre pelo avatar do topo (/perfil, de todos; outra pessoa em /perfil/:codigo).
             { chave: "usuarios", rotulo: "Pessoas", caminho: "/usuarios", ordem: 30, permissao: Permissao.PESSOAS_GERIR, grupo: "Equipe" },
@@ -98,14 +98,22 @@ export const MODULOS: Modulo[] = [
         chave: "projetos",
         nome: "Projetos",
         rotas: [ProjetoRoutes],
-        permissoes: [Permissao.PROJETOS_VER_TODOS, Permissao.PROJETOS_EDITAR, Permissao.PROJETOS_EXCLUIR, Permissao.PROJETOS_VER_SIGILOSOS],
+        permissoes: [
+            Permissao.PROJETOS_VER,
+            Permissao.PROJETOS_ABRIR_DA_AREA,
+            Permissao.PROJETOS_ABRIR_TODOS,
+            Permissao.PROJETOS_EDITAR,
+            Permissao.PROJETOS_EXCLUIR,
+            Permissao.PROJETOS_LIDERAR,
+            Permissao.CLIENTES_VER,
+        ],
         menu: [{ chave: "projetos", rotulo: "Projetos", caminho: "/projetos", ordem: 20, grupo: "Trabalho" }],
     },
     {
         chave: "tarefas",
         nome: "Tarefas",
         rotas: [TarefaRoutes, OcupacaoRoutes],
-        permissoes: [Permissao.TAREFAS_GERIR_TODAS],
+        permissoes: [Permissao.TAREFAS_VER, Permissao.TAREFAS_GERIR_TODAS],
         // Painel global (sessão 8c): as tarefas dos meus projetos, inclusive o geral da minha área (sessão 23b);
         // a gestão filtra por pessoa.
         menu: [{ chave: "tarefas", rotulo: "Tarefas", caminho: "/tarefas", ordem: 15, grupo: "Trabalho" }],
@@ -115,7 +123,7 @@ export const MODULOS: Modulo[] = [
         chave: "agenda",
         nome: "Agenda",
         rotas: [AgendaRoutes],
-        permissoes: [],
+        permissoes: [Permissao.AGENDA_VER, Permissao.AGENDA_GERIR_TODAS, Permissao.REUNIOES_CRIAR],
         // Sem item de menu desde 25/11: a Agenda mora no Dashboard.
         menu: [],
     },
@@ -123,7 +131,7 @@ export const MODULOS: Modulo[] = [
         chave: "capacitacoes",
         nome: "Capacitações",
         rotas: [CapacitacaoRoutes],
-        permissoes: [Permissao.CAPACITACOES_GERIR],
+        permissoes: [Permissao.CAPACITACOES_VER, Permissao.CAPACITACOES_GERIR, Permissao.CAPACITACOES_PRESENCA],
         menu: [{ chave: "capacitacoes", rotulo: "Capacitações", caminho: "/capacitacoes", ordem: 35, grupo: "Equipe" }],
     },
     {
@@ -131,7 +139,7 @@ export const MODULOS: Modulo[] = [
         chave: "biblioteca",
         nome: "Biblioteca",
         rotas: [BibliotecaRoutes],
-        permissoes: [Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
+        permissoes: [Permissao.BIBLIOTECA_USAR, Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
         menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 40, semTrainee: true, grupo: "Equipe" }],
     },
     {
@@ -146,7 +154,13 @@ export const MODULOS: Modulo[] = [
         chave: "config",
         nome: "Configurações",
         rotas: [ConfiguracaoRoutes],
-        permissoes: [Permissao.CONFIGURACOES_EDITAR],
+        permissoes: [
+            Permissao.CONFIGURACOES_VER,
+            Permissao.CONFIG_ESTRUTURA,
+            Permissao.CONFIG_DIFICULDADE,
+            Permissao.CONFIG_PRECIFICACAO,
+            Permissao.PERMISSOES_GERIR,
+        ],
         menu: [
             {
                 chave: "configuracoes",
