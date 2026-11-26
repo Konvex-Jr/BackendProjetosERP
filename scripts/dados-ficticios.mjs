@@ -123,6 +123,7 @@ async function main() {
     });
     const CURSOS = CURSOS_FICTICIOS;
     let contagemPessoas = 0;
+    // Sessão 31a: sem perfil fixo; o terceiro argumento é só o rótulo do log. O que a pessoa pode vem do cargo.
     async function pessoa(nome, email, perfil, extra = {}, soCurso = false) {
         if (porEmail.has(email)) return porEmail.get(email);
         const n = contagemPessoas++;
@@ -130,7 +131,6 @@ async function main() {
         const criada = await exigir("POST", "/usuarios", dir, {
             nome,
             email,
-            perfil,
             codigoSenioridade: "junior",
             curso: CURSOS[n % CURSOS.length],
             ...(soCurso
@@ -148,7 +148,9 @@ async function main() {
         return criada;
     }
 
-    const ines = await pessoa("Inês Gerente", "ines@dev.konvex", "gerente");
+    const ines = await pessoa("Inês Gerente", "ines@dev.konvex", "gerente de inovação");
+    // Gerente de projetos (31a): abre os projetos da área Projetos, não os de Inovação.
+    const gabi = await pessoa("Gabi Gerente", "gabi@dev.konvex", "gerente de projetos");
     const bia = await pessoa("Bia Membro", "bia@dev.konvex", "membro");
     const caio = await pessoa("Caio Membro", "caio@dev.konvex", "membro");
 
@@ -184,24 +186,47 @@ async function main() {
         return criada;
     }
     const cargosExistentes = await exigir("GET", "/cargos", dir);
-    async function cargo(nome, lideraArea) {
-        const achado = cargosExistentes.find((c) => c.nome === nome);
-        if (achado) return achado;
-        const criado = await exigir("POST", "/cargos", dir, { nome, lideraArea });
-        cargosExistentes.push(criado);
-        return criado;
+    // Sessão 31a: posição e permissões. Gerente = tudo menos o que é só da diretoria (padrão da migração 030).
+    const { catalogo } = await exigir("GET", "/permissoes", dir);
+    const SO_DIRETORIA = [
+        "projetos.abrirTodos",
+        "projetos.excluir",
+        "clientes.ver",
+        "areas.liderarTodas",
+        "configuracoes.ver",
+        "config.estrutura",
+        "config.dificuldade",
+        "config.precificacao",
+        "permissoes.gerir",
+    ];
+    const PERMISSOES_GERENTE = catalogo.map((i) => i.chave).filter((c) => !SO_DIRETORIA.includes(c));
+    async function cargo(nome, lideraArea, posicao = 4, permissoes = null) {
+        let achado = cargosExistentes.find((c) => c.nome === nome);
+        if (!achado) {
+            achado = await exigir("POST", "/cargos", dir, { nome, lideraArea, posicao });
+            cargosExistentes.push(achado);
+        }
+        if (permissoes) await exigir("PUT", `/permissoes/${achado.codigo}`, dir, { permissoes });
+        return achado;
     }
     const areaProjetos = await area("Projetos");
     const areaInovacao = await area("Inovação", areaProjetos);
     const areaExecucao = await area("Execução", areaProjetos);
     const areaCapacitacao = await area("Capacitação", areaProjetos);
     const assessor = await cargo("Assessor", false);
-    const gerente = await cargo("Gerente", true);
-    await cargo("Diretor", true);
+    const gerente = await cargo("Gerente de inovação", true, 3, PERMISSOES_GERENTE);
+    const gerenteProjetos = await cargo("Gerente de projetos", false, 3, PERMISSOES_GERENTE);
+    await cargo(
+        "Diretor de projetos",
+        true,
+        2,
+        catalogo.map((i) => i.chave),
+    );
     const coordenador = await cargo("Coordenador", true);
     const periodosFicticios = [
         // Inês lidera Inovação (gerente); Caio é da equipe de Inovação e Execução; Bia fica fora de Inovação.
         [ines, [[areaInovacao, gerente, -300, null]]],
+        [gabi, [[areaProjetos, gerenteProjetos, -200, null]]],
         [
             bia,
             [
@@ -282,6 +307,7 @@ async function main() {
             dataInicio: dia(-20),
             dataFim: dia(40),
             status: "em_execucao",
+            codigoArea: areaProjetos.codigo,
         });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
         await exigir("POST", `/projetos/${projeto.codigo}/membros`, dir, { codigoUsuario: caio.codigo, funcao: "Design" });
@@ -387,20 +413,21 @@ async function main() {
         }
     }
 
-    // Projeto sigiloso: Bia e Davi na equipe; Inês (gerente) e Caio (membro), fora, veem só o cartão (sessão 27a).
+    // Projeto da área Projetos com equipe Bia e Davi: Gabi (gerente de projetos) abre pela área; Inês (Inovação) e
+    // Caio (membro de fora) veem só o cartão (31a: todo projeto é fechado).
     let sigiloso = projetos.find((p) => p.nome === "Proposta confidencial (fictício)");
     if (!sigiloso) {
         sigiloso = await exigir("POST", "/projetos", dir, {
             nome: "Proposta confidencial (fictício)",
-            descricao: "Projeto sigiloso de exemplo.",
+            descricao: "Projeto fechado de exemplo.",
             dataInicio: dia(-5),
             dataFim: dia(60),
             status: "em_execucao",
-            sigiloso: true,
+            codigoArea: areaProjetos.codigo,
         });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: bia.codigo, funcao: "Dev" });
         await exigir("POST", `/projetos/${sigiloso.codigo}/membros`, dir, { codigoUsuario: davi.codigo, funcao: "Apoio" });
-        console.log("Projeto sigiloso (equipe: Bia e Davi) criado.");
+        console.log("Projeto fechado (equipe: Bia e Davi) criado.");
     }
     if ((await exigir("GET", `/tarefas?codigoProjeto=${sigiloso.codigo}`, dir)).length === 0) {
         await exigir("POST", "/tarefas", dir, {
@@ -411,7 +438,7 @@ async function main() {
             prioridade: "P2",
             codigosResponsaveis: [davi.codigo],
         });
-        console.log("Tarefa do trainee no projeto sigiloso criada.");
+        console.log("Tarefa do trainee no projeto fechado criada.");
     }
 
     const caps = await exigir("GET", "/capacitacoes", dir);
@@ -484,7 +511,9 @@ async function main() {
     }
     if (criados) console.log(`Biblioteca: ${criados} item(ns) criado(s).`);
 
-    console.log(`Pronto. Contas fictícias: ines@, bia@, caio@ e davi@ (trainee) dev.konvex com a senha ${SENHA_FICTICIA}.`);
+    console.log(
+        `Pronto. Contas fictícias: ines@ (gerente de inovação), gabi@ (gerente de projetos), bia@, caio@ e davi@ (trainee) dev.konvex com a senha ${SENHA_FICTICIA}.`,
+    );
 }
 
 main().catch((erro) => {

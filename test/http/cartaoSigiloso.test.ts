@@ -1,11 +1,11 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Participacao from "../../source/domain/entity/Participacao";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
-/** Sessão 27a (era o resumo da 20): quem está fora de um sigiloso, gerente ou membro, recebe o cartão. */
+/** Sessão 27a/31a: quem não abre o projeto (gerente de outra área ou membro de fora) recebe o cartão. */
 describe("Cartão de projeto sigiloso na leitura", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
@@ -13,7 +13,9 @@ describe("Cartão de projeto sigiloso na leitura", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        exEquipe = new Usuario("Edu", "edu@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-edu");
+        // Gerente de fora: só abre os projetos da área do cargo (o projeto não tem área).
+        comPapel(ctx.gerente, "gerenteDaArea");
+        exEquipe = comPapel(new Usuario("Edu", "edu@konvex.com.br", true, "x", ctx.senioridade, "usr-edu"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(exEquipe);
         const repo = ctx.factory.criarProjetoRepository();
         await repo.criar(
@@ -25,7 +27,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
                 undefined,
                 [ctx.membro, new Participacao(exEquipe, { dataEntrada: dataInicio, dataSaida: new Date("2026-10-20T00:00:00.000Z") })],
                 "proj-sig",
-                { sigiloso: true, clienteNome: "Cliente Zeta", lider: ctx.membro },
+                { clienteNome: "Cliente Zeta", lider: ctx.membro },
             ),
         );
         servidor = await subirServidor(ctx.factory);
@@ -39,16 +41,15 @@ describe("Cartão de projeto sigiloso na leitura", () => {
         const r = await servidor.chamar("get", "/projetos", { usuario: ctx.gerente });
         expect(codigos(r)).toEqual(["proj-sig"]);
         expect(r.corpo[0].cartao).toBe(true);
-        expect(r.corpo[0].sigiloso).toBe(true);
         expect(JSON.stringify(r.corpo[0])).not.toContain("Cliente Zeta");
         expect(r.corpo[0].tarefas).toBeUndefined();
         expect(r.corpo[0].participacoes).toBeUndefined();
     });
 
-    it("ex-equipe recebe o cartão; equipe atual vê completo, sem lista de acesso", async () => {
+    it("ex-equipe segue vendo completo (31a: quem sai não perde); equipe atual vê completo, sem lista de acesso", async () => {
         const ex = await servidor.chamar("get", "/projetos", { usuario: exEquipe });
         expect(codigos(ex)).toEqual(["proj-sig"]);
-        expect(ex.corpo[0].cartao).toBe(true);
+        expect(ex.corpo[0].cartao).toBeUndefined();
         const equipe = await servidor.chamar("get", "/projetos", { usuario: ctx.membro });
         expect(equipe.corpo[0].cartao).toBeUndefined();
         expect(equipe.corpo[0].clienteNome).toBe("Cliente Zeta");
@@ -84,10 +85,10 @@ describe("Cartão de projeto sigiloso na leitura", () => {
         expect(gerente.corpo.clienteNome).toBeUndefined();
         const ex = await servidor.chamar("get", "/projetos/proj-sig", { usuario: exEquipe });
         expect(ex.status).toBe(200);
-        expect(ex.corpo.cartao).toBe(true);
+        expect(ex.corpo.cartao).toBeUndefined();
         const completo = await servidor.chamar("get", "/projetos/proj-sig", { usuario: ctx.membro });
         expect(completo.status).toBe(200);
-        expect(completo.corpo.sigiloso).toBe(true);
+        expect(completo.corpo).not.toHaveProperty("sigiloso");
         expect(completo.corpo).not.toHaveProperty("acesso");
         expect(completo.corpo.tarefas.atrasadas).toBe(0);
     });

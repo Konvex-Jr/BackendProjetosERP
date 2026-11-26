@@ -5,9 +5,9 @@ import Projeto from "../source/domain/entity/Projeto";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import Usuario from "../source/domain/entity/Usuario";
 import { novoGeral } from "../source/domain/entity/ProjetoGeral";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import TipoProjeto from "../source/domain/enum/TipoProjeto";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
+import { comPapel } from "./papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -24,7 +24,7 @@ describe("projeto geral no repositório em memória", () => {
     let cliente: Projeto;
 
     async function novaPessoa(nome: string): Promise<Usuario> {
-        const p = new Usuario(nome, `${nome}@teste.com`, PerfilUsuario.MEMBRO, true, "h", new SenioridadeUsuario("pleno", "Pleno", 75));
+        const p = comPapel(new Usuario(nome, `${nome}@teste.com`, true, "h", new SenioridadeUsuario("pleno", "Pleno", 75)), "membro");
         await factory.criarUsuarioRepository().criar(p);
         return p;
     }

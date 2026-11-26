@@ -1,6 +1,5 @@
 import Usuario from "../source/domain/entity/Usuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import CriarTarefa from "../source/useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../source/useCases/tarefas/EditarTarefa";
 import GerirCapacitacoes from "../source/useCases/capacitacoes/GerirCapacitacoes";
@@ -9,20 +8,15 @@ import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, dataInicio, dataFim } from "./fixtures";
 import Projeto from "../source/domain/entity/Projeto";
+import { comPapel, efetivasDoPapel } from "./papel";
 
 async function cenario() {
     const ctx = await criarContexto();
     const { factory, membro, gerente, senioridade } = ctx;
     const mk = async (nome: string, codigo: string, status = StatusPessoa.ATIVO, senha = "h") => {
-        const u = new Usuario(
-            nome,
-            `${codigo}@konvex.com.br`,
-            PerfilUsuario.MEMBRO,
-            status !== StatusPessoa.INATIVO,
-            senha,
-            senioridade,
-            codigo,
-            { status },
+        const u = comPapel(
+            new Usuario(nome, `${codigo}@konvex.com.br`, status !== StatusPessoa.INATIVO, senha, senioridade, codigo, { status }),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(u);
         return u;
@@ -101,7 +95,7 @@ describe("aviso de capacitação nova", () => {
         const inativo = await mk("Ivo", "usr-ivo", StatusPessoa.INATIVO);
         const trainee = await mk("Tito", "usr-tito", StatusPessoa.TRAINEE);
         const convidado = await mk("Cida", "usr-cida", StatusPessoa.ATIVO, "");
-        const gestao = { codigo: gerente.codigo, perfil: PerfilUsuario.DIRETOR } as any;
+        const gestao = { codigo: gerente.codigo, ...efetivasDoPapel("diretor") } as any;
         const servico = new GerirCapacitacoes(factory);
         const ficha = await servico.salvar(gestao, {
             titulo: "Nova",

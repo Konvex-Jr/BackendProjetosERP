@@ -12,10 +12,10 @@ import SenioridadeUsuario from "../../source/domain/entity/SenioridadeUsuario";
 import Area from "../../source/domain/entity/Area";
 import Cargo from "../../source/domain/entity/Cargo";
 import PeriodoArea from "../../source/domain/entity/PeriodoArea";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { ErroValidacao } from "../../source/shared/erros/ErroValidacao";
 import { preencherAreasAtuais } from "../../source/useCases/pessoas/areasAtuais";
 import ListarUsuarios from "../../source/useCases/pessoas/ListarUsuarios";
+import { comPapel } from "../papel";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -30,13 +30,9 @@ descrever("períodos nas áreas contra PostgreSQL", () => {
     let gerente: Cargo;
 
     async function novaPessoa(nome: string): Promise<Usuario> {
-        const pessoa = new Usuario(
-            nome,
-            `${nome.toLowerCase()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario(nome, `${nome.toLowerCase()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         return pessoa;

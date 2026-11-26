@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /** Sessão 27b: o projeto só tem líder (o responsável saiu) e o líder é escolhido já na criação. */
 describe("Líder na criação do projeto", () => {
@@ -17,12 +17,18 @@ describe("Líder na criação do projeto", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        trainee = new Usuario("Tito", "tito@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-tito", {
-            status: StatusPessoa.TRAINEE,
-        });
-        inativo = new Usuario("Ivo", "ivo@konvex.com.br", PerfilUsuario.MEMBRO, false, "x", ctx.senioridade, "usr-ivo", {
-            status: StatusPessoa.INATIVO,
-        });
+        trainee = comPapel(
+            new Usuario("Tito", "tito@konvex.com.br", true, "x", ctx.senioridade, "usr-tito", {
+                status: StatusPessoa.TRAINEE,
+            }),
+            "membro",
+        );
+        inativo = comPapel(
+            new Usuario("Ivo", "ivo@konvex.com.br", false, "x", ctx.senioridade, "usr-ivo", {
+                status: StatusPessoa.INATIVO,
+            }),
+            "membro",
+        );
         await usuarios.criar(trainee);
         await usuarios.criar(inativo);
         servidor = await subirServidor(ctx.factory);
@@ -49,10 +55,10 @@ describe("Líder na criação do projeto", () => {
         expect(r.corpo.lider).toBeNull();
     });
 
-    it("trainee não lidera: 400 TRAINEE_NAO_LIDERA", async () => {
+    it("trainee não lidera (sem projetos.liderar): 400 LIDER_SEM_PERMISSAO", async () => {
         const r = await criar({ codigoLider: trainee.codigo });
         expect(r.status).toBe(400);
-        expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
+        expect(r.corpo.code ?? r.corpo.codigo).toBe("LIDER_SEM_PERMISSAO");
     });
 
     it("líder fora da EJ ou inexistente: 404", async () => {
@@ -60,9 +66,10 @@ describe("Líder na criação do projeto", () => {
         expect((await criar({ codigoLider: "usr-nada" })).status).toBe(404);
     });
 
-    it("sigiloso: ser o líder conta como estar na equipe", async () => {
-        expect((await criar({ sigiloso: true, codigoLider: ctx.gerente.codigo })).status).toBe(200);
-        const fora = await criar({ sigiloso: true, codigoLider: ctx.membro.codigo });
+    it("quem cria não fica de fora (31a): ser o líder conta como estar na equipe", async () => {
+        comPapel(ctx.gerente, "gerenteDaArea");
+        expect((await criar({ codigoLider: ctx.gerente.codigo })).status).toBe(200);
+        const fora = await criar({ codigoLider: ctx.membro.codigo });
         expect(fora.status).toBe(400);
     });
 });

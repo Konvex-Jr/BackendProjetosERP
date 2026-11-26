@@ -13,8 +13,8 @@ export default class ListarProjetos {
         const { codigoUsuario, ...resto } = opcoes;
         if (!codigoUsuario) return this.projetos.listar(resto);
         const permitidos = new Set((await this.projetos.listar(resto)).map((p) => p.codigo));
-        // Equipe atual ou antiga (o geral pode repetir); quem perdeu o acesso (ex-equipe de sigiloso) é
-        // decidido depois, na regra de acesso por projeto.
+        // Equipe atual ou antiga (o geral pode repetir); o acesso é decidido depois,
+        // na regra de acesso por projeto.
         const doUsuario = new Map<string, Projeto>();
         for (const p of await this.projetos.listarPorMembro(codigoUsuario)) doUsuario.set(p.codigo, p);
         return [...doUsuario.values()].filter((p) => permitidos.has(p.codigo));

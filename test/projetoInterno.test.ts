@@ -3,12 +3,12 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import TipoProjeto from "../source/domain/enum/TipoProjeto";
+import { comPapel } from "./papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const senio = new SenioridadeUsuario("pleno", "Pleno", 75);
-const pessoa = (codigo: string) => new Usuario(codigo, `${codigo}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "h", senio, codigo);
+const pessoa = (codigo: string) => comPapel(new Usuario(codigo, `${codigo}@konvex.com.br`, true, "h", senio, codigo), "membro");
 const inovacao = new Area("Inovação", null, true, "inovacao");
 const novo = (d: object = {}, membros: Usuario[] = []) =>
     new Projeto("P", "Desc", dia("2026-01-01"), dia("2026-12-31"), undefined, membros, "p1", d);
@@ -16,11 +16,6 @@ const novo = (d: object = {}, membros: Usuario[] = []) =>
 describe("projeto interno e geral", () => {
     test("interno sem área lança AREA_OBRIGATORIA_INTERNO", () => {
         expect(() => novo({ tipo: TipoProjeto.INTERNO })).toThrow(expect.objectContaining({ codigo: "AREA_OBRIGATORIA_INTERNO" }));
-    });
-
-    test("geral sigiloso lança GERAL_SIGILOSO", () => {
-        const d = { tipo: TipoProjeto.INTERNO, area: inovacao, geralDaArea: true, sigiloso: true };
-        expect(() => novo(d)).toThrow(expect.objectContaining({ codigo: "GERAL_SIGILOSO" }));
     });
 
     test("geral de cliente lança GERAL_INTERNO", () => {

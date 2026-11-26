@@ -1,3 +1,4 @@
+import PermissoesRepositoryMemory from "./memory/PermissoesRepositoryMemory";
 import AvisoRepositoryMemory from "./memory/AvisoRepositoryMemory";
 import ReuniaoRepositoryMemory from "./memory/ReuniaoRepositoryMemory";
 import EnvioEmailMemoria from "../email/EnvioEmailMemoria";
@@ -84,6 +85,7 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     private readonly areaRepository = new AreaRepositoryMemory();
     private readonly cargoRepository = new CargoRepositoryMemory();
+    private readonly permissoesRepository = new PermissoesRepositoryMemory();
     private readonly horasDificuldadeRepository = new HorasDificuldadeRepositoryMemory();
     private readonly regrasPrecificacaoRepository = new RegrasPrecificacaoRepositoryMemory();
     private readonly periodoAreaRepository = new PeriodoAreaRepositoryMemory();
@@ -134,6 +136,10 @@ export default class MemoryRepositoryFactory implements RepositoryFactoryInterfa
 
     criarCargoRepository() {
         return this.cargoRepository;
+    }
+
+    criarPermissoesRepository() {
+        return this.permissoesRepository;
     }
 
     criarHorasDificuldadeRepository() {

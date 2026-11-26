@@ -1,5 +1,4 @@
 import Usuario, { DetalhesPessoa, URL_VALIDA } from "../../domain/entity/Usuario";
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
 import { ehCursoValido, CURSOS } from "../../domain/enum/Curso";
@@ -45,13 +44,6 @@ export function resolverPerfilPessoa(entrada: EntradaPerfilPessoa): DetalhesPess
     }
 
     return detalhes;
-}
-
-/** Trainee (sessão 20) é sempre membro: 400 se o status for trainee e o perfil, outro. */
-export function exigirTraineeMembro(status: StatusPessoa | string, perfil: PerfilUsuario | string): void {
-    if (status === StatusPessoa.TRAINEE && perfil !== PerfilUsuario.MEMBRO) {
-        throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.TRAINEE_SO_MEMBRO, "TRAINEE_SO_MEMBRO");
-    }
 }
 
 export function lerStatusPessoa(valor: unknown): StatusPessoa | undefined {

@@ -17,13 +17,13 @@ import CorrigirConclusao from "../../../useCases/tarefas/CorrigirConclusao";
 import MoverTarefa from "../../../useCases/tarefas/MoverTarefa";
 import MarcarItemChecklist from "../../../useCases/tarefas/MarcarItemChecklist";
 import ExcluirTarefa from "../../../useCases/tarefas/ExcluirTarefa";
-import { exigirAutenticado, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, Permissao, temPermissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import ListarProjetos from "../../../useCases/projetos/ListarProjetos";
-import { acessoAoProjeto, exigirAcessoCompleto, podeVerTodosProjetos } from "../../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, exigirAcessoCompleto } from "../../../shared/seguranca/visibilidadeProjetos";
 import { papelNoProjeto, RegrasTarefa } from "../../../shared/seguranca/regrasTarefa";
 import { carregarTarefa } from "../../../useCases/tarefas/carregarTarefa";
 import { avisarTarefaRecebida } from "../../../useCases/avisos/registrarAvisos";
@@ -64,8 +64,7 @@ export default class TarefaRoutes implements ModelRoutes {
 
     private async carregar(usuario: UsuarioAutenticado, codigo: string): Promise<{ tarefa: Tarefa; regras: RegrasTarefa }> {
         const { tarefa, projeto, regras } = await carregarTarefa(this.factory, usuario, codigo);
-        // Quem só vê o cartão do projeto (normal ou sigiloso; no sigiloso, inclusive o gerente de fora) e não é
-        // responsável recebe o mesmo 404 da tarefa inexistente: a tarefa e o que há nela não são revelados.
+        // Quem só vê o cartão do projeto (inclusive a gestão de fora) e não é responsável recebe o mesmo 404 da tarefa inexistente: a tarefa e o que há nela não são revelados.
         if (projeto && !regras.ver && acessoAoProjeto(usuario, projeto) !== "completo") {
             throw new ErroNaoEncontrado(TAREFA_NAO_ENCONTRADA);
         }
@@ -115,32 +114,20 @@ export default class TarefaRoutes implements ModelRoutes {
                 codigoResponsavel: minhas ? usuario.codigo : query?.codigoResponsavel,
                 status: query?.status,
             });
-            // Tarefa de projeto sigiloso só vai para quem tem acesso completo ao projeto (nem o responsável que saiu,
-            // nem a gestão fora). Usa o projeto atual (equipe de hoje), não o que veio junto da tarefa.
-            const sigilosos = new Map((await this.factory.criarProjetoRepository().listarSigilosos()).map((p) => [p.codigo, p]));
-            const semSigilosoAlheio = tarefas.filter((t) => {
-                const sigiloso = sigilosos.get(t.projeto.codigo);
-                return !sigiloso || acessoAoProjeto(usuario, sigiloso) === "completo";
-            });
-            if (podeVerTodosProjetos(usuario)) return this.comAnexos(semSigilosoAlheio);
-            // Lista de um projeto que a pessoa vê completo (ex.: o geral de outra área, aberto a todos desde 25/11):
-            // vão todas as tarefas dele. Sem o filtro de projeto, a lista continua só com os projetos da pessoa.
-            if (query?.codigoProjeto) {
-                const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(String(query.codigoProjeto));
-                if (projeto && acessoAoProjeto(usuario, projeto) === "completo") return this.comAnexos(semSigilosoAlheio);
-            }
-            // Membro: tarefas dos projetos de que participa ou participou (no geral da área, pelos períodos ou por
-            // liderar a área) e as em que é responsável.
-            const visiveis = new Set(
-                (await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo),
-            );
+            // Sessão 31a: todo projeto é fechado. Só vão tarefas de projetos que a pessoa abre (equipe atual ou
+            // antiga, cargo, geral), pelo projeto de hoje, não o que veio junto da tarefa.
+            const projetos = new Map((await this.factory.criarProjetoRepository().listar()).map((p) => [p.codigo, p]));
+            const abre = (t: Tarefa) => {
+                const projeto = projetos.get(t.projeto.codigo);
+                return !!projeto && acessoAoProjeto(usuario, projeto) === "completo";
+            };
+            // Lista de um projeto (ex.: o geral de outra área, aberto a todos desde 25/11): todas as tarefas dele.
+            if (query?.codigoProjeto) return this.comAnexos(tarefas.filter(abre));
+            // Sem filtro de projeto, o geral de outra área (aberto a todos) só entra para quem abre todos os projetos.
+            const meus = new Set((await new ListarProjetos(this.factory).execute({ codigoUsuario: usuario.codigo })).map((p) => p.codigo));
+            const todos = temPermissao(usuario, Permissao.PROJETOS_ABRIR_TODOS);
             return this.comAnexos(
-                semSigilosoAlheio.filter(
-                    (t) =>
-                        t.responsaveis.some((r) => r.codigo === usuario.codigo) ||
-                        podeVerTodosProjetos(usuario) ||
-                        visiveis.has(t.projeto.codigo),
-                ),
+                tarefas.filter((t) => abre(t) && (todos || !projetos.get(t.projeto.codigo)?.geralDaArea || meus.has(t.projeto.codigo))),
             );
         });
 
@@ -150,7 +137,7 @@ export default class TarefaRoutes implements ModelRoutes {
             // Toda tarefa tem projeto (sessão 23b): sem ele, 400 para todos, antes da permissão. `categoria` é ignorada.
             if (!body.codigoProjeto) throw new ErroValidacao(MENSAGENS_DE_ERRO.TAREFA.PROJETO_OBRIGATORIO, "PROJETO_OBRIGATORIO");
             const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(body.codigoProjeto);
-            if (projeto?.sigiloso) exigirAcessoCompleto(usuario, projeto);
+            if (projeto) exigirAcessoCompleto(usuario, projeto);
             const papel = papelNoProjeto(usuario, projeto);
             if (papel === "nenhum") throw new ErroProibido("Você só pode criar tarefas em projetos de cuja equipe faz parte.");
             // Participante cria e fica como responsável; o líder organiza depois.

@@ -49,10 +49,6 @@ export default class ProjetoRepositoryMemory implements ProjetoRepositoryInterfa
         return [...comuns, ...gerais];
     }
 
-    async listarSigilosos(): Promise<Projeto[]> {
-        return this.montar(this.projetos.filter((p) => p.sigiloso));
-    }
-
     async buscarPorCodigo(codigo: string): Promise<Projeto | null> {
         const projeto = this.projetos.find((p) => p.codigo === codigo);
         return projeto ? (await this.montar([projeto]))[0] : null;

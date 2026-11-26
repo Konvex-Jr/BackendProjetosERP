@@ -2,10 +2,10 @@ import Area from "../source/domain/entity/Area";
 import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea from "../source/domain/entity/PeriodoArea";
 import Usuario from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { preencherAreasAtuais } from "../source/useCases/pessoas/areasAtuais";
 import { criarContexto } from "./fixtures";
+import { comPapel } from "./papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -33,9 +33,12 @@ describe("preencherAreasAtuais", () => {
 
     test("pessoa fora da EJ com período aberto (dado incoerente) fica sem áreas atuais", async () => {
         const { factory, senioridade } = await criarContexto();
-        const alumni = new Usuario("Beto", "beto@konvex.com.br", PerfilUsuario.MEMBRO, false, "hash", senioridade, "usr-beto", {
-            status: StatusPessoa.INATIVO,
-        });
+        const alumni = comPapel(
+            new Usuario("Beto", "beto@konvex.com.br", false, "hash", senioridade, "usr-beto", {
+                status: StatusPessoa.INATIVO,
+            }),
+            "membro",
+        );
         await factory.criarUsuarioRepository().criar(alumni);
         await factory
             .criarPeriodoAreaRepository()

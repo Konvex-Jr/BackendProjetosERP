@@ -1,15 +1,14 @@
 import Area from "../../domain/entity/Area";
 import PeriodoArea from "../../domain/entity/PeriodoArea";
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import { STATUS_NA_EJ } from "../../domain/enum/StatusPessoa";
-import { UsuarioAutenticado } from "./permissoes";
+import { Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
 
 /*
  * Liderança das áreas (spec 23, seção 5.3).
  * Regra provisória; as lideranças da EJ vão decidir a definitiva (18/11/2026).
  * Por isso ela fica toda aqui: quem precisa saber se alguém lidera uma área pergunta a este arquivo.
  *
- * Lidera a área quem tem o papel diretor do sistema, ou um período em aberto com cargo que lidera
+ * Lidera a área quem tem `areas.liderarTodas` (sessão 31a; antes, o perfil diretor), ou um período em aberto com cargo que lidera
  * (`Cargo.lideraArea`) nesta área ou em alguma acima dela.
  */
 
@@ -37,7 +36,7 @@ function areaEAcima(codigoArea: string, areas: Area[]): string[] {
 
 export function lideraArea(usuario: UsuarioAutenticado, codigoArea: string, areas: Area[], periodosAbertos: PeriodoArea[]): boolean {
     if (!naEj(usuario)) return false;
-    if (usuario.perfil === PerfilUsuario.DIRETOR) return true;
+    if (temPermissao(usuario, Permissao.AREAS_LIDERAR_TODAS)) return true;
     const acima = new Set(areaEAcima(codigoArea, areas));
     return periodosDeLideranca(usuario, periodosAbertos).some((p) => acima.has(p.area.codigo));
 }
@@ -45,7 +44,7 @@ export function lideraArea(usuario: UsuarioAutenticado, codigoArea: string, area
 /** Códigos das áreas que a pessoa lidera: as dos seus períodos de liderança e todas abaixo delas. */
 export function areasLideradas(usuario: UsuarioAutenticado, areas: Area[], periodosAbertos: PeriodoArea[]): Set<string> {
     if (!naEj(usuario)) return new Set();
-    if (usuario.perfil === PerfilUsuario.DIRETOR) return new Set(areas.map((a) => a.codigo));
+    if (temPermissao(usuario, Permissao.AREAS_LIDERAR_TODAS)) return new Set(areas.map((a) => a.codigo));
     const raizes = new Set(periodosDeLideranca(usuario, periodosAbertos).map((p) => p.area.codigo));
     return new Set(areas.filter((a) => areaEAcima(a.codigo, areas).some((c) => raizes.has(c))).map((a) => a.codigo));
 }

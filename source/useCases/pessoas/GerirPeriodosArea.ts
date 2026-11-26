@@ -2,6 +2,8 @@ import PeriodoArea, { validarNovoPeriodo } from "../../domain/entity/PeriodoArea
 import Usuario from "../../domain/entity/Usuario";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
+import { ErroValidacao } from "../../shared/erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
 export interface PeriodoAreaEntrada {
     codigoArea: string;
@@ -37,14 +39,29 @@ export default class GerirPeriodosArea {
         const { area, cargo } = await this.areaECargo(entrada);
         const periodo = anterior.copiar({ area, cargo, inicio: entrada.inicio, fim: entrada.fim ?? null });
         const repositorio = this.factory.criarPeriodoAreaRepository();
+        if (!(periodo.aberto && periodo.cargo?.codigo === anterior.cargo?.codigo)) await this.exigirPresidenteNaoVago(anterior);
         validarNovoPeriodo(periodo, await repositorio.listarDe(codigoUsuario), anterior, pessoa);
         return repositorio.editar(periodo);
     }
 
     async excluir(codigoUsuario: string, codigoPeriodo: string): Promise<void> {
         await this.pessoa(codigoUsuario);
-        await this.periodoDa(codigoUsuario, codigoPeriodo);
+        await this.exigirPresidenteNaoVago(await this.periodoDa(codigoUsuario, codigoPeriodo));
         await this.factory.criarPeriodoAreaRepository().excluir(codigoPeriodo);
+    }
+
+    /**
+     * Sessão 31a: o cargo do presidente (posição 1) nunca fica vago. Encerrar, trocar o cargo ou excluir o último
+     * período aberto nele = 400 PRESIDENTE_VAGO; antes, dá-se o cargo a outra pessoa.
+     */
+    private async exigirPresidenteNaoVago(anterior: PeriodoArea): Promise<void> {
+        if (!anterior.aberto || !anterior.cargo) return;
+        const cargo = await this.factory.criarCargoRepository().buscarPorCodigo(anterior.cargo.codigo);
+        if (!cargo?.ehPresidente()) return;
+        const areas = await this.factory.criarAreaRepository().listar();
+        const periodos = await this.factory.criarPeriodoAreaRepository().listarDasAreas(areas.map((a) => a.codigo));
+        const outros = periodos.filter((p) => p.aberto && p.cargo?.codigo === cargo.codigo && p.codigo !== anterior.codigo);
+        if (outros.length === 0) throw new ErroValidacao(MENSAGENS_DE_ERRO.HIERARQUIA.PRESIDENTE_VAGO, "PRESIDENTE_VAGO");
     }
 
     private async pessoa(codigoUsuario: string): Promise<Usuario> {

@@ -2,7 +2,6 @@ import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFac
 import Http, { ContextoRequisicao } from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
-import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import LoginUsuario, { criarLimitesLogin } from "../../../useCases/auth/LoginUsuario";
 import RenovarSessao from "../../../useCases/auth/RenovarSessao";
@@ -27,8 +26,9 @@ import GerirPeriodosArea, { PeriodoAreaEntrada } from "../../../useCases/pessoas
 import { comAreasAtuais } from "../../../useCases/pessoas/areasAtuais";
 import Usuario from "../../../domain/entity/Usuario";
 import { EntradaPerfilPessoa, lerStatusPessoa, pendenciasPerfil } from "../../../useCases/pessoas/dadosPessoa";
-import { exigirAutenticado, exigirPodeGerirPerfil } from "../../../shared/seguranca/permissoes";
-import { lerData, lerDataObrigatoria, lerEnum, lerLista } from "../../../shared/entradas";
+import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import { AlvoDaHierarquia, exigirDarCargo, exigirGerirPessoa, podeGerirPessoa } from "../../../shared/seguranca/hierarquia";
+import { lerData, lerDataObrigatoria, lerLista } from "../../../shared/entradas";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
 import { ErroAplicacao } from "../../../shared/erros/ErroAplicacao";
@@ -75,25 +75,6 @@ function lerPerfil(body: any): EntradaPerfilPessoa {
     };
 }
 
-/** Períodos de área: ninguém altera os próprios, exceto o diretor. Devolve quem gere. */
-function exigirPodeGerirPeriodosDe(usuario: any, alvo: { codigo: string; perfil: PerfilUsuario | string }) {
-    const gestor = exigirPodeGerirPerfil(usuario, alvo.perfil, alvo.perfil);
-    if (gestor.codigo === alvo.codigo && gestor.perfil !== PerfilUsuario.DIRETOR) {
-        throw new ErroProibido(MENSAGENS_DE_ERRO.PERIODO.PROPRIO);
-    }
-    return gestor;
-}
-
-function podeGerirPeriodosDe(usuario: any, alvo: { codigo: string; perfil: PerfilUsuario | string }): boolean {
-    try {
-        exigirPodeGerirPeriodosDe(usuario, alvo);
-        return true;
-    } catch (erro) {
-        if (erro instanceof ErroAplicacao) return false;
-        throw erro;
-    }
-}
-
 /** Rotas de sessão (RF-001) e de pessoas (RF-010 a RF-016). */
 export default class UsuarioRoutes implements ModelRoutes {
     constructor(
@@ -114,6 +95,59 @@ export default class UsuarioRoutes implements ModelRoutes {
 
     private async comPendencias<T extends { usuario: Usuario }>(sessao: T) {
         return { ...sessao, usuario: await this.responderEu(sessao.usuario) };
+    }
+
+    /** A pessoa como a hierarquia a vê (sessão 31a): a posição do cargo atual ou, sem cargo aberto, do último. */
+    private async alvoNaHierarquia(alvo: Usuario): Promise<AlvoDaHierarquia> {
+        return { codigo: alvo.codigo, cargo: (await this.posicoesDosCargos([alvo.codigo])).get(alvo.codigo) ?? null };
+    }
+
+    /**
+     * Posição de cada pessoa na hierarquia, numa leitura só: a do cargo do período aberto; sem cargo aberto
+     * (ex.: saiu da EJ, períodos encerrados), a do cargo do período com cargo mais recente. Assim um ex-diretor
+     * inativo continua acima do gerente, que não o reativa nem troca o e-mail dele (revisão da 31a).
+     */
+    private async posicoesDosCargos(codigos: string[]): Promise<Map<string, { posicao: number }>> {
+        const quem = new Set(codigos);
+        const areas = await this.repositoryFactory.criarAreaRepository().listar();
+        const periodos = (await this.repositoryFactory.criarPeriodoAreaRepository().listarDasAreas(areas.map((a) => a.codigo))).filter(
+            (p) => quem.has(p.codigoUsuario) && p.cargo,
+        );
+        const cargos = new Map((await this.repositoryFactory.criarCargoRepository().listar()).map((c) => [c.codigo, c]));
+        // Ordem: aberto primeiro; depois o fim mais recente; depois o início mais recente.
+        const chave = (p: (typeof periodos)[number]) => [p.aberto ? 1 : 0, p.fim?.getTime() ?? 0, p.inicio.getTime()];
+        const maisNovo = (a: (typeof periodos)[number], b: (typeof periodos)[number]) => {
+            const [x, y] = [chave(a), chave(b)];
+            return (x[0] - y[0] || x[1] - y[1] || x[2] - y[2]) > 0;
+        };
+        const maisRecente = new Map<string, (typeof periodos)[number]>();
+        for (const p of periodos) {
+            const atual = maisRecente.get(p.codigoUsuario);
+            if (!atual || maisNovo(p, atual)) maisRecente.set(p.codigoUsuario, p);
+        }
+        const posicoes = new Map<string, { posicao: number }>();
+        for (const [codigo, p] of maisRecente) {
+            const cargo = cargos.get(p.cargo!.codigo);
+            if (cargo) posicoes.set(codigo, { posicao: cargo.posicao });
+        }
+        return posicoes;
+    }
+
+    /** `pessoas.gerir` e a pessoa abaixo do seu cargo; devolve quem gere. */
+    private async exigirGerir(usuario: UsuarioAutenticado | undefined, alvo: Usuario): Promise<UsuarioAutenticado> {
+        return exigirGerirPessoa(usuario, await this.alvoNaHierarquia(alvo));
+    }
+
+    /** Período com cargo (31a): só cargos abaixo do seu. Cargo inexistente segue para o caso de uso (404). */
+    private async exigirDarCargoDe(gestor: UsuarioAutenticado, codigoCargo: string | null | undefined): Promise<void> {
+        if (!codigoCargo) return;
+        exigirDarCargo(gestor, await this.repositoryFactory.criarCargoRepository().buscarPorCodigo(codigoCargo));
+    }
+
+    /** Alterar ou excluir um período: o cargo que ele tem hoje também precisa estar abaixo do seu. */
+    private async exigirMexerNoPeriodo(gestor: UsuarioAutenticado, codigoPeriodo: string): Promise<void> {
+        const periodo = await this.repositoryFactory.criarPeriodoAreaRepository().buscarPorCodigo(codigoPeriodo);
+        exigirDarCargo(gestor, periodo?.cargo ?? null);
     }
 
     private async buscarAlvo(codigo: string) {
@@ -256,13 +290,19 @@ export default class UsuarioRoutes implements ModelRoutes {
         });
 
         // Pessoas: todos os autenticados consultam; só gestores alteram (matriz de permissões).
-        this.http.route("get", "/usuarios", true, async (_p: any, _b: any, query: any) =>
-            new ListarUsuarios(f).execute({
+        this.http.route("get", "/usuarios", true, async (_p: any, body: any, query: any) => {
+            const pessoas = await new ListarUsuarios(f).execute({
                 status: lerLista(query?.status).map((s) => lerStatusPessoa(s)!),
                 codigoArea: query?.codigoArea || undefined,
                 busca: query?.busca || undefined,
-            }),
-        );
+            });
+            // Sessão 31a: a tela obedece a `podeGerir` (pessoas.gerir e a pessoa abaixo do cargo de quem olha).
+            const posicoes = await this.posicoesDosCargos(pessoas.map((p) => p.codigo));
+            return pessoas.map((p) => ({
+                ...p.toJSON(),
+                podeGerir: podeGerirPessoa(body.user, { codigo: p.codigo, cargo: posicoes.get(p.codigo) ?? null }),
+            }));
+        });
 
         this.http.route("get", "/usuarios/:codigo", true, async (params: any) =>
             this.responderPessoa(await this.buscarAlvo(params.codigo)),
@@ -270,7 +310,7 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("get", "/usuarios/:codigo/perfil", true, async (params: any, body: any) => {
             const perfil = await new ObterPerfilPessoa(f).execute(params.codigo, exigirAutenticado(body.user));
-            return { ...perfil, podeGerirPeriodos: podeGerirPeriodosDe(body.user, perfil.usuario) };
+            return { ...perfil, podeGerir: podeGerirPessoa(body.user, await this.alvoNaHierarquia(perfil.usuario)) };
         });
 
         // Períodos por área (sessão 23a): todos os logados leem, como o perfil; só a gestão grava.
@@ -281,19 +321,25 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("post", "/usuarios/:codigo/periodos", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            const gestor = exigirPodeGerirPeriodosDe(body.user, alvo);
-            return new GerirPeriodosArea(f).criar(alvo.codigo, lerPeriodo(body), gestor.codigo);
+            const gestor = await this.exigirGerir(body.user, alvo);
+            const entrada = lerPeriodo(body);
+            await this.exigirDarCargoDe(gestor, entrada.codigoCargo);
+            return new GerirPeriodosArea(f).criar(alvo.codigo, entrada, gestor.codigo);
         });
 
         this.http.route("put", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPeriodosDe(body.user, alvo);
-            return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, lerPeriodo(body));
+            const gestor = await this.exigirGerir(body.user, alvo);
+            const entrada = lerPeriodo(body);
+            await this.exigirMexerNoPeriodo(gestor, params.codigoPeriodo);
+            await this.exigirDarCargoDe(gestor, entrada.codigoCargo);
+            return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, entrada);
         });
 
         this.http.route("delete", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPeriodosDe(body.user, alvo);
+            const gestor = await this.exigirGerir(body.user, alvo);
+            await this.exigirMexerNoPeriodo(gestor, params.codigoPeriodo);
             await new GerirPeriodosArea(f).excluir(alvo.codigo, params.codigoPeriodo);
             return new RespostaSemConteudo();
         });
@@ -301,12 +347,11 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("get", "/senioridades", true, async () => f.criarSenioridadeRepository().listar());
 
         this.http.route("post", "/usuarios", true, async (_p: any, body: any) => {
-            const perfil = lerEnum(body.perfil, PerfilUsuario, "perfil") ?? PerfilUsuario.MEMBRO;
-            exigirPodeGerirPerfil(body.user, null, perfil);
+            // Pessoa nova entra sem cargo (abaixo de todos): basta gerir pessoas. O cargo vem depois, pelos períodos.
+            exigirPermissao(body.user, Permissao.PESSOAS_GERIR, MENSAGENS_DE_ERRO.HIERARQUIA.SEM_GERIR_PESSOAS);
             const criado = await new CriarUsuario(f).execute({
                 nome: body.nome,
                 email: body.email,
-                perfil,
                 senioridade: lerSenioridade(body),
                 status: lerStatusPessoa(body.status),
                 ...lerPerfil(body),
@@ -318,7 +363,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         // Reenvia o convite (quem ainda não definiu senha) ou manda link de redefinição. A gestão nunca vê a senha nem o link.
         this.http.route("post", "/usuarios/:codigo/link-senha", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            await this.exigirGerir(body.user, alvo);
             if (!alvo.ativo) throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.PESSOA_SEM_ACESSO, "PESSOA_SEM_ACESSO");
             const tipo = alvo.convitePendente ? "convite" : "redefinir";
             return { enviado: await new GerirLinkSenha(f).emitir(alvo, tipo), tipo };
@@ -326,16 +371,11 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("put", "/usuarios/:codigo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            const perfil = lerEnum(body.perfil, PerfilUsuario, "perfil") ?? alvo.perfil;
-            const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, perfil);
-            if (gestor.codigo === alvo.codigo && perfil !== alvo.perfil) {
-                throw new ErroProibido("Você não pode alterar o próprio perfil de acesso.");
-            }
+            await this.exigirGerir(body.user, alvo);
             const editado = await new EditarUsuario(f).execute({
                 codigo: alvo.codigo,
                 nome: body.nome ?? alvo.nome,
                 email: body.email ?? alvo.email,
-                perfil,
                 senioridade: lerSenioridade(body),
                 ...lerPerfil(body),
             });
@@ -344,7 +384,7 @@ export default class UsuarioRoutes implements ModelRoutes {
 
         this.http.route("patch", "/usuarios/:codigo/status", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            const gestor = await this.exigirGerir(body.user, alvo);
             if (gestor.codigo === alvo.codigo) throw new ErroProibido("Você não pode alterar o próprio status.");
             const resultado = await new AlterarStatusPessoa(f).execute({
                 codigo: alvo.codigo,
@@ -360,7 +400,7 @@ export default class UsuarioRoutes implements ModelRoutes {
         // Compatibilidade: DELETE não exclui, só muda o status para Inativo (ADR-006).
         this.http.route("delete", "/usuarios/:codigo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            const gestor = exigirPodeGerirPerfil(body.user, alvo.perfil, alvo.perfil);
+            const gestor = await this.exigirGerir(body.user, alvo);
             if (gestor.codigo === alvo.codigo) throw new ErroProibido("Você não pode inativar a própria conta.");
             await new AlterarStatusPessoa(f).execute({ codigo: alvo.codigo, status: StatusPessoa.INATIVO, motivoSaida: body.motivoSaida });
             return { message: "Pessoa inativada. O histórico foi preservado." };

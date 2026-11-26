@@ -37,7 +37,7 @@ descrever("migração 018 sobre a 017", () => {
     async function geral(area: string) {
         return (
             await pool.query(
-                `SELECT p.codigo, p.nome, p.status, p.tipo, p.sigiloso, p.data_fim::text AS data_fim, pai.nome AS pai
+                `SELECT p.codigo, p.nome, p.status, p.tipo, p.data_fim::text AS data_fim, pai.nome AS pai
                  FROM projetos p JOIN areas a ON a.codigo = p.area_codigo
                  LEFT JOIN areas pai ON pai.codigo = a.area_pai_codigo
                  WHERE p.geral_da_area AND a.nome = $1`,
@@ -146,17 +146,16 @@ descrever("migração 018 sobre a 017", () => {
         ).rejects.toMatchObject({ code: "23502" });
     });
 
-    test("o banco barra segundo geral, geral sigiloso e interno sem área", async () => {
+    test("o banco barra segundo geral e interno sem área (o sigilo saiu na 030)", async () => {
         const inovacao = (await pool.query("SELECT codigo FROM areas WHERE nome = 'Inovação'")).rows[0].codigo;
-        const inserir = (area: string | null, tipo: string, geralDaArea: boolean, sigiloso: boolean) =>
+        const inserir = (area: string | null, tipo: string, geralDaArea: boolean) =>
             pool.query(
-                `INSERT INTO projetos (nome, descricao, data_inicio, data_fim, area_codigo, tipo, geral_da_area, sigiloso)
-                 VALUES ('Extra', 'x', '2026-01-01', '2026-02-01', $1, $2, $3, $4)`,
-                [area, tipo, geralDaArea, sigiloso],
+                `INSERT INTO projetos (nome, descricao, data_inicio, data_fim, area_codigo, tipo, geral_da_area)
+                 VALUES ('Extra', 'x', '2026-01-01', '2026-02-01', $1, $2, $3)`,
+                [area, tipo, geralDaArea],
             );
-        await expect(inserir(inovacao, "interno", true, false)).rejects.toMatchObject({ code: "23505" });
-        await expect(inserir(areaProjetos, "interno", true, true)).rejects.toMatchObject({ code: "23514" });
-        await expect(inserir(null, "interno", false, false)).rejects.toMatchObject({ code: "23514" });
+        await expect(inserir(inovacao, "interno", true)).rejects.toMatchObject({ code: "23505" });
+        await expect(inserir(null, "interno", false)).rejects.toMatchObject({ code: "23514" });
     });
 
     test("aplicar de novo não faz nada", async () => {

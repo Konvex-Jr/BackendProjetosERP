@@ -15,7 +15,6 @@ import Cargo from "../../source/domain/entity/Cargo";
 import PeriodoArea from "../../source/domain/entity/PeriodoArea";
 import Projeto from "../../source/domain/entity/Projeto";
 import { novoGeral } from "../../source/domain/entity/ProjetoGeral";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import TipoProjeto from "../../source/domain/enum/TipoProjeto";
 import ItemBiblioteca from "../../source/domain/entity/ItemBiblioteca";
 import { DonoAnexo } from "../../source/domain/enum/Anexo";
@@ -26,6 +25,7 @@ import ProjetoRepositoryDatabase from "../../source/infra/repository/database/Pr
 import { existsSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
+import { autenticado, comPapel } from "../papel";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -45,13 +45,9 @@ descrever("projeto geral da área contra PostgreSQL", () => {
     let cliente: Projeto;
 
     async function novaPessoa(nome: string): Promise<Usuario> {
-        const pessoa = new Usuario(
-            nome,
-            `${nome.toLowerCase()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario(nome, `${nome.toLowerCase()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         return pessoa;
@@ -157,13 +153,9 @@ descrever("projeto geral da área contra PostgreSQL", () => {
         beforeAll(async () => {
             pasta = mkdtempSync(path.join(tmpdir(), "anexos-"));
             process.env.ANEXOS_DIR = pasta;
-            diretor = new Usuario(
-                "Dora",
-                "dora@teste.com",
-                PerfilUsuario.DIRETOR,
-                true,
-                "hash",
-                new SenioridadeUsuario("pleno", "Pleno", 75),
+            diretor = comPapel(
+                new Usuario("Dora", "dora@teste.com", true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
+                "diretor",
             );
             await factory.criarUsuarioRepository().criar(diretor);
         });
@@ -185,12 +177,10 @@ descrever("projeto geral da área contra PostgreSQL", () => {
                     autor: { codigo: diretor.codigo, nome: diretor.nome },
                 }),
             );
-            const anexo = await new GerirAnexos(factory).enviar(
-                { codigo: diretor.codigo, perfil: diretor.perfil },
-                DonoAnexo.BIBLIOTECA,
-                item.codigo,
-                { nome: "ata.pdf", conteudo: Buffer.from("%PDF-1.4") },
-            );
+            const anexo = await new GerirAnexos(factory).enviar(autenticado(diretor), DonoAnexo.BIBLIOTECA, item.codigo, {
+                nome: "ata.pdf",
+                conteudo: Buffer.from("%PDF-1.4"),
+            });
             return { area, geral, item, arquivo: path.join(pasta, anexo.arquivo) };
         }
 

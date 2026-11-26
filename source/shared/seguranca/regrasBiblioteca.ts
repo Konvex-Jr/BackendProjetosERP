@@ -8,17 +8,14 @@ import { Permissao } from "./catalogoPermissoes";
 import { exigirAutenticado, temPermissao, UsuarioAutenticado } from "./permissoes";
 import { acessoAoProjeto } from "./visibilidadeProjetos";
 
-/** Projetos da pessoa e projetos sigilosos que ela não pode ver (sessão 20). */
+/** Projetos que a pessoa abre por inteiro (sessão 31a: equipe, cargo ou geral; `acessoAoProjeto`). */
 export interface ContextoProjetos {
-    /** Projetos com acesso completo vindos de participação (atual ou passada). */
-    meus: Set<string>;
-    /** Projetos sigilosos que a pessoa não vê por inteiro: itens ligados a eles somem, para todos os papéis. */
-    ocultos: Set<string>;
+    completos: Set<string>;
 }
 
 /**
- * Quem lê e altera itens da Biblioteca (sessão 17). Gestão (biblioteca.verTodos) lê todos;
- * os demais leem os itens "todos" e os de projeto de que participam ou participaram.
+ * Quem lê e altera itens da Biblioteca (sessão 17; 31a). "todos": todos; "gestao": biblioteca.verTodos;
+ * "projeto": quem abre o projeto (`acessoAoProjeto`), para todos os papéis.
  * Item invisível se comporta como inexistente (404). Alterar: autor ou biblioteca.gerir.
  */
 export function podeVerTodosItens(usuario: UsuarioAutenticado | undefined | null): boolean {
@@ -26,11 +23,11 @@ export function podeVerTodosItens(usuario: UsuarioAutenticado | undefined | null
 }
 
 export function podeVerItem(usuario: UsuarioAutenticado, item: ItemBiblioteca, ctx: ContextoProjetos): boolean {
-    // Projeto sigiloso oculto vale até para a gestão: vem antes de qualquer atalho.
-    if (item.projeto && ctx.ocultos.has(item.projeto.codigo)) return false;
-    if (podeVerTodosItens(usuario)) return true;
+    // "Todos" vale pelo sigilo do item, mesmo ligado a projeto que a pessoa não abre (o projeto chega nulo).
     if (item.sigilo === SigiloBiblioteca.TODOS) return true;
-    if (item.sigilo === SigiloBiblioteca.PROJETO) return !!item.projeto && ctx.meus.has(item.projeto.codigo);
+    // "Equipe do projeto" exige abrir o projeto, para todos (31a: nem biblioteca.verTodos passa por cima do projeto fechado).
+    if (item.sigilo === SigiloBiblioteca.PROJETO) return !!item.projeto && ctx.completos.has(item.projeto.codigo);
+    if (podeVerTodosItens(usuario)) return true;
     // Sigilo "gestao" (ou valor desconhecido): só quem passou na primeira checagem.
     return false;
 }
@@ -40,29 +37,15 @@ export function podeAlterarItem(usuario: UsuarioAutenticado | null | undefined, 
     return item.autor?.codigo === usuario.codigo || temPermissao(usuario, Permissao.BIBLIOTECA_GERIR);
 }
 
-/**
- * Projetos da pessoa (`meus`: acesso completo entre os de que participa ou participou) e sigilosos
- * ocultos. `meus` fica vazio para quem tem
- * biblioteca.verTodos, que não precisa dele; `ocultos` é calculado para todos.
- */
+/** Projetos que a pessoa abre por inteiro (sessão 31a: todo projeto é fechado a quem não é da equipe nem tem o cargo). */
 export async function contextoProjetos(usuario: UsuarioAutenticado, factory: RepositoryFactoryInterface): Promise<ContextoProjetos> {
-    const repo = factory.criarProjetoRepository();
-    const ocultos = new Set((await repo.listarSigilosos()).filter((p) => acessoAoProjeto(usuario, p) !== "completo").map((p) => p.codigo));
-    const meus = new Set<string>();
-    if (!podeVerTodosItens(usuario)) {
-        for (const p of await repo.listarPorMembro(usuario.codigo)) if (acessoAoProjeto(usuario, p) === "completo") meus.add(p.codigo);
-    }
-    return { meus, ocultos };
+    const projetos = await factory.criarProjetoRepository().listar();
+    return { completos: new Set(projetos.filter((p) => acessoAoProjeto(usuario, p) === "completo").map((p) => p.codigo)) };
 }
 
-/**
- * Se a pessoa pode ver o projeto ligado a um item (Ruling 8): sigiloso oculto nunca; senão projetos.verTodos
- * ou projeto dela. Quem tivesse biblioteca.verTodos sem projetos.verTodos veria todos os projetos
- * não ocultos como nulos, o lado seguro.
- */
-export function podeVerProjetoDoItem(usuario: UsuarioAutenticado, codigoProjeto: string, ctx: ContextoProjetos): boolean {
-    if (ctx.ocultos.has(codigoProjeto)) return false;
-    return temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || ctx.meus.has(codigoProjeto);
+/** Se a pessoa pode ver o projeto ligado a um item: só se abre o projeto; senão o item mostra projeto nulo. */
+export function podeVerProjetoDoItem(_usuario: UsuarioAutenticado, codigoProjeto: string, ctx: ContextoProjetos): boolean {
+    return ctx.completos.has(codigoProjeto);
 }
 
 export async function exigirVerItem(
@@ -84,7 +67,7 @@ export function exigirAlterarItem(usuario: UsuarioAutenticado | null | undefined
 
 /**
  * Impede o membro de escalar privilégio ao criar ou editar: sigilo "gestao" só com biblioteca.gerir;
- * ligar a um projeto exige biblioteca.gerir ou participar/ter participado dele.
+ * ligar a um projeto exige abri-lo (sessão 31a).
  */
 export async function exigirPodeUsarSigiloEProjeto(
     usuario: UsuarioAutenticado | null | undefined,
@@ -96,9 +79,11 @@ export async function exigirPodeUsarSigiloEProjeto(
     const gere = temPermissao(autenticado, Permissao.BIBLIOTECA_GERIR);
     if (!gere && sigilo === SigiloBiblioteca.GESTAO) throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.SIGILO_SEM_PERMISSAO);
     if (!codigoProjeto) return;
-    const ctx = await contextoProjetos(autenticado, factory);
-    // Sigiloso oculto: nem quem gere a Biblioteca liga item a ele.
-    if (ctx.ocultos.has(codigoProjeto)) throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.PROJETO_SEM_PERMISSAO);
-    if (gere) return;
-    if (!ctx.meus.has(codigoProjeto)) throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.PROJETO_SEM_PERMISSAO);
+    // Ligar a projeto: só a um que a pessoa abre (vale também para quem gere a Biblioteca). Inexistente: 404 para
+    // quem gere; para os demais, o mesmo 403 do projeto alheio (como antes da 31a).
+    const projeto = await factory.criarProjetoRepository().buscarPorCodigo(codigoProjeto);
+    if (!projeto && gere) throw new ErroNaoEncontrado(MENSAGENS_DE_ERRO.PROJETO.NAO_ENCONTRADO);
+    if (!projeto || acessoAoProjeto(autenticado, projeto) !== "completo") {
+        throw new ErroProibido(MENSAGENS_DE_ERRO.BIBLIOTECA.PROJETO_SEM_PERMISSAO);
+    }
 }

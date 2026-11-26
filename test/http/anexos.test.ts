@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { LIMITE_ANEXO_BYTES } from "../../source/domain/enum/Anexo";
 import { criarContexto } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /**
  * Sessão 12c (09/11/2026): anexos reais, até 20 MB, documentos e imagens; cada anexo segue as
@@ -31,7 +31,7 @@ describe("Anexos", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        bruno = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
+        bruno = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(bruno);
         servidor = await subirServidor(ctx.factory);
     });

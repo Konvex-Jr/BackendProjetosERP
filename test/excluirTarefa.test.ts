@@ -2,6 +2,7 @@ import ExcluirTarefa from "../source/useCases/tarefas/ExcluirTarefa";
 import { DonoAnexo } from "../source/domain/enum/Anexo";
 import GerirAnexos from "../source/useCases/anexos/GerirAnexos";
 import { criarContexto, criarTarefa } from "./fixtures";
+import { autenticado } from "./papel";
 
 test("exclui uma tarefa existente", async () => {
     const { factory, membro } = await criarContexto();
@@ -16,7 +17,7 @@ test("excluir a tarefa apaga os anexos e os arquivos", async () => {
     const { factory, membro } = await criarContexto();
     const tarefa = await criarTarefa(factory, membro);
     const gerir = new GerirAnexos(factory);
-    const usuario = { codigo: membro.codigo, perfil: membro.perfil };
+    const usuario = autenticado(membro);
     const a1 = await gerir.enviar(usuario, DonoAnexo.TAREFA, tarefa.codigo, { nome: "a.pdf", conteudo: Buffer.from("%PDF-1.4 a") });
     const a2 = await gerir.enviar(usuario, DonoAnexo.TAREFA, tarefa.codigo, { nome: "b.pdf", conteudo: Buffer.from("%PDF-1.4 b") });
     const armazenamento = factory.criarArmazenamentoAnexos();

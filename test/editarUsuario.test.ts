@@ -1,7 +1,6 @@
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { hoje } from "../source/domain/entity/Participacao";
 import EditarUsuario from "../source/useCases/pessoas/EditarUsuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import { criarContexto } from "./fixtures";
 
 test("edita os dados e normaliza o e-mail do usuário", async () => {
@@ -10,7 +9,6 @@ test("edita os dados e normaliza o e-mail do usuário", async () => {
         codigo: membro.codigo,
         nome: " Ana Silva Atualizada ",
         email: " ANA.SILVA@KONVEX.COM.BR ",
-        perfil: PerfilUsuario.MEMBRO,
         senioridade,
     });
 

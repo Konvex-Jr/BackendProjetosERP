@@ -1,9 +1,9 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { hoje as hojeNoFuso } from "../../source/shared/datas";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /** Sessão 8: tarefas pela API (criar, editar, status, responsável, excluir). */
 describe("Tarefas pela API", () => {
@@ -22,8 +22,8 @@ describe("Tarefas pela API", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        colega = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
-        deFora = new Usuario("Carla", "carla@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-carla");
+        colega = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
+        deFora = comPapel(new Usuario("Carla", "carla@konvex.com.br", true, "x", ctx.senioridade, "usr-carla"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(colega);
         await ctx.factory.criarUsuarioRepository().criar(deFora);
         await ctx.factory
@@ -202,7 +202,7 @@ describe("Tarefas pela API", () => {
         it("tarefa de sigiloso sem acesso: 404 no PATCH /coluna", async () => {
             const sig = await ctx.factory
                 .criarProjetoRepository()
-                .criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", { sigiloso: true }));
+                .criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {}));
             await criarTarefa(ctx.factory, ctx.membro, sig, "tarefa-sig");
             const r = await mover(deFora, "tarefa-sig", sig.colunas[1].codigo);
             expect(r.status).toBe(404);

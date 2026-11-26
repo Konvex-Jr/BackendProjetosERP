@@ -7,7 +7,7 @@ import { hoje } from "../../shared/datas";
 import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, temVisoesDaGestao } from "../../shared/seguranca/visibilidadeProjetos";
 import { comAreasAtuais } from "./areasAtuais";
 
 export interface ProjetoNoPerfil {
@@ -18,7 +18,6 @@ export interface ProjetoNoPerfil {
     funcao: string | null;
     dataEntrada: Date;
     dataSaida: Date | null;
-    sigiloso: boolean;
     tipo: Projeto["tipo"];
     geralDaArea: boolean;
     /** Sem acesso completo ao projeto: nome e datas aparecem, referência e função saem nulas. */
@@ -64,7 +63,7 @@ export default class ObterPerfilPessoa {
         const todosOsProjetos = await this.factory.criarProjetoRepository().listarPorMembro(codigo);
         const acessoDe = (projeto: Projeto) => acessoAoProjeto(quemPede, projeto);
         // Como no cartão (sem ex-membros): passagem antiga por projeto restrito só aparece à gestão e à própria pessoa.
-        const veAnteriores = quemPede.codigo === codigo || podeVerTodosProjetos(quemPede);
+        const veAnteriores = quemPede.codigo === codigo || temVisoesDaGestao(quemPede);
         const projetosAtuais: ProjetoNoPerfil[] = [];
         const projetosAnteriores: ProjetoNoPerfil[] = [];
         for (const projeto of todosOsProjetos) {
@@ -78,7 +77,6 @@ export default class ObterPerfilPessoa {
                     funcao: restrito ? null : p.funcao,
                     dataEntrada: p.dataEntrada,
                     dataSaida: p.dataSaida,
-                    sigiloso: projeto.sigiloso,
                     tipo: projeto.tipo,
                     geralDaArea: projeto.geralDaArea,
                     restrito,

@@ -8,7 +8,7 @@ import { ErroNaoEncontrado } from "../../../shared/erros/ErroNaoEncontrado";
 import { normalizarBusca } from "../../../shared/texto";
 import { SELECT_USUARIO, usuarioDeLinha } from "./carregadores";
 
-const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, status,
+const COLUNAS = `nome, email, senioridade_codigo, ativo, senha_hash, status,
     nome_exibicao, foto, telefone, linkedin_url, curso, ingresso,
     data_entrada, data_saida, bio, calendario_url, github_url,
     email_pessoal, motivo_saida, fim_trainee`;
@@ -18,12 +18,13 @@ const COLUNAS = `nome, email, perfil, senioridade_codigo, ativo, senha_hash, sta
 const LISTA_COLUNAS = COLUNAS.split(",").map((c) => c.trim());
 const POSICAO_FOTO = LISTA_COLUNAS.indexOf("foto");
 const COLUNAS_EDITAR = LISTA_COLUNAS.filter((_, i) => i !== POSICAO_FOTO);
+/** $1 é o código; as colunas vêm depois, na ordem de COLUNAS. */
+const MARCADORES_CRIAR = ["codigo", ...LISTA_COLUNAS].map((_, i) => `$${i + 1}`).join(", ");
 
 function valores(usuario: Usuario): unknown[] {
     return [
         usuario.nome,
         usuario.email,
-        usuario.perfil,
         usuario.senioridade?.codigo ?? null,
         usuario.ativo,
         usuario.senha || null,
@@ -52,7 +53,7 @@ export default class UsuarioRepositoryDatabase implements UsuarioRepositoryInter
         return this.conexao.transacao(async (conexao) => {
             const linhas = await conexao.consultar(
                 `INSERT INTO usuarios (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+                 VALUES (${MARCADORES_CRIAR})
                  ON CONFLICT DO NOTHING
                  RETURNING codigo`,
                 [usuario.codigo, ...valores(usuario)],

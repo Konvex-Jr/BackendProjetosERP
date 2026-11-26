@@ -2,6 +2,7 @@ import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFac
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import SalvarArea from "../../../useCases/config/SalvarArea";
+import GerirPermissoes from "../../../useCases/config/GerirPermissoes";
 import SalvarCargo from "../../../useCases/config/SalvarCargo";
 import SalvarHorasDificuldade from "../../../useCases/config/SalvarHorasDificuldade";
 import SalvarRegrasPrecificacao from "../../../useCases/config/SalvarRegrasPrecificacao";
@@ -9,7 +10,7 @@ import SalvarSenioridade from "../../../useCases/config/SalvarSenioridade";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import { lerBooleano, lerInteiro } from "../../../shared/entradas";
 
-const SO_DIRETOR = "Somente diretores configuram áreas, cargos e senioridades.";
+const SO_DIRETOR = "Você não tem permissão para configurar áreas, cargos e senioridades.";
 
 /** Configurações (ADR-007): leitura para todos, escrita só para diretores (ADMIN). */
 export default class ConfiguracaoRoutes implements ModelRoutes {
@@ -23,7 +24,7 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
 
         this.http.route("get", "/areas", true, async () => f.criarAreaRepository().listar());
         this.http.route("post", "/areas", true, async (_p: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarArea(f).execute({
                 nome: body.nome,
                 codigoAreaPai: body.codigoAreaPai,
@@ -32,7 +33,7 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
             });
         });
         this.http.route("put", "/areas/:codigo", true, async (params: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarArea(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,
@@ -44,24 +45,34 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
 
         this.http.route("get", "/cargos", true, async () => f.criarCargoRepository().listar());
         this.http.route("post", "/cargos", true, async (_p: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            const quem = exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarCargo(f).execute({
                 nome: body.nome,
                 ativo: body.ativo,
                 lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
                 tetoSemanalHoras: lerInteiro(body.tetoSemanalHoras, "tetoSemanalHoras"),
+                posicao: lerInteiro(body.posicao, "posicao"),
+                quem,
             });
         });
         this.http.route("put", "/cargos/:codigo", true, async (params: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            const quem = exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarCargo(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,
                 ativo: body.ativo,
                 lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
                 tetoSemanalHoras: lerInteiro(body.tetoSemanalHoras, "tetoSemanalHoras"),
+                posicao: lerInteiro(body.posicao, "posicao"),
+                quem,
             });
         });
+
+        // Grade de permissões (sessão 31a): quem tem permissoes.gerir; altera só o que está abaixo do seu cargo.
+        this.http.route("get", "/permissoes", true, async (_p: any, body: any) => new GerirPermissoes(f).grade(body.user));
+        this.http.route("put", "/permissoes/:chave", true, async (params: any, body: any) =>
+            new GerirPermissoes(f).salvarColuna(body.user, params.chave, body.permissoes),
+        );
 
         this.http.route("get", "/config/horas-dificuldade", true, async () => f.criarHorasDificuldadeRepository().listar());
         this.http.route("put", "/config/horas-dificuldade", true, async (_p: any, body: any) => {
@@ -78,11 +89,11 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         });
 
         this.http.route("post", "/senioridades", true, async (_p: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarSenioridade(f).execute({ nome: body.nome, ordem: lerInteiro(body.ordem, "ordem") });
         });
         this.http.route("put", "/senioridades/:codigo", true, async (params: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR);
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarSenioridade(f).execute({ codigo: params.codigo, nome: body.nome, ordem: lerInteiro(body.ordem, "ordem") });
         });
     }

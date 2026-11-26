@@ -1,5 +1,4 @@
 import { v4 as uuid } from "uuid";
-import PerfilUsuario from "../enum/PerfilUsuario";
 import StatusPessoa, { STATUS_COM_ACESSO, STATUS_NA_EJ } from "../enum/StatusPessoa";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
@@ -53,7 +52,6 @@ export default class Usuario {
     readonly codigo: string;
     readonly nome: string;
     readonly email: string;
-    readonly perfil: PerfilUsuario;
     readonly senioridade: SenioridadeUsuario | null;
     /** Derivado do status: pode entrar no sistema (ver STATUS_COM_ACESSO). */
     readonly ativo: boolean;
@@ -80,7 +78,6 @@ export default class Usuario {
     constructor(
         nome: string,
         email: string,
-        perfil: PerfilUsuario,
         ativo: boolean,
         senha: string,
         senioridade: SenioridadeUsuario | null = null,
@@ -90,7 +87,6 @@ export default class Usuario {
         this.codigo = codigo ?? uuid();
         this.nome = nome;
         this.email = email;
-        this.perfil = perfil;
         this.senha = senha;
         this.senioridade = senioridade;
         // O status manda; o parâmetro `ativo` só decide quando o status não é informado.
@@ -127,7 +123,6 @@ export default class Usuario {
         alteracoes: Partial<{
             nome: string;
             email: string;
-            perfil: PerfilUsuario;
             senha: string;
             senioridade: SenioridadeUsuario | null;
         }> &
@@ -136,7 +131,7 @@ export default class Usuario {
         // undefined = "não alterar"; null = "limpar o campo".
         const pick = <K extends keyof Usuario>(chave: K): any =>
             (alteracoes as any)[chave] !== undefined ? (alteracoes as any)[chave] : this[chave];
-        return new Usuario(pick("nome"), pick("email"), pick("perfil"), this.ativo, pick("senha"), pick("senioridade"), this.codigo, {
+        return new Usuario(pick("nome"), pick("email"), this.ativo, pick("senha"), pick("senioridade"), this.codigo, {
             status: pick("status"),
             nomeExibicao: pick("nomeExibicao"),
             foto: pick("foto"),
@@ -161,7 +156,6 @@ export default class Usuario {
             codigo: this.codigo,
             nome: this.nome,
             email: this.email,
-            perfil: this.perfil,
             senioridade: this.senioridade,
             ativo: this.ativo,
             naEj: this.naEj,
@@ -198,19 +192,12 @@ export default class Usuario {
             throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.EMAIL_INVALIDO, "EMAIL_INVALIDO");
         }
 
-        if (!Object.values(PerfilUsuario).includes(this.perfil)) {
-            throw new ErroValidacao("Perfil de acesso inválido.", "PERFIL_INVALIDO");
-        }
-
         if (!Object.values(StatusPessoa).includes(this.status)) {
             throw new ErroValidacao("Status de pessoa inválido.", "STATUS_PESSOA_INVALIDO");
         }
 
-        // A entidade exige só do membro (o admin inicial, do seed, fica sem); CriarUsuario e
-        // EditarUsuario exigem de todos os perfis cadastrados pela tela.
-        if (this.perfil === PerfilUsuario.MEMBRO && !this.senioridade) {
-            throw new ErroValidacao(MENSAGENS_DE_ERRO.VALIDACAO.SENIORIDADE_OBRIGATORIA, "SENIORIDADE_OBRIGATORIA");
-        }
+        // Senioridade: CriarUsuario e EditarUsuario exigem de quem é cadastrado pela tela; a entidade não (sessão 31a:
+        // sem perfil fixo, o admin inicial e quem vem de dados antigos ficam sem).
 
         for (const [campo, valor] of [
             ["do LinkedIn", this.linkedinUrl],

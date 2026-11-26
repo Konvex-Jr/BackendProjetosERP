@@ -1,9 +1,9 @@
 import Area from "../source/domain/entity/Area";
 import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea from "../source/domain/entity/PeriodoArea";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { areasLideradas, lideraArea, lideresDaArea } from "../source/shared/seguranca/liderancaArea";
+import { efetivasDoPapel } from "./papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -16,13 +16,13 @@ const areas = [projetos, inovacao, pesquisa, marketing];
 const gerente = new Cargo("Gerente", true, "gerente", true);
 const assessor = new Cargo("Assessor", true, "assessor", false);
 
-const membro = { codigo: "usr-ana", perfil: PerfilUsuario.MEMBRO, status: StatusPessoa.ATIVO };
+const membro = { codigo: "usr-ana", status: StatusPessoa.ATIVO, ...efetivasDoPapel("membro") };
 const aberto = (area: Area, cargo: Cargo | null, codigoUsuario = membro.codigo) =>
     new PeriodoArea(codigoUsuario, area, cargo, dia("2026-02-01"), null, null);
 
 describe("liderança das áreas (regra provisória)", () => {
     test("diretor do sistema sem período lidera tudo", () => {
-        const diretor = { codigo: "usr-dir", perfil: PerfilUsuario.DIRETOR, status: StatusPessoa.ATIVO };
+        const diretor = { codigo: "usr-dir", status: StatusPessoa.ATIVO, ...efetivasDoPapel("diretor") };
         expect(lideraArea(diretor, "pesquisa", areas, [])).toBe(true);
         expect(areasLideradas(diretor, areas, [])).toEqual(new Set(["projetos", "inovacao", "pesquisa", "marketing"]));
     });

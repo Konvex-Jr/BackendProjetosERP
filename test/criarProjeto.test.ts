@@ -17,43 +17,33 @@ test("cria um projeto com membros válidos", async () => {
     expect(projeto.membros).toHaveLength(1);
 });
 
-describe("sigilo do projeto (sessão 20; sem lista de acesso desde a 27a)", () => {
+describe("criador do projeto (histórico; não dá acesso desde a 27a; sem sigilo desde a 31a)", () => {
     const novo = (detalhes?: ConstructorParameters<typeof Projeto>[7]) =>
         new Projeto("P", "Descrição", dataInicio, dataFim, undefined, [], undefined, detalhes);
 
-    test("guarda sigilo e criador", () => {
-        const projeto = novo({ sigiloso: true, criadoPor: "u1" });
-        expect(projeto.sigiloso).toBe(true);
-        expect(projeto.criadoPor).toBe("u1");
+    test("guarda o criador; sem detalhes, sem criador", () => {
+        expect(novo({ criadoPor: "u1" }).criadoPor).toBe("u1");
+        expect(novo().criadoPor).toBeNull();
     });
 
-    test("sem detalhes o projeto é aberto e sem criador", () => {
-        const projeto = novo();
-        expect(projeto.sigiloso).toBe(false);
-        expect(projeto.criadoPor).toBeNull();
-    });
-
-    test("copiar mantém o que não mudou; toJSON mostra o sigilo, sem criador nem lista de acesso", () => {
-        const copia = novo({ sigiloso: true, criadoPor: "u1" }).copiar({ sigiloso: false });
-        expect(copia.sigiloso).toBe(false);
+    test("copiar mantém o criador; toJSON sem criador, sem sigilo e sem lista de acesso", () => {
+        const copia = novo({ criadoPor: "u1" }).copiar({});
         expect(copia.criadoPor).toBe("u1");
         const json = copia.toJSON() as any;
-        expect(json.sigiloso).toBe(false);
+        expect(json).not.toHaveProperty("sigiloso");
         expect(json).not.toHaveProperty("criadoPor");
         expect(json).not.toHaveProperty("acesso");
     });
 
-    test("CriarProjeto repassa criador e sigilo", async () => {
+    test("CriarProjeto repassa o criador", async () => {
         const { factory, membro } = await criarContexto();
         const projeto = await new CriarProjeto(factory).execute({
-            nome: "Secreto",
+            nome: "Novo",
             descricao: "Descrição",
             dataInicio,
             dataFim,
             criadoPor: membro.codigo,
-            sigiloso: true,
         });
-        expect(projeto.sigiloso).toBe(true);
         expect(projeto.criadoPor).toBe(membro.codigo);
     });
 });

@@ -8,9 +8,6 @@ import { tmpdir } from "os";
 import path from "path";
 import { Pool } from "pg";
 import { aplicarMigracoes } from "../../source/infra/database/migracoes";
-import PgConexao from "../../source/infra/database/PgConexao";
-import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRepositoryFactory";
-import Projeto from "../../source/domain/entity/Projeto";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -83,24 +80,6 @@ descrever("migração 014 sobre a 013", () => {
     });
 
     // Depois do teste da tabela: aplicar todas as migrações roda a 024, que apaga a projeto_acesso (sessão 27a).
-    test("o repositório grava e lê sigilo e criador", async () => {
-        await aplicarMigracoes(pool, PASTA, silencio); // o repositório grava colunas (015)
-        const conexao = PgConexao.criar(URL_TESTE!);
-        try {
-            const repo = new DatabaseRepositoryFactory(conexao).criarProjetoRepository();
-            const secreto = new Projeto("Secreto", "Descrição", new Date("2026-01-01"), new Date("2026-12-31"), undefined, [], undefined, {
-                sigiloso: true,
-                criadoPor: trainee,
-            });
-            await repo.criar(secreto);
-            const lido = (await repo.buscarPorCodigo(secreto.codigo))!;
-            expect([lido.sigiloso, lido.criadoPor]).toEqual([true, trainee]);
-            expect((await repo.listarSigilosos()).map((p) => p.codigo)).toEqual([secreto.codigo]);
-            await repo.excluir(secreto.codigo);
-        } finally {
-            await conexao.encerrar();
-        }
-    });
 
     test("rodar o SQL da 014 de novo não quebra", async () => {
         const sql = readFileSync(path.join(PASTA, "014_sigilo_trainee.sql"), "utf8");

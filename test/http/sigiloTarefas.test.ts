@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { Papel, comPapel } from "../papel";
 
 /** Sessão 20: tarefas, comentários e anexos de tarefa de projeto sigiloso. */
 describe("Tarefas de projeto sigiloso", () => {
@@ -23,23 +23,22 @@ describe("Tarefas de projeto sigiloso", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo);
+        const novo = async (nome: string, perfil: Papel, codigo: string) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo), perfil);
             await usuarios.criar(u);
             return u;
         };
         equipe = ctx.membro;
-        ex = await novo("Eva", PerfilUsuario.MEMBRO, "usr-eva");
-        exResponsavel = await novo("Ruy", PerfilUsuario.MEMBRO, "usr-ruy");
-        criadorFora = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
-        fora = await novo("Fê", PerfilUsuario.MEMBRO, "usr-fe");
-        gerenteFora = await novo("Gui", PerfilUsuario.GERENTE, "usr-gui");
-        diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
+        ex = await novo("Eva", "membro", "usr-eva");
+        exResponsavel = await novo("Ruy", "membro", "usr-ruy");
+        criadorFora = await novo("Lia", "membro", "usr-lia");
+        fora = await novo("Fê", "membro", "usr-fe");
+        gerenteFora = await novo("Gui", "gerenteDaArea", "usr-gui");
+        diretor = await novo("Dora", "diretor", "usr-dora");
 
         const projetos = ctx.factory.criarProjetoRepository();
         const sigiloso = await projetos.criar(
             new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe, ex, exResponsavel], "proj-sig", {
-                sigiloso: true,
                 criadoPor: criadorFora.codigo,
             }),
         );
@@ -62,22 +61,17 @@ describe("Tarefas de projeto sigiloso", () => {
     afterEach(async () => servidor.fechar());
 
     describe("GET /tarefas", () => {
-        it("gerente fora do sigiloso não recebe nenhuma tarefa dele, mas recebe as normais", async () => {
+        it("gerente de outra área não recebe tarefa de projeto que não abre (31a: todo projeto é fechado)", async () => {
             const r = await chamar("get", "/tarefas", gerenteFora);
             expect(r.status).toBe(200);
-            expect(codigos(r.corpo)).toEqual(["t-nor"]);
+            expect(codigos(r.corpo)).toEqual([]);
         });
 
-        it("ex-membro que não é responsável não recebe tarefa do sigiloso", async () => {
+        it("ex-membro segue recebendo as tarefas do projeto (31a: quem sai não perde o acesso)", async () => {
             const r = await chamar("get", "/tarefas", ex);
-            expect(codigos(r.corpo)).toEqual([]);
-        });
-
-        it("ex-membro que ainda é responsável também não recebe", async () => {
-            const r = await chamar("get", "/tarefas", exResponsavel);
-            expect(codigos(r.corpo)).toEqual([]);
+            expect(codigos(r.corpo)).toEqual(["t-sig", "t-sig-ex"]);
             const q = await chamar("get", "/tarefas?minhas=true", exResponsavel);
-            expect(codigos(q.corpo)).toEqual([]);
+            expect(codigos(q.corpo)).toEqual(["t-sig-ex"]);
         });
 
         it("membro que só criou o sigiloso (fora da equipe) não recebe tarefa dele (sessão 27a)", async () => {
@@ -112,8 +106,8 @@ describe("Tarefas de projeto sigiloso", () => {
             ["post", "/tarefas/t-sig/comentarios", () => ({ texto: "oi" })],
         ];
 
-        it.each(rotas)("%s %s: membro fora, ex-membro, ex-responsável e criador fora recebem 404", async (metodo, caminho, corpo) => {
-            for (const u of [fora, ex, exResponsavel, criadorFora]) {
+        it.each(rotas)("%s %s: membro fora e criador fora recebem 404", async (metodo, caminho, corpo) => {
+            for (const u of [fora, criadorFora]) {
                 const r = await chamar(metodo, caminho, u, corpo());
                 expect(r.status).toBe(404);
             }
@@ -135,7 +129,7 @@ describe("Tarefas de projeto sigiloso", () => {
         });
 
         it("anexos da tarefa: 404 para quem não vê, qualquer papel", async () => {
-            for (const u of [fora, ex, exResponsavel, gerenteFora, criadorFora]) {
+            for (const u of [fora, gerenteFora, criadorFora]) {
                 const r = await chamar("get", "/tarefas/t-sig/anexos", u);
                 expect(r.status).toBe(404);
             }

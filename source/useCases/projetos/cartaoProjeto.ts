@@ -10,7 +10,6 @@ export interface CartaoProjeto {
     area: { codigo: string; nome: string } | null;
     status: StatusProjeto;
     lider: { codigo: string; nome: string } | null;
-    sigiloso: boolean;
     geralDaArea: boolean;
     /** Equipe atual (sessão 27b): só código, nome e foto; sem função nem ex-membros. */
     membros: { codigo: string; nome: string; foto: string | null }[];
@@ -32,7 +31,6 @@ export function cartaoProjeto(projeto: Projeto): CartaoProjeto {
         area,
         status: projeto.status,
         lider,
-        sigiloso: projeto.sigiloso,
         geralDaArea: projeto.geralDaArea,
         membros: projeto.membros.map((m) => ({ codigo: m.codigo, nome: m.nome, foto: m.foto })),
         cartao: true,

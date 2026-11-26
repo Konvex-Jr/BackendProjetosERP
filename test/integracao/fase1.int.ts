@@ -14,6 +14,7 @@ import Router from "../../source/infra/http/Router";
 import { mkdtempSync, readdirSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
+import { darCargoNoBanco } from "./papelBanco";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -54,11 +55,14 @@ descrever("fase 1 contra PostgreSQL", () => {
         await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
         await aplicarMigracoes(pool);
         await aplicarMigracoes(pool); // rodar de novo não pode quebrar nem duplicar
-        await pool.query(
-            `INSERT INTO usuarios (codigo, nome, email, perfil, senioridade_codigo, ativo, senha_hash)
-             VALUES (gen_random_uuid(), 'Diretora', 'diretora@teste.com', 'diretor', NULL, TRUE, $1)`,
+        const {
+            rows: [{ codigo: codigoAdmin }],
+        } = await pool.query(
+            `INSERT INTO usuarios (codigo, nome, email, senioridade_codigo, ativo, senha_hash)
+             VALUES (gen_random_uuid(), 'Diretora', 'diretora@teste.com', NULL, TRUE, $1) RETURNING codigo`,
             [await hash("SenhaDiretora1", 4)],
         );
+        await darCargoNoBanco(pool, codigoAdmin, "presidente");
 
         conexao = PgConexao.criar(URL_TESTE!);
         const factory = new DatabaseRepositoryFactory(conexao);
@@ -136,7 +140,8 @@ descrever("fase 1 contra PostgreSQL", () => {
         // Perfil próprio
         const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Engenharia Elétrica", perfil: "diretor" });
         expect(perfil.status).toBe(200);
-        expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBe("membro");
+        // Sessão 31a: não há mais perfil fixo; o corpo ignora o campo e a resposta não o traz.
+        expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBeUndefined();
 
         // Projetos e equipe (a alocação manual saiu na 24a: o corpo ignora `alocacao` e não devolve)
         const p1 = await chamar("POST", "/projetos", dir, {
@@ -394,8 +399,8 @@ descrever("fase 1 contra PostgreSQL", () => {
         expect([cap.status, cap.corpo.message]).toEqual([200, undefined]);
         const pessoas = (
             await pool.query(
-                `INSERT INTO usuarios (codigo, nome, email, perfil, senioridade_codigo, ativo, senha_hash)
-                 SELECT gen_random_uuid(), 'Corredor ' || n, 'corredor' || n || '@teste.com', 'membro', 'junior', TRUE, 'x'
+                `INSERT INTO usuarios (codigo, nome, email, senioridade_codigo, ativo, senha_hash)
+                 SELECT gen_random_uuid(), 'Corredor ' || n, 'corredor' || n || '@teste.com', 'junior', TRUE, 'x'
                  FROM generate_series(1, 8) n RETURNING codigo, nome`,
             )
         ).rows;

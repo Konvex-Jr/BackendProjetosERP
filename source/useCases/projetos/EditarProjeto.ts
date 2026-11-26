@@ -39,7 +39,6 @@ export default class EditarProjeto {
             dataInicio: input.dataInicio ?? atual.dataInicio,
             dataFim: input.dataFim ?? atual.dataFim,
             status: input.status,
-            sigiloso: input.sigiloso ?? atual.sigiloso,
             participacoes,
             ...detalhes,
         });

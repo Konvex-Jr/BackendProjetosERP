@@ -2,7 +2,6 @@ import ConexaoBanco from "../../database/ConexaoBanco";
 import Usuario from "../../../domain/entity/Usuario";
 import SenioridadeUsuario from "../../../domain/entity/SenioridadeUsuario";
 import Projeto from "../../../domain/entity/Projeto";
-import PerfilUsuario from "../../../domain/enum/PerfilUsuario";
 import StatusProjeto from "../../../domain/enum/StatusProjeto";
 import StatusPessoa from "../../../domain/enum/StatusPessoa";
 import PrioridadeProjeto from "../../../domain/enum/PrioridadeProjeto";
@@ -26,7 +25,7 @@ import PeriodoAreaRepositoryDatabase from "./PeriodoAreaRepositoryDatabase";
  * SELECT base de pessoa, já com senioridade. As áreas atuais vêm dos períodos (preencherAreasAtuais).
  */
 export const SELECT_USUARIO = `
-    SELECT u.codigo, u.nome, u.email, u.perfil, u.ativo, u.senha_hash, u.status,
+    SELECT u.codigo, u.nome, u.email, u.ativo, u.senha_hash, u.status,
            u.nome_exibicao, u.foto, u.telefone, u.linkedin_url, u.calendario_url, u.github_url, u.curso, u.ingresso,
            u.data_entrada, u.data_saida, u.bio, u.email_pessoal, u.motivo_saida, u.fim_trainee,
            s.codigo AS senioridade_codigo,
@@ -62,32 +61,23 @@ export function usuarioDeLinha(linha: any): Usuario {
           )
         : null;
 
-    return new Usuario(
-        linha.nome,
-        linha.email,
-        linha.perfil as PerfilUsuario,
-        linha.ativo,
-        linha.senha_hash ?? "",
-        senioridade,
-        linha.codigo,
-        {
-            status: (linha.status as StatusPessoa) ?? undefined,
-            nomeExibicao: linha.nome_exibicao,
-            foto: linha.foto,
-            telefone: linha.telefone,
-            linkedinUrl: linha.linkedin_url,
-            calendarioUrl: linha.calendario_url,
-            githubUrl: linha.github_url,
-            curso: linha.curso,
-            ingresso: linha.ingresso,
-            dataEntrada: linha.data_entrada,
-            dataSaida: linha.data_saida,
-            bio: linha.bio,
-            emailPessoal: linha.email_pessoal,
-            motivoSaida: linha.motivo_saida,
-            fimTrainee: linha.fim_trainee,
-        },
-    );
+    return new Usuario(linha.nome, linha.email, linha.ativo, linha.senha_hash ?? "", senioridade, linha.codigo, {
+        status: (linha.status as StatusPessoa) ?? undefined,
+        nomeExibicao: linha.nome_exibicao,
+        foto: linha.foto,
+        telefone: linha.telefone,
+        linkedinUrl: linha.linkedin_url,
+        calendarioUrl: linha.calendario_url,
+        githubUrl: linha.github_url,
+        curso: linha.curso,
+        ingresso: linha.ingresso,
+        dataEntrada: linha.data_entrada,
+        dataSaida: linha.data_saida,
+        bio: linha.bio,
+        emailPessoal: linha.email_pessoal,
+        motivoSaida: linha.motivo_saida,
+        fimTrainee: linha.fim_trainee,
+    });
 }
 
 /** Pessoas pelos códigos, num Map por código. Códigos repetidos são consultados uma vez só. */
@@ -122,7 +112,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
-                p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
+                p.tags, p.lider_codigo, p.criado_por_codigo,
                 p.tipo, p.geral_da_area,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa, a.tem_geral AS area_tem_geral
          FROM projetos p
@@ -202,7 +192,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                 area: areaDeLinha(linha),
                 tags: linha.tags ?? [],
                 lider: linha.lider_codigo && !linha.geral_da_area ? (usuarios.get(linha.lider_codigo) ?? null) : null,
-                sigiloso: linha.sigiloso,
                 criadoPor: linha.criado_por_codigo,
                 colunas: colunas
                     .filter((c) => c.projeto_codigo === linha.codigo)

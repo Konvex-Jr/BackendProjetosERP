@@ -11,13 +11,13 @@ import Usuario from "../../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../../source/domain/entity/SenioridadeUsuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import DificuldadeTarefa from "../../source/domain/enum/DificuldadeTarefa";
 import Cargo from "../../source/domain/entity/Cargo";
 import CriarTarefa from "../../source/useCases/tarefas/CriarTarefa";
 import EditarTarefa from "../../source/useCases/tarefas/EditarTarefa";
+import { Papel, comPapel } from "../papel";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -43,13 +43,15 @@ descrever("tarefas contra PostgreSQL", () => {
     test("responsável que saiu da equipe não impede listar, abrir nem editar a tarefa", async () => {
         const inicio = new Date("2026-10-12T00:00:00.000Z");
         const fim = new Date("2026-10-30T00:00:00.000Z");
-        const pessoa = new Usuario(
-            "Saiu do Projeto",
-            `saiu-${crypto.randomUUID()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario(
+                "Saiu do Projeto",
+                `saiu-${crypto.randomUUID()}@teste.com`,
+                true,
+                "hash",
+                new SenioridadeUsuario("pleno", "Pleno", 75),
+            ),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         const projeto = await factory
@@ -85,13 +87,9 @@ descrever("tarefas contra PostgreSQL", () => {
     test("checklist: responsável do item grava e lê; marcar na hora; PUT não desfaz a marcação", async () => {
         const inicio = new Date("2026-10-12T00:00:00.000Z");
         const fim = new Date("2026-10-30T00:00:00.000Z");
-        const pessoa = new Usuario(
-            "Item",
-            `item-${crypto.randomUUID()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario("Item", `item-${crypto.randomUUID()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         const projeto = await factory
@@ -133,13 +131,9 @@ descrever("tarefas contra PostgreSQL", () => {
     test("dificuldade da tarefa, horas por nível e teto do cargo gravam e leem", async () => {
         const inicio = new Date("2026-10-12T00:00:00.000Z");
         const fim = new Date("2026-10-30T00:00:00.000Z");
-        const pessoa = new Usuario(
-            "Dificuldade",
-            `dif-${crypto.randomUUID()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario("Dificuldade", `dif-${crypto.randomUUID()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         const projeto = await factory
@@ -196,26 +190,19 @@ descrever("tarefas contra PostgreSQL", () => {
         const { subirServidor } = await import("../http/servidorTeste");
         const inicio = new Date("2026-10-12T00:00:00.000Z");
         const fim = new Date("2026-10-30T00:00:00.000Z");
-        const criar = async (nome: string, perfil: PerfilUsuario) => {
-            const u = new Usuario(
-                nome,
-                `${crypto.randomUUID()}@teste.com`,
+        const criar = async (nome: string, perfil: Papel) => {
+            const u = comPapel(
+                new Usuario(nome, `${crypto.randomUUID()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
                 perfil,
-                true,
-                "hash",
-                new SenioridadeUsuario("pleno", "Pleno", 75),
             );
             await factory.criarUsuarioRepository().criar(u);
             return u;
         };
-        const equipe = await criar("Equipe Sigilo", PerfilUsuario.MEMBRO);
-        const gerenteFora = await criar("Gerente Fora", PerfilUsuario.GERENTE);
-        const projeto = await factory.criarProjetoRepository().criar(
-            new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), {
-                sigiloso: true,
-                criadoPor: null,
-            }),
-        );
+        const equipe = await criar("Equipe Sigilo", "membro");
+        const gerenteFora = await criar("Gerente Fora", "gerenteDaArea");
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), { criadoPor: null }));
         const tarefa = await factory
             .criarTarefaRepository()
             .criar(new Tarefa(projeto, "Segredo", inicio, fim, StatusTarefa.PENDENTE, PrioridadeTarefa.P2, null, null, null, [equipe], []));
@@ -235,13 +222,15 @@ descrever("tarefas contra PostgreSQL", () => {
 
     test("contarPorProjetos conta total, concluídas, atrasadas e da semana (hoje = quarta 18/11)", async () => {
         const dia = (d: string) => new Date(`${d}T00:00:00.000Z`);
-        const pessoa = new Usuario(
-            "Conta Tarefas",
-            `conta-${crypto.randomUUID()}@teste.com`,
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
+        const pessoa = comPapel(
+            new Usuario(
+                "Conta Tarefas",
+                `conta-${crypto.randomUUID()}@teste.com`,
+                true,
+                "hash",
+                new SenioridadeUsuario("pleno", "Pleno", 75),
+            ),
+            "membro",
         );
         await factory.criarUsuarioRepository().criar(pessoa);
         const projeto = await factory
@@ -284,30 +273,23 @@ descrever("tarefas contra PostgreSQL", () => {
         const dia = hoje();
         const inicio = new Date(dia.getTime() - 30 * 86_400_000);
         const fim = new Date(dia.getTime() + 60 * 86_400_000);
-        const criar = async (nome: string, perfil: PerfilUsuario) => {
-            const u = new Usuario(
-                nome,
-                `${crypto.randomUUID()}@teste.com`,
+        const criar = async (nome: string, perfil: Papel) => {
+            const u = comPapel(
+                new Usuario(nome, `${crypto.randomUUID()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
                 perfil,
-                true,
-                "hash",
-                new SenioridadeUsuario("pleno", "Pleno", 75),
             );
             await factory.criarUsuarioRepository().criar(u);
             return u;
         };
-        const assessor = await criar("Assessor Ocupado", PerfilUsuario.MEMBRO);
-        const fora = await criar("Membro Fora", PerfilUsuario.MEMBRO);
-        const gerente = await criar("Gerente Ocupação", PerfilUsuario.GERENTE);
+        const assessor = await criar("Assessor Ocupado", "membro");
+        const fora = await criar("Membro Fora", "membro");
+        const gerente = await criar("Gerente Ocupação", "gerenteDaArea");
         const area = await factory.criarAreaRepository().criar(new Area(`Área ${crypto.randomUUID()}`));
         const cargo = await factory.criarCargoRepository().criar(new Cargo(`Assessor ${crypto.randomUUID()}`, true, undefined, false, 10));
         await factory.criarPeriodoAreaRepository().criar(new PeriodoArea(assessor.codigo, area, cargo, inicio, null, null));
         const projetos = factory.criarProjetoRepository();
         const sigiloso = await projetos.criar(
-            new Projeto("Sigiloso Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID(), {
-                sigiloso: true,
-                criadoPor: null,
-            }),
+            new Projeto("Sigiloso Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID(), { criadoPor: null }),
         );
         const normal = await projetos.criar(new Projeto("Normal Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID()));
         await factory
@@ -380,6 +362,8 @@ descrever("tarefas contra PostgreSQL", () => {
                         DificuldadeTarefa.MEDIA,
                     ),
                 );
+            // Para criar no projeto normal, a gestão precisa abri-lo (31a): passa a abrir todos.
+            comPapel(gerente, "gerente");
             const criada = await servidor.chamar("post", "/tarefas", {
                 usuario: gerente,
                 corpo: {
@@ -412,20 +396,16 @@ descrever("tarefas contra PostgreSQL", () => {
         const dia = hoje();
         const inicio = new Date(dia.getTime() - 30 * 86_400_000);
         const fim = new Date(dia.getTime() + 60 * 86_400_000);
-        const criar = async (nome: string, perfil: PerfilUsuario) => {
-            const u = new Usuario(
-                nome,
-                `${crypto.randomUUID()}@teste.com`,
+        const criar = async (nome: string, perfil: Papel) => {
+            const u = comPapel(
+                new Usuario(nome, `${crypto.randomUUID()}@teste.com`, true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)),
                 perfil,
-                true,
-                "hash",
-                new SenioridadeUsuario("pleno", "Pleno", 75),
             );
             await factory.criarUsuarioRepository().criar(u);
             return u;
         };
-        const alvo = await criar("Alvo do Aviso", PerfilUsuario.MEMBRO);
-        const autor = await criar("Autor do Aviso", PerfilUsuario.DIRETOR);
+        const alvo = await criar("Alvo do Aviso", "membro");
+        const autor = await criar("Autor do Aviso", "diretor");
         const projeto = await factory
             .criarProjetoRepository()
             .criar(new Projeto("Projeto Avisos", "d", inicio, fim, undefined, [alvo], crypto.randomUUID()));

@@ -1,4 +1,3 @@
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import RetomarSessao from "../source/useCases/auth/RetomarSessao";
 import RenovarSessao from "../source/useCases/auth/RenovarSessao";
 import EncerrarSessao from "../source/useCases/auth/EncerrarSessao";
@@ -22,7 +21,6 @@ describe("RetomarSessao e lembrete", () => {
             {
                 nome: "Ana Dev",
                 email: "ana@dev.konvex",
-                perfil: PerfilUsuario.MEMBRO,
                 senioridade: ctx.senioridade,
                 curso: "Engenharia Mecânica",
             },

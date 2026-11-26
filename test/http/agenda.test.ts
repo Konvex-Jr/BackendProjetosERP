@@ -1,12 +1,12 @@
 import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 const d = (texto: string) => new Date(`${texto}T00:00:00.000Z`);
 
@@ -34,7 +34,7 @@ describe("Agenda e reuniões (HTTP)", () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
         const pessoa = async (nome: string, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, codigo, { status });
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), "membro");
             await usuarios.criar(u);
             return u;
         };
@@ -103,6 +103,8 @@ describe("Agenda e reuniões (HTTP)", () => {
     });
 
     it("agenda junta reuniões, prazos e capacitações; a gestão vê a de outra pessoa", async () => {
+        // Gestão de outra área: vê a agenda, mas o prazo de projeto que não abre vem sem título (31a).
+        comPapel(ctx.gerente, "gerenteDaArea");
         await servidor.chamar("post", "/reunioes", { usuario: bia, corpo: corpo({ participantes: ["usr-ana"] }) });
         await servidor.chamar("post", "/reunioes", { usuario: bia, corpo: corpo({ titulo: "Só Bia", participantes: [] }) });
         await servidor.chamar("post", "/reunioes", {
@@ -113,7 +115,7 @@ describe("Agenda e reuniões (HTTP)", () => {
         const projetos = ctx.factory.criarProjetoRepository();
         const normal = await projetos.criar(new Projeto("Normal", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-nor"));
         const sigiloso = await projetos.criar(
-            new Projeto("Secreto", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-sig", { sigiloso: true }),
+            new Projeto("Secreto", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-sig", {}),
         );
         const tarefa = (projeto: Projeto, titulo: string, codigo: string, fim: string, status = StatusTarefa.PENDENTE) =>
             new Tarefa(

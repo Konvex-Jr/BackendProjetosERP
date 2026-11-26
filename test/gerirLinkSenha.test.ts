@@ -1,12 +1,12 @@
 import { compare } from "bcrypt";
 import Usuario from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import GerirLinkSenha from "../source/useCases/auth/GerirLinkSenha";
 import { hashToken } from "../source/useCases/auth/emitirSessao";
 import { emitirSessao } from "../source/useCases/auth/emitirSessao";
+import { comPapel } from "./papel";
 
 const SENHA = "Konvex@123";
 
@@ -18,7 +18,7 @@ describe("GerirLinkSenha", () => {
     beforeEach(async () => {
         factory = new MemoryRepositoryFactory();
         caso = new GerirLinkSenha(factory);
-        ana = new Usuario("Ana Souza", "ana@x.com", PerfilUsuario.MEMBRO, true, "", new SenioridadeUsuario("pleno", "Pleno", 75));
+        ana = comPapel(new Usuario("Ana Souza", "ana@x.com", true, "", new SenioridadeUsuario("pleno", "Pleno", 75)), "membro");
         await factory.criarUsuarioRepository().criar(ana);
     });
 

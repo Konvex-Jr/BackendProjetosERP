@@ -5,7 +5,6 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
@@ -13,6 +12,7 @@ import ConsultarOcupacao from "../source/useCases/tarefas/ConsultarOcupacao";
 import { diaNoFuso, hoje } from "../source/shared/datas";
 import { criarContexto } from "./fixtures";
 import { subirServidor } from "./http/servidorTeste";
+import { Papel, autenticado, comPapel } from "./papel";
 
 const UM_DIA = 86_400_000;
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -59,16 +59,16 @@ describe("Ocupação semanal (HTTP)", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, { status });
+        const novo = async (nome: string, perfil: Papel, codigo: string, status = StatusPessoa.ATIVO) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), perfil);
             await usuarios.criar(u);
             return u;
         };
-        assessor = await novo("Ivo Assessor", PerfilUsuario.MEMBRO, "usr-ivo");
-        fora = await novo("Fê Fora", PerfilUsuario.MEMBRO, "usr-fe");
-        diretor = await novo("Dora Diretora", PerfilUsuario.DIRETOR, "usr-dora");
-        trainee = await novo("Téo Trainee", PerfilUsuario.MEMBRO, "usr-teo", StatusPessoa.TRAINEE);
-        alumni = await novo("Alu Alumni", PerfilUsuario.MEMBRO, "usr-alu", StatusPessoa.INATIVO);
+        assessor = await novo("Ivo Assessor", "membro", "usr-ivo");
+        fora = await novo("Fê Fora", "membro", "usr-fe");
+        diretor = await novo("Dora Diretora", "diretor", "usr-dora");
+        trainee = await novo("Téo Trainee", "membro", "usr-teo", StatusPessoa.TRAINEE);
+        alumni = await novo("Alu Alumni", "membro", "usr-alu", StatusPessoa.INATIVO);
 
         area = await ctx.factory.criarAreaRepository().criar(new Area("Projetos"));
         const cargo = await ctx.factory.criarCargoRepository().criar(new Cargo("Assessor", true, undefined, false, 10));
@@ -80,7 +80,7 @@ describe("Ocupação semanal (HTTP)", () => {
         const inicio = new Date(dia.getTime() - 30 * UM_DIA);
         const fim = new Date(dia.getTime() + 60 * UM_DIA);
         const sigiloso = await projetos.criar(
-            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [assessor], "p-sig", { sigiloso: true, criadoPor: "usr-dora" }),
+            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [assessor], "p-sig", { criadoPor: "usr-dora" }),
         );
         normal = await projetos.criar(new Projeto("Normal", "d", inicio, fim, undefined, [assessor, ctx.membro], "p-nor"));
         await ctx.factory
@@ -148,6 +148,7 @@ describe("Ocupação semanal (HTTP)", () => {
         });
 
         it("gerente fora do sigiloso: linha do projeto com o nome, sem título", async () => {
+            comPapel(ctx.gerente, "gerenteDaArea");
             const r = await servidor.chamar("get", "/ocupacao/usr-ivo", { usuario: ctx.gerente });
             expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 1.5 }]);
             const texto = JSON.stringify(r.corpo);
@@ -371,7 +372,7 @@ describe("Ocupação semanal (HTTP)", () => {
     });
 
     describe("ConsultarOcupacao (semana e teto)", () => {
-        const auth = (u: Usuario) => ({ codigo: u.codigo, perfil: u.perfil });
+        const auth = (u: Usuario) => autenticado(u);
 
         it("domingo 22h em São Paulo: a semana padrão é a de São Paulo (segunda 16/11), não a do UTC", async () => {
             // 23/11 01:00 UTC = domingo 22/11 22:00 em São Paulo
@@ -384,16 +385,11 @@ describe("Ocupação semanal (HTTP)", () => {
             const d = (t: string) => new Date(`${t}T00:00:00.000Z`);
             const quarta = d("2026-11-18");
             const usuarios = ctx.factory.criarUsuarioRepository();
-            const passado = new Usuario(
-                "Pedro Passado",
-                "pedro@konvex.com.br",
-                PerfilUsuario.MEMBRO,
-                true,
-                "x",
-                ctx.senioridade,
-                "usr-pedro",
+            const passado = comPapel(
+                new Usuario("Pedro Passado", "pedro@konvex.com.br", true, "x", ctx.senioridade, "usr-pedro"),
+                "membro",
             );
-            const agora = new Usuario("Alice Agora", "alice@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-alice");
+            const agora = comPapel(new Usuario("Alice Agora", "alice@konvex.com.br", true, "x", ctx.senioridade, "usr-alice"), "membro");
             await usuarios.criar(passado);
             await usuarios.criar(agora);
             const tarefas = ctx.factory.criarTarefaRepository();

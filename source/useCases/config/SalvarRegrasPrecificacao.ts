@@ -15,7 +15,7 @@ export default class SalvarRegrasPrecificacao {
     }
 
     async execute(input: { regras: unknown; quem: UsuarioAutenticado | undefined | null }): Promise<RegrasPrecificacao> {
-        exigirPermissao(input.quem, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR_PRECIFICACAO);
+        exigirPermissao(input.quem, Permissao.CONFIG_PRECIFICACAO, SO_DIRETOR_PRECIFICACAO);
         const regras = validarRegrasPrecificacao(input.regras);
         await this.factory.criarRegrasPrecificacaoRepository().salvar(regras);
         return regras;

@@ -4,7 +4,7 @@ import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactor
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../shared/erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirAutenticado, exigirNaoTrainee, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { exigirVerItem, podeAlterarItem } from "../../shared/seguranca/regrasBiblioteca";
 import { RegrasTarefa } from "../../shared/seguranca/regrasTarefa";
@@ -108,7 +108,7 @@ export default class GerirAnexos {
 
     /** Trainee (sessão 20) não usa a Biblioteca: 403 (e não 404) nos anexos dos itens dela. */
     private semTraineeNaBiblioteca(usuario: UsuarioAutenticado, tipo: DonoAnexo): void {
-        if (tipo === DonoAnexo.BIBLIOTECA) exigirNaoTrainee(usuario, MENSAGENS_DE_ERRO.USUARIO.TRAINEE_SEM_BIBLIOTECA);
+        if (tipo === DonoAnexo.BIBLIOTECA) exigirPermissao(usuario, Permissao.BIBLIOTECA_USAR, MENSAGENS_DE_ERRO.USUARIO.SEM_BIBLIOTECA);
     }
 
     /** Anexa um arquivo a um item da Biblioteca, a uma capacitação ou a uma tarefa. */

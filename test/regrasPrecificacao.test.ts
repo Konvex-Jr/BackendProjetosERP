@@ -1,12 +1,12 @@
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import { REGRAS_PADRAO, regrasComPadrao, validarRegrasPrecificacao } from "../source/domain/entity/RegrasPrecificacao";
 import SalvarRegrasPrecificacao from "../source/useCases/config/SalvarRegrasPrecificacao";
 import { ErroProibido } from "../source/shared/erros/ErroProibido";
 import { criarContexto } from "./fixtures";
+import { efetivasDoPapel } from "./papel";
 
-const diretor = { codigo: "d", perfil: PerfilUsuario.DIRETOR };
-const gerente = { codigo: "g", perfil: PerfilUsuario.GERENTE };
-const membro = { codigo: "m", perfil: PerfilUsuario.MEMBRO };
+const diretor = { codigo: "d", ...efetivasDoPapel("diretor") };
+const gerente = { codigo: "g", ...efetivasDoPapel("gerente") };
+const membro = { codigo: "m", ...efetivasDoPapel("membro") };
 
 test("sem gravar, gestão lê as regras padrão", async () => {
     const { factory } = await criarContexto();

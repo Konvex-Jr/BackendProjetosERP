@@ -3,7 +3,6 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
@@ -11,9 +10,10 @@ import TipoProjeto from "../source/domain/enum/TipoProjeto";
 import { hoje } from "../source/shared/datas";
 import { criarContexto } from "./fixtures";
 import { subirServidor } from "./http/servidorTeste";
+import { Papel, comPapel } from "./papel";
 
 const UM_DIA = 86_400_000;
-const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "sigiloso", "status", "tipo"];
+const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "status", "tipo"];
 
 /**
  * Sessão 27a: todo logado recebe o cartão de todos os projetos; o completo é da equipe e da gestão
@@ -56,17 +56,18 @@ describe("Visibilidade de projetos (HTTP)", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, { status });
+        const novo = async (nome: string, perfil: Papel, codigo: string, status = StatusPessoa.ATIVO) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), perfil);
             await usuarios.criar(u);
             return u;
         };
-        m = await novo("Mel Membro", PerfilUsuario.MEMBRO, "usr-m");
-        m2 = await novo("Mio Membro", PerfilUsuario.MEMBRO, "usr-m2");
-        t = await novo("Téo Trainee", PerfilUsuario.MEMBRO, "usr-t", StatusPessoa.TRAINEE);
-        g = await novo("Gil Gerente", PerfilUsuario.GERENTE, "usr-g");
-        d = await novo("Dora Diretora", PerfilUsuario.DIRETOR, "usr-d");
-        gs = await novo("Gus Gerente", PerfilUsuario.GERENTE, "usr-gs");
+        m = await novo("Mel Membro", "membro", "usr-m");
+        m2 = await novo("Mio Membro", "membro", "usr-m2");
+        t = await novo("Téo Trainee", "membro", "usr-t", StatusPessoa.TRAINEE);
+        // Gerente de outra área (31a): só abre os projetos da área do cargo, que nenhum projeto daqui tem.
+        g = await novo("Gil Gerente", "gerenteDaArea", "usr-g");
+        d = await novo("Dora Diretora", "diretor", "usr-d");
+        gs = await novo("Gus Gerente", "gerenteDaArea", "usr-gs");
 
         const area = await ctx.factory.criarAreaRepository().criar(new Area("Marketing", null, true, "area-mkt", false));
         const projetos = ctx.factory.criarProjetoRepository();
@@ -77,9 +78,7 @@ describe("Visibilidade de projetos (HTTP)", () => {
                 lider: m2,
             }),
         );
-        const s = await projetos.criar(
-            new Projeto("Sigiloso Beta", "d", inicio, fim, undefined, [m2, gs], "p-s", { sigiloso: true, criadoPor: g.codigo }),
-        );
+        const s = await projetos.criar(new Projeto("Sigiloso Beta", "d", inicio, fim, undefined, [m2, gs], "p-s", { criadoPor: g.codigo }));
         await projetos.criar(new Projeto("Interno Gama", "d", inicio, fim, undefined, [m2], "p-i", { tipo: TipoProjeto.INTERNO, area }));
         const tarefas = ctx.factory.criarTarefaRepository();
         await tarefas.criar(tarefa(n, "t-n", m2));
@@ -113,7 +112,6 @@ describe("Visibilidade de projetos (HTTP)", () => {
                 area: null,
                 status: projetos.get("p-n").status,
                 lider: { codigo: m2.codigo, nome: m2.nome },
-                sigiloso: false,
                 geralDaArea: false,
                 membros: projetos.get("p-n").membros,
                 cartao: true,
@@ -121,7 +119,6 @@ describe("Visibilidade de projetos (HTTP)", () => {
             // Equipe atual com nome e foto, sem função (sessão 27b).
             for (const membro of projetos.get("p-n").membros) expect(Object.keys(membro).sort()).toEqual(["codigo", "foto", "nome"]);
             expect(projetos.get("p-n").membros.map((x: any) => x.codigo)).toContain(m2.codigo);
-            expect(projetos.get("p-s").sigiloso).toBe(true);
             expect(projetos.get("p-i").area).toEqual({ codigo: "area-mkt", nome: "Marketing" });
             const texto = JSON.stringify([...projetos.values()]);
             for (const proibido of [
@@ -138,15 +135,16 @@ describe("Visibilidade de projetos (HTTP)", () => {
             }
         });
 
-        it("gerente: normal completo, sigiloso alheio como cartão", async () => {
+        it("gerente de outra área: tudo cartão, inclusive o que criou sem estar na equipe (31a)", async () => {
             const projetos = await lista(g);
-            expect(projetos.get("p-n").cartao).toBeUndefined();
-            expect(projetos.get("p-n").tarefas).toMatchObject({ total: 1 });
-            expect(projetos.get("p-n").participacoes).toHaveLength(1);
-            expect(projetos.get("p-n")).not.toHaveProperty("podeGerirAcesso");
-            expect(projetos.get("p-n")).not.toHaveProperty("acesso");
-            // Criou o sigiloso, mas não está na equipe: só o cartão.
-            expect(Object.keys(projetos.get("p-s")).sort()).toEqual(CHAVES_DO_CARTAO);
+            for (const p of projetos.values()) expect(Object.keys(p).sort()).toEqual(CHAVES_DO_CARTAO);
+        });
+
+        it("gerente na equipe: completo no projeto dele, cartão nos outros", async () => {
+            const projetos = await lista(gs);
+            expect(projetos.get("p-s").cartao).toBeUndefined();
+            expect(projetos.get("p-s")).not.toHaveProperty("acesso");
+            expect(projetos.get("p-n").cartao).toBe(true);
         });
 
         it("diretor: tudo completo", async () => {
@@ -157,8 +155,8 @@ describe("Visibilidade de projetos (HTTP)", () => {
         });
 
         it("filtro de pessoa descarta os cartões (não revela a equipe)", async () => {
-            const doM2 = await lista(g, `?codigoUsuario=${m2.codigo}`);
-            expect([...doM2.keys()].sort()).toEqual(["p-i", "p-n"]);
+            const doM2 = await lista(d, `?codigoUsuario=${m2.codigo}`);
+            expect([...doM2.keys()].sort()).toEqual(["p-i", "p-n", "p-s"]);
             for (const p of doM2.values()) expect(p.cartao).toBeUndefined();
             // Membro pedindo os de outra pessoa: só os que vê completo (nenhum aqui).
             expect((await lista(m, `?codigoUsuario=${m2.codigo}`)).size).toBe(0);
@@ -172,7 +170,7 @@ describe("Visibilidade de projetos (HTTP)", () => {
             const projetos = await lista(m, "?codigoArea=area-mkt");
             expect([...projetos.keys()]).toEqual(["p-i"]);
             expect(projetos.get("p-i").cartao).toBe(true);
-            expect([...(await lista(g, "?codigoArea=area-mkt")).keys()].sort()).toEqual(["p-ca", "p-i"]);
+            expect([...(await lista(d, "?codigoArea=area-mkt")).keys()].sort()).toEqual(["p-ca", "p-i"]);
         });
 
         it("busca no cartão só pelo nome (cliente e referência não servem de pista)", async () => {
@@ -180,7 +178,7 @@ describe("Visibilidade de projetos (HTTP)", () => {
             expect((await lista(m, "?busca=REF-1")).has("p-n")).toBe(false);
             expect((await lista(m, "?busca=alfa")).has("p-n")).toBe(true);
             // Quem vê completo continua achando pelo cliente.
-            expect((await lista(g, "?busca=cliente%20x")).has("p-n")).toBe(true);
+            expect((await lista(d, "?busca=cliente%20x")).has("p-n")).toBe(true);
         });
     });
 
@@ -233,7 +231,7 @@ describe("Visibilidade de projetos (HTTP)", () => {
             expect(r.status).toBe(404);
             expect(r.corpo).toEqual(inexistente.corpo);
             // Gestão segue vendo.
-            expect((await servidor.chamar("get", "/tarefas/t-n/comentarios", { usuario: g })).status).toBe(200);
+            expect((await servidor.chamar("get", "/tarefas/t-n/comentarios", { usuario: d })).status).toBe(200);
         });
 
         it("gerente de fora em tarefa de sigiloso: 404 (anexos e comentários)", async () => {
@@ -242,88 +240,8 @@ describe("Visibilidade de projetos (HTTP)", () => {
         });
     });
 
-    describe("ninguém se tranca fora de um sigiloso", () => {
-        const novoProjeto = (extra: Record<string, unknown>) => ({
-            nome: "Novo sigiloso",
-            descricao: "d",
-            dataInicio: iso(inicio),
-            dataFim: iso(fim),
-            ...extra,
-        });
-        const corpoEdicao = (extra: Record<string, unknown>) => ({
-            nome: "Normal Alfa",
-            descricao: "descrição sem pista zebra",
-            dataInicio: iso(inicio),
-            dataFim: iso(fim),
-            ...extra,
-        });
-
-        it("POST sigiloso por gerente fora da equipe inicial: 400 SIGILOSO_SEM_VOCE", async () => {
-            const r = await servidor.chamar("post", "/projetos", {
-                usuario: g,
-                corpo: novoProjeto({ sigiloso: true, codigosMembros: [m2.codigo] }),
-            });
-            expect(r.status).toBe(400);
-            expect(r.corpo.codigo).toBe("SIGILOSO_SEM_VOCE");
-            expect(r.corpo.message).toMatch(/equipe/);
-        });
-
-        it("POST sigiloso por gerente na equipe inicial: criado", async () => {
-            const r = await servidor.chamar("post", "/projetos", {
-                usuario: g,
-                corpo: novoProjeto({ sigiloso: true, codigosMembros: [g.codigo] }),
-            });
-            expect(r.status).toBe(200);
-            expect(r.corpo.sigiloso).toBe(true);
-        });
-
-        it("POST sigiloso por diretor fora da equipe: criado", async () => {
-            const r = await servidor.chamar("post", "/projetos", { usuario: d, corpo: novoProjeto({ sigiloso: true }) });
-            expect(r.status).toBe(200);
-        });
-
-        it("POST com o campo acesso antigo: ignorado (não vira lista)", async () => {
-            const r = await servidor.chamar("post", "/projetos", {
-                usuario: d,
-                corpo: novoProjeto({ sigiloso: true, acesso: [m.codigo] }),
-            });
-            expect(r.status).toBe(200);
-            expect(r.corpo).not.toHaveProperty("acesso");
-        });
-
-        it("PUT que liga o sigilo por gerente fora da equipe: 400", async () => {
-            const r = await servidor.chamar("put", "/projetos/p-n", { usuario: g, corpo: corpoEdicao({ sigiloso: true }) });
-            expect(r.status).toBe(400);
-            expect(r.corpo.codigo).toBe("SIGILOSO_SEM_VOCE");
-        });
-
-        it("PUT que liga o sigilo no geral da área por gerente fora da equipe: erro do geral, não SIGILOSO_SEM_VOCE", async () => {
-            const area = (await ctx.factory.criarAreaRepository().buscarPorCodigo("area-mkt"))!;
-            await ctx.factory.criarProjetoRepository().criar(
-                new Projeto("Marketing geral", "d", inicio, fim, undefined, [], "p-g", {
-                    tipo: TipoProjeto.INTERNO,
-                    area,
-                    geralDaArea: true,
-                }),
-            );
-            const r = await servidor.chamar("put", "/projetos/p-g", { usuario: g, corpo: corpoEdicao({ sigiloso: true }) });
-            expect(r.status).toBe(400);
-            expect(r.corpo.codigo).toBe("PROJETO_GERAL_FIXO");
-        });
-
-        it("PUT de outro campo em sigiloso já existente por quem vê completo: 200; desligar o sigilo: 200", async () => {
-            const corpo = { nome: "Sigiloso Beta 2", descricao: "d", dataInicio: iso(inicio), dataFim: iso(fim) };
-            const outro = await servidor.chamar("put", "/projetos/p-s", { usuario: gs, corpo: { ...corpo, sigiloso: true } });
-            expect(outro.status).toBe(200);
-            expect(outro.corpo.nome).toBe("Sigiloso Beta 2");
-            const desligar = await servidor.chamar("put", "/projetos/p-s", { usuario: gs, corpo: { ...corpo, sigiloso: false } });
-            expect(desligar.status).toBe(200);
-            expect(desligar.corpo.sigiloso).toBe(false);
-        });
-    });
-
     describe("ocupação com sigiloso alheio", () => {
-        it("gerente e membro: linha do projeto com o nome (sessão 27b)", async () => {
+        it("gerente de outra área e membro: linha do projeto com o nome (sessão 27b)", async () => {
             const gerente = await servidor.chamar("get", `/ocupacao/${m2.codigo}`, { usuario: g });
             expect(gerente.status).toBe(200);
             expect(gerente.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 1.5 });

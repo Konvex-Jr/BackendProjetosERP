@@ -1,10 +1,10 @@
 import Area from "../../source/domain/entity/Area";
 import Cargo from "../../source/domain/entity/Cargo";
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { hoje } from "../../source/shared/datas";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel, darCargo } from "../papel";
 
 /** Sessão 23a: períodos por área no perfil; a gestão lança e corrige, todos os logados leem. */
 describe("Períodos por área (HTTP)", () => {
@@ -18,7 +18,7 @@ describe("Períodos por área (HTTP)", () => {
         ctx = await criarContexto();
         area = await ctx.factory.criarAreaRepository().criar(new Area("Projetos"));
         cargo = await ctx.factory.criarCargoRepository().criar(new Cargo("Assessor"));
-        diretora = new Usuario("Clara", "clara@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-clara");
+        diretora = comPapel(new Usuario("Clara", "clara@konvex.com.br", true, "x", ctx.senioridade, "usr-clara"), "diretor");
         await ctx.factory.criarUsuarioRepository().criar(diretora);
         servidor = await subirServidor(ctx.factory);
     });
@@ -78,10 +78,11 @@ describe("Períodos por área (HTTP)", () => {
         }
     });
 
-    it("gerente não mexe nos períodos de um diretor: 403", async () => {
+    it("gerente não mexe nos períodos de um diretor; diretor não mexe nos próprios: 403", async () => {
+        await darCargo(ctx.factory, diretora, "diretor");
         const r = await servidor.chamar("post", caminho(diretora), { usuario: ctx.gerente, corpo: corpo() });
         expect(r.status).toBe(403);
-        expect((await servidor.chamar("post", caminho(diretora), { usuario: diretora, corpo: corpo() })).status).toBe(200);
+        expect((await servidor.chamar("post", caminho(diretora), { usuario: diretora, corpo: corpo() })).status).toBe(403);
     });
 
     it("tela antiga mandando codigoArea e codigoCargo no PUT da pessoa: 200 e campos ignorados", async () => {
@@ -94,16 +95,17 @@ describe("Períodos por área (HTTP)", () => {
         expect(r.corpo.areas).toEqual([]);
     });
 
-    it("perfil informa se quem olha pode gerir os períodos", async () => {
+    it("perfil informa se quem olha pode gerir a pessoa", async () => {
+        await darCargo(ctx.factory, diretora, "diretor");
         const doGerente = await servidor.chamar("get", `/usuarios/${ctx.membro.codigo}/perfil`, { usuario: ctx.gerente });
-        expect(doGerente.corpo.podeGerirPeriodos).toBe(true);
+        expect(doGerente.corpo.podeGerir).toBe(true);
         const doMembro = await servidor.chamar("get", `/usuarios/${ctx.membro.codigo}/perfil`, { usuario: ctx.membro });
-        expect(doMembro.corpo.podeGerirPeriodos).toBe(false);
+        expect(doMembro.corpo.podeGerir).toBe(false);
         const daDiretora = await servidor.chamar("get", `/usuarios/${diretora.codigo}/perfil`, { usuario: ctx.gerente });
-        expect(daDiretora.corpo.podeGerirPeriodos).toBe(false);
+        expect(daDiretora.corpo.podeGerir).toBe(false);
     });
 
-    it("gerente não mexe nos próprios períodos: 403 PERIODO.PROPRIO; perfil próprio sem podeGerirPeriodos", async () => {
+    it("gerente não mexe nos próprios períodos: 403 PERIODO.PROPRIO; perfil próprio sem podeGerir", async () => {
         const meu = await servidor.chamar("post", caminho(ctx.membro), { usuario: ctx.gerente, corpo: corpo() });
         const codigoPeriodo = meu.corpo.codigo;
         const post = await servidor.chamar("post", caminho(ctx.gerente), { usuario: ctx.gerente, corpo: corpo() });
@@ -112,12 +114,13 @@ describe("Períodos por área (HTTP)", () => {
         expect((await servidor.chamar("put", `${caminho(ctx.gerente)}/x`, { usuario: ctx.gerente, corpo: corpo() })).status).toBe(403);
         expect((await servidor.chamar("delete", `${caminho(ctx.gerente)}/x`, { usuario: ctx.gerente })).status).toBe(403);
         const perfil = await servidor.chamar("get", `/usuarios/${ctx.gerente.codigo}/perfil`, { usuario: ctx.gerente });
-        expect(perfil.corpo.podeGerirPeriodos).toBe(false);
+        expect(perfil.corpo.podeGerir).toBe(false);
         // continua podendo no período de um membro
         expect((await servidor.chamar("delete", `${caminho(ctx.membro)}/${codigoPeriodo}`, { usuario: ctx.gerente })).status).toBe(204);
     });
 
-    it("diretor altera os próprios períodos", async () => {
+    it("só o presidente altera os próprios períodos", async () => {
+        diretora = comPapel(diretora, "presidente");
         const criado = await servidor.chamar("post", caminho(diretora), { usuario: diretora, corpo: corpo() });
         expect(criado.status).toBe(200);
         const editado = await servidor.chamar("put", `${caminho(diretora)}/${criado.corpo.codigo}`, {
@@ -126,7 +129,70 @@ describe("Períodos por área (HTTP)", () => {
         });
         expect(editado.status).toBe(200);
         const perfil = await servidor.chamar("get", `/usuarios/${diretora.codigo}/perfil`, { usuario: diretora });
-        expect(perfil.corpo.podeGerirPeriodos).toBe(true);
+        expect(perfil.corpo.podeGerir).toBe(true);
         expect((await servidor.chamar("delete", `${caminho(diretora)}/${criado.corpo.codigo}`, { usuario: diretora })).status).toBe(204);
+    });
+
+    describe("hierarquia nos períodos (sessão 31a)", () => {
+        it("gerente (posição 3) não dá cargo de posição 3; dá o de posição 4", async () => {
+            const cargos = ctx.factory.criarCargoRepository();
+            const outroGerente = await cargos.criar(new Cargo("Gerente de inovação", true, "c-gi", false, 10, 3));
+            const assessorBaixo = await cargos.criar(new Cargo("Assessor de projetos", true, "c-ap", false, 10, 4));
+            const alto = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: ctx.gerente,
+                corpo: corpo({ codigoCargo: outroGerente.codigo }),
+            });
+            expect(alto.status).toBe(403);
+            const baixo = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: ctx.gerente,
+                corpo: corpo({ codigoCargo: assessorBaixo.codigo }),
+            });
+            expect(baixo.status).toBe(200);
+        });
+
+        it("gerente não encerra nem exclui período com cargo do próprio nível", async () => {
+            const cargos = ctx.factory.criarCargoRepository();
+            const outroGerente = await cargos.criar(new Cargo("Gerente de inovação", true, "c-gi", false, 10, 3));
+            const presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+            await ctx.factory.criarUsuarioRepository().criar(presidente);
+            const criado = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: outroGerente.codigo }),
+            });
+            expect(criado.status).toBe(200);
+            const excluir = await servidor.chamar("delete", `${caminho(ctx.membro)}/${criado.corpo.codigo}`, { usuario: ctx.gerente });
+            expect(excluir.status).toBe(403);
+        });
+
+        it("o último período aberto no cargo de presidente não pode ser encerrado nem excluído: 400 PRESIDENTE_VAGO", async () => {
+            const cargoPres = await ctx.factory.criarCargoRepository().criar(new Cargo("Presidente", true, "c-pres", true, 20, 1, []));
+            const presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+            await ctx.factory.criarUsuarioRepository().criar(presidente);
+            const criado = await servidor.chamar("post", caminho(presidente), {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: cargoPres.codigo }),
+            });
+            expect(criado.status).toBe(200);
+            const encerrar = await servidor.chamar("put", `${caminho(presidente)}/${criado.corpo.codigo}`, {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: cargoPres.codigo, fim: hoje().toISOString().slice(0, 10) }),
+            });
+            expect(encerrar.status).toBe(400);
+            expect(encerrar.corpo.codigo).toBe("PRESIDENTE_VAGO");
+            const excluir = await servidor.chamar("delete", `${caminho(presidente)}/${criado.corpo.codigo}`, { usuario: presidente });
+            expect(excluir.status).toBe(400);
+        });
+    });
+
+    it("GET /usuarios traz podeGerir por pessoa, pela posição do cargo de quem olha", async () => {
+        await darCargo(ctx.factory, diretora, "diretor");
+        const r = await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente });
+        expect(r.status).toBe(200);
+        const pode = new Map(r.corpo.map((p: any) => [p.codigo, p.podeGerir]));
+        expect(pode.get(ctx.membro.codigo)).toBe(true);
+        expect(pode.get(diretora.codigo)).toBe(false);
+        expect(pode.get(ctx.gerente.codigo)).toBe(false);
+        const doMembro = await servidor.chamar("get", "/usuarios", { usuario: ctx.membro });
+        expect(doMembro.corpo.every((p: any) => p.podeGerir === false)).toBe(true);
     });
 });

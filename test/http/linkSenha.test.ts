@@ -1,5 +1,4 @@
 import EnvioEmailMemoria from "../../source/infra/email/EnvioEmailMemoria";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { cadastrarComSenha, criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
@@ -15,7 +14,6 @@ describe("Esqueci a senha e link de senha (HTTP)", () => {
             {
                 nome: "Ana Dev",
                 email: "ana@dev.konvex",
-                perfil: PerfilUsuario.MEMBRO,
                 senioridade: ctx.senioridade,
                 curso: "Engenharia Mecânica",
             },

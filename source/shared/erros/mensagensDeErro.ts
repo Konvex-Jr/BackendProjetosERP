@@ -36,10 +36,9 @@ export const MENSAGENS_DE_ERRO = {
         EMAIL_FORA_DO_DOMINIO: (dominio: string) => `Use o e-mail da Konvex (@${dominio}).`,
         PESSOA_SEM_ACESSO: "Esta pessoa não tem acesso ao sistema.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
-        TRAINEE_SO_MEMBRO: "Trainee tem sempre o perfil de membro: troque o perfil para membro ou o status para ativo.",
         STATUS_TRAINEE_SO_NA_ENTRADA: "Trainee é só a etapa de entrada; ninguém volta a ser trainee.",
-        TRAINEE_NAO_LIDERA: "Trainee não pode ser líder de projeto.",
-        TRAINEE_SEM_BIBLIOTECA: "Trainees não têm acesso à Biblioteca.",
+        LIDER_SEM_PERMISSAO: 'Esta pessoa não pode liderar projetos (permissão "Pode ser líder de projeto" do cargo).',
+        SEM_BIBLIOTECA: "Você não tem acesso à Biblioteca.",
     },
 
     PROJETO: {
@@ -47,16 +46,11 @@ export const MENSAGENS_DE_ERRO = {
         DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
         NAO_ENCONTRADO: "Projeto não encontrado.",
         AREA_OBRIGATORIA_INTERNO: "Projeto interno precisa de uma área.",
-        GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído, arquivado nem ficar sigiloso.",
-        GERAL_SIGILOSO: "O projeto geral da área não pode ser sigiloso.",
+        GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído nem arquivado.",
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
-        SEM_ACESSO: (sigiloso: boolean) =>
-            sigiloso
-                ? "Este projeto é sigiloso: só a equipe atual e os diretores veem os detalhes."
-                : "Só a equipe do projeto e a gestão veem os detalhes deste projeto.",
-        SIGILOSO_SEM_VOCE:
-            "Você ficaria sem acesso ao projeto sigiloso: só a equipe atual e os diretores o veem. Coloque-se na equipe ou peça a um diretor.",
+        SEM_ACESSO_AO_CRIAR: "Você ficaria sem acesso ao projeto: coloque-se na equipe ou escolha a área do seu cargo.",
+        SEM_ACESSO: "Você vê só o cartão deste projeto: os detalhes são da equipe e de quem tem acesso pelo cargo.",
         GERAL_COM_TAREFAS: (quantidade: number) =>
             `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
     },
@@ -71,12 +65,32 @@ export const MENSAGENS_DE_ERRO = {
         MARGEM_MINIMA_ACIMA: "A margem mínima (margemMinima) não pode ser maior que a margem padrão (margem).",
     },
 
+    PERMISSOES: {
+        SEM_PERMISSAO: "Você não tem permissão para ver ou alterar as permissões.",
+        COLUNA_NAO_ENCONTRADA: "Cargo não encontrado.",
+    },
+
+    HIERARQUIA: {
+        SEM_GERIR_PESSOAS: "Você não tem permissão para gerir pessoas.",
+        PROPRIO: "Você não pode alterar o próprio cadastro nem os próprios períodos pela gestão; peça a quem está acima de você.",
+        PESSOA_ACIMA: "Você só gere pessoas com cargo abaixo do seu.",
+        SO_ABAIXO: "Você só altera cargos abaixo do seu.",
+        CARGO_ACIMA: "Você só dá cargos abaixo do seu.",
+        POSICAO_ACIMA: "A posição do cargo precisa ficar abaixo da sua.",
+        PRESIDENTE_FIXO: "O cargo do presidente pode tudo e fica sempre na posição 1.",
+        NAO_PODE_CONCEDER: (rotulo: string) => `Você não pode dar a permissão "${rotulo}", porque não a tem.`,
+        PRESIDENTE_VAGO: "O cargo do presidente não pode ficar vago: dê o cargo a outra pessoa antes de encerrar este período.",
+    },
+
     CARGO: {
         TETO_INVALIDO: "O teto semanal do cargo (tetoSemanalHoras) deve ser um número inteiro de 1 a 40 horas.",
+        COM_OCUPANTES: "Este cargo tem pessoas num período aberto: encerre ou troque os períodos antes de desativá-lo.",
+        POSICAO_INVALIDA: "A posição do cargo (posicao) deve ser um número inteiro a partir de 1 (1 = presidente).",
+        PERMISSOES_INVALIDAS: "As permissões (permissoes) devem ser uma lista.",
+        PERMISSAO_INVALIDA: (valor: string) => `Permissão desconhecida (permissoes): "${valor}".`,
     },
 
     PERIODO: {
-        PROPRIO: "Você não pode alterar os próprios períodos de área.",
         INICIO_NO_FUTURO: "O início do período na área não pode ser no futuro.",
         FIM_NO_FUTURO: "O fim do período na área não pode ser no futuro.",
         FIM_NAO_DEPOIS_DO_INICIO: "O fim do período na área deve ser depois do início.",

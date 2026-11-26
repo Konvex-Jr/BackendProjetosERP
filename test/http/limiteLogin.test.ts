@@ -1,4 +1,3 @@
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { cadastrarComSenha, criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 
@@ -13,7 +12,6 @@ describe("Limite de tentativas no login", () => {
             {
                 nome: "Carla",
                 email: "carla@konvex.com.br",
-                perfil: PerfilUsuario.GERENTE,
                 senioridade: ctx.senioridade,
                 curso: "Engenharia Mecânica",
             },

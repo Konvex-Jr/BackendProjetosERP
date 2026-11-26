@@ -7,7 +7,7 @@ import { hoje } from "../../domain/entity/Participacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
-import { exigirDominioKonvex, conferirCamposAlterados, exigirTraineeMembro, resolverPerfilPessoa } from "./dadosPessoa";
+import { exigirDominioKonvex, conferirCamposAlterados, resolverPerfilPessoa } from "./dadosPessoa";
 import GerirLinkSenha from "../auth/GerirLinkSenha";
 import CriarUsuarioInput from "./CriarUsuarioInput";
 import CriarUsuarioOutput from "./CriarUsuarioOutput";
@@ -43,14 +43,11 @@ export default class CriarUsuario {
             throw new ErroValidacao("Uma pessoa nova entra como Ativa ou Trainee.", "STATUS_INICIAL_INVALIDO");
         }
 
-        exigirTraineeMembro(status, input.perfil);
-
         const detalhes = resolverPerfilPessoa(input);
         conferirCamposAlterados(null, { ...detalhes, status, dataEntrada: detalhes.dataEntrada ?? hoje() });
         const usuario = new Usuario(
             String(input.nome ?? "").trim(),
             email,
-            input.perfil,
             status !== StatusPessoa.INATIVO,
             "", // sem senha: a pessoa define pelo link do convite
             senioridade,

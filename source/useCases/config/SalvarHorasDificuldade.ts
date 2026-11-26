@@ -11,7 +11,7 @@ export default class SalvarHorasDificuldade {
     constructor(private readonly factory: RepositoryFactoryInterface) {}
 
     async execute(input: { horas: unknown; quem: UsuarioAutenticado | undefined | null }): Promise<PercentualPorDificuldade> {
-        exigirPermissao(input.quem, Permissao.CONFIGURACOES_EDITAR, SO_DIRETOR_HORAS);
+        exigirPermissao(input.quem, Permissao.CONFIG_DIFICULDADE, SO_DIRETOR_HORAS);
         const bruto = (input.horas ?? {}) as Record<string, unknown>;
         const horas = {} as PercentualPorDificuldade;
         for (const nivel of NIVEIS_DIFICULDADE) {

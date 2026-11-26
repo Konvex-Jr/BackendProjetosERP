@@ -1,12 +1,12 @@
 import Usuario, { DetalhesPessoa } from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { ehCursoValido } from "../source/domain/enum/Curso";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
+import { comPapel } from "./papel";
 
 const senioridade = new SenioridadeUsuario("sen-1", "Pleno", 10);
 const criar = (d: DetalhesPessoa = {}) =>
-    new Usuario("Ana", "ana@konvex.com.br", PerfilUsuario.MEMBRO, true, "hash", senioridade, "usr-ana", d);
+    comPapel(new Usuario("Ana", "ana@konvex.com.br", true, "hash", senioridade, "usr-ana", d), "membro");
 const codigo = (f: () => unknown) => {
     try {
         f();

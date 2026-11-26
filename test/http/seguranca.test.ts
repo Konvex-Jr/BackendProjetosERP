@@ -1,7 +1,7 @@
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarProjeto, criarTarefa } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel, darCargo } from "../papel";
 
 /**
  * Cobre as falhas S1 a S6 encontradas no diagnóstico de 29/10/2026.
@@ -10,12 +10,15 @@ describe("Segurança da API", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
     let diretor: Usuario;
+    let presidente: Usuario;
     let outroMembro: Usuario;
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        diretor = new Usuario("Diretora", "diretora@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dir");
-        outroMembro = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
+        diretor = comPapel(new Usuario("Diretora", "diretora@konvex.com.br", true, "x", ctx.senioridade, "usr-dir"), "diretor");
+        presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+        await ctx.factory.criarUsuarioRepository().criar(presidente);
+        outroMembro = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(diretor);
         await ctx.factory.criarUsuarioRepository().criar(outroMembro);
         servidor = await subirServidor(ctx.factory);
@@ -106,31 +109,52 @@ describe("Segurança da API", () => {
         expect(noProjeto.corpo.responsaveis.map((r: any) => r.codigo)).toEqual([ctx.membro.codigo]);
     });
 
-    it("S5: gerente não promove ninguém a diretor nem altera diretores", async () => {
-        const promover = await servidor.chamar("put", `/usuarios/${ctx.membro.codigo}`, {
-            usuario: ctx.gerente,
-            corpo: {
-                nome: ctx.membro.nome,
-                email: ctx.membro.email,
-                perfil: "diretor",
-                senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 },
-            },
-        });
-        expect(promover.status).toBe(403);
-
+    it("S5: gerente não altera diretores; diretor altera quem está abaixo (31a: pela posição do cargo)", async () => {
+        await darCargo(ctx.factory, diretor, "diretor");
         const inativarDiretor = await servidor.chamar("delete", `/usuarios/${diretor.codigo}`, { usuario: ctx.gerente });
         expect(inativarDiretor.status).toBe(403);
+        const editarDiretor = await servidor.chamar("put", `/usuarios/${diretor.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Outro nome", email: diretor.email, senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 } },
+        });
+        expect(editarDiretor.status).toBe(403);
 
-        const diretorPromove = await servidor.chamar("put", `/usuarios/${ctx.membro.codigo}`, {
+        const diretorEdita = await servidor.chamar("put", `/usuarios/${ctx.membro.codigo}`, {
             usuario: diretor,
             corpo: {
                 nome: ctx.membro.nome,
                 email: ctx.membro.email,
-                perfil: "gerente",
                 senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 },
             },
         });
-        expect(diretorPromove.status).toBe(200);
+        expect(diretorEdita.status).toBe(200);
+    });
+
+    it("S5b: ex-diretor inativo segue acima do gerente (último cargo conta): sem reativar, editar nem link", async () => {
+        await darCargo(ctx.factory, diretor, "diretor");
+        const inativar = await servidor.chamar("delete", `/usuarios/${diretor.codigo}`, {
+            usuario: presidente,
+            corpo: { motivoSaida: "Saiu" },
+        });
+        expect(inativar.status).toBe(200);
+        const reativar = await servidor.chamar("patch", `/usuarios/${diretor.codigo}/status`, {
+            usuario: ctx.gerente,
+            corpo: { status: "ativo" },
+        });
+        expect(reativar.status).toBe(403);
+        const editar = await servidor.chamar("put", `/usuarios/${diretor.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Outro", email: "outro@konvex.com.br", senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 } },
+        });
+        expect(editar.status).toBe(403);
+        const lista = await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente });
+        expect(lista.corpo.find((p: any) => p.codigo === diretor.codigo).podeGerir).toBe(false);
+        // O presidente segue podendo reativar.
+        const peloPresidente = await servidor.chamar("patch", `/usuarios/${diretor.codigo}/status`, {
+            usuario: presidente,
+            corpo: { status: "ativo" },
+        });
+        expect(peloPresidente.status).toBe(200);
     });
 
     it("S6: CORS só responde para origens configuradas", async () => {

@@ -7,8 +7,8 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../shared/erros/ErroProibido";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto } from "../../shared/seguranca/visibilidadeProjetos";
+import { Permissao, temPermissao, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 
 const M = MENSAGENS_DE_ERRO.REUNIAO;
 const A = MENSAGENS_DE_ERRO.AGENDA;
@@ -30,7 +30,7 @@ const nomeDe = (u: Usuario) => u.nomeExibicao || u.nome;
 
 /**
  * Agenda unificada e reuniões (sessão 28b). A agenda junta, num período, as reuniões e os prazos
- * das tarefas da pessoa e todas as capacitações. Cada um vê a própria; a gestão (projetos.verTodos)
+ * das tarefas da pessoa e todas as capacitações. Cada um vê a própria; quem tem agenda.gerirTodas
  * pode ver a de outra pessoa. Prazo de tarefa de projeto sem acesso completo aparece sem título.
  */
 export default class GerirAgenda {
@@ -40,7 +40,7 @@ export default class GerirAgenda {
         if (ate.getTime() < de.getTime() || (ate.getTime() - de.getTime()) / DIA > MAXIMO_DIAS_AGENDA) {
             throw new ErroValidacao(A.PERIODO_INVALIDO, "AGENDA_PERIODO_INVALIDO");
         }
-        const gestao = podeVerTodosProjetos(usuario);
+        const gestao = temPermissao(usuario, Permissao.AGENDA_GERIR_TODAS);
         const alvoCodigo = codigoPessoa || usuario.codigo;
         if (alvoCodigo !== usuario.codigo && !gestao) throw new ErroProibido(A.OUTRA_PESSOA);
         const alvo = await this.factory.criarUsuarioRepository().buscarPorCodigo(alvoCodigo);
@@ -149,13 +149,14 @@ export default class GerirAgenda {
     }
 
     private podeAlterar(usuario: UsuarioAutenticado, r: Reuniao): boolean {
-        return r.criadoPor.codigo === usuario.codigo || podeVerTodosProjetos(usuario);
+        return r.criadoPor.codigo === usuario.codigo || temPermissao(usuario, Permissao.AGENDA_GERIR_TODAS);
     }
 
     /** Quem não participa e não é da gestão recebe 404, como se a reunião não existisse. */
     private async buscarVisivel(usuario: UsuarioAutenticado, codigo: string): Promise<Reuniao> {
         const r = await this.factory.criarReuniaoRepository().buscarPorCodigo(codigo);
-        if (!r || !(r.participa(usuario.codigo) || podeVerTodosProjetos(usuario))) throw new ErroNaoEncontrado(M.NAO_ENCONTRADA);
+        if (!r || !(r.participa(usuario.codigo) || temPermissao(usuario, Permissao.AGENDA_GERIR_TODAS)))
+            throw new ErroNaoEncontrado(M.NAO_ENCONTRADA);
         return r;
     }
 

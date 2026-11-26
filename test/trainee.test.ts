@@ -1,10 +1,10 @@
 import { hash } from "bcrypt";
 import Usuario from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import Projeto from "../source/domain/entity/Projeto";
 import { criarContexto, criarProjeto, criarTarefa, dataFim, dataInicio } from "./fixtures";
 import { subirServidor, tokenPara } from "./http/servidorTeste";
+import { comPapel } from "./papel";
 
 /** Sessão 20: trainee entra como membro, sem Biblioteca e sem liderança. */
 describe("Trainee", () => {
@@ -24,17 +24,11 @@ describe("Trainee", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        trainee = new Usuario(
-            "Tina Trainee",
-            "tina@konvex.com.br",
-            PerfilUsuario.MEMBRO,
-            true,
-            await hash("Senha@forte1", 4),
-            ctx.senioridade,
-            "usr-tina",
-            {
+        trainee = comPapel(
+            new Usuario("Tina Trainee", "tina@konvex.com.br", true, await hash("Senha@forte1", 4), ctx.senioridade, "usr-tina", {
                 status: StatusPessoa.TRAINEE,
-            },
+            }),
+            "membro",
         );
         await ctx.factory.criarUsuarioRepository().criar(trainee);
         servidor = await subirServidor(ctx.factory);
@@ -118,19 +112,17 @@ describe("Trainee", () => {
             curso: "Engenharia Elétrica",
         };
 
-        it("criar trainee gerente: 400 TRAINEE_SO_MEMBRO", async () => {
+        it("sem perfil fixo (31a): perfil no corpo é ignorado e o trainee entra sem cargo", async () => {
             const r = await servidor.chamar("post", "/usuarios", {
                 usuario: ctx.gerente,
                 corpo: { ...dados, status: "trainee", perfil: "gerente" },
             });
-            expect(r.status).toBe(400);
-            expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_SO_MEMBRO");
-            const ok = await servidor.chamar("post", "/usuarios", { usuario: ctx.gerente, corpo: { ...dados, status: "trainee" } });
-            expect(ok.status).toBe(200);
+            expect(r.status).toBe(200);
+            expect(r.corpo.perfil).toBeUndefined();
         });
 
         it("mudar alguém para trainee: 400 STATUS_TRAINEE_SO_NA_ENTRADA", async () => {
-            const diretor = new Usuario("Dir", "dir@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dir");
+            const diretor = comPapel(new Usuario("Dir", "dir@konvex.com.br", true, "x", ctx.senioridade, "usr-dir"), "diretor");
             await ctx.factory.criarUsuarioRepository().criar(diretor);
             const r = await servidor.chamar("patch", `/usuarios/${ctx.gerente.codigo}/status`, {
                 usuario: diretor,
@@ -140,21 +132,21 @@ describe("Trainee", () => {
             expect(r.corpo.code ?? r.corpo.codigo).toBe("STATUS_TRAINEE_SO_NA_ENTRADA");
         });
 
-        it("editar trainee para gerente: 400", async () => {
+        it("editar trainee mandando perfil: o campo é ignorado", async () => {
             const r = await servidor.chamar("put", `/usuarios/${trainee.codigo}`, { usuario: ctx.gerente, corpo: { perfil: "gerente" } });
-            expect(r.status).toBe(400);
-            expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_SO_MEMBRO");
+            expect(r.status).toBe(200);
+            expect(r.corpo.perfil).toBeUndefined();
         });
     });
 
-    it("líder: trainee da equipe não pode (400 TRAINEE_NAO_LIDERA)", async () => {
+    it("líder: trainee da equipe não pode (400 LIDER_SEM_PERMISSAO)", async () => {
         const projeto = await criarProjeto(ctx.factory, trainee);
         const r = await servidor.chamar("put", `/projetos/${projeto.codigo}/lider`, {
             usuario: ctx.gerente,
             corpo: { codigoUsuario: trainee.codigo },
         });
         expect(r.status).toBe(400);
-        expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
+        expect(r.corpo.code ?? r.corpo.codigo).toBe("LIDER_SEM_PERMISSAO");
     });
 
     it("membro ativo que lidera não volta a trainee: 400 e o líder fica", async () => {

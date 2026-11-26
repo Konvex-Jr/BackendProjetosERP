@@ -1,11 +1,11 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import Tarefa from "../../source/domain/entity/Tarefa";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /**
  * Decisão de 30/10/2026, revista na sessão 27a: gerente e diretor veem todos os projetos completos; o membro vê
@@ -18,7 +18,7 @@ describe("Visibilidade de projetos", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        outroMembro = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
+        outroMembro = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(outroMembro);
         const repo = ctx.factory.criarProjetoRepository();
         await repo.criar(new Projeto("Meu projeto", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-meu"));

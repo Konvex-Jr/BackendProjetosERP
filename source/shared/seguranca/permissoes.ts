@@ -1,8 +1,8 @@
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
 import StatusPessoa from "../../domain/enum/StatusPessoa";
 import { ErroNaoAutorizado } from "../erros/ErroNaoAutorizado";
 import { ErroProibido } from "../erros/ErroProibido";
-import { Permissao, permissoesDoPapel } from "./catalogoPermissoes";
+import { Permissao } from "./catalogoPermissoes";
+import { CargoDaPessoa } from "./permissoesEfetivas";
 
 export { Permissao } from "./catalogoPermissoes";
 
@@ -12,13 +12,15 @@ export { Permissao } from "./catalogoPermissoes";
  */
 export interface UsuarioAutenticado {
     codigo: string;
-    /**
-     * Lido do banco a cada requisição (ver AuthExpress), não do token: mudar o papel
-     * de alguém vale já na próxima chamada, sem esperar o token expirar.
-     */
-    perfil: PerfilUsuario | string;
-    /** Também lido do banco a cada requisição: trainee que vira Ativo vale já na próxima chamada. */
+    /** Lido do banco a cada requisição: trainee que vira Ativo vale já na próxima chamada. */
     status?: StatusPessoa | string;
+    /**
+     * Permissões efetivas (sessão 31a), calculadas a cada requisição pelo AuthExpress a partir do cargo
+     * (ver permissoesEfetivas.ts): mudar a grade vale no próximo clique. Ausente = nenhuma (na dúvida, nega).
+     */
+    permissoes?: readonly Permissao[];
+    /** Cargo atual (período aberto com cargo); nulo = sem cargo. */
+    cargo?: CargoDaPessoa | null;
 }
 
 const MENSAGEM_PADRAO = "Você não tem permissão para fazer esta alteração.";
@@ -34,21 +36,9 @@ export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null
     return usuario;
 }
 
-/** Trainee (sessão 20): entra no sistema como membro, mas sem Biblioteca nem liderança. */
-export function ehTrainee(usuario: UsuarioAutenticado | undefined | null): boolean {
-    return !!usuario && usuario.status === StatusPessoa.TRAINEE;
-}
-
-/** 401 sem pessoa logada; 403 (com a mensagem informada) para trainee. */
-export function exigirNaoTrainee(usuario: UsuarioAutenticado | undefined | null, mensagem: string): UsuarioAutenticado {
-    const autenticado = exigirAutenticado(usuario);
-    if (ehTrainee(autenticado)) throw new ErroProibido(mensagem);
-    return autenticado;
-}
-
 /** Versão que não lança erro: serve para montar os booleanos das respostas (podeGerir, podeAlterar...). */
 export function temPermissao(usuario: UsuarioAutenticado | undefined | null, permissao: Permissao): boolean {
-    return !!usuario && permissoesDoPapel(usuario.perfil).includes(permissao);
+    return !!usuario && (usuario.permissoes ?? []).includes(permissao);
 }
 
 /** 401 sem pessoa logada; 403 (com a mensagem informada) se o papel não tiver a ação. */
@@ -81,21 +71,4 @@ export function resolverUsuarioAlvo(
         throw new ErroProibido("Você só pode realizar esta ação em seu próprio nome.");
     }
     return codigoInformado;
-}
-
-/**
- * Gerir pessoas exige pessoas.gerir; criar, alterar ou promover diretores
- * exige também pessoas.gerirDiretores.
- */
-export function exigirPodeGerirPerfil(
-    usuario: UsuarioAutenticado | undefined | null,
-    perfilDoAlvoAtual: PerfilUsuario | string | null,
-    perfilDesejado: PerfilUsuario | string | null,
-): UsuarioAutenticado {
-    const gestor = exigirPermissao(usuario, Permissao.PESSOAS_GERIR, "Somente diretores e gerentes podem gerenciar pessoas.");
-    const envolveDiretor = perfilDoAlvoAtual === PerfilUsuario.DIRETOR || perfilDesejado === PerfilUsuario.DIRETOR;
-    if (envolveDiretor && !temPermissao(gestor, Permissao.PESSOAS_GERIR_DIRETORES)) {
-        throw new ErroProibido("Somente diretores podem criar, alterar ou promover diretores.");
-    }
-    return gestor;
 }

@@ -1,3 +1,4 @@
+import PermissoesRepositoryInterface from "./PermissoesRepositoryInterface";
 import AvisoRepositoryInterface from "./AvisoRepositoryInterface";
 import ReuniaoRepositoryInterface from "./ReuniaoRepositoryInterface";
 import LinkSenhaRepositoryInterface from "./LinkSenhaRepositoryInterface";
@@ -40,6 +41,7 @@ export default interface RepositoryFactoryInterface {
     criarCapacitacaoFeedbackRepository(): CapacitacaoFeedbackRepositoryInterface;
     criarAreaRepository(): AreaRepositoryInterface;
     criarCargoRepository(): CargoRepositoryInterface;
+    criarPermissoesRepository(): PermissoesRepositoryInterface;
     criarPeriodoAreaRepository(): PeriodoAreaRepositoryInterface;
     criarHorasDificuldadeRepository(): HorasDificuldadeRepositoryInterface;
     criarRegrasPrecificacaoRepository(): RegrasPrecificacaoRepositoryInterface;

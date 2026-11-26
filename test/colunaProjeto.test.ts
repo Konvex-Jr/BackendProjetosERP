@@ -3,9 +3,9 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import { PapelColuna } from "../source/domain/enum/ColunaProjeto";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import { ErroValidacao } from "../source/shared/erros/ErroValidacao";
+import { comPapel } from "./papel";
 
 const inicio = new Date("2026-10-12T00:00:00.000Z");
 const fim = new Date("2026-12-12T00:00:00.000Z");
@@ -145,7 +145,7 @@ describe("Tarefa com coluna", () => {
 
     it("naColuna: entrar na concluída registra data e autor", () => {
         const p = projetoPadrao();
-        const quem = new Usuario("Ana", "ana@x.com", PerfilUsuario.DIRETOR, true, "senha123");
+        const quem = comPapel(new Usuario("Ana", "ana@x.com", true, "senha123"), "diretor");
         const t = tarefaDe(p).naColuna(p.colunas[3], hoje, quem);
         expect(t.status).toBe(StatusTarefa.CONCLUIDA);
         expect(t.dataConclusao).toBe(hoje);

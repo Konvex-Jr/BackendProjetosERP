@@ -2,7 +2,7 @@ import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFac
 import GerirAgenda, { EntradaReuniao } from "../../../useCases/agenda/GerirAgenda";
 import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
-import { exigirAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import RespostaSemConteudo from "../RespostaSemConteudo";
@@ -56,7 +56,10 @@ export default class AgendaRoutes implements ModelRoutes {
         );
 
         this.http.route("post", "/reunioes", true, async (_p: any, body: any) =>
-            gerir().criar(exigirAutenticado(body?.user), lerReuniao(body ?? {})),
+            gerir().criar(
+                exigirPermissao(body?.user, Permissao.REUNIOES_CRIAR, "Você não tem permissão para criar reuniões."),
+                lerReuniao(body ?? {}),
+            ),
         );
 
         this.http.route("put", "/reunioes/:codigo", true, async (params: any, body: any) =>

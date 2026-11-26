@@ -4,13 +4,13 @@ import PeriodoArea from "../source/domain/entity/PeriodoArea";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import Usuario from "../source/domain/entity/Usuario";
 import { comEquipeDaArea, nomeDoGeral, novoGeral } from "../source/domain/entity/ProjetoGeral";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusProjeto from "../source/domain/enum/StatusProjeto";
 import TipoProjeto from "../source/domain/enum/TipoProjeto";
+import { comPapel } from "./papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const senio = new SenioridadeUsuario("pleno", "Pleno", 75);
-const pessoa = (codigo: string) => new Usuario(codigo, `${codigo}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "h", senio, codigo);
+const pessoa = (codigo: string) => comPapel(new Usuario(codigo, `${codigo}@konvex.com.br`, true, "h", senio, codigo), "membro");
 const inovacao = new Area("Inovação", null, true, "inovacao");
 const marketing = new Area("Marketing", null, true, "marketing");
 const usuarios = new Map(["ana", "bia", "cris"].map((c) => [c, pessoa(c)]));

@@ -5,11 +5,11 @@ import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
 import Usuario from "../../source/domain/entity/Usuario";
 import { novoGeral } from "../../source/domain/entity/ProjetoGeral";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -33,7 +33,7 @@ describe("Tarefas no projeto geral da área", () => {
     });
 
     async function novaPessoa(nome: string): Promise<Usuario> {
-        const p = new Usuario(nome, `${nome}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, `usr-${nome}`);
+        const p = comPapel(new Usuario(nome, `${nome}@konvex.com.br`, true, "x", ctx.senioridade, `usr-${nome}`), "membro");
         await ctx.factory.criarUsuarioRepository().criar(p);
         return p;
     }
