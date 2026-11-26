@@ -273,4 +273,17 @@ describe("Perfil completo", () => {
 
         expect((await servidor.chamar("get", "/habilidades", { usuario: ctx.membro })).status).toBe(404);
     });
+
+    it("25/11: a própria pessoa informa a entrada na EJ (não no futuro); períodos de área seguem com a gestão", async () => {
+        const futuro = await servidor.chamar("put", "/auth/perfil", {
+            usuario: ctx.membro,
+            corpo: { dataEntrada: "2999-01-10T15:00:00.000Z" },
+        });
+        expect([futuro.status, futuro.corpo.codigo]).toEqual([400, "ENTRADA_NO_FUTURO"]);
+        const r = await servidor.chamar("put", "/auth/perfil", { usuario: ctx.membro, corpo: { dataEntrada: "2025-03-10T15:00:00.000Z" } });
+        expect(r.status).toBe(200);
+        expect(String(r.corpo.dataEntrada).slice(0, 10)).toBe("2025-03-10");
+        const periodo = await servidor.chamar("post", "/usuarios/usr-ana/periodos", { usuario: ctx.membro, corpo: {} });
+        expect(periodo.status).toBe(403);
+    });
 });
