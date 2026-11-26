@@ -771,6 +771,28 @@ SQL
 
 **Voltar:** a 030 apaga `usuarios.perfil` e `projetos.sigiloso`. Voltar = restaurar o `pg_dump` e voltar backend e frontend juntos.
 
+### Publicação da sessão 31b (clientes, classe e contratos): migração 031
+
+O que muda no banco: tabela `classes_projeto` (com 7 classes iniciais), `projetos.classe_codigo`, `projetos.clientes` (lista JSON) no lugar de `projetos.cliente_nome` (o nome antigo vira o primeiro cliente da lista e a coluna sai) e o sigilo `diretoria` na Biblioteca. Back e front juntos (o front antigo manda `clienteNome`, que a API nova ignora).
+
+**Parte 0, consulta (opcional, só para saber o que a gestão vai completar depois):**
+
+```bash
+cd /docker/erp-konvex
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+SELECT nome, cliente_nome FROM projetos WHERE coalesce(btrim(cliente_nome), '') <> '' ORDER BY nome;
+SELECT nome, tipo FROM projetos WHERE NOT geral_da_area AND tipo = 'cliente' AND area_codigo IS NULL ORDER BY nome;
+SQL
+```
+
+**Parte 1, backup:** igual ao bloco "Publicação" do início (banco e anexos).
+
+**Parte 2, construir e subir:** `git -C backend pull --ff-only && git -C frontend pull --ff-only`, `docker compose build backend frontend && docker compose up -d`. No log: `Migração aplicada: 031_clientes_classe.sql`. Conferir de fora: `curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/classes-projeto` = 401.
+
+**Parte 3, pela tela:** a diretoria confere Configurações → Classes de projeto; abre os projetos de cliente e completa telefone e e-mail dos clientes, a classe e a área (projetos antigos sem classe ou área seguem editáveis; a escolha só é exigida quando o campo muda). Contratos vão para a Biblioteca com o sigilo "Só diretoria".
+
+**Voltar:** a 031 apaga `projetos.cliente_nome`. Voltar = restaurar o `pg_dump` e voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.

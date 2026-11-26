@@ -83,6 +83,7 @@ Os módulos estão registrados em `source/modulos/registro.ts` (rotas, ações d
 - **Projeto sigiloso: saiu na sessão 31a** (migração 030 apaga `projetos.sigiloso`). Todo projeto passou a ser fechado pela regra acima. **Tarefas:** sem acesso completo, ninguém tem papel no projeto, nem a gestão (`papelNoProjeto`). Tarefa, comentários e anexos de projeto que a pessoa não abre respondem o mesmo 404 da tarefa inexistente.
 - Só o diretor exclui projeto (`projetos.excluir`); excluir leva junto os itens da Biblioteca com sigilo "Equipe do projeto" (e os anexos deles); os itens de sigilo Todos ou Só gestão só perdem a ligação com o projeto. O recomendado é Arquivar.
 - Ativos = Em andamento, Atenção e Bloqueado.
+- **Clientes, classe e área (sessão 31b).** `clientes` é uma lista (até 10) de `{ nome, empresa, telefone, email }`; nome obrigatório, telefone de 10 a 13 dígitos, e-mail válido (400 dizendo qual cliente). Quem abre o projeto recebe nome e empresa; telefone e e-mail só com `clientes.ver`; mandar `clientes` no POST/PUT sem `clientes.ver` = 403. `codigoClasse` (tabela `classes_projeto`, editável em Configurações com `config.estrutura`) é obrigatório ao criar (400 `CLASSE_OBRIGATORIA`) e área é obrigatória no projeto de cliente ao criar (400 `AREA_OBRIGATORIA_CLIENTE`); na edição, as duas só são conferidas quando mudam. O cartão ganhou `progresso` (% de tarefas concluídas) e `classe` (nome). A busca acha pelo nome e pela empresa do cliente, nunca pelo telefone ou e-mail.
 - **Projeto interno (sessão 23b).** `tipo` é `cliente` (padrão) ou `interno`; outro valor é 400 `TIPO_PROJETO_INVALIDO`. Interno sempre tem área (400 `AREA_OBRIGATORIA_INTERNO`). `GET /projetos?tipo=interno|cliente` filtra.
 - **Projeto geral da área.** Um por área (`geralDaArea`), nome "Área geral", interno. Criado pelo sistema (migração 018 para as áreas existentes e `SalvarArea` para as novas); renomear a área renomeia o geral, inativar arquiva e reativar volta a Em andamento. A equipe e a liderança não são gravadas: vêm dos períodos da área e da `liderancaArea`. Editar, excluir, mudar status, acesso, equipe e líder do geral é 400 `PROJETO_GERAL_FIXO`; só `PUT /projetos/:codigo/colunas` segue valendo. As tarefas que eram avulsas moram nele.
 
@@ -130,9 +131,9 @@ Lista (`GET /tarefas`): a gestão recebe todas; o membro recebe as dos projetos 
 ### Biblioteca (`/biblioteca`)
 Um módulo só no lugar de Gestão (pastas e documentos), Base de Inteligência e Iniciativas. Guarda o material da Konvex: pesquisas, decisões, aprendizados, documentos, ideias.
 - **Item:** título (até 160 caracteres), texto em Markdown simples, links `http(s)://`, anexos, tags, um projeto (opcional) e o sigilo. O autor é quem cadastrou. A lista ordena pelo mais recente alterado. O formulário pede conteúdo, link ou arquivo; a API exige só o título.
-- **Sigilo:** **Todos** (padrão), **Só gestão** ou **Equipe de um projeto** (exige projeto).
-- **Quem lê:** a gestão lê tudo (`biblioteca.verTodos`). Os demais leem os itens de sigilo Todos e os de projeto de que participam **ou participaram**. Item que a pessoa não lê responde 404, na lista, na ficha, nos anexos e na aba do projeto.
-- **Quem cria:** qualquer pessoa logada. Sigilo "Só gestão" só com `biblioteca.gerir`. Ligar a um projeto (em qualquer sigilo): a gestão liga qualquer um; o membro só liga projeto de que participa ou participou.
+- **Sigilo:** **Todos** (padrão), **Só gestão**, **Equipe de um projeto** (exige projeto) ou **Só diretoria** (contratos, sessão 31b).
+- **Quem lê:** "Só diretoria" só com `clientes.ver` (nem `biblioteca.verTodos` passa por cima). Fora isso, a gestão lê tudo (`biblioteca.verTodos`). Os demais leem os itens de sigilo Todos e os de projeto de que participam **ou participaram**. Item que a pessoa não lê responde 404, na lista, na ficha, nos anexos e na aba do projeto.
+- **Quem cria:** qualquer pessoa logada. Sigilo "Só gestão" só com `biblioteca.gerir`; "Só diretoria" só com `clientes.ver` (403). Ligar a um projeto (em qualquer sigilo): a gestão liga qualquer um; o membro só liga projeto de que participa ou participou.
 - **Quem edita e exclui:** o autor ou a gestão (`biblioteca.gerir`). As regras de sigilo e projeto só são conferidas quando esses campos **mudam** no salvar: quem saiu da equipe continua editando e excluindo o próprio item.
 - **Projeto ligado que a pessoa não vê:** o item aparece sem projeto (`projeto` nulo), para não revelar o nome. Filtrar a lista por um projeto que a pessoa não vê devolve vazio.
 - **Busca e filtros:** texto (título, conteúdo e tags) e filtros por tag, projeto, sigilo e autor. Tags e busca fazem o papel das antigas pastas e categorias.
@@ -166,7 +167,7 @@ Legenda: ✅ pode · ❌ não pode · texto = pode, com a condição. "Código" 
 | Projetos | `projetos.editar` (criar e editar os que abre) | ✅ | ✅ | ❌ | ❌ |
 | Projetos | `projetos.excluir` | ✅ | ❌ | ❌ | ❌ |
 | Projetos | `projetos.liderar` (pode ser escolhido líder; senão 400 `LIDER_SEM_PERMISSAO`) | ✅ | ✅ | ✅ | ❌ |
-| Projetos | `clientes.ver` (dados do cliente e contratos; usado a partir da 31b) | ✅ | ❌ | ❌ | ❌ |
+| Projetos | `clientes.ver` (telefone e e-mail dos clientes, alterar clientes e sigilo "Só diretoria" na Biblioteca) | ✅ | ❌ | ❌ | ❌ |
 | Tarefas | `tarefas.ver` (tela Tarefas) | ✅ | ✅ | ✅ | ✅ |
 | Tarefas | `tarefas.gerirTodas` (organiza tarefas dos projetos que abre) | ✅ | ✅ | ❌ | ❌ |
 | Agenda | `agenda.ver` | ✅ | ✅ | ✅ | ✅ |
@@ -266,6 +267,8 @@ Sessão 23b: a tarefa avulsa acabou e a ação `tarefas.atribuir` saiu do catál
 | Ler itens | todos | todos | sigilo Todos e os dos seus projetos (atuais e anteriores) | `biblioteca.verTodos` / `podeVerItem` |
 | Cadastrar item | ✅ | ✅ | ✅ | só login (`SalvarItemBiblioteca`) |
 | Usar sigilo "Só gestão" | ✅ | ✅ | ❌ | `biblioteca.gerir` (`exigirPodeUsarSigiloEProjeto`) |
+| Usar e ler sigilo "Só diretoria" (31b) | ✅ | ❌ | ❌ | `clientes.ver` (`exigirPodeUsarSigiloEProjeto`, `podeVerItem`) |
+| Ver telefone e e-mail dos clientes e alterar a lista (31b) | ✅ | ❌ | ❌ | `clientes.ver` (`ProjetoRoutes.paraResposta`, `exigirPodeAlterarClientes`) |
 | Ligar item a projeto | qualquer | qualquer | os que participa ou participou | `biblioteca.gerir` / `exigirPodeUsarSigiloEProjeto` |
 | Editar e excluir item e seus anexos | ✅ | ✅ | se é o autor | `biblioteca.gerir` / `podeAlterarItem` |
 | Ver o nome do projeto ligado | ✅ | ✅ | só dos projetos que vê (senão, sem projeto) | `projetos.verTodos` / `podeVerProjetoDoItem` |
