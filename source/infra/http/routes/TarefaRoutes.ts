@@ -123,6 +123,12 @@ export default class TarefaRoutes implements ModelRoutes {
                 return !sigiloso || acessoAoProjeto(usuario, sigiloso) === "completo";
             });
             if (podeVerTodosProjetos(usuario)) return this.comAnexos(semSigilosoAlheio);
+            // Lista de um projeto que a pessoa vê completo (ex.: o geral de outra área, aberto a todos desde 25/11):
+            // vão todas as tarefas dele. Sem o filtro de projeto, a lista continua só com os projetos da pessoa.
+            if (query?.codigoProjeto) {
+                const projeto = await this.factory.criarProjetoRepository().buscarPorCodigo(String(query.codigoProjeto));
+                if (projeto && acessoAoProjeto(usuario, projeto) === "completo") return this.comAnexos(semSigilosoAlheio);
+            }
             // Membro: tarefas dos projetos de que participa ou participou (no geral da área, pelos períodos ou por
             // liderar a área) e as em que é responsável.
             const visiveis = new Set(

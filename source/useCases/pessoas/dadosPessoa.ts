@@ -114,6 +114,10 @@ export function conferirCamposAlterados(atual: Usuario | null, detalhes: Detalhe
             throw new ErroValidacao(M.FIM_TRAINEE_ANTES_DA_ENTRADA, "FIM_TRAINEE_ANTES_DA_ENTRADA");
         }
     }
+    // Entrada na EJ (a própria pessoa preenche desde 25/11): conferida só quando muda.
+    if (entrada && mudouEntrada && dia(entrada)! > hoje().getTime()) {
+        throw new ErroValidacao(M.ENTRADA_NO_FUTURO, "ENTRADA_NO_FUTURO");
+    }
     if (fim && mudouFim) {
         if (dia(fim)! > hoje().getTime()) throw new ErroValidacao(M.FIM_TRAINEE_NO_FUTURO, "FIM_TRAINEE_NO_FUTURO");
         const status = detalhes.status ?? atual?.status;

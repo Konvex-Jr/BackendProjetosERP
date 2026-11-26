@@ -21,7 +21,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 describe("Ocupação semanal (HTTP)", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
-    let assessor: Usuario; // tem 4 h (Média) no sigiloso nesta semana
+    let assessor: Usuario; // tem 1,5 h (Média de hoje: 75% de um dia de 2 h) no sigiloso nesta semana
     let fora: Usuario; // membro sem relação com o sigiloso
     let diretor: Usuario;
     let trainee: Usuario;
@@ -109,9 +109,9 @@ describe("Ocupação semanal (HTTP)", () => {
             expect(r.corpo.find((p: any) => p.codigoUsuario === assessor.codigo)).toEqual({
                 codigoUsuario: assessor.codigo,
                 nome: "Ivo Assessor",
-                horas: 4,
+                horas: 1.5,
                 teto: 10,
-                percentual: 40,
+                percentual: 15,
             });
             // Total não revela tarefas
             expect(JSON.stringify(r.corpo)).not.toContain("Título secreto");
@@ -139,8 +139,8 @@ describe("Ocupação semanal (HTTP)", () => {
         it("membro de fora do sigiloso: linha do projeto com o nome, sem título (sessão 27b)", async () => {
             const r = await servidor.chamar("get", "/ocupacao/usr-ivo", { usuario: fora });
             expect(r.status).toBe(200);
-            expect(r.corpo).toMatchObject({ codigoUsuario: "usr-ivo", horas: 4, teto: 10, percentual: 40 });
-            expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 4 }]);
+            expect(r.corpo).toMatchObject({ codigoUsuario: "usr-ivo", horas: 1.5, teto: 10, percentual: 15 });
+            expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 1.5 }]);
             const texto = JSON.stringify(r.corpo);
             expect(texto).not.toContain("Título secreto");
             expect(texto).not.toContain("titulo");
@@ -149,7 +149,7 @@ describe("Ocupação semanal (HTTP)", () => {
 
         it("gerente fora do sigiloso: linha do projeto com o nome, sem título", async () => {
             const r = await servidor.chamar("get", "/ocupacao/usr-ivo", { usuario: ctx.gerente });
-            expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 4 }]);
+            expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 1.5 }]);
             const texto = JSON.stringify(r.corpo);
             expect(texto).not.toContain("Título secreto");
             expect(texto).not.toContain("titulo");
@@ -164,7 +164,7 @@ describe("Ocupação semanal (HTTP)", () => {
                     codigo: "t-sig",
                     titulo: "Título secreto",
                     projeto: { codigo: "p-sig", nome: "Projeto Secreto" },
-                    horas: 4,
+                    horas: 1.5,
                 },
             ]);
             expect(r.corpo.semana).toBe(iso(new Date(dia.getTime() - ((dia.getUTCDay() + 6) % 7) * UM_DIA)));
@@ -172,11 +172,14 @@ describe("Ocupação semanal (HTTP)", () => {
     });
 
     describe("avisos ao salvar tarefa", () => {
+        // Semana que vem inteira: futura em qualquer dia da semana em que o teste rodar.
+        const segundaQueVem = new Date(dia.getTime() + (7 - ((dia.getUTCDay() + 6) % 7)) * UM_DIA);
+        const sextaQueVem = new Date(segundaQueVem.getTime() + 4 * UM_DIA);
         const corpoTarefa = (extra: Record<string, unknown> = {}) => ({
             codigoProjeto: "p-nor",
             titulo: "Relatório final",
-            dataInicio: iso(dia),
-            dataFim: iso(dia),
+            dataInicio: iso(segundaQueVem),
+            dataFim: iso(sextaQueVem),
             prioridade: "P2",
             status: "pendente",
             dificuldade: "dificil",
@@ -184,7 +187,33 @@ describe("Ocupação semanal (HTTP)", () => {
             ...extra,
         });
 
-        it("POST de tarefa Difícil de um dia para assessor com 4 h: aviso de 120%", async () => {
+        beforeEach(async () => {
+            // Já tem uma Média na segunda da semana que vem: 75% de um dia de 2 h = 1,5 h.
+            await ctx.factory
+                .criarTarefaRepository()
+                .criar(
+                    new Tarefa(
+                        normal,
+                        "Média de segunda",
+                        segundaQueVem,
+                        segundaQueVem,
+                        StatusTarefa.PENDENTE,
+                        PrioridadeTarefa.P2,
+                        null,
+                        null,
+                        null,
+                        [assessor],
+                        [],
+                        "t-seg",
+                        null,
+                        null,
+                        null,
+                        DificuldadeTarefa.MEDIA,
+                    ),
+                );
+        });
+
+        it("POST de tarefa Difícil de segunda a sexta para assessor com 1,5 h na segunda: aviso de 115%", async () => {
             const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoTarefa() });
             expect(r.status).toBe(200);
             expect(r.corpo.titulo).toBe("Relatório final");
@@ -193,11 +222,11 @@ describe("Ocupação semanal (HTTP)", () => {
             expect(r.corpo.avisosOcupacao[0]).toMatchObject({
                 codigoUsuario: assessor.codigo,
                 nome: "Ivo Assessor",
-                horas: 12,
+                horas: 11.5,
                 teto: 10,
-                percentual: 120,
+                percentual: 115,
+                semana: iso(segundaQueVem),
             });
-            expect(r.corpo.avisosOcupacao[0].percentual).toBe(120);
         });
 
         it("POST que não passa de 100%: avisosOcupacao vazio", async () => {
@@ -225,13 +254,32 @@ describe("Ocupação semanal (HTTP)", () => {
             });
             expect(criada.corpo.avisosOcupacao).toEqual([]);
             const r = await servidor.chamar("put", `/tarefas/${criada.corpo.codigo}`, { usuario: ctx.gerente, corpo: corpoTarefa() });
-            expect(r.corpo.avisosOcupacao.map((a: any) => a.percentual)).toEqual([120]);
+            expect(r.corpo.avisosOcupacao.map((a: any) => a.percentual)).toEqual([115]);
         });
 
         it("PATCH coluna que reabre tarefa concluída e passa de 100%: aviso", async () => {
             await ctx.factory
                 .criarTarefaRepository()
-                .criar(novaTarefa(normal, "Concluída", DificuldadeTarefa.DIFICIL, StatusTarefa.CONCLUIDA, "t-conc"));
+                .criar(
+                    new Tarefa(
+                        normal,
+                        "Concluída",
+                        segundaQueVem,
+                        sextaQueVem,
+                        StatusTarefa.CONCLUIDA,
+                        PrioridadeTarefa.P2,
+                        null,
+                        dia,
+                        null,
+                        [assessor],
+                        [],
+                        "t-conc",
+                        null,
+                        null,
+                        null,
+                        DificuldadeTarefa.DIFICIL,
+                    ),
+                );
             const r = await servidor.chamar("patch", "/tarefas/t-conc/coluna", {
                 usuario: ctx.gerente,
                 corpo: { codigoColuna: normal.colunaDeEntrada.codigo },
@@ -239,7 +287,7 @@ describe("Ocupação semanal (HTTP)", () => {
             expect(r.status).toBe(200);
             expect(r.corpo.status).toBe("pendente");
             expect(r.corpo.avisosOcupacao).toHaveLength(1);
-            expect(r.corpo.avisosOcupacao[0]).toMatchObject({ codigoUsuario: assessor.codigo, percentual: 120 });
+            expect(r.corpo.avisosOcupacao[0]).toMatchObject({ codigoUsuario: assessor.codigo, percentual: 115 });
         });
 
         it("PATCH status que conclui: avisosOcupacao vazio", async () => {
@@ -250,47 +298,19 @@ describe("Ocupação semanal (HTTP)", () => {
         });
 
         describe("datas com hora (a tela manda meio-dia local, 15:00Z)", () => {
-            const segundaQueVem = new Date(dia.getTime() + (7 - ((dia.getUTCDay() + 6) % 7)) * UM_DIA);
-            const sextaQueVem = new Date(segundaQueVem.getTime() + 4 * UM_DIA);
             const as15 = (d: Date) => `${iso(d)}T15:00:00.000Z`;
             const corpoSemanaQueVem = (extra: Record<string, unknown> = {}) =>
                 corpoTarefa({ dataInicio: as15(segundaQueVem), dataFim: as15(sextaQueVem), ...extra });
 
-            beforeEach(async () => {
-                // Já tem uma Média (4 h) na segunda da semana que vem.
-                await ctx.factory
-                    .criarTarefaRepository()
-                    .criar(
-                        new Tarefa(
-                            normal,
-                            "Média de segunda",
-                            segundaQueVem,
-                            segundaQueVem,
-                            StatusTarefa.PENDENTE,
-                            PrioridadeTarefa.P2,
-                            null,
-                            null,
-                            null,
-                            [assessor],
-                            [],
-                            "t-seg",
-                            null,
-                            null,
-                            null,
-                            DificuldadeTarefa.MEDIA,
-                        ),
-                    );
-            });
-
-            it("Difícil de segunda a sexta da semana que vem: aviso de 120% (nenhum dia perdido)", async () => {
+            it("Difícil de segunda a sexta da semana que vem: aviso de 115% (nenhum dia perdido)", async () => {
                 const r = await servidor.chamar("post", "/tarefas", { usuario: ctx.gerente, corpo: corpoSemanaQueVem() });
                 expect(r.status).toBe(200);
                 expect(r.corpo.avisosOcupacao).toHaveLength(1);
                 expect(r.corpo.avisosOcupacao[0]).toMatchObject({
                     codigoUsuario: assessor.codigo,
-                    horas: 12,
+                    horas: 11.5,
                     teto: 10,
-                    percentual: 120,
+                    percentual: 115,
                     semana: iso(segundaQueVem),
                 });
                 // Gravada no dia, sem a hora
@@ -376,13 +396,6 @@ describe("Ocupação semanal (HTTP)", () => {
             const agora = new Usuario("Alice Agora", "alice@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-alice");
             await usuarios.criar(passado);
             await usuarios.criar(agora);
-            const cargos = ctx.factory.criarCargoRepository();
-            const apertado = await cargos.criar(new Cargo("Apertado", true, undefined, false, 1));
-            const folgado = await cargos.criar(new Cargo("Folgado", true, undefined, false, 40));
-            const periodos = ctx.factory.criarPeriodoAreaRepository();
-            // Pedro: teto 1 até 02/11 (exclusivo), 40 depois: só as semanas passadas ficam acima de 100%.
-            await periodos.criar(new PeriodoArea(passado.codigo, area, apertado, d("2026-10-01"), d("2026-11-02"), null));
-            await periodos.criar(new PeriodoArea(passado.codigo, area, folgado, d("2026-11-02"), null, null));
             const tarefas = ctx.factory.criarTarefaRepository();
             const nova = (titulo: string, inicio: string, fim: string, dif: DificuldadeTarefa, resp: Usuario[]) =>
                 new Tarefa(
@@ -403,15 +416,23 @@ describe("Ocupação semanal (HTTP)", () => {
                     null,
                     dif,
                 );
-            // Alice (teto 10) já tem 8 h + 4 h nesta semana.
-            await tarefas.criar(nova("Esta semana 1", "2026-11-18", "2026-11-20", DificuldadeTarefa.DIFICIL, [agora]));
-            await tarefas.criar(nova("Esta semana 2", "2026-11-18", "2026-11-20", DificuldadeTarefa.MEDIA, [agora]));
-            // Começou 3 semanas atrás (26/10) e termina na próxima (27/11): 25 dias úteis, 1,6 h por semana.
-            const longa = await tarefas.criar(nova("Longa", "2026-10-26", "2026-11-27", DificuldadeTarefa.DIFICIL, [passado, agora]));
+            // Ambos sem cargo (teto 10, dia de 2 h). Pedro: Difícil de 02/11 até hoje (quarta 18/11): 5 dias (10 h) na
+            // semana de 02/11 e 3 dias (segunda a quarta, 6 h) nesta. (Atrasada não serviria: só conta na semana atual.)
+            await tarefas.criar(nova("Desde 02/11", "2026-11-02", "2026-11-18", DificuldadeTarefa.DIFICIL, [passado]));
+            // Alice: Difícil de segunda a sexta desta semana (10 h).
+            await tarefas.criar(nova("Esta semana", "2026-11-16", "2026-11-20", DificuldadeTarefa.DIFICIL, [agora]));
+            // Rápida de 26/10 a 27/11: 25% de 2 h = 0,5 h por dia útil, 2,5 h em cada semana inteira, para os dois.
+            // Pedro: 12,5 h (125%) só na semana de 02/11 (passada); 8,5 h (85%) nesta: sem aviso.
+            // Alice: 2,5 h + 10 h = 12,5 h (125%) nesta semana; 2,5 h na próxima.
+            const longa = await tarefas.criar(nova("Longa", "2026-10-26", "2026-11-27", DificuldadeTarefa.RAPIDA, [passado, agora]));
 
             const avisos = await new ConsultarOcupacao(ctx.factory, () => quarta).avisos(null, longa);
             expect(avisos.map((a) => a.codigoUsuario)).toEqual([agora.codigo]);
-            expect(avisos[0]).toMatchObject({ semana: "2026-11-16", horas: 13.6, teto: 10, percentual: 136 });
+            expect(avisos[0]).toMatchObject({ semana: "2026-11-16", horas: 12.5, teto: 10, percentual: 125 });
+            // A semana passada de Pedro estava mesmo acima de 100% (o aviso só a ignora por ser passada).
+            const consulta = new ConsultarOcupacao(ctx.factory, () => quarta);
+            expect(await consulta.dePessoa(auth(diretor), passado.codigo, d("2026-11-02"))).toMatchObject({ horas: 12.5, percentual: 125 });
+            expect(await consulta.dePessoa(auth(diretor), passado.codigo, quarta)).toMatchObject({ horas: 8.5, percentual: 85 });
         });
 
         it("teto da semana vem do cargo vigente na segunda; dois cargos (dados antigos) = o maior", async () => {
@@ -441,8 +462,8 @@ describe("Ocupação semanal (HTTP)", () => {
                 PeriodoArea.carregar(assessor.codigo, outra, presidente, new Date("2026-01-01T00:00:00.000Z"), null, null, "per-x"),
             );
             const agora = await consulta.dePessoa(auth(diretor), assessor.codigo, dia);
-            expect(agora.teto).toBe(20);
-            expect(agora.percentual).toBe(20);
+            // Média de hoje com teto 20: 75% de um dia de 4 h = 3 h (15%).
+            expect(agora).toMatchObject({ teto: 20, horas: 3, percentual: 15 });
         });
     });
 });

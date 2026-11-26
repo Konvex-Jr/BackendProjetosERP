@@ -326,9 +326,9 @@ describe("Visibilidade de projetos (HTTP)", () => {
         it("gerente e membro: linha do projeto com o nome (sessão 27b)", async () => {
             const gerente = await servidor.chamar("get", `/ocupacao/${m2.codigo}`, { usuario: g });
             expect(gerente.status).toBe(200);
-            expect(gerente.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 4 });
+            expect(gerente.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 1.5 });
             const membro = await servidor.chamar("get", `/ocupacao/${m2.codigo}`, { usuario: m });
-            expect(membro.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 4 });
+            expect(membro.corpo.itens).toContainEqual({ tipo: "projeto", projeto: { codigo: "p-s", nome: "Sigiloso Beta" }, horas: 1.5 });
             expect(membro.corpo.itens.some((i: any) => i.tipo === "outras")).toBe(false);
         });
     });

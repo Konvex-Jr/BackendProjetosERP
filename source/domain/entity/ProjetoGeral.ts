@@ -28,8 +28,8 @@ export function novoGeral(area: Area, hoje: Date): Projeto {
 }
 
 /**
- * Equipe do projeto geral = quem passou pela área: período aberto vira participação ativa, encerrado vira
- * participação com saída. Quem tem um período encerrado e outro aberto aparece uma vez em `membros`.
+ * Equipe do projeto geral = quem está na área hoje (período aberto). Desde 25/11 quem saiu da área não aparece
+ * como ex-membro: o geral é aberto a todos (`acessoAoProjeto`), então o histórico não serve para dar acesso.
  */
 export function comEquipeDaArea(
     projeto: Projeto,
@@ -39,7 +39,7 @@ export function comEquipeDaArea(
 ): Projeto {
     const participacoes: Participacao[] = [];
     for (const p of periodosDaArea) {
-        if (p.area.codigo !== projeto.area?.codigo) continue;
+        if (p.area.codigo !== projeto.area?.codigo || !p.aberto) continue;
         const usuario = usuarios.get(p.codigoUsuario);
         if (!usuario) continue;
         participacoes.push(new Participacao(usuario, { dataEntrada: p.inicio, dataSaida: p.fim }));

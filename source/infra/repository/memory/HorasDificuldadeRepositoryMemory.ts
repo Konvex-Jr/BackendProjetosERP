@@ -1,14 +1,14 @@
-import { HORAS_PADRAO, HorasPorDificuldade } from "../../../domain/enum/DificuldadeTarefa";
+import { PERCENTUAL_PADRAO, PercentualPorDificuldade } from "../../../domain/enum/DificuldadeTarefa";
 import HorasDificuldadeRepositoryInterface from "../../../domain/interfaces/HorasDificuldadeRepositoryInterface";
 
 export default class HorasDificuldadeRepositoryMemory implements HorasDificuldadeRepositoryInterface {
-    private horas: HorasPorDificuldade = { ...HORAS_PADRAO };
+    private horas: PercentualPorDificuldade = { ...PERCENTUAL_PADRAO };
 
-    async listar(): Promise<HorasPorDificuldade> {
+    async listar(): Promise<PercentualPorDificuldade> {
         return { ...this.horas };
     }
 
-    async salvar(horas: HorasPorDificuldade): Promise<void> {
+    async salvar(horas: PercentualPorDificuldade): Promise<void> {
         this.horas = { ...horas };
     }
 }

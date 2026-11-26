@@ -57,19 +57,30 @@ describe("Registro de módulos", () => {
             "dashboard",
             "tarefas",
             "projetos",
-            "agenda",
+            "usuarios",
             "capacitacoes",
             "biblioteca",
             "estrategia",
             "precificacao",
-            "usuarios",
             "configuracoes",
         ]);
         expect(telas(gerente)).toEqual(telas(diretor).filter((t) => t !== "configuracoes"));
-        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "agenda", "capacitacoes", "biblioteca"]);
+        expect(telas(membro)).toEqual(["dashboard", "tarefas", "projetos", "capacitacoes", "biblioteca"]);
         // Biblioteca (sessão 17): sem permissão no menu; o membro vê o módulo.
         expect(menuDoUsuario(membro).find((m) => m.chave === "biblioteca")?.itens).toEqual([
-            { chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca" },
+            { chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", grupo: "Equipe" },
+        ]);
+        // Menu em grupos (25/11): Trabalho, Equipe e Gestão; Configurações fica sem grupo (engrenagem do topo).
+        expect(menuOrdenado(diretor).map((i) => i.grupo)).toEqual([
+            "Trabalho",
+            "Trabalho",
+            "Trabalho",
+            "Equipe",
+            "Equipe",
+            "Equipe",
+            "Gestão",
+            "Gestão",
+            undefined,
         ]);
         // "Meu perfil" abre pelo avatar do topo (sessão 22): o membro não vê o módulo Pessoas no menu.
         expect(chaves(membro)).not.toContain("pessoas");

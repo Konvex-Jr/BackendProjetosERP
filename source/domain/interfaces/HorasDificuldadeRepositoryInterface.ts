@@ -1,7 +1,7 @@
-import { HorasPorDificuldade } from "../enum/DificuldadeTarefa";
+import { PercentualPorDificuldade } from "../enum/DificuldadeTarefa";
 
-/** Horas que cada nível de dificuldade vale (uma linha por nível; sempre os quatro). */
+/** % do dia que cada nível de dificuldade vale (uma linha por nível; sempre os quatro; tabela horas_dificuldade). */
 export default interface HorasDificuldadeRepositoryInterface {
-    listar(): Promise<HorasPorDificuldade>;
-    salvar(horas: HorasPorDificuldade): Promise<void>;
+    listar(): Promise<PercentualPorDificuldade>;
+    salvar(horas: PercentualPorDificuldade): Promise<void>;
 }

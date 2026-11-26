@@ -202,10 +202,12 @@ export default class UsuarioRoutes implements ModelRoutes {
             return { message: "Senha alterada. Entre novamente nos outros dispositivos." };
         });
 
-        // A própria pessoa edita só os dados de contato e apresentação; o resto é com a gestão.
+        // A própria pessoa edita os dados de contato, a apresentação e a data de entrada na EJ (25/11);
+        // o resto (inclusive os períodos de área e cargo) é com a gestão.
         this.http.route("put", "/auth/perfil", true, async (_p: any, body: any) => {
             const eu = exigirAutenticado(body.user);
-            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, emailPessoal, ingresso, bio } = lerPerfil(body);
+            const { nomeExibicao, telefone, linkedinUrl, calendarioUrl, githubUrl, curso, emailPessoal, ingresso, dataEntrada, bio } =
+                lerPerfil(body);
             const editado = await new EditarUsuario(f).execute(
                 {
                     codigo: eu.codigo,
@@ -217,6 +219,7 @@ export default class UsuarioRoutes implements ModelRoutes {
                     curso,
                     emailPessoal,
                     ingresso,
+                    dataEntrada,
                     bio,
                 },
                 { autoEdicao: true },
