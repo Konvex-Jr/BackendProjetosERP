@@ -8,8 +8,6 @@ export default interface EditarProjetoInput extends EntradaDetalhesProjeto {
     dataInicio: Date;
     dataFim: Date;
     status?: StatusProjeto;
-    /** Omitido = mantém o sigilo atual; a rota confere quem pode mudar. */
-    sigiloso?: boolean;
     /**
      * Se informado, a equipe passa a ser exatamente essa lista: quem saiu tem a participação
      * encerrada hoje e quem entrou ganha uma participação nova. Se omitido, a equipe não muda.

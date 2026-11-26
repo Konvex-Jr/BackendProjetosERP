@@ -15,7 +15,7 @@ import { AdicionarParticipante, DefinirLider, EditarParticipacao, EncerrarPartic
 import { EntradaDetalhesProjeto } from "../../../useCases/projetos/dadosProjeto";
 import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { acessoAoProjeto, exigirAcessoCompleto, exigirNaoSeTrancar } from "../../../shared/seguranca/visibilidadeProjetos";
-import { lerBooleano, lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
+import { lerData, lerDataObrigatoria, lerEnum, lerInteiro, lerLista } from "../../../shared/entradas";
 import { cartaoProjeto } from "../../../useCases/projetos/cartaoProjeto";
 import { hoje } from "../../../shared/datas";
 import { normalizarBusca } from "../../../shared/texto";
@@ -127,15 +127,16 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("post", "/projetos", true, async (_p: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
-            const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
-            // Lida uma vez: a mesma equipe inicial vale para a regra do sigilo e para a gravação.
-            // Líder na criação (sessão 27b): entra na equipe junto, então conta para a regra do sigilo.
+            // Líder na criação (sessão 27b): entra na equipe junto.
             const codigoLider = body.codigoLider ? String(body.codigoLider) : undefined;
             const codigosMembros = [...new Set([...lerLista(body.codigosMembros), ...(codigoLider ? [codigoLider] : [])])];
-            if (sigiloso) exigirNaoSeTrancar(usuario, codigosMembros);
+            // Sessão 31a: todo projeto é fechado; quem cria não pode ficar de fora do que acabou de criar.
+            exigirNaoSeTrancar(usuario, {
+                participacoes: codigosMembros.map((codigo) => ({ usuario: { codigo }, ativa: true })),
+                area: body.codigoArea ? { codigo: String(body.codigoArea) } : null,
+            });
             return new CriarProjeto(f).execute({
                 criadoPor: usuario.codigo,
-                sigiloso,
                 nome: body.nome,
                 descricao: body.descricao,
                 dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),
@@ -149,20 +150,11 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
-            const projeto = await this.carregarParaEscrita(usuario, params.codigo);
-            const sigiloso = lerBooleano(body.sigiloso, "sigiloso");
-            // Ausente = não mexe na equipe; presente = a equipe que fica (lida uma vez, para a regra e a gravação).
+            await this.carregarParaEscrita(usuario, params.codigo);
+            // Ausente = não mexe na equipe; presente = a equipe que fica.
             const codigosMembros = body.codigosMembros === undefined ? undefined : lerLista(body.codigosMembros);
-            // Só quando liga o sigilo: mexer em outro campo de um sigiloso existente (ou sair da equipe dele)
-            // não barra ninguém. A equipe que vale é a que fica depois da gravação: a do corpo, se veio.
-            // O geral da área não passa por aqui: o caso de uso responde com o motivo certo (projeto fixo).
-            if (sigiloso === true && !projeto.sigiloso && !projeto.geralDaArea) {
-                const equipe = codigosMembros ?? projeto.membros.map((m) => m.codigo);
-                exigirNaoSeTrancar(usuario, equipe);
-            }
             return new EditarProjeto(f).execute({
                 codigo: params.codigo,
-                sigiloso,
                 nome: body.nome,
                 descricao: body.descricao,
                 dataInicio: lerDataObrigatoria(body.dataInicio, "dataInicio"),

@@ -23,7 +23,6 @@ export default class CriarProjeto {
         }
         const detalhes = await resolverDetalhesProjeto(this.factory, input);
         detalhes.criadoPor = input.criadoPor ?? null;
-        if (input.sigiloso !== undefined) detalhes.sigiloso = input.sigiloso;
         if (input.codigoLider) {
             const lider = participacoes.find((p) => p.usuario.codigo === input.codigoLider)!.usuario;
             // Trainee (sessão 20) não lidera.

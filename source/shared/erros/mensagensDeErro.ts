@@ -46,16 +46,11 @@ export const MENSAGENS_DE_ERRO = {
         DESCRICAO_OBRIGATORIA: "A descrição do projeto é obrigatória.",
         NAO_ENCONTRADO: "Projeto não encontrado.",
         AREA_OBRIGATORIA_INTERNO: "Projeto interno precisa de uma área.",
-        GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído, arquivado nem ficar sigiloso.",
-        GERAL_SIGILOSO: "O projeto geral da área não pode ser sigiloso.",
+        GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído nem arquivado.",
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
-        SEM_ACESSO: (sigiloso: boolean) =>
-            sigiloso
-                ? "Este projeto é sigiloso: só a equipe atual e os diretores veem os detalhes."
-                : "Só a equipe do projeto e a gestão veem os detalhes deste projeto.",
-        SIGILOSO_SEM_VOCE:
-            "Você ficaria sem acesso ao projeto sigiloso: só a equipe atual e os diretores o veem. Coloque-se na equipe ou peça a um diretor.",
+        SEM_ACESSO_AO_CRIAR: "Você ficaria sem acesso ao projeto que está criando: coloque-se na equipe ou escolha a área do seu cargo.",
+        SEM_ACESSO: "Você vê só o cartão deste projeto: os detalhes são da equipe e de quem tem acesso pelo cargo.",
         GERAL_COM_TAREFAS: (quantidade: number) =>
             `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
     },

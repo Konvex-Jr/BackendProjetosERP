@@ -8,7 +8,7 @@ import { autenticado, comPapel } from "./papel";
 describe("regrasTarefa.editar (sessão 24b)", () => {
     const auth = (u: Usuario) => autenticado(u);
 
-    async function montar(opcoes: { sigiloso?: boolean } = {}) {
+    async function montar(opcoes: Record<string, never> = {}) {
         const { senioridade, membro, gerente } = await criarContexto();
         const criador = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", senioridade, "usr-bruno"), "membro");
         const projeto = new Projeto("Time", "d", dataInicio, dataFim, undefined, [membro, criador], "proj-time", opcoes);
@@ -45,7 +45,7 @@ describe("regrasTarefa.editar (sessão 24b)", () => {
 
     it("sigiloso sem acesso completo: não edita", async () => {
         const { criador, tarefa } = await montar();
-        const sig = new Projeto("Sig", "d", dataInicio, dataFim, undefined, [], "proj-time", { sigiloso: true });
+        const sig = new Projeto("Sig", "d", dataInicio, dataFim, undefined, [], "proj-time", {});
         expect(regrasTarefa(auth(criador), tarefa(criador), sig).editar).toBe(false);
     });
 });

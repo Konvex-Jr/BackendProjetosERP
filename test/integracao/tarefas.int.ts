@@ -199,13 +199,10 @@ descrever("tarefas contra PostgreSQL", () => {
             return u;
         };
         const equipe = await criar("Equipe Sigilo", "membro");
-        const gerenteFora = await criar("Gerente Fora", "gerente");
-        const projeto = await factory.criarProjetoRepository().criar(
-            new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), {
-                sigiloso: true,
-                criadoPor: null,
-            }),
-        );
+        const gerenteFora = await criar("Gerente Fora", "gerenteDaArea");
+        const projeto = await factory
+            .criarProjetoRepository()
+            .criar(new Projeto("Sigiloso", "Descrição", inicio, fim, undefined, [equipe], crypto.randomUUID(), { criadoPor: null }));
         const tarefa = await factory
             .criarTarefaRepository()
             .criar(new Tarefa(projeto, "Segredo", inicio, fim, StatusTarefa.PENDENTE, PrioridadeTarefa.P2, null, null, null, [equipe], []));
@@ -286,16 +283,13 @@ descrever("tarefas contra PostgreSQL", () => {
         };
         const assessor = await criar("Assessor Ocupado", "membro");
         const fora = await criar("Membro Fora", "membro");
-        const gerente = await criar("Gerente Ocupação", "gerente");
+        const gerente = await criar("Gerente Ocupação", "gerenteDaArea");
         const area = await factory.criarAreaRepository().criar(new Area(`Área ${crypto.randomUUID()}`));
         const cargo = await factory.criarCargoRepository().criar(new Cargo(`Assessor ${crypto.randomUUID()}`, true, undefined, false, 10));
         await factory.criarPeriodoAreaRepository().criar(new PeriodoArea(assessor.codigo, area, cargo, inicio, null, null));
         const projetos = factory.criarProjetoRepository();
         const sigiloso = await projetos.criar(
-            new Projeto("Sigiloso Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID(), {
-                sigiloso: true,
-                criadoPor: null,
-            }),
+            new Projeto("Sigiloso Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID(), { criadoPor: null }),
         );
         const normal = await projetos.criar(new Projeto("Normal Ocupação", "d", inicio, fim, undefined, [assessor], crypto.randomUUID()));
         await factory
@@ -368,6 +362,8 @@ descrever("tarefas contra PostgreSQL", () => {
                         DificuldadeTarefa.MEDIA,
                     ),
                 );
+            // Para criar no projeto normal, a gestão precisa abri-lo (31a): passa a abrir todos.
+            comPapel(gerente, "gerente");
             const criada = await servidor.chamar("post", "/tarefas", {
                 usuario: gerente,
                 corpo: {

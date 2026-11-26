@@ -83,10 +83,7 @@ describe("Avisos (HTTP)", () => {
         const fim = new Date(dia.getTime() + 60 * UM_DIA);
         normal = await projetos.criar(new Projeto("Normal", "d", inicio, fim, undefined, [ctx.membro, trainee, sobrecarregado], "p-nor"));
         sigiloso = await projetos.criar(
-            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [ctx.membro], "p-sig", {
-                sigiloso: true,
-                criadoPor: diretor.codigo,
-            }),
+            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [ctx.membro], "p-sig", { criadoPor: diretor.codigo }),
         );
         servidor = await subirServidor(ctx.factory);
     });
@@ -160,6 +157,7 @@ describe("Avisos (HTTP)", () => {
     });
 
     it("gerente fora do sigiloso (acesso resumo): título não aparece nos gravados nem na situação", async () => {
+        comPapel(ctx.gerente, "gerenteDaArea");
         await ctx.factory
             .criarTarefaRepository()
             .criar(

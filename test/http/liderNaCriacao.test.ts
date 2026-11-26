@@ -66,9 +66,10 @@ describe("Líder na criação do projeto", () => {
         expect((await criar({ codigoLider: "usr-nada" })).status).toBe(404);
     });
 
-    it("sigiloso: ser o líder conta como estar na equipe", async () => {
-        expect((await criar({ sigiloso: true, codigoLider: ctx.gerente.codigo })).status).toBe(200);
-        const fora = await criar({ sigiloso: true, codigoLider: ctx.membro.codigo });
+    it("quem cria não fica de fora (31a): ser o líder conta como estar na equipe", async () => {
+        comPapel(ctx.gerente, "gerenteDaArea");
+        expect((await criar({ codigoLider: ctx.gerente.codigo })).status).toBe(200);
+        const fora = await criar({ codigoLider: ctx.membro.codigo });
         expect(fora.status).toBe(400);
     });
 });

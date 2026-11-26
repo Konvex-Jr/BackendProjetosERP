@@ -20,9 +20,7 @@ async function montar() {
     const detalhes = { referencia: "REF-SECRETA" };
     // Ana (membro) e Beto estão no normal e no sigiloso; Ana saiu do sigiloso "antigo".
     await repo.criar(new Projeto("Normal", "d", dataInicio, dataFim, undefined, [membro, outro], "p-normal", detalhes));
-    await repo.criar(
-        new Projeto("Sigiloso ativo", "d", dataInicio, dataFim, undefined, [membro, outro], "p-sig", { ...detalhes, sigiloso: true }),
-    );
+    await repo.criar(new Projeto("Sigiloso ativo", "d", dataInicio, dataFim, undefined, [membro, outro], "p-sig", { ...detalhes }));
     await repo.criar(
         new Projeto(
             "Sigiloso antigo",
@@ -32,49 +30,48 @@ async function montar() {
             undefined,
             [new Participacao(membro, { dataEntrada: dataInicio, dataSaida: saida }), outro],
             "p-sig-antigo",
-            { ...detalhes, sigiloso: true },
+            { ...detalhes },
         ),
     );
     const auth = (u: Usuario) => autenticado(u);
     return { factory, membro, gerente, outro, auth };
 }
 
-describe("Perfil da pessoa com projetos sigilosos", () => {
-    it("gestão vê todos; sigiloso sem acesso vem restrito, sem referência nem função", async () => {
-        const { factory, membro, gerente, auth } = await montar();
-        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(gerente));
+describe("Perfil da pessoa com projetos fechados (31a: era o sigiloso)", () => {
+    it("gerente de outra área vê todos; os que não abre vêm restritos, sem referência nem função", async () => {
+        const { factory, membro, auth } = await montar();
+        const gerenteFora = comPapel(new Usuario("Gui", "gui@konvex.com.br", true, "x", membro.senioridade, "usr-gui"), "gerenteDaArea");
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(gerenteFora));
         const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
         expect(todos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig", "p-sig-antigo"]);
         const sig = todos.find((p) => p.codigo === "p-sig")!;
-        expect(sig).toMatchObject({ nome: "Sigiloso ativo", sigiloso: true, restrito: true, referencia: null, funcao: null });
+        expect(sig).toMatchObject({ nome: "Sigiloso ativo", restrito: true, referencia: null, funcao: null });
         expect(JSON.stringify(sig)).not.toContain("REF-SECRETA");
-        const normal = todos.find((p) => p.codigo === "p-normal")!;
-        expect(normal).toMatchObject({ sigiloso: false, restrito: false, referencia: "REF-SECRETA", tipo: "cliente", geralDaArea: false });
-        expect(perfil.ocupacao.percentual).toBe(0);
     });
 
-    it("a própria pessoa vê o que perdeu como restrito e o que ainda tem como completo", async () => {
+    it("gestão que abre todos vê tudo completo", async () => {
+        const { factory, membro, gerente, auth } = await montar();
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(gerente));
+        const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
+        expect(todos.every((p) => !p.restrito)).toBe(true);
+    });
+
+    it("a própria pessoa vê completo também o projeto de que saiu (quem sai não perde o acesso)", async () => {
         const { factory, membro, auth } = await montar();
         const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(membro));
-        const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
-        expect(todos.map((p) => p.codigo).sort()).toEqual(["p-normal", "p-sig", "p-sig-antigo"]);
-        expect(todos.find((p) => p.codigo === "p-sig")).toMatchObject({ sigiloso: true, restrito: false, referencia: "REF-SECRETA" });
-        const antigo = todos.find((p) => p.codigo === "p-sig-antigo")!;
-        expect(antigo).toMatchObject({ sigiloso: true, restrito: true, referencia: null, funcao: null });
-        expect(JSON.stringify(antigo)).not.toContain("REF-SECRETA");
+        const antigo = [...perfil.projetosAtuais, ...perfil.projetosAnteriores].find((p) => p.codigo === "p-sig-antigo")!;
+        expect(antigo).toMatchObject({ restrito: false, referencia: "REF-SECRETA" });
     });
 
-    it("membro olhando outro vê todos os projetos dele; sem acesso completo = restrito (sessão 27b)", async () => {
+    it("membro olhando outro: projeto que ele também abre (até de que saiu) vem completo (sessão 27b)", async () => {
         const { factory, membro, outro, auth } = await montar();
         const perfil = await new ObterPerfilPessoa(factory).execute(outro.codigo, auth(membro));
         const todos = [...perfil.projetosAtuais, ...perfil.projetosAnteriores];
-        // Ana está na equipe atual de p-sig (completo); em p-sig-antigo Ana saiu e o outro segue: aparece restrito.
         expect(todos.map((p) => [p.codigo, p.restrito]).sort()).toEqual([
             ["p-normal", false],
             ["p-sig", false],
-            ["p-sig-antigo", true],
+            ["p-sig-antigo", false],
         ]);
-        expect(todos.find((p) => p.codigo === "p-sig-antigo")).toMatchObject({ referencia: null, funcao: null });
         expect(perfil.ocupacao).toMatchObject({ percentual: 0, horas: 0, itens: [] });
         expect("alocacao" in perfil).toBe(false);
     });
@@ -96,7 +93,7 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
         const { factory, membro, outro, auth } = await montar();
         const hojeSp = hoje();
         const dia = 86_400_000;
-        const oculto = new Projeto("Oculto", "d", dataInicio, dataFim, undefined, [outro], "p-oculto", { sigiloso: true });
+        const oculto = new Projeto("Oculto", "d", dataInicio, dataFim, undefined, [outro], "p-oculto", {});
         await factory.criarProjetoRepository().criar(oculto);
         const tarefa = new Tarefa(
             oculto,

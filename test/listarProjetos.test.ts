@@ -15,11 +15,9 @@ test("lista projetos associados a um membro", async () => {
 test("com codigoUsuario, só os projetos da equipe (quem só criou o sigiloso não o recebe)", async () => {
     const { factory, membro } = await criarContexto();
     const repo = factory.criarProjetoRepository();
-    await repo.criar(new Projeto("Meu", "d", dataInicio, dataFim, undefined, [membro], "p-meu", { sigiloso: true }));
-    await repo.criar(
-        new Projeto("Criado por ele", "d", dataInicio, dataFim, undefined, [], "p-criado", { sigiloso: true, criadoPor: membro.codigo }),
-    );
-    await repo.criar(new Projeto("Alheio", "d", dataInicio, dataFim, undefined, [], "p-alheio", { sigiloso: true }));
+    await repo.criar(new Projeto("Meu", "d", dataInicio, dataFim, undefined, [membro], "p-meu", {}));
+    await repo.criar(new Projeto("Criado por ele", "d", dataInicio, dataFim, undefined, [], "p-criado", { criadoPor: membro.codigo }));
+    await repo.criar(new Projeto("Alheio", "d", dataInicio, dataFim, undefined, [], "p-alheio", {}));
 
     const projetos = await new ListarProjetos(factory).execute(membro.codigo);
 

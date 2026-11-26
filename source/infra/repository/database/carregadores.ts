@@ -112,7 +112,7 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
     const linhas = await conexao.consultar(
         `SELECT p.codigo, p.nome, p.descricao, p.data_inicio, p.data_fim, p.status,
                 p.referencia, p.objetivo, p.cliente_nome, p.prioridade, p.progresso,
-                p.tags, p.lider_codigo, p.sigiloso, p.criado_por_codigo,
+                p.tags, p.lider_codigo, p.criado_por_codigo,
                 p.tipo, p.geral_da_area,
                 a.codigo AS area_codigo, a.nome AS area_nome, a.area_pai_codigo, a.ativa AS area_ativa, a.tem_geral AS area_tem_geral
          FROM projetos p
@@ -192,7 +192,6 @@ export async function carregarProjetos(conexao: ConexaoBanco, codigos: string[])
                 area: areaDeLinha(linha),
                 tags: linha.tags ?? [],
                 lider: linha.lider_codigo && !linha.geral_da_area ? (usuarios.get(linha.lider_codigo) ?? null) : null,
-                sigiloso: linha.sigiloso,
                 criadoPor: linha.criado_por_codigo,
                 colunas: colunas
                     .filter((c) => c.projeto_codigo === linha.codigo)

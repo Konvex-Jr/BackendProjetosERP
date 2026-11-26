@@ -20,7 +20,11 @@ import { PermissoesDaPessoa } from "../source/shared/seguranca/permissoesEfetiva
  * Unidade: o objeto marcado já serve como UsuarioAutenticado. HTTP: o servidor de teste (servidorTeste.ts)
  * consulta este registro antes de calcular pelo cargo.
  */
-export type Papel = "presidente" | "diretor" | "gerente" | "membro";
+/**
+ * "gerente": como o gerente de antes da 31a (abre todos os projetos), para os testes antigos de gestão.
+ * "gerenteDaArea": o padrão da migração 030 (abre só os projetos da área do cargo, "area-projetos-teste").
+ */
+export type Papel = "presidente" | "diretor" | "gerente" | "gerenteDaArea" | "membro";
 
 const PAPEIS = new Map<string, Papel>();
 
@@ -28,13 +32,15 @@ const CARGOS: Record<Papel, PermissoesDaPessoa["cargo"]> = {
     presidente: { codigo: "cargo-presidente-teste", nome: "Presidente", posicao: 1, codigoArea: "area-presidencia-teste" },
     diretor: { codigo: "cargo-diretor-teste", nome: "Diretor", posicao: 2, codigoArea: "area-projetos-teste" },
     gerente: { codigo: "cargo-gerente-teste", nome: "Gerente", posicao: 3, codigoArea: "area-projetos-teste" },
+    gerenteDaArea: { codigo: "cargo-gerente-area-teste", nome: "Gerente da área", posicao: 3, codigoArea: "area-projetos-teste" },
     membro: null,
 };
 
 const PERMISSOES: Record<Papel, readonly Permissao[]> = {
     presidente: TODAS_AS_PERMISSOES,
     diretor: PADRAO_DIRETOR,
-    gerente: PADRAO_GERENTE,
+    gerente: [...PADRAO_GERENTE, Permissao.PROJETOS_ABRIR_TODOS],
+    gerenteDaArea: PADRAO_GERENTE,
     membro: PADRAO_MEMBRO,
 };
 
@@ -65,8 +71,14 @@ export function autenticado(usuario: { codigo: string; status?: StatusPessoa | s
     return { codigo: usuario.codigo, status: usuario.status, ...(papel ? efetivasDoPapel(papel, usuario.status) : {}) };
 }
 
-const NOMES_CARGO: Record<Papel, string> = { presidente: "Presidente", diretor: "Diretor", gerente: "Gerente", membro: "Membro" };
-const POSICOES: Record<Papel, number> = { presidente: 1, diretor: 2, gerente: 3, membro: 4 };
+const NOMES_CARGO: Record<Papel, string> = {
+    presidente: "Presidente",
+    diretor: "Diretor",
+    gerente: "Gerente",
+    gerenteDaArea: "Gerente da área",
+    membro: "Membro",
+};
+const POSICOES: Record<Papel, number> = { presidente: 1, diretor: 2, gerente: 3, gerenteDaArea: 3, membro: 4 };
 
 /**
  * Dá à pessoa um cargo de verdade (cargo com os padrões do papel e período aberto numa área de teste), para as

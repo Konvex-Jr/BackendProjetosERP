@@ -9,7 +9,7 @@ import { carregarProjetos } from "./carregadores";
 import { validarColunas } from "../../../domain/entity/ColunaProjeto";
 
 const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
-    prioridade, progresso, area_codigo, tags, lider_codigo, sigiloso, criado_por_codigo,
+    prioridade, progresso, area_codigo, tags, lider_codigo, criado_por_codigo,
     tipo, geral_da_area`;
 
 function valores(projeto: Projeto): unknown[] {
@@ -28,7 +28,6 @@ function valores(projeto: Projeto): unknown[] {
         projeto.tags,
         // O geral não tem líder gravado: quem lidera vem dos períodos da área.
         projeto.geralDaArea ? null : (projeto.lider?.codigo ?? null),
-        projeto.sigiloso,
         projeto.criadoPor,
         projeto.tipo,
         projeto.geralDaArea,
@@ -42,7 +41,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
@@ -100,11 +99,6 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         return [...(await this.hidratar(linhas.map((l) => l.codigo))), ...dosGerais];
     }
 
-    async listarSigilosos(): Promise<Projeto[]> {
-        const linhas = await this.conexao.consultar("SELECT codigo FROM projetos WHERE sigiloso ORDER BY data_inicio, nome");
-        return this.hidratar(linhas.map((l) => l.codigo));
-    }
-
     async buscarPorCodigo(codigo: string): Promise<Projeto | null> {
         const projetos = await carregarProjetos(this.conexao, [codigo]);
         return projetos.get(codigo) ?? null;
@@ -120,7 +114,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],

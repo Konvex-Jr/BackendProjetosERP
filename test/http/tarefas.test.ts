@@ -202,7 +202,7 @@ describe("Tarefas pela API", () => {
         it("tarefa de sigiloso sem acesso: 404 no PATCH /coluna", async () => {
             const sig = await ctx.factory
                 .criarProjetoRepository()
-                .criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", { sigiloso: true }));
+                .criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {}));
             await criarTarefa(ctx.factory, ctx.membro, sig, "tarefa-sig");
             const r = await mover(deFora, "tarefa-sig", sig.colunas[1].codigo);
             expect(r.status).toBe(404);

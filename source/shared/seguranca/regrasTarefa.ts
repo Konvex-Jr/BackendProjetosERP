@@ -1,7 +1,7 @@
 import Projeto from "../../domain/entity/Projeto";
 import Tarefa from "../../domain/entity/Tarefa";
 import { Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
-import { acessoAoProjeto, podeVerTodosProjetos } from "./visibilidadeProjetos";
+import { acessoAoProjeto } from "./visibilidadeProjetos";
 
 /**
  * Política única de tarefas (sessões 8b, 20 e 23b). Tudo o que decide quem pode o quê numa tarefa fica aqui.
@@ -12,9 +12,8 @@ import { acessoAoProjeto, podeVerTodosProjetos } from "./visibilidadeProjetos";
  *   também a edita e exclui (`editar`, sessão 24b), sem trocar responsáveis nem situação (isso é de `organizar` e `mudarStatus`);
  * - nenhum: só vê se for responsável ou tiver participado do projeto.
  *
- * Projeto sigiloso (sessão 20; regra da 27a): quem não tem acesso completo ao projeto (`acessoAoProjeto`: diretor
- * ou equipe atual) não vê nem faz nada nas tarefas dele, nem sendo responsável ou gerente. Quem tem acesso
- * completo sempre vê e organiza como em qualquer projeto.
+ * Sessão 31a: todo projeto é fechado. Quem não abre o projeto (`acessoAoProjeto`) não vê nem faz nada nas
+ * tarefas dele, nem sendo responsável nem com `tarefas.gerirTodas`. Quem abre segue as regras acima.
  *
  * Projeto geral da área (sessão 23b): a equipe vem dos períodos na área (aberto = equipe atual, encerrado = ex-equipe)
  * e quem tem cargo que lidera a área (`lideresDaArea`) conta como líder: organiza tudo, mas não entra como
@@ -36,8 +35,8 @@ export interface RegrasTarefa {
  * o projeto conta como "gestao". `membros` só tem a equipe atual, então quem saiu vira "nenhum".
  */
 export function papelNoProjeto(usuario: UsuarioAutenticado, projeto: Projeto | null): PapelProjeto {
-    // Em sigiloso, sem acesso completo ninguém tem papel (a gestão fora também não).
-    if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") return "nenhum";
+    // Sem acesso completo ao projeto ninguém tem papel (a gestão de fora também não).
+    if (projeto && acessoAoProjeto(usuario, projeto) !== "completo") return "nenhum";
     if (temPermissao(usuario, Permissao.TAREFAS_GERIR_TODAS)) return "gestao";
     if (!projeto) return "nenhum";
     if (projeto.ehLider(usuario.codigo)) return "lider";
@@ -52,13 +51,13 @@ export function papelNoProjeto(usuario: UsuarioAutenticado, projeto: Projeto | n
 export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projeto: Projeto | null): RegrasTarefa {
     const responsavel = tarefa.responsaveis.some((r) => r.codigo === usuario.codigo);
 
-    if (projeto?.sigiloso && acessoAoProjeto(usuario, projeto) !== "completo") {
+    if (projeto && acessoAoProjeto(usuario, projeto) !== "completo") {
         return { ver: false, organizar: false, editar: false, mudarStatus: false, comentar: false };
     }
     const papel = papelNoProjeto(usuario, projeto);
     const organizar = papel === "gestao" || papel === "lider";
-    // Gestão, quem participa ou participou e quem lidera a área do geral. Sigiloso: chegar aqui já é ter acesso completo.
-    const verProjeto = podeVerTodosProjetos(usuario) || (projeto !== null && acessoAoProjeto(usuario, projeto) === "completo");
+    // Chegar aqui com projeto já é ter acesso completo a ele.
+    const verProjeto = projeto !== null;
     return {
         ver: organizar || responsavel || verProjeto,
         organizar,

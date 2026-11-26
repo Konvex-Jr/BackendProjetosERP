@@ -113,11 +113,6 @@ const swaggerSpecification = {
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
                     codigosMembros: { type: "array", items: { type: "string" } },
-                    sigiloso: {
-                        type: "boolean",
-                        description:
-                            "Projeto sigiloso. Na edição, omitido mantém o atual; quem edita o projeto pode marcar e desmarcar. Ligar o sigilo (criar sigiloso ou marcar um que não era) sem ser diretor e sem estar na equipe que fica: 400 SIGILOSO_SEM_VOCE.",
-                    },
                 },
             },
             TarefaInput: {
@@ -270,7 +265,7 @@ const swaggerSpecification = {
         "/projetos": {
             get: operation(
                 ["Projetos"],
-                "Listar todos os projetos (sessão 27a): completo (com `tarefas`) para a equipe e a gestão (no sigiloso, equipe atual e diretores); para os demais, cartão { codigo, nome, tipo, area, status, lider, sigiloso, geralDaArea, cartao: true }. Filtros de pessoa e responsável descartam os cartões; busca no cartão só pelo nome",
+                "Listar todos os projetos (sessão 27a): completo (com `tarefas`) para a equipe (atual ou antiga) e quem abre pelo cargo (projetos.abrirTodos, ou projetos.abrirDaArea na área do cargo; sessão 31a); para os demais, cartão { codigo, nome, tipo, area, status, lider, sigiloso, geralDaArea, cartao: true }. Filtros de pessoa e responsável descartam os cartões; busca no cartão só pelo nome",
                 {
                     parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
                 },
@@ -394,7 +389,7 @@ const swaggerSpecification = {
         "/agenda": {
             get: operation(
                 ["Agenda"],
-                "Agenda unificada de um período: { pessoa, de, ate, itens }. Itens: reuniao (da pessoa), prazo (tarefas em que a pessoa é responsável; sem título nem código se quem pede não vê o projeto completo), capacitacao (todas, com inscrito e ministra). Só a gestão (projetos.verTodos) usa `pessoa`. 400 AGENDA_PERIODO_INVALIDO (no máximo 62 dias), 403, 404",
+                "Agenda unificada de um período: { pessoa, de, ate, itens }. Itens: reuniao (da pessoa), prazo (tarefas em que a pessoa é responsável; sem título nem código se quem pede não vê o projeto completo), capacitacao (todas, com inscrito e ministra). Só quem tem agenda.gerirTodas usa `pessoa`. 400 AGENDA_PERIODO_INVALIDO (no máximo 62 dias), 403, 404",
                 {
                     parameters: [
                         { name: "de", in: "query", required: true, schema: { type: "string", example: "2026-12-01" } },
@@ -446,7 +441,7 @@ const swaggerSpecification = {
         "/avisos": {
             get: operation(
                 ["Painel"],
-                "Central de avisos de quem está logado: { naoLidos, gravados (no máximo 30: tarefa recebida e capacitação nova), situacao (atrasadas, a vencer, capacitação próxima; sobrecarga só para a gestão, quem tem projetos.verTodos: hoje diretor e gerente) }. Tarefas só de projetos com acesso completo",
+                "Central de avisos de quem está logado: { naoLidos, gravados (no máximo 30: tarefa recebida e capacitação nova), situacao (atrasadas, a vencer, capacitação próxima; sobrecarga só para quem tem gestao.visoes) }. Tarefas só de projetos com acesso completo",
             ),
         },
         "/avisos/lidos": {

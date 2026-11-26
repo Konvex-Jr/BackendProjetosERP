@@ -103,6 +103,8 @@ describe("Agenda e reuniões (HTTP)", () => {
     });
 
     it("agenda junta reuniões, prazos e capacitações; a gestão vê a de outra pessoa", async () => {
+        // Gestão de outra área: vê a agenda, mas o prazo de projeto que não abre vem sem título (31a).
+        comPapel(ctx.gerente, "gerenteDaArea");
         await servidor.chamar("post", "/reunioes", { usuario: bia, corpo: corpo({ participantes: ["usr-ana"] }) });
         await servidor.chamar("post", "/reunioes", { usuario: bia, corpo: corpo({ titulo: "Só Bia", participantes: [] }) });
         await servidor.chamar("post", "/reunioes", {
@@ -113,7 +115,7 @@ describe("Agenda e reuniões (HTTP)", () => {
         const projetos = ctx.factory.criarProjetoRepository();
         const normal = await projetos.criar(new Projeto("Normal", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-nor"));
         const sigiloso = await projetos.criar(
-            new Projeto("Secreto", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-sig", { sigiloso: true }),
+            new Projeto("Secreto", "d", d("2026-10-01"), d("2026-12-31"), undefined, [ctx.membro], "p-sig", {}),
         );
         const tarefa = (projeto: Projeto, titulo: string, codigo: string, fim: string, status = StatusTarefa.PENDENTE) =>
             new Tarefa(

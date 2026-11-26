@@ -35,14 +35,11 @@ describe("Biblioteca e projeto sigiloso", () => {
         equipe = ctx.membro;
         criadorFora = await novo("Lia", "membro", "usr-lia");
         fora = await novo("Fê", "membro", "usr-fe");
-        gerenteFora = await novo("Gui", "gerente", "usr-gui");
+        gerenteFora = await novo("Gui", "gerenteDaArea", "usr-gui");
         diretor = await novo("Dora", "diretor", "usr-dora");
         const projetos = ctx.factory.criarProjetoRepository();
         await projetos.criar(
-            new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe], "proj-sig", {
-                sigiloso: true,
-                criadoPor: criadorFora.codigo,
-            }),
+            new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe], "proj-sig", { criadoPor: criadorFora.codigo }),
         );
         await projetos.criar(new Projeto("Normal", "d", dataInicio, dataFim, undefined, [equipe], "proj-nor"));
         servidor = await subirServidor(ctx.factory);
@@ -61,20 +58,16 @@ describe("Biblioteca e projeto sigiloso", () => {
 
     afterEach(async () => servidor.fechar());
 
-    it("gerente fora do sigiloso não lista, não abre e não baixa o anexo de item do projeto", async () => {
-        expect(await titulos(gerenteFora)).toEqual(["Normal"]);
-        expect((await ver(gerenteFora, itemTodos.codigo)).status).toBe(404);
-        expect((await ver(gerenteFora, itemProjeto.codigo)).status).toBe(404);
-        expect(await baixar(gerenteFora, codigoAnexo)).toBe(404);
+    it("quem não abre o projeto (gerente de outra área, membro de fora): vê o item 'todos', não o da equipe", async () => {
+        for (const u of [gerenteFora, fora]) {
+            expect(await titulos(u)).toEqual(["Aberto no sigiloso", "Normal"]);
+            expect((await ver(u, itemTodos.codigo)).status).toBe(200);
+            expect((await ver(u, itemProjeto.codigo)).status).toBe(404);
+            expect(await baixar(u, codigoAnexo)).toBe(200);
+        }
     });
 
-    it("membro sem relação também não vê, nem baixa", async () => {
-        expect(await titulos(fora)).toEqual(["Normal"]);
-        expect((await ver(fora, itemTodos.codigo)).status).toBe(404);
-        expect(await baixar(fora, codigoAnexo)).toBe(404);
-    });
-
-    it("filtrar pelo sigiloso devolve vazio para o gerente fora", async () => {
+    it("filtrar pelo projeto que não abre devolve vazio", async () => {
         expect(await titulos(gerenteFora, "?projeto=proj-sig")).toEqual([]);
     });
 
@@ -86,12 +79,9 @@ describe("Biblioteca e projeto sigiloso", () => {
         }
     });
 
-    it("quem só criou o sigiloso (fora da equipe) não vê os itens nem baixa (sessão 27a)", async () => {
-        expect(await titulos(criadorFora)).toEqual(["Normal"]);
-        expect((await ver(criadorFora, itemTodos.codigo)).status).toBe(404);
+    it("quem só criou o projeto (fora da equipe) não vê o item da equipe (sessão 27a)", async () => {
+        expect(await titulos(criadorFora)).toEqual(["Aberto no sigiloso", "Normal"]);
         expect((await ver(criadorFora, itemProjeto.codigo)).status).toBe(404);
-        expect(await baixar(criadorFora, codigoAnexo)).toBe(404);
-        expect((await ver(fora, itemProjeto.codigo)).status).toBe(404);
     });
 
     it("projeto do item aparece como null para quem não vê o projeto", async () => {
@@ -99,7 +89,7 @@ describe("Biblioteca e projeto sigiloso", () => {
         expect(r.corpo.every((i: any) => i.projeto?.codigo !== "proj-sig")).toBe(true);
     });
 
-    it("gerente com biblioteca.gerir fora da equipe não liga item ao sigiloso (403)", async () => {
+    it("gerente com biblioteca.gerir não liga item a projeto que não abre (403); ao que abre, liga", async () => {
         const r = await servidor.chamar("post", "/biblioteca", {
             usuario: gerenteFora,
             corpo: { titulo: "Tentativa", sigilo: "todos", codigoProjeto: "proj-sig" },
@@ -109,6 +99,11 @@ describe("Biblioteca e projeto sigiloso", () => {
             usuario: gerenteFora,
             corpo: { titulo: "Normal 2", sigilo: "todos", codigoProjeto: "proj-nor" },
         });
-        expect(ok.status).toBe(200);
+        expect(ok.status).toBe(403);
+        const doDiretor = await servidor.chamar("post", "/biblioteca", {
+            usuario: diretor,
+            corpo: { titulo: "Normal 3", sigilo: "todos", codigoProjeto: "proj-nor" },
+        });
+        expect(doDiretor.status).toBe(200);
     });
 });

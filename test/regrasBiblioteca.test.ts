@@ -16,7 +16,7 @@ import {
     podeVerProjetoDoItem,
     contextoProjetos,
 } from "../source/shared/seguranca/regrasBiblioteca";
-import { autenticado, comPapel } from "./papel";
+import { autenticado, comPapel, efetivasDoPapel } from "./papel";
 
 const inicio = new Date("2026-10-01T00:00:00.000Z");
 const saida = new Date("2026-10-20T00:00:00.000Z");
@@ -43,47 +43,37 @@ async function montar() {
     const item = (sigilo: string, projeto: string | null = null, autor = outro) =>
         new ItemBiblioteca({ titulo: "Item", sigilo, projeto: projeto ? ref(projeto) : null, autor: ref(autor.codigo) });
     const u = (x: Usuario) => autenticado(x);
-    return { factory, membro: u(membro), gerente: u(gerente), outro: u(outro), outroUsuario: outro, item };
+    const diretor = { codigo: "usr-dir", ...efetivasDoPapel("diretor") };
+    return { factory, membro: u(membro), gerente: u(gerente), diretor, outro: u(outro), outroUsuario: outro, item };
 }
 
 describe("regras da Biblioteca", () => {
-    it("gerente vê os três sigilos", async () => {
+    it("gerente (biblioteca.verTodos) vê os três sigilos", async () => {
         const { factory, gerente, item } = await montar();
-        const meus = await contextoProjetos(gerente, factory);
-        expect(meus.meus.size).toBe(0);
+        const ctx = await contextoProjetos(gerente, factory);
         for (const i of [item("todos"), item("gestao"), item("projeto", "p-alheio")]) {
-            expect(podeVerItem(gerente, i, meus)).toBe(true);
+            expect(podeVerItem(gerente, i, ctx)).toBe(true);
         }
     });
 
     it("membro vê todos, projeto do seu e do que saiu; não vê gestao nem projeto alheio", async () => {
         const { factory, membro, item } = await montar();
-        const meus = await contextoProjetos(membro, factory);
-        expect([...meus.meus].sort()).toEqual(["p-antigo", "p-meu"]);
-        expect(podeVerItem(membro, item("todos"), meus)).toBe(true);
-        expect(podeVerItem(membro, item("projeto", "p-meu"), meus)).toBe(true);
-        expect(podeVerItem(membro, item("projeto", "p-antigo"), meus)).toBe(true);
-        expect(podeVerItem(membro, item("gestao"), meus)).toBe(false);
-        expect(podeVerItem(membro, item("projeto", "p-alheio"), meus)).toBe(false);
+        const ctx = await contextoProjetos(membro, factory);
+        expect([...ctx.completos].sort()).toEqual(["p-antigo", "p-meu"]);
+        expect(podeVerItem(membro, item("todos"), ctx)).toBe(true);
+        expect(podeVerItem(membro, item("projeto", "p-meu"), ctx)).toBe(true);
+        expect(podeVerItem(membro, item("projeto", "p-antigo"), ctx)).toBe(true);
+        expect(podeVerItem(membro, item("gestao"), ctx)).toBe(false);
+        expect(podeVerItem(membro, item("projeto", "p-alheio"), ctx)).toBe(false);
     });
 
-    it("sigiloso oculto: nem a gestão vê item ligado a ele, nem liga item a ele", async () => {
-        const { factory, gerente, membro, outro, outroUsuario, item } = await montar();
-        await factory
-            .criarProjetoRepository()
-            .criar(
-                new Projeto("Secreto", "d", inicio, saida, undefined, [outroUsuario], "p-sec", { sigiloso: true, criadoPor: outro.codigo }),
-            );
-        const ctxGerente = await contextoProjetos(gerente, factory);
-        expect([...ctxGerente.ocultos]).toEqual(["p-sec"]);
-        expect(podeVerItem(gerente, item("todos", "p-sec"), ctxGerente)).toBe(false);
-        expect(podeVerProjetoDoItem(gerente, "p-sec", ctxGerente)).toBe(false);
-        await expect(exigirPodeUsarSigiloEProjeto(gerente, SigiloBiblioteca.TODOS, "p-sec", factory)).rejects.toThrow(ErroProibido);
-        const ctxDono = await contextoProjetos(outro, factory);
-        expect(ctxDono.ocultos.size).toBe(0);
-        expect(ctxDono.meus.has("p-sec")).toBe(true);
-        expect(podeVerItem(outro, item("projeto", "p-sec"), ctxDono)).toBe(true);
-        expect((await contextoProjetos(membro, factory)).meus.has("p-sec")).toBe(false);
+    it("projeto que a pessoa não abre: item 'todos' segue visível com o projeto nulo; ligar item a ele não", async () => {
+        const { factory, membro, item } = await montar();
+        const ctx = await contextoProjetos(membro, factory);
+        expect(podeVerItem(membro, item("todos", "p-alheio"), ctx)).toBe(true);
+        expect(podeVerProjetoDoItem(membro, "p-alheio", ctx)).toBe(false);
+        expect(podeVerProjetoDoItem(membro, "p-meu", ctx)).toBe(true);
+        await expect(exigirPodeUsarSigiloEProjeto(membro, SigiloBiblioteca.TODOS, "p-alheio", factory)).rejects.toThrow(ErroProibido);
     });
 
     it("exigirVerItem responde 404 para item invisível ou nulo", async () => {
@@ -106,7 +96,7 @@ describe("regras da Biblioteca", () => {
     });
 
     it("exigirPodeUsarSigiloEProjeto", async () => {
-        const { factory, membro, gerente } = await montar();
+        const { factory, membro, gerente, diretor } = await montar();
         const G = SigiloBiblioteca.GESTAO,
             P = SigiloBiblioteca.PROJETO,
             T = SigiloBiblioteca.TODOS;
@@ -116,8 +106,11 @@ describe("regras da Biblioteca", () => {
         await expect(exigirPodeUsarSigiloEProjeto(membro, P, "p-antigo", factory)).resolves.toBeUndefined();
         await expect(exigirPodeUsarSigiloEProjeto(membro, T, "p-meu", factory)).resolves.toBeUndefined();
         await expect(exigirPodeUsarSigiloEProjeto(membro, T, null, factory)).resolves.toBeUndefined();
-        await expect(exigirPodeUsarSigiloEProjeto(gerente, G, "p-alheio", factory)).resolves.toBeUndefined();
-        await expect(exigirPodeUsarSigiloEProjeto(gerente, P, "p-alheio", factory)).resolves.toBeUndefined();
+        // 31a: ligar item a projeto exige abri-lo, também para quem gere a Biblioteca.
+        await expect(exigirPodeUsarSigiloEProjeto(gerente, G, null, factory)).resolves.toBeUndefined();
+        const gerenteDaArea = { codigo: "usr-gda", ...efetivasDoPapel("gerenteDaArea") };
+        await expect(exigirPodeUsarSigiloEProjeto(gerenteDaArea, P, "p-alheio", factory)).rejects.toThrow(ErroProibido);
+        await expect(exigirPodeUsarSigiloEProjeto(diretor, P, "p-alheio", factory)).resolves.toBeUndefined();
     });
 
     it("catálogo: gestão tem as duas permissões; membro nenhuma", () => {

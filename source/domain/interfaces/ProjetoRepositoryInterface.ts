@@ -21,8 +21,6 @@ export default interface ProjetoRepositoryInterface {
     listar(filtro?: FiltroProjetos): Promise<Projeto[]>;
     /** Projetos em que a pessoa participa ou já participou, mais os gerais das áreas em que tem ou teve período, ou que lidera. */
     listarPorMembro(codigoUsuario: string): Promise<Projeto[]>;
-    /** Todos os projetos sigilosos. */
-    listarSigilosos(): Promise<Projeto[]>;
     buscarPorCodigo(codigo: string): Promise<Projeto | null>;
     /** O projeto geral da área, com a equipe montada pelos períodos. */
     buscarGeralDaArea(codigoArea: string): Promise<Projeto | null>;

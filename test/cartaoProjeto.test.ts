@@ -9,13 +9,12 @@ import { fimDaSemana } from "../source/shared/datas";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
 
 describe("cartaoProjeto", () => {
-    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "sigiloso", "status", "tipo"];
+    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "status", "tipo"];
 
     it("tem só os campos da lista fechada e nada do cliente, das datas ou das funções", async () => {
         const { membro } = await criarContexto();
         const area = new Area("Projetos", null, true, "area-1");
         const projeto = new Projeto("Sigiloso", "descrição secreta", dataInicio, dataFim, undefined, [membro], "p-1", {
-            sigiloso: true,
             clienteNome: "Cliente Secreto",
             referencia: "REF-77",
             area,
@@ -24,7 +23,6 @@ describe("cartaoProjeto", () => {
         const cartao = cartaoProjeto(projeto);
         expect(Object.keys(cartao).sort()).toEqual(chaves);
         expect(cartao.cartao).toBe(true);
-        expect(cartao.sigiloso).toBe(true);
         expect(cartao.tipo).toBe("cliente");
         expect(cartao.geralDaArea).toBe(false);
         expect(cartao.membros).toEqual([{ codigo: membro.codigo, nome: membro.nome, foto: null }]);

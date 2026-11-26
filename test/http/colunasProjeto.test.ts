@@ -35,7 +35,7 @@ describe("Colunas do projeto", () => {
             new Projeto("Normal", "d", dataInicio, dataFim, undefined, [ctx.membro, lider, trainee], "proj-nor", { lider }),
         );
         colunas = normal.colunas.map((c) => c.toJSON());
-        await projetos.criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", { sigiloso: true }));
+        await projetos.criar(new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [ctx.membro], "proj-sig", {}));
         servidor = await subirServidor(ctx.factory);
     });
 
@@ -69,6 +69,7 @@ describe("Colunas do projeto", () => {
     });
 
     it("sigiloso: membro e gerente de fora 403 PROJETO_SEM_ACESSO (sessão 27a; antes o membro tinha 404), diretor 200", async () => {
+        comPapel(ctx.gerente, "gerenteDaArea");
         for (const quem of [deFora, ctx.gerente]) {
             const r = await gravar("proj-sig", quem);
             expect(r.status).toBe(403);
@@ -114,9 +115,10 @@ describe("Colunas do projeto", () => {
     });
 
     it("GET traz colunas na versão completa e não no cartão do sigiloso", async () => {
-        const completo = await servidor.chamar("get", "/projetos/proj-nor", { usuario: ctx.gerente });
+        const completo = await servidor.chamar("get", "/projetos/proj-nor", { usuario: diretor });
         expect(completo.corpo.colunas).toHaveLength(4);
-        const lista = await servidor.chamar("get", "/projetos", { usuario: ctx.gerente });
+        const lista = await servidor.chamar("get", "/projetos", { usuario: diretor });
+        comPapel(ctx.gerente, "gerenteDaArea");
         expect(lista.corpo.find((p: any) => p.codigo === "proj-nor").colunas).toHaveLength(4);
         const cartao = await servidor.chamar("get", "/projetos/proj-sig", { usuario: ctx.gerente });
         expect(cartao.corpo.cartao).toBe(true);

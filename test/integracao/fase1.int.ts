@@ -140,7 +140,8 @@ descrever("fase 1 contra PostgreSQL", () => {
         // Perfil próprio
         const perfil = await chamar("PUT", "/auth/perfil", mem, { curso: "Engenharia Elétrica", perfil: "diretor" });
         expect(perfil.status).toBe(200);
-        expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBe("membro");
+        // Sessão 31a: não há mais perfil fixo; o corpo ignora o campo e a resposta não o traz.
+        expect((await chamar("GET", "/auth/me", mem)).corpo.perfil).toBeUndefined();
 
         // Projetos e equipe (a alocação manual saiu na 24a: o corpo ignora `alocacao` e não devolve)
         const p1 = await chamar("POST", "/projetos", dir, {

@@ -18,11 +18,6 @@ describe("projeto interno e geral", () => {
         expect(() => novo({ tipo: TipoProjeto.INTERNO })).toThrow(expect.objectContaining({ codigo: "AREA_OBRIGATORIA_INTERNO" }));
     });
 
-    test("geral sigiloso lança GERAL_SIGILOSO", () => {
-        const d = { tipo: TipoProjeto.INTERNO, area: inovacao, geralDaArea: true, sigiloso: true };
-        expect(() => novo(d)).toThrow(expect.objectContaining({ codigo: "GERAL_SIGILOSO" }));
-    });
-
     test("geral de cliente lança GERAL_INTERNO", () => {
         expect(() => novo({ area: inovacao, geralDaArea: true })).toThrow(expect.objectContaining({ codigo: "GERAL_INTERNO" }));
     });

@@ -5,7 +5,7 @@ import { hoje as hojeEmSaoPaulo } from "../../shared/datas";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 import { UsuarioAutenticado } from "../../shared/seguranca/permissoes";
-import { acessoAoProjeto, podeVerTodosProjetos } from "../../shared/seguranca/visibilidadeProjetos";
+import { acessoAoProjeto, temVisoesDaGestao } from "../../shared/seguranca/visibilidadeProjetos";
 import ConsultarOcupacao from "../tarefas/ConsultarOcupacao";
 
 const DIA = 86_400_000;
@@ -80,7 +80,7 @@ export default class ConsultarAvisos {
             if (gravados.length < MAXIMO_GRAVADOS) gravados.push({ ...base, autor: await autorDe(r.codigoAutor), ...alvo });
         }
 
-        const gestao = podeVerTodosProjetos(usuario);
+        const gestao = temVisoesDaGestao(usuario);
         const situacao = calcularSituacao({
             codigoUsuario: usuario.codigo,
             hoje: hojeEmSaoPaulo(),

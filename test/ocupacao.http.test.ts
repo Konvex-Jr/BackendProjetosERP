@@ -80,7 +80,7 @@ describe("Ocupação semanal (HTTP)", () => {
         const inicio = new Date(dia.getTime() - 30 * UM_DIA);
         const fim = new Date(dia.getTime() + 60 * UM_DIA);
         const sigiloso = await projetos.criar(
-            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [assessor], "p-sig", { sigiloso: true, criadoPor: "usr-dora" }),
+            new Projeto("Projeto Secreto", "d", inicio, fim, undefined, [assessor], "p-sig", { criadoPor: "usr-dora" }),
         );
         normal = await projetos.criar(new Projeto("Normal", "d", inicio, fim, undefined, [assessor, ctx.membro], "p-nor"));
         await ctx.factory
@@ -148,6 +148,7 @@ describe("Ocupação semanal (HTTP)", () => {
         });
 
         it("gerente fora do sigiloso: linha do projeto com o nome, sem título", async () => {
+            comPapel(ctx.gerente, "gerenteDaArea");
             const r = await servidor.chamar("get", "/ocupacao/usr-ivo", { usuario: ctx.gerente });
             expect(r.corpo.itens).toEqual([{ tipo: "projeto", projeto: { codigo: "p-sig", nome: "Projeto Secreto" }, horas: 1.5 }]);
             const texto = JSON.stringify(r.corpo);
