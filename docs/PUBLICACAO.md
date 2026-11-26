@@ -716,6 +716,18 @@ sleep 5; docker logs konvex-backend 2>&1 | tail -5
 
 Testar "Esqueci a senha" pela tela. Falha aparece no log com o código (ex.: `421`, `550`).
 
+### Publicação da sessão de interface: migração 029
+
+A migração `029_dificuldade_percentual.sql` troca as **horas por dificuldade** (1, 2, 4, 8) por **% do dia** (Rápida 25, Fácil 50, Média 75, Difícil 100; o dia vale o teto semanal do cargo ÷ 5). Valores ajustados à mão antes são **trocados pelo padrão**. Não apaga tarefas nem a dificuldade delas. Também muda (sem migração): menu em grupos, Configurações na engrenagem do topo, Agenda dentro do Dashboard, projeto geral visível a todos, data de entrada na EJ editável pela própria pessoa. Publicar **backend e frontend juntos** (se o curso ADS ainda não foi publicado, vai junto).
+
+**Parte 1, backup:** igual ao bloco "Publicação" do início (banco e anexos).
+
+**Parte 2, construir e subir:** `git -C backend pull --ff-only && git -C frontend pull --ff-only`, `docker compose build backend frontend && docker compose up -d`. No log tem que aparecer `Migração aplicada: 029_dificuldade_percentual.sql`.
+
+**Parte 3, pela tela:** Configurações (engrenagem do topo) → Dificuldade: conferir as % de cada nível; o perfil de uma pessoa mostra a ocupação da semana com a conta nova.
+
+**Voltar:** a 029 renomeia a coluna (`horas` → `percentual`); o backend antigo não lê a tabela nova. Voltar = restaurar o `pg_dump` e voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
