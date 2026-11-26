@@ -3,6 +3,7 @@ import { DonoAnexo } from "../source/domain/enum/Anexo";
 import GerirAnexos from "../source/useCases/anexos/GerirAnexos";
 import ExcluirProjeto from "../source/useCases/projetos/ExcluirProjeto";
 import { criarContexto, criarProjeto, criarTarefa } from "./fixtures";
+import { autenticado } from "./papel";
 
 test("exclui o projeto e as tarefas associadas", async () => {
     const { factory, membro } = await criarContexto();
@@ -26,15 +27,10 @@ test("excluir o projeto leva os itens da equipe (com anexos e arquivos) e solta 
     const aberto = await repo.criar(
         new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor: { codigo: gerente.codigo, nome: gerente.nome } }),
     );
-    const anexo = await new GerirAnexos(factory).enviar(
-        { codigo: gerente.codigo, perfil: gerente.perfil },
-        DonoAnexo.BIBLIOTECA,
-        equipe.codigo,
-        {
-            nome: "ata.pdf",
-            conteudo: Buffer.from("%PDF-1.4"),
-        },
-    );
+    const anexo = await new GerirAnexos(factory).enviar(autenticado(gerente), DonoAnexo.BIBLIOTECA, equipe.codigo, {
+        nome: "ata.pdf",
+        conteudo: Buffer.from("%PDF-1.4"),
+    });
     const armazenamento = factory.criarArmazenamentoAnexos();
     expect(await armazenamento.ler(anexo.arquivo)).not.toBeNull();
 
@@ -52,7 +48,7 @@ test("excluir o projeto apaga os anexos de todas as tarefas", async () => {
     const t1 = await criarTarefa(factory, membro, projeto);
     const t2 = await criarTarefa(factory, membro, projeto, "tarefa-dois");
     const gerir = new GerirAnexos(factory);
-    const usuario = { codigo: membro.codigo, perfil: membro.perfil };
+    const usuario = autenticado(membro);
     const anexos = [];
     for (const t of [t1, t2]) {
         for (const nome of ["a.pdf", "b.pdf"]) {
@@ -72,7 +68,7 @@ test("excluir o projeto pega só os códigos das tarefas, sem montar as entidade
     const { factory, membro } = await criarContexto();
     const projeto = await criarProjeto(factory, membro);
     const tarefa = await criarTarefa(factory, membro, projeto);
-    const anexo = await new GerirAnexos(factory).enviar({ codigo: membro.codigo, perfil: membro.perfil }, DonoAnexo.TAREFA, tarefa.codigo, {
+    const anexo = await new GerirAnexos(factory).enviar(autenticado(membro), DonoAnexo.TAREFA, tarefa.codigo, {
         nome: "a.pdf",
         conteudo: Buffer.from("%PDF-1.4"),
     });

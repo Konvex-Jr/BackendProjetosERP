@@ -43,10 +43,10 @@ descrever("migração 023 (avisos)", () => {
         await aplicarMigracoes(pool, PASTA, silencio);
         const pessoa = async (nome: string) =>
             (
-                await pool.query(
-                    `INSERT INTO usuarios (nome, email, perfil, ativo, senha_hash) VALUES ($1, $2, 'membro', true, 'h') RETURNING codigo`,
-                    [nome, `${nome}@x.com`],
-                )
+                await pool.query(`INSERT INTO usuarios (nome, email, ativo, senha_hash) VALUES ($1, $2, true, 'h') RETURNING codigo`, [
+                    nome,
+                    `${nome}@x.com`,
+                ])
             ).rows[0].codigo as string;
         ana = await pessoa("ana");
         bia = await pessoa("bia");
@@ -80,9 +80,7 @@ descrever("migração 023 (avisos)", () => {
 
     test("apagar o autor deixa autor_codigo nulo", async () => {
         const autor = (
-            await pool.query(
-                `INSERT INTO usuarios (nome, email, perfil, ativo, senha_hash) VALUES ('c', 'c@x.com', 'membro', true, 'h') RETURNING codigo`,
-            )
+            await pool.query(`INSERT INTO usuarios (nome, email, ativo, senha_hash) VALUES ('c', 'c@x.com', true, 'h') RETURNING codigo`)
         ).rows[0].codigo;
         await aviso(ana, await novaTarefa(), autor);
         await pool.query("DELETE FROM usuarios WHERE codigo = $1", [autor]);

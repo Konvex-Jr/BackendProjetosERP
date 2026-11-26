@@ -32,10 +32,10 @@ descrever("migração 026 (reuniões)", () => {
         await pool.query(readFileSync(path.join(PASTA, "026_reunioes.sql"), "utf8"));
         const pessoa = async (nome: string) =>
             (
-                await pool.query(
-                    `INSERT INTO usuarios (nome, email, perfil, ativo, senha_hash) VALUES ($1, $2, 'membro', true, 'h') RETURNING codigo`,
-                    [nome, `${nome}@x.com`],
-                )
+                await pool.query(`INSERT INTO usuarios (nome, email, ativo, senha_hash) VALUES ($1, $2, true, 'h') RETURNING codigo`, [
+                    nome,
+                    `${nome}@x.com`,
+                ])
             ).rows[0].codigo as string;
         ana = await pessoa("ana");
         bia = await pessoa("bia");

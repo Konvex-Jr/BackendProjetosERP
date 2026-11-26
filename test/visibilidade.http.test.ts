@@ -3,7 +3,6 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
@@ -11,6 +10,7 @@ import TipoProjeto from "../source/domain/enum/TipoProjeto";
 import { hoje } from "../source/shared/datas";
 import { criarContexto } from "./fixtures";
 import { subirServidor } from "./http/servidorTeste";
+import { Papel, comPapel } from "./papel";
 
 const UM_DIA = 86_400_000;
 const CHAVES_DO_CARTAO = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "sigiloso", "status", "tipo"];
@@ -56,17 +56,17 @@ describe("Visibilidade de projetos (HTTP)", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, { status });
+        const novo = async (nome: string, perfil: Papel, codigo: string, status = StatusPessoa.ATIVO) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), perfil);
             await usuarios.criar(u);
             return u;
         };
-        m = await novo("Mel Membro", PerfilUsuario.MEMBRO, "usr-m");
-        m2 = await novo("Mio Membro", PerfilUsuario.MEMBRO, "usr-m2");
-        t = await novo("Téo Trainee", PerfilUsuario.MEMBRO, "usr-t", StatusPessoa.TRAINEE);
-        g = await novo("Gil Gerente", PerfilUsuario.GERENTE, "usr-g");
-        d = await novo("Dora Diretora", PerfilUsuario.DIRETOR, "usr-d");
-        gs = await novo("Gus Gerente", PerfilUsuario.GERENTE, "usr-gs");
+        m = await novo("Mel Membro", "membro", "usr-m");
+        m2 = await novo("Mio Membro", "membro", "usr-m2");
+        t = await novo("Téo Trainee", "membro", "usr-t", StatusPessoa.TRAINEE);
+        g = await novo("Gil Gerente", "gerente", "usr-g");
+        d = await novo("Dora Diretora", "diretor", "usr-d");
+        gs = await novo("Gus Gerente", "gerente", "usr-gs");
 
         const area = await ctx.factory.criarAreaRepository().criar(new Area("Marketing", null, true, "area-mkt", false));
         const projetos = ctx.factory.criarProjetoRepository();

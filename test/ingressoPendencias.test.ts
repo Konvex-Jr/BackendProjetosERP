@@ -1,11 +1,11 @@
 import Usuario from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { conferirCamposAlterados, ingressoValido, pendenciasPerfil } from "../source/useCases/pessoas/dadosPessoa";
 import { hoje } from "../source/shared/datas";
 import Router from "../source/infra/http/Router";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import { cadastrarComSenha, criarContexto } from "./fixtures";
+import { autenticado, comPapel } from "./papel";
 
 const completo = {
     curso: "Ciência da Computação",
@@ -14,7 +14,7 @@ const completo = {
     ingresso: "2025/1",
     calendarioUrl: "https://cal.exemplo.com/a",
 };
-const pessoa = (detalhes: any = {}) => new Usuario("Ana", "ana@x.com", PerfilUsuario.DIRETOR, true, "h", null, undefined, detalhes);
+const pessoa = (detalhes: any = {}) => comPapel(new Usuario("Ana", "ana@x.com", true, "h", null, undefined, detalhes), "diretor");
 
 describe("ingresso", () => {
     test.each(["2025/1", "2025/2", "2000/1"])("%s é aceito", (v) => {
@@ -76,7 +76,7 @@ describe("rotas devolvem pendenciasPerfil", () => {
             { route: (m: string, u: string, _a: boolean, cb: any) => (r[`${m} ${u}`] = cb), swagger: () => undefined } as any,
             factory,
         ).init();
-        return { r, eu: { codigo: membro.codigo, perfil: membro.perfil }, membro, factory };
+        return { r, eu: autenticado(membro), membro, factory };
     }
     test("GET /auth/me e PUT /auth/perfil", async () => {
         const { r, eu } = await rotas();
@@ -91,11 +91,11 @@ describe("rotas devolvem pendenciasPerfil", () => {
     });
     test("diretor sem senioridade completa o perfil por PUT /auth/perfil", async () => {
         const { r, factory } = await rotas();
-        const dir = await factory.criarUsuarioRepository().criar(new Usuario("Dir", "dir@x.com", PerfilUsuario.DIRETOR, true, "h"));
+        const dir = await factory.criarUsuarioRepository().criar(comPapel(new Usuario("Dir", "dir@x.com", true, "h"), "diretor"));
         const ed = await r["put /auth/perfil"](
             {},
             {
-                user: { codigo: dir!.codigo, perfil: dir!.perfil },
+                user: autenticado(dir!),
                 ...completo,
             },
         );
@@ -108,7 +108,6 @@ describe("rotas devolvem pendenciasPerfil", () => {
             {
                 nome: "Zé",
                 email: "ze@x.com",
-                perfil: PerfilUsuario.MEMBRO,
                 senioridade: new SenioridadeUsuario("pleno", "Pleno", 75),
                 curso: "Engenharia Mecânica",
             } as any,

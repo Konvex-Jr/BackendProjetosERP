@@ -6,12 +6,12 @@ import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepository
 import Usuario from "../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import Capacitacao from "../source/domain/entity/Capacitacao";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import TipoCapacitacao from "../source/domain/enum/TipoCapacitacao";
 import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
+import { comPapel } from "./papel";
 
 export const dataInicio = new Date("2026-10-12T00:00:00.000Z");
 export const dataFim = new Date("2026-10-30T00:00:00.000Z");
@@ -20,8 +20,8 @@ export const semana = new Date("2026-10-12T00:00:00.000Z");
 export async function criarContexto() {
     const factory = new MemoryRepositoryFactory();
     const senioridade = new SenioridadeUsuario("pleno", "Pleno", 75);
-    const membro = new Usuario("Ana Silva", "ana@konvex.com.br", PerfilUsuario.MEMBRO, true, "senha-hash", senioridade, "usr-ana");
-    const gerente = new Usuario("João Souza", "joao@konvex.com.br", PerfilUsuario.GERENTE, true, "senha-hash", senioridade, "usr-joao");
+    const membro = comPapel(new Usuario("Ana Silva", "ana@konvex.com.br", true, "senha-hash", senioridade, "usr-ana"), "membro");
+    const gerente = comPapel(new Usuario("João Souza", "joao@konvex.com.br", true, "senha-hash", senioridade, "usr-joao"), "gerente");
 
     await factory.criarUsuarioRepository().criar(membro);
     await factory.criarUsuarioRepository().criar(gerente);

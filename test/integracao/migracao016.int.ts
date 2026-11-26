@@ -22,7 +22,7 @@ descrever("migração 016", () => {
         pool = new Pool({ connectionString: URL_TESTE });
         await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
         await aplicarMigracoes(pool, PASTA, silencio);
-        await pool.query("INSERT INTO usuarios (codigo, nome, email, perfil) VALUES (gen_random_uuid(), 'Ana', 'ana@x.com', 'membro')");
+        await pool.query("INSERT INTO usuarios (codigo, nome, email) VALUES (gen_random_uuid(), 'Ana', 'ana@x.com')");
     }, 60000);
 
     afterAll(async () => {

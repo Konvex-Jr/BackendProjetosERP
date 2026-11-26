@@ -1,5 +1,4 @@
 import EnvioEmailMemoria from "../../source/infra/email/EnvioEmailMemoria";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { hashToken } from "../../source/useCases/auth/emitirSessao";
 import { cadastrarComSenha, criarContexto } from "../fixtures";
 import RetomarSessao from "../../source/useCases/auth/RetomarSessao";
@@ -34,7 +33,6 @@ describe("Manter conectado (cookie de lembrete)", () => {
             {
                 nome: "Ana Dev",
                 email: "ana@dev.konvex",
-                perfil: PerfilUsuario.MEMBRO,
                 senioridade: ctx.senioridade,
                 curso: "Engenharia Mecânica",
             },

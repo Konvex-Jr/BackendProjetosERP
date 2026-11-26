@@ -4,7 +4,6 @@ import ModelRoutes from "./routes/ModelRoutes";
 import swaggerSpecification from "./swagger";
 import { MODULOS, Modulo, menuDoUsuario, menuOrdenado } from "../../modulos/registro";
 import { exigirAutenticado } from "../../shared/seguranca/permissoes";
-import { permissoesDoPapel } from "../../shared/seguranca/catalogoPermissoes";
 
 /**
  * Monta as rotas a partir do registro de módulos. Módulo novo não mexe aqui: basta a entrada
@@ -28,8 +27,8 @@ export default class Router {
         this.http.route("get", "/auth/permissoes", true, async (_p: any, body: any) => {
             const usuario = exigirAutenticado(body.user);
             return {
-                perfil: usuario.perfil,
-                permissoes: permissoesDoPapel(usuario.perfil),
+                permissoes: usuario.permissoes ?? [],
+                cargo: usuario.cargo ?? null,
                 modulos: menuDoUsuario(usuario, this.modulos),
                 menu: menuOrdenado(usuario, this.modulos),
             };

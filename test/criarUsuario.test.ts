@@ -4,7 +4,6 @@ import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepository
 import EditarUsuario from "../source/useCases/pessoas/EditarUsuario";
 import EnvioEmailMemoria from "../source/infra/email/EnvioEmailMemoria";
 import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 import { ErroValidacao } from "../source/shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../source/shared/erros/mensagensDeErro";
@@ -17,7 +16,6 @@ const senioridadePleno = new SenioridadeUsuario("pleno", "Pleno", 75);
 const inputValido = {
     nome: "John",
     email: "john.doe@konvex.com.br",
-    perfil: PerfilUsuario.MEMBRO,
     senioridade: senioridadePleno,
     curso: "Engenharia Mecânica",
 };
@@ -35,7 +33,6 @@ test("Deve criar um usuário membro", async () => {
 test("Deve criar um usuário gerente com senioridade", async () => {
     const output = await criarUsuario.execute({
         ...inputValido,
-        perfil: PerfilUsuario.GERENTE,
         senioridade: senioridadePleno,
     });
     expect(output.usuario.codigo).toBeTruthy();
@@ -99,7 +96,6 @@ test("Não deve criar um membro sem senioridade", async () => {
 test("Não deve criar um diretor ou gerente sem senioridade", async () => {
     const promessa = criarUsuario.execute({
         ...inputValido,
-        perfil: PerfilUsuario.GERENTE,
         senioridade: null,
     });
     await expect(promessa).rejects.toBeInstanceOf(ErroValidacao);

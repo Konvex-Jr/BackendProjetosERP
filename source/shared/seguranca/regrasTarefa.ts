@@ -1,7 +1,7 @@
 import Projeto from "../../domain/entity/Projeto";
 import Tarefa from "../../domain/entity/Tarefa";
 import { Permissao, temPermissao, UsuarioAutenticado } from "./permissoes";
-import { acessoAoProjeto } from "./visibilidadeProjetos";
+import { acessoAoProjeto, podeVerTodosProjetos } from "./visibilidadeProjetos";
 
 /**
  * Política única de tarefas (sessões 8b, 20 e 23b). Tudo o que decide quem pode o quê numa tarefa fica aqui.
@@ -58,8 +58,7 @@ export function regrasTarefa(usuario: UsuarioAutenticado, tarefa: Tarefa, projet
     const papel = papelNoProjeto(usuario, projeto);
     const organizar = papel === "gestao" || papel === "lider";
     // Gestão, quem participa ou participou e quem lidera a área do geral. Sigiloso: chegar aqui já é ter acesso completo.
-    const verProjeto =
-        temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || (projeto !== null && acessoAoProjeto(usuario, projeto) === "completo");
+    const verProjeto = podeVerTodosProjetos(usuario) || (projeto !== null && acessoAoProjeto(usuario, projeto) === "completo");
     return {
         ver: organizar || responsavel || verProjeto,
         organizar,

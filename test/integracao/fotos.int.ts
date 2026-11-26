@@ -15,6 +15,7 @@ import DatabaseRepositoryFactory from "../../source/infra/repository/DatabaseRep
 import ExpressHttp from "../../source/infra/http/ExpressHttp";
 import ExpressAuth from "../../source/infra/http/middleware/AuthExpress";
 import Router from "../../source/infra/http/Router";
+import { darCargoNoBanco } from "./papelBanco";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -47,11 +48,14 @@ descrever("rotas da foto de perfil contra PostgreSQL", () => {
         pool = new Pool({ connectionString: URL_TESTE });
         await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
         await aplicarMigracoes(pool);
-        await pool.query(
-            `INSERT INTO usuarios (codigo, nome, email, perfil, senioridade_codigo, ativo, senha_hash)
-             VALUES (gen_random_uuid(), 'Diretora', 'diretora@teste.com', 'diretor', NULL, TRUE, $1)`,
+        const {
+            rows: [{ codigo: codigoAdmin }],
+        } = await pool.query(
+            `INSERT INTO usuarios (codigo, nome, email, senioridade_codigo, ativo, senha_hash)
+             VALUES (gen_random_uuid(), 'Diretora', 'diretora@teste.com', NULL, TRUE, $1) RETURNING codigo`,
             [await hash("SenhaDiretora1", 4)],
         );
+        await darCargoNoBanco(pool, codigoAdmin, "presidente");
         conexao = PgConexao.criar(URL_TESTE!);
         const factory = new DatabaseRepositoryFactory(conexao);
         http = new ExpressHttp(new ExpressAuth(factory));

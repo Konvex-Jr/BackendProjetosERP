@@ -7,6 +7,7 @@ import Cargo from "../source/domain/entity/Cargo";
 import PeriodoArea from "../source/domain/entity/PeriodoArea";
 import { hoje } from "../source/domain/entity/Participacao";
 import { criarContexto, criarProjeto } from "./fixtures";
+import { autenticado } from "./papel";
 
 describe("Status de pessoa (RF-011, RN-01)", () => {
     it("trainee está na EJ, entra em projetos e tem acesso ao sistema", async () => {
@@ -43,7 +44,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         expect(resultado.participacoesEncerradas).toBe(1);
         expect(resultado.usuario.dataSaida).not.toBeNull();
 
-        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, { codigo: membro.codigo, perfil: membro.perfil });
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, autenticado(membro));
         expect(perfil.projetosAtuais).toHaveLength(0);
         expect(perfil.projetosAnteriores).toHaveLength(1);
         expect(await factory.criarUsuarioRepository().buscarPorCodigo(membro.codigo)).not.toBeNull();
@@ -68,7 +69,7 @@ describe("Status de pessoa (RF-011, RN-01)", () => {
         expect(resultado.periodosEncerrados).toBe(1);
         expect(resultado.participacoesEncerradas).toBe(0);
         expect((await periodos.listarDe(membro.codigo))[0].fim).toEqual(saida);
-        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, { codigo: membro.codigo, perfil: membro.perfil });
+        const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, autenticado(membro));
         expect(perfil.projetosAtuais).toHaveLength(1);
     });
 

@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
+import { Papel, comPapel } from "../papel";
 
 /** Sessão 20 (regra da 27a): itens da Biblioteca ligados a projeto sigiloso só aparecem para quem vê o projeto. */
 describe("Biblioteca e projeto sigiloso", () => {
@@ -27,16 +27,16 @@ describe("Biblioteca e projeto sigiloso", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo);
+        const novo = async (nome: string, perfil: Papel, codigo: string) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo), perfil);
             await usuarios.criar(u);
             return u;
         };
         equipe = ctx.membro;
-        criadorFora = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
-        fora = await novo("Fê", PerfilUsuario.MEMBRO, "usr-fe");
-        gerenteFora = await novo("Gui", PerfilUsuario.GERENTE, "usr-gui");
-        diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
+        criadorFora = await novo("Lia", "membro", "usr-lia");
+        fora = await novo("Fê", "membro", "usr-fe");
+        gerenteFora = await novo("Gui", "gerente", "usr-gui");
+        diretor = await novo("Dora", "diretor", "usr-dora");
         const projetos = ctx.factory.criarProjetoRepository();
         await projetos.criar(
             new Projeto("Sigiloso", "d", dataInicio, dataFim, undefined, [equipe], "proj-sig", {

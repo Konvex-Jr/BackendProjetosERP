@@ -1,5 +1,3 @@
-import PerfilUsuario from "../../domain/enum/PerfilUsuario";
-
 /**
  * Catálogo central de ações do sistema (sessão 31a). As rotas checam a ação ("projetos.editar"),
  * nunca o cargo: quem pode o quê fica gravado no cargo (grade de Configurações → Permissões).
@@ -36,14 +34,6 @@ export const Permissao = {
     CONFIG_DIFICULDADE: "config.dificuldade",
     CONFIG_PRECIFICACAO: "config.precificacao",
     PERMISSOES_GERIR: "permissoes.gerir",
-    /** @deprecated sai na Task 3 da 31a. */
-    PROJETOS_VER_TODOS: "projetos.verTodos",
-    /** @deprecated sai na Task 3 da 31a. */
-    PROJETOS_VER_SIGILOSOS: "projetos.verSigilosos",
-    /** @deprecated sai na Task 3 da 31a. */
-    PESSOAS_GERIR_DIRETORES: "pessoas.gerirDiretores",
-    /** @deprecated sai na Task 3 da 31a. */
-    CONFIGURACOES_EDITAR: "configuracoes.editar",
 } as const;
 
 export type Permissao = (typeof Permissao)[keyof typeof Permissao];
@@ -226,48 +216,3 @@ export const PADRAO_MEMBRO: readonly Permissao[] = [
 ];
 
 export const PADRAO_TRAINEE: readonly Permissao[] = PADRAO_MEMBRO.filter((p) => p !== P.PROJETOS_LIDERAR && p !== P.BIBLIOTECA_USAR);
-
-/**
- * Gerente: tudo o que o diretor faz, menos três ações que ficam só com a diretoria:
- * gerir outros diretores, excluir projetos e editar as configurações.
- * @deprecated mapa antigo por perfil; sai na Task 3 da 31a.
- */
-const DO_GESTOR: Permissao[] = [
-    P.PESSOAS_GERIR,
-    P.PROJETOS_VER_TODOS,
-    P.PROJETOS_EDITAR,
-    P.TAREFAS_GERIR_TODAS,
-    P.CAPACITACOES_GERIR,
-    P.BIBLIOTECA_VER_TODOS,
-    P.BIBLIOTECA_GERIR,
-    P.ESTRATEGIA_VER,
-    P.PRECIFICACAO_SIMULAR,
-];
-
-const ANTIGAS_DO_DIRETOR: Permissao[] = [
-    P.PESSOAS_GERIR,
-    P.PESSOAS_GERIR_DIRETORES,
-    P.PROJETOS_VER_TODOS,
-    P.PROJETOS_EDITAR,
-    P.PROJETOS_EXCLUIR,
-    P.PROJETOS_VER_SIGILOSOS,
-    P.TAREFAS_GERIR_TODAS,
-    P.CAPACITACOES_GERIR,
-    P.BIBLIOTECA_VER_TODOS,
-    P.BIBLIOTECA_GERIR,
-    P.CONFIGURACOES_EDITAR,
-    P.ESTRATEGIA_VER,
-    P.PRECIFICACAO_SIMULAR,
-];
-
-/** @deprecated sai na Task 3 da 31a. */
-export const PERMISSOES_POR_PAPEL: Record<PerfilUsuario, readonly Permissao[]> = {
-    [PerfilUsuario.DIRETOR]: ANTIGAS_DO_DIRETOR,
-    [PerfilUsuario.GERENTE]: DO_GESTOR,
-    [PerfilUsuario.MEMBRO]: [],
-};
-
-/** @deprecated sai na Task 3 da 31a. */
-export function permissoesDoPapel(perfil: PerfilUsuario | string | null | undefined): Permissao[] {
-    return [...(PERMISSOES_POR_PAPEL[perfil as PerfilUsuario] ?? [])];
-}

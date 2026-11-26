@@ -2,12 +2,12 @@ import Area from "../../source/domain/entity/Area";
 import PeriodoArea from "../../source/domain/entity/PeriodoArea";
 import Projeto from "../../source/domain/entity/Projeto";
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import ItemBiblioteca from "../../source/domain/entity/ItemBiblioteca";
 import { DonoAnexo } from "../../source/domain/enum/Anexo";
 import GerirAnexos from "../../source/useCases/anexos/GerirAnexos";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { autenticado, comPapel } from "../papel";
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -32,8 +32,8 @@ describe("Projetos internos e geral da área", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        diretor = new Usuario("Dora", "dora@konvex.com.br", PerfilUsuario.DIRETOR, true, "x", ctx.senioridade, "usr-dora");
-        ana = new Usuario("Ana", "ana2@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-ana2");
+        diretor = comPapel(new Usuario("Dora", "dora@konvex.com.br", true, "x", ctx.senioridade, "usr-dora"), "diretor");
+        ana = comPapel(new Usuario("Ana", "ana2@konvex.com.br", true, "x", ctx.senioridade, "usr-ana2"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(diretor);
         await ctx.factory.criarUsuarioRepository().criar(ana);
         servidor = await subirServidor(ctx.factory);
@@ -190,12 +190,10 @@ describe("Projetos internos e geral da área", () => {
             const biblioteca = ctx.factory.criarBibliotecaRepository();
             const daEquipe = await biblioteca.criar(new ItemBiblioteca({ titulo: "Da equipe", sigilo: "projeto", projeto: ref, autor }));
             const aberto = await biblioteca.criar(new ItemBiblioteca({ titulo: "Aberto", sigilo: "todos", projeto: ref, autor }));
-            const anexo = await new GerirAnexos(ctx.factory).enviar(
-                { codigo: diretor.codigo, perfil: diretor.perfil },
-                DonoAnexo.BIBLIOTECA,
-                daEquipe.codigo,
-                { nome: "ata.pdf", conteudo: Buffer.from("%PDF-1.4") },
-            );
+            const anexo = await new GerirAnexos(ctx.factory).enviar(autenticado(diretor), DonoAnexo.BIBLIOTECA, daEquipe.codigo, {
+                nome: "ata.pdf",
+                conteudo: Buffer.from("%PDF-1.4"),
+            });
 
             const r = await desligar();
             expect(r.status).toBe(200);

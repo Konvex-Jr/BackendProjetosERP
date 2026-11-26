@@ -1,3 +1,4 @@
+import PermissoesRepositoryDatabase from "./database/PermissoesRepositoryDatabase";
 import AvisoRepositoryDatabase from "./database/AvisoRepositoryDatabase";
 import ReuniaoRepositoryDatabase from "./database/ReuniaoRepositoryDatabase";
 import EnvioEmailInterface from "../../domain/interfaces/EnvioEmailInterface";
@@ -94,6 +95,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarCargoRepository() {
         return new CargoRepositoryDatabase(this.conexao);
+    }
+
+    criarPermissoesRepository() {
+        return new PermissoesRepositoryDatabase(this.conexao);
     }
 
     criarHorasDificuldadeRepository() {

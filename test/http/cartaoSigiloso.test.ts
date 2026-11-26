@@ -1,9 +1,9 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Participacao from "../../source/domain/entity/Participacao";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /** Sessão 27a (era o resumo da 20): quem está fora de um sigiloso, gerente ou membro, recebe o cartão. */
 describe("Cartão de projeto sigiloso na leitura", () => {
@@ -13,7 +13,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        exEquipe = new Usuario("Edu", "edu@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-edu");
+        exEquipe = comPapel(new Usuario("Edu", "edu@konvex.com.br", true, "x", ctx.senioridade, "usr-edu"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(exEquipe);
         const repo = ctx.factory.criarProjetoRepository();
         await repo.criar(

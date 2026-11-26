@@ -1,7 +1,7 @@
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import SalvarHorasDificuldade from "../source/useCases/config/SalvarHorasDificuldade";
 import SalvarCargo from "../source/useCases/config/SalvarCargo";
 import { criarContexto } from "./fixtures";
+import { efetivasDoPapel } from "./papel";
 
 const PADRAO = { rapida: 25, facil: 50, media: 75, dificil: 100 };
 
@@ -15,7 +15,7 @@ test("diretor grava os percentuais e o repositório devolve", async () => {
     const novas = { rapida: 5, facil: 30, media: 60, dificil: 100 };
     const salvas = await new SalvarHorasDificuldade(factory).execute({
         horas: novas,
-        quem: { codigo: "d", perfil: PerfilUsuario.DIRETOR },
+        quem: { codigo: "d", ...efetivasDoPapel("diretor") },
     });
     expect(salvas).toEqual(novas);
     expect(await factory.criarHorasDificuldadeRepository().listar()).toEqual(novas);
@@ -23,7 +23,7 @@ test("diretor grava os percentuais e o repositório devolve", async () => {
 
 test("percentual fora de 5 a 100, não inteiro ou nível faltando: 400 HORAS_DIFICULDADE_INVALIDAS", async () => {
     const { factory } = await criarContexto();
-    const quem = { codigo: "d", perfil: PerfilUsuario.DIRETOR };
+    const quem = { codigo: "d", ...efetivasDoPapel("diretor") };
     const salvar = (horas: unknown) => new SalvarHorasDificuldade(factory).execute({ horas: horas as never, quem });
     await expect(salvar({ ...PADRAO, media: 4 })).rejects.toMatchObject({ codigo: "HORAS_DIFICULDADE_INVALIDAS" });
     await expect(salvar({ ...PADRAO, media: 101 })).rejects.toMatchObject({ codigo: "HORAS_DIFICULDADE_INVALIDAS" });

@@ -1,9 +1,9 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Participacao from "../../source/domain/entity/Participacao";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 const inicio = new Date("2026-10-01T00:00:00.000Z");
 const saida = new Date("2026-10-20T00:00:00.000Z");
@@ -44,7 +44,7 @@ describe("Biblioteca", () => {
 
     beforeEach(async () => {
         ctx = await criarContexto();
-        bruno = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
+        bruno = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(bruno);
         const projetos = ctx.factory.criarProjetoRepository();
         await projetos.criar(new Projeto("Meu", "d", inicio, saida, undefined, [ctx.membro], "proj-meu"));

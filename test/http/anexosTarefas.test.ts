@@ -2,9 +2,9 @@ import Usuario from "../../source/domain/entity/Usuario";
 import Anexo from "../../source/domain/entity/Anexo";
 import { DonoAnexo } from "../../source/domain/enum/Anexo";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /**
  * Sessão 19: anexos nas tarefas, com as regras dos comentários (`regrasTarefa`):
@@ -41,9 +41,9 @@ describe("Anexos nas tarefas", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         lider = ctx.membro;
-        colega = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
-        deFora = new Usuario("Carla", "carla@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-carla");
-        exParticipante = new Usuario("Davi", "davi@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-davi");
+        colega = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
+        deFora = comPapel(new Usuario("Carla", "carla@konvex.com.br", true, "x", ctx.senioridade, "usr-carla"), "membro");
+        exParticipante = comPapel(new Usuario("Davi", "davi@konvex.com.br", true, "x", ctx.senioridade, "usr-davi"), "membro");
         for (const u of [colega, deFora, exParticipante]) await ctx.factory.criarUsuarioRepository().criar(u);
         await ctx.factory
             .criarProjetoRepository()

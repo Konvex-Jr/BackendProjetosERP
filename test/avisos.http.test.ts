@@ -5,13 +5,13 @@ import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
 import Usuario from "../source/domain/entity/Usuario";
 import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import { hoje } from "../source/shared/datas";
 import { criarContexto } from "./fixtures";
 import { subirServidor } from "./http/servidorTeste";
+import { Papel, comPapel } from "./papel";
 
 const UM_DIA = 86_400_000;
 
@@ -63,14 +63,14 @@ describe("Avisos (HTTP)", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, { status });
+        const novo = async (nome: string, perfil: Papel, codigo: string, status = StatusPessoa.ATIVO) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), perfil);
             await usuarios.criar(u);
             return u;
         };
-        diretor = await novo("Dora Diretora", PerfilUsuario.DIRETOR, "usr-dora");
-        trainee = await novo("Téo Trainee", PerfilUsuario.MEMBRO, "usr-teo", StatusPessoa.TRAINEE);
-        sobrecarregado = await novo("Sol Sobrecarga", PerfilUsuario.MEMBRO, "usr-sol");
+        diretor = await novo("Dora Diretora", "diretor", "usr-dora");
+        trainee = await novo("Téo Trainee", "membro", "usr-teo", StatusPessoa.TRAINEE);
+        sobrecarregado = await novo("Sol Sobrecarga", "membro", "usr-sol");
 
         const area = await ctx.factory.criarAreaRepository().criar(new Area("Projetos"));
         const cargo = await ctx.factory.criarCargoRepository().criar(new Cargo("Assessor", true, undefined, false, 10));
@@ -114,7 +114,7 @@ describe("Avisos (HTTP)", () => {
     });
 
     it("saiu da equipe do sigiloso (segue responsável): aviso some e a tarefa sai da situação", async () => {
-        const outra = new Usuario("Out", "out@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-out");
+        const outra = comPapel(new Usuario("Out", "out@konvex.com.br", true, "x", ctx.senioridade, "usr-out"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(outra);
         const atrasada = new Tarefa(
             sigiloso,

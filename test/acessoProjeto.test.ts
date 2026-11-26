@@ -1,4 +1,3 @@
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import { ErroAplicacao } from "../source/shared/erros/ErroAplicacao";
 import { UsuarioAutenticado } from "../source/shared/seguranca/permissoes";
@@ -8,17 +7,22 @@ import {
     exigirNaoSeTrancar,
     ProjetoParaAcesso,
 } from "../source/shared/seguranca/visibilidadeProjetos";
+import { Papel, efetivasDoPapel } from "./papel";
 
-const usuario = (codigo: string, perfil: PerfilUsuario, status?: StatusPessoa): UsuarioAutenticado => ({ codigo, perfil, status });
-const diretor = usuario("d", PerfilUsuario.DIRETOR);
-const gerente = usuario("g", PerfilUsuario.GERENTE);
-const equipe = usuario("e", PerfilUsuario.MEMBRO);
-const exEquipe = usuario("x", PerfilUsuario.MEMBRO);
-const fora = usuario("f", PerfilUsuario.MEMBRO);
-const trainee = usuario("t", PerfilUsuario.MEMBRO, StatusPessoa.TRAINEE);
+const usuario = (codigo: string, perfil: Papel, status?: StatusPessoa): UsuarioAutenticado => ({
+    codigo,
+    status,
+    ...efetivasDoPapel(perfil, status),
+});
+const diretor = usuario("d", "diretor");
+const gerente = usuario("g", "gerente");
+const equipe = usuario("e", "membro");
+const exEquipe = usuario("x", "membro");
+const fora = usuario("f", "membro");
+const trainee = usuario("t", "membro", StatusPessoa.TRAINEE);
 // Criou o projeto, mas não está na equipe: `criadoPor` não dá acesso (sessão 27a).
-const criador = usuario("c", PerfilUsuario.MEMBRO);
-const liderDaArea = usuario("la", PerfilUsuario.MEMBRO);
+const criador = usuario("c", "membro");
+const liderDaArea = usuario("la", "membro");
 
 const participacoes = [
     { usuario: { codigo: "e" }, ativa: true },

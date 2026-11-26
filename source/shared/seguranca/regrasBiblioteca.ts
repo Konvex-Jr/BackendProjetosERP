@@ -6,7 +6,7 @@ import { ErroProibido } from "../erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../erros/mensagensDeErro";
 import { Permissao } from "./catalogoPermissoes";
 import { exigirAutenticado, temPermissao, UsuarioAutenticado } from "./permissoes";
-import { acessoAoProjeto } from "./visibilidadeProjetos";
+import { acessoAoProjeto, podeVerTodosProjetos } from "./visibilidadeProjetos";
 
 /** Projetos da pessoa e projetos sigilosos que ela não pode ver (sessão 20). */
 export interface ContextoProjetos {
@@ -62,7 +62,7 @@ export async function contextoProjetos(usuario: UsuarioAutenticado, factory: Rep
  */
 export function podeVerProjetoDoItem(usuario: UsuarioAutenticado, codigoProjeto: string, ctx: ContextoProjetos): boolean {
     if (ctx.ocultos.has(codigoProjeto)) return false;
-    return temPermissao(usuario, Permissao.PROJETOS_VER_TODOS) || ctx.meus.has(codigoProjeto);
+    return podeVerTodosProjetos(usuario) || ctx.meus.has(codigoProjeto);
 }
 
 export async function exigirVerItem(

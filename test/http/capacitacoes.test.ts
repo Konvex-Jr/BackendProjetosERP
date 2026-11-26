@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { hoje } from "../../source/shared/datas";
 import { criarContexto } from "../fixtures";
 import { subirServidor, tokenPara } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /**
  * Sessão 13 (09/11/2026): capacitações pela API. A gestão cria, edita, exclui e marca presença;
@@ -41,7 +41,7 @@ describe("Capacitações", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const pessoa = (nome: string, codigo: string) =>
-            new Usuario(nome, `${codigo}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, codigo);
+            comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo), "membro");
         bia = pessoa("Bia", "usr-bia");
         caio = pessoa("Caio", "usr-caio");
         instrutora = pessoa("Inês", "usr-ines");

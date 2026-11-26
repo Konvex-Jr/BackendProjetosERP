@@ -1,7 +1,6 @@
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Usuario from "../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
 import CriarProjeto from "../source/useCases/projetos/CriarProjeto";
@@ -17,6 +16,7 @@ import ExcluirTarefa from "../source/useCases/tarefas/ExcluirTarefa";
 import ListarUsuarios from "../source/useCases/pessoas/ListarUsuarios";
 import EditarUsuario from "../source/useCases/pessoas/EditarUsuario";
 import InativarUsuario from "../source/useCases/pessoas/InativarUsuario";
+import { comPapel } from "./papel";
 
 describe("Casos de uso de usuários, projetos e tarefas", () => {
     let factory: MemoryRepositoryFactory;
@@ -26,7 +26,7 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
     beforeEach(async () => {
         factory = new MemoryRepositoryFactory();
         const senioridade = new SenioridadeUsuario("pleno", "Pleno", 75);
-        membro = new Usuario("Ana", "ana@konvex.com.br", PerfilUsuario.MEMBRO, true, "hash", senioridade, "usr-ana");
+        membro = comPapel(new Usuario("Ana", "ana@konvex.com.br", true, "hash", senioridade, "usr-ana"), "membro");
         await factory.criarUsuarioRepository().criar(membro);
     });
 
@@ -39,7 +39,6 @@ describe("Casos de uso de usuários, projetos e tarefas", () => {
             codigo: membro.codigo,
             nome: " Ana Silva ",
             email: " ANA@KONVEX.COM.BR ",
-            perfil: PerfilUsuario.MEMBRO,
             senioridade: membro.senioridade,
         });
         expect(atualizado.nome).toBe("Ana Silva");

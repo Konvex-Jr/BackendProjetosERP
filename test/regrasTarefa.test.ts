@@ -1,17 +1,16 @@
 import Usuario from "../source/domain/entity/Usuario";
 import Projeto from "../source/domain/entity/Projeto";
 import Tarefa from "../source/domain/entity/Tarefa";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
-import { permissoesDoPapel } from "../source/shared/seguranca/catalogoPermissoes";
 import { regrasTarefa } from "../source/shared/seguranca/regrasTarefa";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
+import { autenticado, comPapel } from "./papel";
 
 describe("regrasTarefa.editar (sessão 24b)", () => {
-    const auth = (u: Usuario) => ({ codigo: u.codigo, perfil: u.perfil, permissoes: permissoesDoPapel(u.perfil) });
+    const auth = (u: Usuario) => autenticado(u);
 
     async function montar(opcoes: { sigiloso?: boolean } = {}) {
         const { senioridade, membro, gerente } = await criarContexto();
-        const criador = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", senioridade, "usr-bruno");
+        const criador = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", senioridade, "usr-bruno"), "membro");
         const projeto = new Projeto("Time", "d", dataInicio, dataFim, undefined, [membro, criador], "proj-time", opcoes);
         const tarefa = (criadaPor: Usuario | null) =>
             new Tarefa(projeto, "T", dataInicio, dataFim, undefined, undefined, null, null, null, [membro], [], "t-1", null, criadaPor);

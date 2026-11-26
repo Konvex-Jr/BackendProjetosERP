@@ -1,12 +1,12 @@
 import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
 import Usuario from "../../source/domain/entity/Usuario";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import { criarContexto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 const d = (texto: string) => new Date(`${texto}T00:00:00.000Z`);
 
@@ -34,7 +34,7 @@ describe("Agenda e reuniões (HTTP)", () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
         const pessoa = async (nome: string, codigo: string, status = StatusPessoa.ATIVO) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, codigo, { status });
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, { status }), "membro");
             await usuarios.criar(u);
             return u;
         };

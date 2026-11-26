@@ -5,10 +5,20 @@ import Router from "../../source/infra/http/Router";
 import RepositoryFactoryInterface from "../../source/domain/interfaces/RepositoryFactoryInterface";
 import Usuario from "../../source/domain/entity/Usuario";
 import { obterChavePrivada } from "../../source/shared/seguranca/chavesJwt";
+import { PermissoesDaPessoa } from "../../source/shared/seguranca/permissoesEfetivas";
+import { efetivasDoPapel, papelDe } from "../papel";
+
+/** Quem foi marcado com `comPapel` recebe as permissões do papel; os demais, as do cargo (como em produção). */
+class AuthDeTeste extends ExpressAuth {
+    protected permissoesDe(usuario: Usuario): Promise<PermissoesDaPessoa> {
+        const papel = papelDe(usuario.codigo);
+        return papel ? Promise.resolve(efetivasDoPapel(papel, usuario.status)) : super.permissoesDe(usuario);
+    }
+}
 
 /** Sobe a API completa numa porta livre, com o repositório informado. */
 export async function subirServidor(factory: RepositoryFactoryInterface) {
-    const auth = new ExpressAuth(factory);
+    const auth = new AuthDeTeste(factory);
     const http = new ExpressHttp(auth);
     new Router(http, factory).init();
     await http.listen(0);

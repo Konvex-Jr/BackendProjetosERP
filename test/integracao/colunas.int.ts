@@ -12,11 +12,11 @@ import SenioridadeUsuario from "../../source/domain/entity/SenioridadeUsuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
 import ColunaProjeto from "../../source/domain/entity/ColunaProjeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import { PapelColuna } from "../../source/domain/enum/ColunaProjeto";
 import GerirColunasProjeto, { EntradaColuna } from "../../source/useCases/projetos/GerirColunasProjeto";
 import ExcluirProjeto from "../../source/useCases/projetos/ExcluirProjeto";
+import { comPapel } from "../papel";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -68,14 +68,7 @@ descrever("colunas do quadro contra PostgreSQL", () => {
         await aplicarMigracoes(pool);
         conexao = PgConexao.criar(URL_TESTE!);
         factory = new DatabaseRepositoryFactory(conexao);
-        pessoa = new Usuario(
-            "Pessoa",
-            "pessoa@teste.com",
-            PerfilUsuario.MEMBRO,
-            true,
-            "hash",
-            new SenioridadeUsuario("pleno", "Pleno", 75),
-        );
+        pessoa = comPapel(new Usuario("Pessoa", "pessoa@teste.com", true, "hash", new SenioridadeUsuario("pleno", "Pleno", 75)), "membro");
         await factory.criarUsuarioRepository().criar(pessoa);
     }, 60000);
 

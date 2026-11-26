@@ -14,7 +14,6 @@ import Usuario from "../../source/domain/entity/Usuario";
 import SenioridadeUsuario from "../../source/domain/entity/SenioridadeUsuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Tarefa from "../../source/domain/entity/Tarefa";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusTarefa from "../../source/domain/enum/StatusTarefa";
 import PrioridadeTarefa from "../../source/domain/enum/PrioridadeTarefa";
 import GerirAnexos from "../../source/useCases/anexos/GerirAnexos";
@@ -22,6 +21,7 @@ import ExcluirProjeto from "../../source/useCases/projetos/ExcluirProjeto";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
+import { autenticado, comPapel } from "../papel";
 
 const URL_TESTE = process.env.DATABASE_URL_TESTE;
 const descrever = URL_TESTE ? describe : describe.skip;
@@ -77,13 +77,15 @@ descrever("anexos contra PostgreSQL", () => {
         try {
             const inicio = new Date("2026-10-12T00:00:00.000Z");
             const fim = new Date("2026-10-30T00:00:00.000Z");
-            const pessoa = new Usuario(
-                "Saiu do Projeto",
-                `saiu-${crypto.randomUUID()}@teste.com`,
-                PerfilUsuario.MEMBRO,
-                true,
-                "hash",
-                new SenioridadeUsuario("pleno", "Pleno", 75),
+            const pessoa = comPapel(
+                new Usuario(
+                    "Saiu do Projeto",
+                    `saiu-${crypto.randomUUID()}@teste.com`,
+                    true,
+                    "hash",
+                    new SenioridadeUsuario("pleno", "Pleno", 75),
+                ),
+                "membro",
             );
             await factory.criarUsuarioRepository().criar(pessoa);
             const projeto = await factory
@@ -106,15 +108,10 @@ descrever("anexos contra PostgreSQL", () => {
                         [],
                     ),
                 );
-            const anexo = await new GerirAnexos(factory).enviar(
-                { codigo: pessoa.codigo, perfil: pessoa.perfil },
-                DonoAnexo.TAREFA,
-                tarefa.codigo,
-                {
-                    nome: "entrega.pdf",
-                    conteudo: Buffer.from("%PDF-1.4 teste"),
-                },
-            );
+            const anexo = await new GerirAnexos(factory).enviar(autenticado(pessoa), DonoAnexo.TAREFA, tarefa.codigo, {
+                nome: "entrega.pdf",
+                conteudo: Buffer.from("%PDF-1.4 teste"),
+            });
             // A pessoa sai do projeto, mas continua responsável pela tarefa.
             await pool.query("UPDATE projeto_membros SET data_saida = data_entrada WHERE projeto_codigo = $1", [projeto.codigo]);
             const armazenamento = factory.criarArmazenamentoAnexos();

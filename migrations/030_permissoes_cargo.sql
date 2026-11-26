@@ -55,7 +55,7 @@ UPDATE cargos c
   FROM perfil_cargo_030 pc
  WHERE pc.cargo_codigo = c.codigo;
 
--- Presidente: o cargo ativo cujo nome começa por "Presid". Com diretores no banco, ele precisa existir e ter ocupante.
+-- Presidente: o cargo ativo cujo nome começa por "Presid". Com diretores e cargos no banco, ele precisa existir e ter ocupante.
 DO $$
 DECLARE
     tem_diretor BOOLEAN;
@@ -63,7 +63,10 @@ DECLARE
     presidente UUID;
     ocupado BOOLEAN;
 BEGIN
-    SELECT EXISTS (SELECT 1 FROM usuarios WHERE perfil::text = 'diretor' AND ativo) INTO tem_diretor;
+    -- Só cobra o presidente de quem já usa cargos (produção desde a 23a). Banco sem cargo nenhum (instalação nova,
+    -- testes antigos) segue sem presidente; o seedAdmin cria o cargo depois.
+    SELECT EXISTS (SELECT 1 FROM usuarios WHERE perfil::text = 'diretor' AND ativo)
+       AND EXISTS (SELECT 1 FROM cargos WHERE ativo) INTO tem_diretor;
     SELECT count(*) INTO candidatos FROM cargos WHERE ativo AND nome ILIKE 'Presid%';
     IF candidatos = 1 THEN
         SELECT codigo INTO presidente FROM cargos WHERE ativo AND nome ILIKE 'Presid%';

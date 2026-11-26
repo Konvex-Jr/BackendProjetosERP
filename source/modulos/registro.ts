@@ -167,7 +167,7 @@ export const MODULOS: Modulo[] = [
                 rotulo: "Configurações",
                 caminho: "/configuracoes",
                 ordem: 90,
-                permissao: Permissao.CONFIGURACOES_EDITAR,
+                permissao: Permissao.CONFIGURACOES_VER,
             },
         ],
     },

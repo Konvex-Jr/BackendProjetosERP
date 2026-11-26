@@ -1,39 +1,31 @@
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import Router from "../source/infra/http/Router";
 import { MODULOS, menuDoUsuario, menuOrdenado } from "../source/modulos/registro";
-import { Permissao, TODAS_AS_PERMISSOES, permissoesDoPapel } from "../source/shared/seguranca/catalogoPermissoes";
-import { exigirPermissao, exigirPodeGerirPerfil, resolverUsuarioAlvo, temPermissao } from "../source/shared/seguranca/permissoes";
+import { Permissao, TODAS_AS_PERMISSOES } from "../source/shared/seguranca/catalogoPermissoes";
+import { exigirPermissao, resolverUsuarioAlvo, temPermissao } from "../source/shared/seguranca/permissoes";
 import { ErroProibido } from "../source/shared/erros/ErroProibido";
 import { ErroNaoAutorizado } from "../source/shared/erros/ErroNaoAutorizado";
 import { criarContexto } from "./fixtures";
+import { autenticado, efetivasDoPapel } from "./papel";
 
-const diretor = { codigo: "d", perfil: PerfilUsuario.DIRETOR };
-const gerente = { codigo: "g", perfil: PerfilUsuario.GERENTE };
-const membro = { codigo: "m", perfil: PerfilUsuario.MEMBRO };
+const diretor = { codigo: "d", ...efetivasDoPapel("diretor") };
+const gerente = { codigo: "g", ...efetivasDoPapel("gerente") };
+const membro = { codigo: "m", ...efetivasDoPapel("membro") };
 
 describe("Catálogo de permissões", () => {
-    test("diretor tem todas; gerente não exclui projeto nem configura; membro nenhuma", () => {
-        expect(permissoesDoPapel(PerfilUsuario.DIRETOR)).toContain(Permissao.PROJETOS_EXCLUIR);
+    test("temPermissao lê as permissões da pessoa (sessão 31a); sem lista, nega", () => {
+        expect(temPermissao(diretor, Permissao.PROJETOS_EXCLUIR)).toBe(true);
         expect(temPermissao(gerente, Permissao.PROJETOS_EDITAR)).toBe(true);
         expect(temPermissao(gerente, Permissao.PROJETOS_EXCLUIR)).toBe(false);
-        expect(temPermissao(gerente, Permissao.CONFIGURACOES_EDITAR)).toBe(false);
-        expect(permissoesDoPapel(PerfilUsuario.MEMBRO)).toEqual([]);
-        expect(permissoesDoPapel("desconhecido")).toEqual([]);
+        expect(temPermissao(gerente, Permissao.CONFIG_ESTRUTURA)).toBe(false);
+        expect(temPermissao(membro, Permissao.PROJETOS_EDITAR)).toBe(false);
+        expect(temPermissao({ codigo: "x" }, Permissao.PROJETOS_VER)).toBe(false);
     });
 
     test("exigirPermissao recusa sem login e sem permissão", () => {
         expect(() => exigirPermissao(null, Permissao.PROJETOS_EDITAR)).toThrow(ErroNaoAutorizado);
         expect(() => exigirPermissao(membro, Permissao.PROJETOS_EDITAR)).toThrow(ErroProibido);
         expect(exigirPermissao(gerente, Permissao.PROJETOS_EDITAR)).toBe(gerente);
-    });
-
-    test("só quem gere diretores mexe em diretor", () => {
-        expect(() => exigirPodeGerirPerfil(gerente, null, PerfilUsuario.DIRETOR)).toThrow(ErroProibido);
-        expect(() => exigirPodeGerirPerfil(gerente, PerfilUsuario.DIRETOR, PerfilUsuario.MEMBRO)).toThrow(ErroProibido);
-        expect(exigirPodeGerirPerfil(gerente, PerfilUsuario.MEMBRO, PerfilUsuario.GERENTE)).toBe(gerente);
-        expect(exigirPodeGerirPerfil(diretor, null, PerfilUsuario.DIRETOR)).toBe(diretor);
-        expect(() => exigirPodeGerirPerfil(membro, null, PerfilUsuario.MEMBRO)).toThrow(ErroProibido);
     });
 
     test("membro só age por si; gestor pode indicar outra pessoa", () => {
@@ -122,7 +114,7 @@ describe("PUT /auth/perfil", () => {
             swagger: () => undefined,
         };
         new Router(http, factory).init();
-        const eu = { codigo: ana.codigo, perfil: ana.perfil };
+        const eu = autenticado(ana);
 
         const editado = await rotas["put /auth/perfil"](
             {},
@@ -134,7 +126,6 @@ describe("PUT /auth/perfil", () => {
                 // Ignorados: só a gestão muda nome, e-mail, perfil e área.
                 nome: "Outro",
                 email: "x@y.com",
-                perfil: PerfilUsuario.DIRETOR,
                 codigoArea: "qualquer",
             },
         );
@@ -142,7 +133,6 @@ describe("PUT /auth/perfil", () => {
         expect(editado.bio).toBe("Oi");
         expect(editado.nome).toBe(ana.nome);
         expect(editado.email).toBe(ana.email);
-        expect(editado.perfil).toBe(ana.perfil);
         await expect(rotas["put /auth/perfil"]({}, { telefone: "1" })).rejects.toThrow(ErroNaoAutorizado);
     });
 
@@ -153,7 +143,7 @@ describe("PUT /auth/perfil", () => {
         new Router(http, factory).init();
         const r = await rotas["put /usuarios/:codigo"](
             { codigo: ana.codigo },
-            { user: { codigo: gerente.codigo, perfil: gerente.perfil }, fimTrainee: "2026-11-10T15:00:00Z", dataEntrada: "2026-01-01" },
+            { user: autenticado(gerente), fimTrainee: "2026-11-10T15:00:00Z", dataEntrada: "2026-01-01" },
         );
         expect(new Date(r.fimTrainee).toISOString().slice(0, 10)).toBe("2026-11-10");
         const lido = await factory.criarUsuarioRepository().buscarPorCodigo(ana.codigo);
@@ -165,14 +155,11 @@ describe("PUT /auth/perfil", () => {
         const rotas: Record<string, any> = {};
         const http: any = { route: (m: string, u: string, _a: boolean, cb: any) => (rotas[`${m} ${u}`] = cb), swagger: () => undefined };
         new Router(http, factory).init();
-        const eu = { codigo: ana.codigo, perfil: ana.perfil };
+        const eu = autenticado(ana);
         const r = await rotas["put /auth/perfil"]({}, { user: eu, emailPessoal: "Ana@Gmail.com", fimTrainee: "2026-01-01" });
         expect(r.emailPessoal).toBe("ana@gmail.com");
         expect(r.fimTrainee ?? null).toBeNull();
-        const visto = await rotas["get /usuarios/:codigo"](
-            { codigo: ana.codigo },
-            { user: { codigo: gerente.codigo, perfil: gerente.perfil } },
-        );
+        const visto = await rotas["get /usuarios/:codigo"]({ codigo: ana.codigo }, { user: autenticado(gerente) });
         expect(visto.emailPessoal).toBe("ana@gmail.com");
         await expect(rotas["put /auth/perfil"]({}, { user: eu, emailPessoal: "sem-arroba" })).rejects.toMatchObject({
             codigo: "EMAIL_PESSOAL_INVALIDO",

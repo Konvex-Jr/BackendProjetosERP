@@ -194,11 +194,10 @@ const swaggerSpecification = {
                 {
                     requestBody: jsonBody({
                         type: "object",
-                        required: ["nome", "email", "perfil"],
+                        required: ["nome", "email"],
                         properties: {
                             nome: { type: "string" },
                             email: { type: "string", format: "email" },
-                            perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
                             senioridade: { type: "object", nullable: true },
                             status: { type: "string", enum: ["ativo", "trainee"], description: "Status inicial (padrão ativo)" },
                             curso: {
@@ -230,11 +229,10 @@ const swaggerSpecification = {
                 parameters: [{ $ref: "#/components/parameters/codigo" }],
                 requestBody: jsonBody({
                     type: "object",
-                    required: ["nome", "email", "perfil"],
+                    required: ["nome", "email"],
                     properties: {
                         nome: { type: "string" },
                         email: { type: "string", format: "email" },
-                        perfil: { type: "string", enum: ["diretor", "gerente", "membro"] },
                         senioridade: { type: "object", nullable: true },
                         curso: {
                             type: "string",

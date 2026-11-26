@@ -1,10 +1,10 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import Participacao from "../../source/domain/entity/Participacao";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { Papel, comPapel } from "../papel";
 
 /** Sessão 20 (regra da 27a): escrita em projeto sigiloso (criar, sigilo, rotas protegidas); sem lista de acesso. */
 describe("Escrita em projeto sigiloso", () => {
@@ -27,16 +27,19 @@ describe("Escrita em projeto sigiloso", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novoUsuario = async (nome: string, perfil: PerfilUsuario, codigo: string, status?: StatusPessoa) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, status ? { status } : {});
+        const novoUsuario = async (nome: string, perfil: Papel, codigo: string, status?: StatusPessoa) => {
+            const u = comPapel(
+                new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, status ? { status } : {}),
+                perfil,
+            );
             await usuarios.criar(u);
             return u;
         };
-        diretor = await novoUsuario("Dora", PerfilUsuario.DIRETOR, "usr-dora");
-        criador = await novoUsuario("Caio", PerfilUsuario.GERENTE, "usr-caio");
-        gerenteEquipe = await novoUsuario("Gil", PerfilUsuario.GERENTE, "usr-gil");
-        gerenteFora = await novoUsuario("Fábio", PerfilUsuario.GERENTE, "usr-fabio");
-        novo = await novoUsuario("Nina", PerfilUsuario.MEMBRO, "usr-nina");
+        diretor = await novoUsuario("Dora", "diretor", "usr-dora");
+        criador = await novoUsuario("Caio", "gerente", "usr-caio");
+        gerenteEquipe = await novoUsuario("Gil", "gerente", "usr-gil");
+        gerenteFora = await novoUsuario("Fábio", "gerente", "usr-fabio");
+        novo = await novoUsuario("Nina", "membro", "usr-nina");
         await ctx.factory.criarProjetoRepository().criar(
             new Projeto("Sigiloso", "descrição", dataInicio, dataFim, undefined, [ctx.membro, gerenteEquipe], "proj-sig", {
                 sigiloso: true,

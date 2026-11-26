@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { Papel, comPapel } from "../papel";
 
 /** Sessão 20: tarefas, comentários e anexos de tarefa de projeto sigiloso. */
 describe("Tarefas de projeto sigiloso", () => {
@@ -23,18 +23,18 @@ describe("Tarefas de projeto sigiloso", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo);
+        const novo = async (nome: string, perfil: Papel, codigo: string) => {
+            const u = comPapel(new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo), perfil);
             await usuarios.criar(u);
             return u;
         };
         equipe = ctx.membro;
-        ex = await novo("Eva", PerfilUsuario.MEMBRO, "usr-eva");
-        exResponsavel = await novo("Ruy", PerfilUsuario.MEMBRO, "usr-ruy");
-        criadorFora = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
-        fora = await novo("Fê", PerfilUsuario.MEMBRO, "usr-fe");
-        gerenteFora = await novo("Gui", PerfilUsuario.GERENTE, "usr-gui");
-        diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
+        ex = await novo("Eva", "membro", "usr-eva");
+        exResponsavel = await novo("Ruy", "membro", "usr-ruy");
+        criadorFora = await novo("Lia", "membro", "usr-lia");
+        fora = await novo("Fê", "membro", "usr-fe");
+        gerenteFora = await novo("Gui", "gerente", "usr-gui");
+        diretor = await novo("Dora", "diretor", "usr-dora");
 
         const projetos = ctx.factory.criarProjetoRepository();
         const sigiloso = await projetos.criar(

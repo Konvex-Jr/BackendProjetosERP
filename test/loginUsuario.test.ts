@@ -3,7 +3,6 @@ import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepository
 import CriarUsuario from "../source/useCases/pessoas/CriarUsuario";
 import { cadastrarComSenha } from "./fixtures";
 import LoginUsuario, { MENSAGEM_CREDENCIAIS_INVALIDAS } from "../source/useCases/auth/LoginUsuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import SenioridadeUsuario from "../source/domain/entity/SenioridadeUsuario";
 
 describe("Caso de uso LoginUsuario", () => {
@@ -14,7 +13,6 @@ describe("Caso de uso LoginUsuario", () => {
     const dadosUsuario = {
         nome: "John",
         email: "john.doe@gmail.com.br",
-        perfil: PerfilUsuario.MEMBRO,
         senioridade: new SenioridadeUsuario("pleno", "Pleno", 75),
         curso: "Engenharia Mecânica",
     };

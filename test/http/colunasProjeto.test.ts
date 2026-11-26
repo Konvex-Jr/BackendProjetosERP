@@ -1,9 +1,9 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
 import { criarContexto, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { Papel, comPapel } from "../papel";
 
 /** Sessão 21: PUT /projetos/:codigo/colunas e o campo `colunas` do projeto. */
 describe("Colunas do projeto", () => {
@@ -18,15 +18,18 @@ describe("Colunas do projeto", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         const usuarios = ctx.factory.criarUsuarioRepository();
-        const novo = async (nome: string, perfil: PerfilUsuario, codigo: string, status?: StatusPessoa) => {
-            const u = new Usuario(nome, `${codigo}@konvex.com.br`, perfil, true, "x", ctx.senioridade, codigo, status ? { status } : {});
+        const novo = async (nome: string, perfil: Papel, codigo: string, status?: StatusPessoa) => {
+            const u = comPapel(
+                new Usuario(nome, `${codigo}@konvex.com.br`, true, "x", ctx.senioridade, codigo, status ? { status } : {}),
+                perfil,
+            );
             await usuarios.criar(u);
             return u;
         };
-        diretor = await novo("Dora", PerfilUsuario.DIRETOR, "usr-dora");
-        lider = await novo("Lia", PerfilUsuario.MEMBRO, "usr-lia");
-        trainee = await novo("Tina", PerfilUsuario.MEMBRO, "usr-tina", StatusPessoa.TRAINEE);
-        deFora = await novo("Fábio", PerfilUsuario.MEMBRO, "usr-fabio");
+        diretor = await novo("Dora", "diretor", "usr-dora");
+        lider = await novo("Lia", "membro", "usr-lia");
+        trainee = await novo("Tina", "membro", "usr-tina", StatusPessoa.TRAINEE);
+        deFora = await novo("Fábio", "membro", "usr-fabio");
         const projetos = ctx.factory.criarProjetoRepository();
         const normal = await projetos.criar(
             new Projeto("Normal", "d", dataInicio, dataFim, undefined, [ctx.membro, lider, trainee], "proj-nor", { lider }),

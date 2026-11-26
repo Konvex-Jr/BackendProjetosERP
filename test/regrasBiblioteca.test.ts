@@ -3,11 +3,10 @@ import Projeto from "../source/domain/entity/Projeto";
 import Participacao from "../source/domain/entity/Participacao";
 import Usuario from "../source/domain/entity/Usuario";
 import ItemBiblioteca from "../source/domain/entity/ItemBiblioteca";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import SigiloBiblioteca from "../source/domain/enum/SigiloBiblioteca";
 import { ErroProibido } from "../source/shared/erros/ErroProibido";
 import { ErroNaoEncontrado } from "../source/shared/erros/ErroNaoEncontrado";
-import { permissoesDoPapel, Permissao } from "../source/shared/seguranca/catalogoPermissoes";
+import { PADRAO_DIRETOR, PADRAO_GERENTE, PADRAO_MEMBRO, Permissao } from "../source/shared/seguranca/catalogoPermissoes";
 import {
     exigirAlterarItem,
     exigirPodeUsarSigiloEProjeto,
@@ -17,13 +16,14 @@ import {
     podeVerProjetoDoItem,
     contextoProjetos,
 } from "../source/shared/seguranca/regrasBiblioteca";
+import { autenticado, comPapel } from "./papel";
 
 const inicio = new Date("2026-10-01T00:00:00.000Z");
 const saida = new Date("2026-10-20T00:00:00.000Z");
 
 async function montar() {
     const { factory, membro, gerente, senioridade } = await criarContexto();
-    const outro = new Usuario("Beto Lima", "beto@konvex.com.br", PerfilUsuario.MEMBRO, true, "senha-hash", senioridade, "usr-beto");
+    const outro = comPapel(new Usuario("Beto Lima", "beto@konvex.com.br", true, "senha-hash", senioridade, "usr-beto"), "membro");
     await factory.criarUsuarioRepository().criar(outro);
     const repo = factory.criarProjetoRepository();
     await repo.criar(new Projeto("Meu", "d", inicio, saida, undefined, [membro], "p-meu"));
@@ -42,7 +42,7 @@ async function montar() {
     const ref = (codigo: string) => ({ codigo, nome: codigo });
     const item = (sigilo: string, projeto: string | null = null, autor = outro) =>
         new ItemBiblioteca({ titulo: "Item", sigilo, projeto: projeto ? ref(projeto) : null, autor: ref(autor.codigo) });
-    const u = (x: Usuario) => ({ codigo: x.codigo, perfil: x.perfil });
+    const u = (x: Usuario) => autenticado(x);
     return { factory, membro: u(membro), gerente: u(gerente), outro: u(outro), outroUsuario: outro, item };
 }
 
@@ -121,12 +121,9 @@ describe("regras da Biblioteca", () => {
     });
 
     it("catálogo: gestão tem as duas permissões; membro nenhuma", () => {
-        expect(permissoesDoPapel(PerfilUsuario.GERENTE)).toEqual(
-            expect.arrayContaining([Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR]),
-        );
-        expect(permissoesDoPapel(PerfilUsuario.DIRETOR)).toEqual(
-            expect.arrayContaining([Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR]),
-        );
-        expect(permissoesDoPapel(PerfilUsuario.MEMBRO)).toEqual([]);
+        expect(PADRAO_GERENTE).toEqual(expect.arrayContaining([Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR]));
+        expect(PADRAO_DIRETOR).toEqual(expect.arrayContaining([Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR]));
+        expect(PADRAO_MEMBRO).not.toContain(Permissao.BIBLIOTECA_GERIR);
+        expect(PADRAO_MEMBRO).not.toContain(Permissao.BIBLIOTECA_VER_TODOS);
     });
 });

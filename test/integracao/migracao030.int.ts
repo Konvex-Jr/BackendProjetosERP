@@ -137,6 +137,13 @@ descrever("migração 030 sobre a 029", () => {
         await expect(aplicarMigracoes(pool, PASTA, silencio)).rejects.toThrow(/presidente/i);
     }, 60000);
 
+    test("diretor sem nenhum cargo cadastrado (banco que não usa cargos): aplica sem presidente", async () => {
+        await ate029();
+        await pessoa("Dir", "diretor");
+        await expect(aplicarMigracoes(pool, PASTA, silencio)).resolves.not.toThrow();
+        expect((await pool.query("SELECT count(*)::int AS n FROM cargos")).rows[0].n).toBe(0);
+    }, 60000);
+
     test("banco sem pessoas aplica sem erro", async () => {
         await ate029();
         await expect(aplicarMigracoes(pool, PASTA, silencio)).resolves.not.toThrow();

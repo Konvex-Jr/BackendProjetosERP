@@ -1,8 +1,8 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
-import PerfilUsuario from "../../source/domain/enum/PerfilUsuario";
 import { criarContexto, criarTarefa, dataFim, dataInicio } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
+import { comPapel } from "../papel";
 
 /** Sessão 8b: líder do projeto, papéis nas tarefas e comentários. */
 describe("Líder e comentários pela API", () => {
@@ -23,8 +23,8 @@ describe("Líder e comentários pela API", () => {
     beforeEach(async () => {
         ctx = await criarContexto();
         lider = ctx.membro;
-        colega = new Usuario("Bruno", "bruno@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-bruno");
-        deFora = new Usuario("Carla", "carla@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", ctx.senioridade, "usr-carla");
+        colega = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
+        deFora = comPapel(new Usuario("Carla", "carla@konvex.com.br", true, "x", ctx.senioridade, "usr-carla"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(colega);
         await ctx.factory.criarUsuarioRepository().criar(deFora);
         await ctx.factory

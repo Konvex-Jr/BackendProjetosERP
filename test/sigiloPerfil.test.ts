@@ -1,7 +1,6 @@
 import Participacao from "../source/domain/entity/Participacao";
 import Projeto from "../source/domain/entity/Projeto";
 import Usuario from "../source/domain/entity/Usuario";
-import PerfilUsuario from "../source/domain/enum/PerfilUsuario";
 import Tarefa from "../source/domain/entity/Tarefa";
 import DificuldadeTarefa from "../source/domain/enum/DificuldadeTarefa";
 import PrioridadeTarefa from "../source/domain/enum/PrioridadeTarefa";
@@ -9,12 +8,13 @@ import StatusTarefa from "../source/domain/enum/StatusTarefa";
 import { hoje } from "../source/shared/datas";
 import ObterPerfilPessoa from "../source/useCases/pessoas/ObterPerfilPessoa";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
+import { autenticado, comPapel } from "./papel";
 
 const saida = new Date("2026-10-20T00:00:00.000Z");
 
 async function montar() {
     const { factory, membro, gerente, senioridade } = await criarContexto();
-    const outro = new Usuario("Beto Lima", "beto@konvex.com.br", PerfilUsuario.MEMBRO, true, "senha-hash", senioridade, "usr-beto");
+    const outro = comPapel(new Usuario("Beto Lima", "beto@konvex.com.br", true, "senha-hash", senioridade, "usr-beto"), "membro");
     await factory.criarUsuarioRepository().criar(outro);
     const repo = factory.criarProjetoRepository();
     const detalhes = { referencia: "REF-SECRETA" };
@@ -35,7 +35,7 @@ async function montar() {
             { ...detalhes, sigiloso: true },
         ),
     );
-    const auth = (u: Usuario) => ({ codigo: u.codigo, perfil: u.perfil });
+    const auth = (u: Usuario) => autenticado(u);
     return { factory, membro, gerente, outro, auth };
 }
 
@@ -81,7 +81,7 @@ describe("Perfil da pessoa com projetos sigilosos", () => {
 
     it("membro não vê a passagem antiga de outra pessoa por projeto que não vê completo (como no cartão)", async () => {
         const { factory, membro, auth } = await montar();
-        const terceiro = new Usuario("Caio", "caio@konvex.com.br", PerfilUsuario.MEMBRO, true, "x", membro.senioridade, "usr-caio");
+        const terceiro = comPapel(new Usuario("Caio", "caio@konvex.com.br", true, "x", membro.senioridade, "usr-caio"), "membro");
         await factory.criarUsuarioRepository().criar(terceiro);
         const perfil = await new ObterPerfilPessoa(factory).execute(membro.codigo, auth(terceiro));
         // Atuais aparecem restritos; a saída de Ana do "Sigiloso antigo" não aparece.

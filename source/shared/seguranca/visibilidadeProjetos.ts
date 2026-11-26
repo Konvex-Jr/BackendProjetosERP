@@ -8,7 +8,8 @@ import { exigirAutenticado, Permissao, temPermissao, UsuarioAutenticado } from "
  * os demais, só os de que participam ou participaram. Os outros chegam como cartão (sessão 27a).
  */
 export function podeVerTodosProjetos(usuario: UsuarioAutenticado | undefined | null): boolean {
-    return temPermissao(usuario, Permissao.PROJETOS_VER_TODOS);
+    // Provisório (31a, Task 3): a regra pela área do cargo entra na Task 5.
+    return temPermissao(usuario, Permissao.PROJETOS_ABRIR_TODOS) || temPermissao(usuario, Permissao.GESTAO_VISOES);
 }
 
 /** Só o que a regra precisa (tipo estrutural), para não depender da entidade Projeto inteira. */
@@ -46,7 +47,7 @@ export function acessoAoProjeto(usuario: UsuarioAutenticado, projeto: ProjetoPar
         const lideraArea = projeto.lideresDaArea?.includes(usuario.codigo) ?? false;
         return podeVerTodosProjetos(usuario) || lideraArea || participaOuParticipou(usuario.codigo, projeto) ? "completo" : "cartao";
     }
-    if (temPermissao(usuario, Permissao.PROJETOS_VER_SIGILOSOS)) return "completo";
+    if (temPermissao(usuario, Permissao.PROJETOS_ABRIR_TODOS)) return "completo";
     return projeto.participacoes.some((p) => p.ativa && p.usuario.codigo === usuario.codigo) ? "completo" : "cartao";
 }
 
@@ -62,7 +63,7 @@ export function exigirAcessoCompleto(usuario: UsuarioAutenticado | undefined | n
  * equipe atual (na criação, a equipe inicial). Senão, 400 SIGILOSO_SEM_VOCE.
  */
 export function exigirNaoSeTrancar(usuario: UsuarioAutenticado, codigosEquipeAtual: readonly string[]): void {
-    if (temPermissao(usuario, Permissao.PROJETOS_VER_SIGILOSOS)) return;
+    if (temPermissao(usuario, Permissao.PROJETOS_ABRIR_TODOS)) return;
     if (codigosEquipeAtual.includes(usuario.codigo)) return;
     throw new ErroValidacao(MENSAGENS_DE_ERRO.PROJETO.SIGILOSO_SEM_VOCE, "SIGILOSO_SEM_VOCE");
 }
