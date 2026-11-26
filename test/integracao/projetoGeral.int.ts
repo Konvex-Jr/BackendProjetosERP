@@ -106,8 +106,8 @@ descrever("projeto geral da área contra PostgreSQL", () => {
     test("a equipe do geral vem dos períodos da área; a liderança, dos cargos que lideram", async () => {
         const lido = (await factory.criarProjetoRepository().buscarPorCodigo(geral.codigo))!;
         expect(lido.membros.map((m) => m.codigo)).toEqual([ana.codigo]);
-        const saida = lido.participacoes.find((p) => p.usuario.codigo === bia.codigo);
-        expect(saida?.dataSaida).toEqual(dia("2026-01-10"));
+        // Desde 25/11 quem saiu da área não aparece como ex-membro do geral.
+        expect(lido.participacoes.some((p) => p.usuario.codigo === bia.codigo)).toBe(false);
         expect(lido.lideresDaArea).toEqual([caio.codigo]);
         expect(lido.lider).toBeNull();
         expect(lido.ehLider(caio.codigo)).toBe(true);
@@ -121,11 +121,11 @@ descrever("projeto geral da área contra PostgreSQL", () => {
         expect(await repo.buscarGeralDaArea(crypto.randomUUID())).toBeNull();
     });
 
-    test("listarPorMembro traz o geral a quem tem ou teve período na área, ou a lidera", async () => {
+    test("listarPorMembro traz o geral a quem está na área ou a lidera; quem saiu não", async () => {
         const repo = factory.criarProjetoRepository();
         const codigos = async (u: Usuario) => (await repo.listarPorMembro(u.codigo)).map((p) => p.codigo);
         expect(await codigos(ana)).toContain(geral.codigo);
-        expect(await codigos(bia)).toContain(geral.codigo);
+        expect(await codigos(bia)).not.toContain(geral.codigo);
         expect(await codigos(caio)).toContain(geral.codigo);
         const daDuda = await codigos(duda);
         expect(daDuda).not.toContain(geral.codigo);

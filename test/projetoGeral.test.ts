@@ -38,7 +38,7 @@ describe("projeto geral da área", () => {
         expect(g.status).toBe(StatusProjeto.ARQUIVADO);
     });
 
-    test("comEquipeDaArea: aberto ativo, encerrado com saída, outra área ignorada", () => {
+    test("comEquipeDaArea: só período aberto entra (25/11); encerrado e outra área ficam fora", () => {
         const g = novoGeral(inovacao, dia("2026-11-19"));
         const periodos = [
             new PeriodoArea("ana", inovacao, cargo, dia("2026-02-01"), null, null),
@@ -47,9 +47,7 @@ describe("projeto geral da área", () => {
         ];
         const p = comEquipeDaArea(g, periodos, usuarios, ["ana"]);
         expect(p.membros.map((m) => m.codigo)).toEqual(["ana"]);
-        const bia = p.participacoes.find((x) => x.usuario.codigo === "bia");
-        expect(bia?.dataSaida).toEqual(dia("2026-03-01"));
-        expect(bia?.dataEntrada).toEqual(dia("2026-01-01"));
+        expect(p.participacoes.some((x) => x.usuario.codigo === "bia")).toBe(false);
         expect(p.participacoes.some((x) => x.usuario.codigo === "cris")).toBe(false);
         expect(p.lideresDaArea).toEqual(["ana"]);
     });
@@ -62,6 +60,7 @@ describe("projeto geral da área", () => {
         ];
         const p = comEquipeDaArea(g, periodos, usuarios, []);
         expect(p.membros.map((m) => m.codigo)).toEqual(["ana"]);
-        expect(p.participacoes).toHaveLength(2);
+        expect(p.participacoes).toHaveLength(1);
+        expect(p.participacoes[0].ativa).toBe(true);
     });
 });

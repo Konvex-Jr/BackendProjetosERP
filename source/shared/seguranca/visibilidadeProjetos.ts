@@ -27,6 +27,8 @@ export interface ProjetoParaAcesso {
     participacoes: { usuario: { codigo: string }; ativa: boolean }[];
     /** Projeto geral (sessão 23b): quem lidera a área vê tudo, mesmo sem estar na equipe. */
     lideresDaArea?: readonly string[];
+    /** Projeto geral da área: desde 25/11 todo logado vê completo (o geral nunca é sigiloso). */
+    geralDaArea?: boolean;
 }
 
 /** completo: vê tudo; cartao: sabe que o projeto existe (nome, tipo, área, status, líder), sem os detalhes. */
@@ -36,8 +38,10 @@ export type AcessoProjeto = "completo" | "cartao";
  * Sessão 27a: todo logado vê o cartão de todos os projetos; o completo é de quem trabalha neles e da gestão.
  * Normal: gerente/diretor (projetos.verTodos), equipe atual ou antiga e, no projeto geral, quem lidera a área.
  * Sigiloso: diretor (projetos.verSigilosos) e equipe ATUAL. Ex-equipe e quem só criou o projeto ficam no cartão.
+ * Projeto geral da área (25/11): todo logado vê completo; criar e mover tarefas continua com a área e a liderança.
  */
 export function acessoAoProjeto(usuario: UsuarioAutenticado, projeto: ProjetoParaAcesso): AcessoProjeto {
+    if (projeto.geralDaArea && !projeto.sigiloso) return "completo";
     if (!projeto.sigiloso) {
         const lideraArea = projeto.lideresDaArea?.includes(usuario.codigo) ?? false;
         return podeVerTodosProjetos(usuario) || lideraArea || participaOuParticipou(usuario.codigo, projeto) ? "completo" : "cartao";

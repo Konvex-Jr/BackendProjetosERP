@@ -140,12 +140,19 @@ describe("Tarefas no projeto geral da área", () => {
         expect(r.corpo.codigo).toBe("RESPONSAVEL_FORA_DO_PROJETO");
     });
 
-    it("ex-membro da área vê as tarefas, mas não comenta; quem nunca esteve na área não vê", async () => {
+    it("geral aberto a todos (25/11): quem não está na área vê as tarefas, mas não comenta", async () => {
         const daAna = await tarefaDe(ana, "tarefa-ana");
         const ids = async (u: Usuario) => (await servidor.chamar("get", "/tarefas", { usuario: u })).corpo.map((t: any) => t.codigo);
-        expect(await ids(bia)).toEqual([daAna.codigo]);
+        // A lista geral de Tarefas fica com os projetos da pessoa; a do projeto geral abre para todos.
         expect(await ids(caio)).toEqual([daAna.codigo]);
+        expect(await ids(bia)).toEqual([]);
         expect(await ids(duda)).toEqual([]);
+        const doGeral = async (u: Usuario) =>
+            (await servidor.chamar("get", `/tarefas?codigoProjeto=${daAna.projeto.codigo}`, { usuario: u })).corpo.map(
+                (t: any) => t.codigo,
+            );
+        expect(await doGeral(bia)).toEqual([daAna.codigo]);
+        expect(await doGeral(duda)).toEqual([daAna.codigo]);
         const comentario = await servidor.chamar("post", `/tarefas/${daAna.codigo}/comentarios`, {
             usuario: bia,
             corpo: { texto: "Oi" },
