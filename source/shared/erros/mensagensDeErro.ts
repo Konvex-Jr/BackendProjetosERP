@@ -37,8 +37,8 @@ export const MENSAGENS_DE_ERRO = {
         PESSOA_SEM_ACESSO: "Esta pessoa não tem acesso ao sistema.",
         EMAIL_JA_CADASTRADO: "Este e-mail já está cadastrado.",
         STATUS_TRAINEE_SO_NA_ENTRADA: "Trainee é só a etapa de entrada; ninguém volta a ser trainee.",
-        TRAINEE_NAO_LIDERA: "Trainee não pode ser líder de projeto.",
-        TRAINEE_SEM_BIBLIOTECA: "Trainees não têm acesso à Biblioteca.",
+        LIDER_SEM_PERMISSAO: 'Esta pessoa não pode liderar projetos (permissão "Pode ser líder de projeto" do cargo).',
+        SEM_BIBLIOTECA: "Você não tem acesso à Biblioteca.",
     },
 
     PROJETO: {

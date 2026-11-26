@@ -2,7 +2,7 @@ import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFac
 import ItemBiblioteca from "../../../domain/entity/ItemBiblioteca";
 import { DonoAnexo } from "../../../domain/enum/Anexo";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
-import { exigirNaoTrainee, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { ContextoProjetos, contextoProjetos, podeAlterarItem, podeVerProjetoDoItem } from "../../../shared/seguranca/regrasBiblioteca";
 import GerirAnexos from "../../../useCases/anexos/GerirAnexos";
 import ExcluirItemBiblioteca from "../../../useCases/biblioteca/ExcluirItemBiblioteca";
@@ -25,9 +25,9 @@ export default class BibliotecaRoutes implements ModelRoutes {
 
     init(): void {
         const f = this.factory;
-        // Trainee (sessão 20) não usa a Biblioteca: 403 em toda rota, antes de qualquer leitura.
+        // Sessão 31a: a Biblioteca exige biblioteca.usar (o trainee, por padrão, não tem): 403 em toda rota.
         const exigirSemTrainee = (usuario: UsuarioAutenticado | undefined) =>
-            exigirNaoTrainee(usuario, MENSAGENS_DE_ERRO.USUARIO.TRAINEE_SEM_BIBLIOTECA);
+            exigirPermissao(usuario, Permissao.BIBLIOTECA_USAR, MENSAGENS_DE_ERRO.USUARIO.SEM_BIBLIOTECA);
         // Cada item diz se quem pediu pode alterá-lo e traz os anexos. Projeto que a pessoa não vê
         // sai como null (Ruling 8), com os projetos dela lidos uma vez por requisição.
         const responder = async (usuario: UsuarioAutenticado, itens: ItemBiblioteca[], contexto?: ContextoProjetos) => {

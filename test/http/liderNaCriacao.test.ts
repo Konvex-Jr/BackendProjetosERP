@@ -55,10 +55,10 @@ describe("Líder na criação do projeto", () => {
         expect(r.corpo.lider).toBeNull();
     });
 
-    it("trainee não lidera: 400 TRAINEE_NAO_LIDERA", async () => {
+    it("trainee não lidera (sem projetos.liderar): 400 LIDER_SEM_PERMISSAO", async () => {
         const r = await criar({ codigoLider: trainee.codigo });
         expect(r.status).toBe(400);
-        expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
+        expect(r.corpo.code ?? r.corpo.codigo).toBe("LIDER_SEM_PERMISSAO");
     });
 
     it("líder fora da EJ ou inexistente: 404", async () => {

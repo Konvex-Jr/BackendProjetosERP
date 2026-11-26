@@ -12,7 +12,7 @@ import ConfiguracaoRoutes from "../infra/http/routes/ConfiguracaoRoutes";
 import AnexoRoutes from "../infra/http/routes/AnexoRoutes";
 import BibliotecaRoutes from "../infra/http/routes/BibliotecaRoutes";
 import { Permissao } from "../shared/seguranca/catalogoPermissoes";
-import { ehTrainee, temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
+import { temPermissao, UsuarioAutenticado } from "../shared/seguranca/permissoes";
 
 /** Item do menu lateral. `chave` e `caminho` são os da tela no frontend; `ordem` define a posição. */
 export interface ItemMenu {
@@ -22,8 +22,6 @@ export interface ItemMenu {
     ordem: number;
     /** Sem permissão: visível para qualquer pessoa logada. */
     permissao?: Permissao;
-    /** Trainee (sessão 20) não vê o item. */
-    semTrainee?: boolean;
     /** Grupo do menu lateral (sessão de interface, 25/11). Sem grupo: fora da lista (Configurações vira a engrenagem do topo). */
     grupo?: GrupoMenu;
 }
@@ -91,7 +89,7 @@ export const MODULOS: Modulo[] = [
         permissoes: [Permissao.PESSOAS_VER, Permissao.PESSOAS_GERIR],
         menu: [
             // "Meu perfil" saiu do menu na sessão 22: abre pelo avatar do topo (/perfil, de todos; outra pessoa em /perfil/:codigo).
-            { chave: "usuarios", rotulo: "Pessoas", caminho: "/usuarios", ordem: 30, permissao: Permissao.PESSOAS_GERIR, grupo: "Equipe" },
+            { chave: "usuarios", rotulo: "Pessoas", caminho: "/usuarios", ordem: 30, permissao: Permissao.PESSOAS_VER, grupo: "Equipe" },
         ],
     },
     {
@@ -107,7 +105,16 @@ export const MODULOS: Modulo[] = [
             Permissao.PROJETOS_LIDERAR,
             Permissao.CLIENTES_VER,
         ],
-        menu: [{ chave: "projetos", rotulo: "Projetos", caminho: "/projetos", ordem: 20, grupo: "Trabalho" }],
+        menu: [
+            {
+                chave: "projetos",
+                rotulo: "Projetos",
+                caminho: "/projetos",
+                ordem: 20,
+                permissao: Permissao.PROJETOS_VER,
+                grupo: "Trabalho",
+            },
+        ],
     },
     {
         chave: "tarefas",
@@ -116,7 +123,9 @@ export const MODULOS: Modulo[] = [
         permissoes: [Permissao.TAREFAS_VER, Permissao.TAREFAS_GERIR_TODAS],
         // Painel global (sessão 8c): as tarefas dos meus projetos, inclusive o geral da minha área (sessão 23b);
         // a gestão filtra por pessoa.
-        menu: [{ chave: "tarefas", rotulo: "Tarefas", caminho: "/tarefas", ordem: 15, grupo: "Trabalho" }],
+        menu: [
+            { chave: "tarefas", rotulo: "Tarefas", caminho: "/tarefas", ordem: 15, permissao: Permissao.TAREFAS_VER, grupo: "Trabalho" },
+        ],
     },
     {
         // Sessão 28b: agenda unificada (reuniões, prazos das tarefas e capacitações). Todos veem a própria.
@@ -132,7 +141,16 @@ export const MODULOS: Modulo[] = [
         nome: "Capacitações",
         rotas: [CapacitacaoRoutes],
         permissoes: [Permissao.CAPACITACOES_VER, Permissao.CAPACITACOES_GERIR, Permissao.CAPACITACOES_PRESENCA],
-        menu: [{ chave: "capacitacoes", rotulo: "Capacitações", caminho: "/capacitacoes", ordem: 35, grupo: "Equipe" }],
+        menu: [
+            {
+                chave: "capacitacoes",
+                rotulo: "Capacitações",
+                caminho: "/capacitacoes",
+                ordem: 35,
+                permissao: Permissao.CAPACITACOES_VER,
+                grupo: "Equipe",
+            },
+        ],
     },
     {
         // Sessão 17: junta Gestão, Base e Iniciativas. Todos veem (o sigilo é por item); na posição da Base.
@@ -140,7 +158,16 @@ export const MODULOS: Modulo[] = [
         nome: "Biblioteca",
         rotas: [BibliotecaRoutes],
         permissoes: [Permissao.BIBLIOTECA_USAR, Permissao.BIBLIOTECA_VER_TODOS, Permissao.BIBLIOTECA_GERIR],
-        menu: [{ chave: "biblioteca", rotulo: "Biblioteca", caminho: "/biblioteca", ordem: 40, semTrainee: true, grupo: "Equipe" }],
+        menu: [
+            {
+                chave: "biblioteca",
+                rotulo: "Biblioteca",
+                caminho: "/biblioteca",
+                ordem: 40,
+                permissao: Permissao.BIBLIOTECA_USAR,
+                grupo: "Equipe",
+            },
+        ],
     },
     {
         // Sessão 12c: arquivos anexados (hoje, a itens da Biblioteca e a capacitações; sem item de menu).
@@ -174,9 +201,7 @@ export const MODULOS: Modulo[] = [
 ];
 
 function itensVisiveis(usuario: UsuarioAutenticado, modulo: Modulo): ItemMenu[] {
-    return modulo.menu.filter(
-        (item) => (!item.permissao || temPermissao(usuario, item.permissao)) && !(item.semTrainee && ehTrainee(usuario)),
-    );
+    return modulo.menu.filter((item) => !item.permissao || temPermissao(usuario, item.permissao));
 }
 
 // O frontend recebe chave, rótulo, caminho e grupo; `permissao` e `ordem` são detalhes do backend.

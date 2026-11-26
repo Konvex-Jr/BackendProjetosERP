@@ -1,12 +1,10 @@
+import { exigirPodeLiderar } from "../../shared/seguranca/permissoesEfetivas";
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import Projeto from "../../domain/entity/Projeto";
 import Participacao from "../../domain/entity/Participacao";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { resolverDetalhesProjeto } from "./dadosProjeto";
 import CriarProjetoInput from "./CriarProjetoInput";
-import StatusPessoa from "../../domain/enum/StatusPessoa";
-import { ErroValidacao } from "../../shared/erros/ErroValidacao";
-import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
 
 /** RF-020: cadastra um projeto. */
 export default class CriarProjeto {
@@ -25,10 +23,8 @@ export default class CriarProjeto {
         detalhes.criadoPor = input.criadoPor ?? null;
         if (input.codigoLider) {
             const lider = participacoes.find((p) => p.usuario.codigo === input.codigoLider)!.usuario;
-            // Trainee (sessão 20) não lidera.
-            if (lider.status === StatusPessoa.TRAINEE) {
-                throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.TRAINEE_NAO_LIDERA, "TRAINEE_NAO_LIDERA");
-            }
+            // Sessão 31a: lidera quem tem projetos.liderar (o trainee, por padrão, não tem).
+            await exigirPodeLiderar(lider, this.factory);
             detalhes.lider = lider;
         }
         const projeto = new Projeto(

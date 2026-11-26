@@ -3,7 +3,9 @@ import { TIPOS_CAPACITACAO } from "../../../domain/enum/TipoCapacitacao";
 import GerirCapacitacoes, { EntradaCapacitacao } from "../../../useCases/capacitacoes/GerirCapacitacoes";
 import { ErroValidacao } from "../../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
-import { exigirAutenticado } from "../../../shared/seguranca/permissoes";
+import { exigirAutenticado, exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
+
+const SEM_CAPACITACOES = "Você não tem acesso às Capacitações.";
 import { podeGerirCapacitacoes } from "../../../shared/seguranca/regrasCapacitacao";
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
@@ -51,9 +53,13 @@ export default class CapacitacaoRoutes implements ModelRoutes {
             return { tipos: TIPOS_CAPACITACAO, podeGerir: podeGerirCapacitacoes(usuario) };
         });
 
-        this.http.route("get", "/capacitacoes", true, async (_p: any, body: any) => gerir().listar(body?.user));
+        this.http.route("get", "/capacitacoes", true, async (_p: any, body: any) =>
+            gerir().listar(exigirPermissao(body?.user, Permissao.CAPACITACOES_VER, SEM_CAPACITACOES)),
+        );
 
-        this.http.route("get", "/capacitacoes/:codigo", true, async (params: any, body: any) => gerir().ficha(body?.user, params.codigo));
+        this.http.route("get", "/capacitacoes/:codigo", true, async (params: any, body: any) =>
+            gerir().ficha(exigirPermissao(body?.user, Permissao.CAPACITACOES_VER, SEM_CAPACITACOES), params.codigo),
+        );
 
         this.http.route("post", "/capacitacoes", true, async (_p: any, body: any) => gerir().salvar(body?.user, lerEntrada(body)));
 

@@ -139,14 +139,14 @@ describe("Trainee", () => {
         });
     });
 
-    it("líder: trainee da equipe não pode (400 TRAINEE_NAO_LIDERA)", async () => {
+    it("líder: trainee da equipe não pode (400 LIDER_SEM_PERMISSAO)", async () => {
         const projeto = await criarProjeto(ctx.factory, trainee);
         const r = await servidor.chamar("put", `/projetos/${projeto.codigo}/lider`, {
             usuario: ctx.gerente,
             corpo: { codigoUsuario: trainee.codigo },
         });
         expect(r.status).toBe(400);
-        expect(r.corpo.code ?? r.corpo.codigo).toBe("TRAINEE_NAO_LIDERA");
+        expect(r.corpo.code ?? r.corpo.codigo).toBe("LIDER_SEM_PERMISSAO");
     });
 
     it("membro ativo que lidera não volta a trainee: 400 e o líder fica", async () => {

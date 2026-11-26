@@ -36,18 +36,6 @@ export function exigirAutenticado(usuario: UsuarioAutenticado | undefined | null
     return usuario;
 }
 
-/** Trainee (sessão 20): entra no sistema como membro, mas sem Biblioteca nem liderança. */
-export function ehTrainee(usuario: UsuarioAutenticado | undefined | null): boolean {
-    return !!usuario && usuario.status === StatusPessoa.TRAINEE;
-}
-
-/** 401 sem pessoa logada; 403 (com a mensagem informada) para trainee. */
-export function exigirNaoTrainee(usuario: UsuarioAutenticado | undefined | null, mensagem: string): UsuarioAutenticado {
-    const autenticado = exigirAutenticado(usuario);
-    if (ehTrainee(autenticado)) throw new ErroProibido(mensagem);
-    return autenticado;
-}
-
 /** Versão que não lança erro: serve para montar os booleanos das respostas (podeGerir, podeAlterar...). */
 export function temPermissao(usuario: UsuarioAutenticado | undefined | null, permissao: Permissao): boolean {
     return !!usuario && (usuario.permissoes ?? []).includes(permissao);

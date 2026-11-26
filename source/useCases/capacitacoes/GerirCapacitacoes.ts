@@ -8,7 +8,7 @@ import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
 import { ErroProibido } from "../../shared/erros/ErroProibido";
 import { ErroValidacao } from "../../shared/erros/ErroValidacao";
 import { MENSAGENS_DE_ERRO } from "../../shared/erros/mensagensDeErro";
-import { exigirAutenticado, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
+import { exigirAutenticado, Permissao, temPermissao, UsuarioAutenticado } from "../../shared/seguranca/permissoes";
 import { acessoAosFeedbacks, ehInstrutor, podeGerirCapacitacoes } from "../../shared/seguranca/regrasCapacitacao";
 import { avisarCapacitacaoNova } from "../avisos/registrarAvisos";
 import GerirAnexos from "../anexos/GerirAnexos";
@@ -65,7 +65,8 @@ export default class GerirCapacitacoes {
     /** Resposta da API para quem pediu: inscritos só para a gestão e para quem ministra. */
     private resposta(usuario: UsuarioAutenticado, c: Capacitacao, resumo: ResumoAvaliacao | undefined, anexos: unknown[]) {
         const gestao = podeGerirCapacitacoes(usuario);
-        const instrutor = ehInstrutor(usuario, c);
+        // Sessão 31a: a chamada vem de capacitacoes.presenca (o instrutor sempre faz a da própria).
+        const chamada = temPermissao(usuario, Permissao.CAPACITACOES_PRESENCA) || ehInstrutor(usuario, c);
         const minha = c.inscricaoDe(usuario.codigo);
         const comecou = c.jaComecou(this.agora());
         return {
@@ -85,10 +86,10 @@ export default class GerirCapacitacoes {
             situacao: comecou ? "realizada" : c.vagasRestantes === 0 ? "lotada" : "aberta",
             inscrito: Boolean(minha),
             presente: minha?.presente ?? null,
-            inscritos: gestao || instrutor ? c.inscricoes.map((i) => ({ ...i.usuario, presente: i.presente })) : undefined,
+            inscritos: gestao || chamada ? c.inscricoes.map((i) => ({ ...i.usuario, presente: i.presente })) : undefined,
             avaliacao: resumo ?? { media: null, total: 0 },
             podeGerir: gestao,
-            podeFazerChamada: (gestao || instrutor) && comecou,
+            podeFazerChamada: chamada && comecou,
             podeInscrever: !minha && !comecou && c.vagasRestantes > 0,
             podeCancelar: Boolean(minha) && !comecou,
             podeAvaliar: comecou && minha?.presente === true,
@@ -190,7 +191,9 @@ export default class GerirCapacitacoes {
     async marcarPresencas(usuario: Usuario, codigo: string, presentes: unknown) {
         const autenticado = exigirAutenticado(usuario);
         const c = await this.buscar(codigo);
-        if (!podeGerirCapacitacoes(autenticado) && !ehInstrutor(autenticado, c)) throw new ErroProibido(M.CHAMADA_SEM_PERMISSAO);
+        if (!temPermissao(autenticado, Permissao.CAPACITACOES_PRESENCA) && !ehInstrutor(autenticado, c)) {
+            throw new ErroProibido(M.CHAMADA_SEM_PERMISSAO);
+        }
         if (!Array.isArray(presentes) || presentes.some((p) => typeof p !== "string")) {
             throw new ErroValidacao("Envie `presentes` como uma lista de códigos de pessoas.", "PRESENTES_INVALIDOS");
         }

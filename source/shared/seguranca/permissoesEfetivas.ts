@@ -1,5 +1,7 @@
 import RepositoryFactoryInterface from "../../domain/interfaces/RepositoryFactoryInterface";
 import StatusPessoa, { STATUS_NA_EJ } from "../../domain/enum/StatusPessoa";
+import { ErroValidacao } from "../erros/ErroValidacao";
+import { MENSAGENS_DE_ERRO } from "../erros/mensagensDeErro";
 import { Permissao } from "./catalogoPermissoes";
 
 /** O cargo atual da pessoa, como as regras precisam dele (sessão 31a). */
@@ -39,4 +41,15 @@ export async function permissoesEfetivas(
     }
     if (cargoAtual) return { permissoes: [...cargoAtual.permissoes], cargo };
     return { permissoes: await f.criarPermissoesRepository().conjunto("sem_cargo"), cargo: null };
+}
+
+/** Sessão 31a: só lidera projeto quem tem `projetos.liderar` (antes: todos menos o trainee). 400 LIDER_SEM_PERMISSAO. */
+export async function exigirPodeLiderar(
+    lider: { codigo: string; status?: StatusPessoa | string },
+    f: RepositoryFactoryInterface,
+): Promise<void> {
+    const { permissoes } = await permissoesEfetivas(lider, f);
+    if (!permissoes.includes(Permissao.PROJETOS_LIDERAR)) {
+        throw new ErroValidacao(MENSAGENS_DE_ERRO.USUARIO.LIDER_SEM_PERMISSAO, "LIDER_SEM_PERMISSAO");
+    }
 }
