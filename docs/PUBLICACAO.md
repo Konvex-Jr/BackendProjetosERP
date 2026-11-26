@@ -728,6 +728,49 @@ A migração `029_dificuldade_percentual.sql` troca as **horas por dificuldade**
 
 **Voltar:** a 029 renomeia a coluna (`horas` → `percentual`); o backend antigo não lê a tabela nova. Voltar = restaurar o `pg_dump` e voltar backend e frontend juntos.
 
+### Publicação da sessão 31a (permissões por cargo): migração 030
+
+A migração `030_permissoes_cargo.sql` **apaga o perfil fixo** (diretor/gerente/membro) e o **projeto sigiloso**. Cada cargo recebe uma posição e as permissões do perfil **mais baixo** de quem o ocupa hoje (período aberto); gerentes passam a abrir só os projetos **da área do cargo**. Quem não tem período aberto com cargo fica com o conjunto "Sem cargo" (o membro de hoje). Se houver diretor e cargos, a migração **para** se não existir exatamente um cargo ativo com nome começando por "Presid" e com alguém num período aberto nele. Publicar **backend e frontend juntos**.
+
+**Parte 0, consulta prévia (só lê, antes de tudo):**
+
+```bash
+cd /docker/erp-konvex
+docker exec -i konvex-db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"' <<'SQL'
+-- (a) Diretores e gerentes SEM período aberto com cargo: viram "Sem cargo" (perdem o acesso de gestão)
+SELECT u.nome, u.perfil FROM usuarios u
+WHERE u.ativo AND u.perfil IN ('diretor','gerente')
+  AND NOT EXISTS (SELECT 1 FROM periodos_area p WHERE p.usuario_codigo = u.codigo AND p.fim IS NULL AND p.cargo_codigo IS NOT NULL)
+ORDER BY u.perfil, u.nome;
+-- (b) Cargos com ocupantes de perfis diferentes (o cargo fica com o perfil mais baixo)
+SELECT c.nome AS cargo, string_agg(DISTINCT u.perfil::text, ', ') AS perfis, string_agg(u.nome, ', ') AS ocupantes
+FROM periodos_area p JOIN cargos c ON c.codigo = p.cargo_codigo JOIN usuarios u ON u.codigo = p.usuario_codigo
+WHERE p.fim IS NULL AND u.ativo GROUP BY c.nome HAVING count(DISTINCT u.perfil) > 1;
+-- (c) Cargo que vira presidente e quem o ocupa (precisa sair exatamente 1 linha de cargo, com ocupante)
+SELECT c.nome AS cargo, c.ativo, u.nome AS ocupante FROM cargos c
+LEFT JOIN periodos_area p ON p.cargo_codigo = c.codigo AND p.fim IS NULL
+LEFT JOIN usuarios u ON u.codigo = p.usuario_codigo
+WHERE c.nome ILIKE 'Presid%';
+-- (d) Projetos de cliente sem área (gerente só abre projeto da área do cargo; sem área, só a equipe e a diretoria)
+SELECT nome, status FROM projetos WHERE tipo = 'cliente' AND area_codigo IS NULL ORDER BY nome;
+-- (e) Gerentes e a área do cargo: o que cada um vai abrir
+SELECT u.nome, c.nome AS cargo, a.nome AS area FROM usuarios u
+JOIN periodos_area p ON p.usuario_codigo = u.codigo AND p.fim IS NULL AND p.cargo_codigo IS NOT NULL
+JOIN cargos c ON c.codigo = p.cargo_codigo JOIN areas a ON a.codigo = p.area_codigo
+WHERE u.ativo AND u.perfil = 'gerente' ORDER BY u.nome;
+SQL
+```
+
+**Antes de publicar, pela tela atual:** dar período com cargo a quem aparece em (a); garantir que (c) traga **um** cargo com ocupante (renomear o cargo do presidente para começar por "Presid", se preciso); pôr a área nos projetos de (d) que os gerentes precisam abrir. Repetir a consulta até ficar como esperado.
+
+**Parte 1, backup:** igual ao bloco "Publicação" do início (banco e anexos).
+
+**Parte 2, construir e subir:** `git -C backend pull --ff-only && git -C frontend pull --ff-only`, `docker compose build backend frontend && docker compose up -d`. No log tem que aparecer `Migração aplicada: 030_permissoes_cargo.sql`. Se aparecer o erro do presidente, o backend não sobe: acerte o cargo pelo SQL ou volte o backup (Parte 1) e repita a Parte 0.
+
+**Parte 3, pela tela:** o presidente entra, abre Configurações → Permissões e confere a grade (posições e permissões de cada cargo); ajusta "Gerente de inovação" e "Gerente de projetos" se forem o mesmo cargo hoje (separar em dois cargos). Conferir de fora: `curl -s -o /dev/null -w "%{http_code}\n" https://erp.konvexjr.com.br/api/permissoes` = 401.
+
+**Voltar:** a 030 apaga `usuarios.perfil` e `projetos.sigiloso`. Voltar = restaurar o `pg_dump` e voltar backend e frontend juntos.
+
 ## Scripts que existem só na VPS
 - `/docker/erp-konvex/redefinir-senha.sh <email>`: define uma senha nova para a pessoa (por exemplo, trainee que virou membro).
 - `/docker/erp-konvex/criar-usuarios-teste.sh`: cria ou atualiza `teste.diretor@` e `teste.membro@konvexjr.com.br`.
