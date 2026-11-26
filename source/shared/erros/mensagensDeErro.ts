@@ -26,6 +26,7 @@ export const MENSAGENS_DE_ERRO = {
         INGRESSO_INVALIDO: "O ingresso (ingresso) deve ser no formato AAAA/1 ou AAAA/2 (ex.: 2025/1), de 2000 até o semestre atual.",
         FIM_TRAINEE_ANTES_DA_ENTRADA: "O fim do trainee (fimTrainee) não pode ser antes da data de entrada (dataEntrada).",
         FIM_TRAINEE_NO_FUTURO: "O fim do trainee (fimTrainee) não pode ser no futuro.",
+        ENTRADA_NO_FUTURO: "A data de entrada na EJ não pode ser no futuro.",
         FIM_TRAINEE_COM_TRAINEE: "Quem ainda é trainee não tem fim do trainee (fimTrainee).",
         EMAIL_PESSOAL_INVALIDO: "O e-mail pessoal (emailPessoal) deve ser um e-mail válido de até 254 caracteres.",
         MOTIVO_SAIDA_OBRIGATORIO: "Informe o motivo da saída (motivoSaida).",
@@ -61,7 +62,7 @@ export const MENSAGENS_DE_ERRO = {
     },
 
     HORAS_DIFICULDADE: {
-        INVALIDAS: (nivel: string) => `As horas do nível "${nivel}" devem ser um número de 0,5 a 40.`,
+        INVALIDAS: (nivel: string) => `A % do dia do nível "${nivel}" deve ser um número inteiro de 5 a 100.`,
     },
 
     PRECIFICACAO: {

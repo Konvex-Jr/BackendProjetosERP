@@ -223,11 +223,11 @@ describe("Avisos (HTTP)", () => {
     describe("sobrecarga na situação", () => {
         beforeEach(async () => {
             const repo = ctx.factory.criarTarefaRepository();
-            // De um dia só, para as horas caírem inteiras na semana (8 h + 4 h sobre o teto de 10 h).
-            for (const [titulo, codigo, nivel] of [
-                ["Pesada", "t-a", DificuldadeTarefa.DIFICIL],
-                ["Média", "t-b", DificuldadeTarefa.MEDIA],
-            ] as const) {
+            // Seis Difíceis de hoje: cada uma vale 1 dia inteiro (2 h com teto de 10 h), em qualquer dia da semana.
+            // 6 × 2 h = 12 h sobre o teto de 10 h = 120%.
+            for (const [titulo, codigo, nivel] of ["a", "b", "c", "d", "e", "f"].map(
+                (x) => [`Pesada ${x}`, `t-${x}`, DificuldadeTarefa.DIFICIL] as const,
+            )) {
                 const t = tarefa(normal, titulo, codigo, [sobrecarregado], nivel);
                 await repo.criar(
                     new Tarefa(

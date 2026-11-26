@@ -181,9 +181,9 @@ descrever("tarefas contra PostgreSQL", () => {
         expect((await tarefas.buscarPorCodigo(criada.codigo))?.dificuldade).toBeNull();
 
         const horas = factory.criarHorasDificuldadeRepository();
-        expect(await horas.listar()).toEqual({ rapida: 1, facil: 2, media: 4, dificil: 8 });
-        await horas.salvar({ rapida: 0.5, facil: 2.5, media: 5, dificil: 12 });
-        expect(await horas.listar()).toEqual({ rapida: 0.5, facil: 2.5, media: 5, dificil: 12 });
+        expect(await horas.listar()).toEqual({ rapida: 25, facil: 50, media: 75, dificil: 100 });
+        await horas.salvar({ rapida: 5, facil: 30, media: 60, dificil: 100 });
+        expect(await horas.listar()).toEqual({ rapida: 5, facil: 30, media: 60, dificil: 100 });
 
         const cargos = factory.criarCargoRepository();
         const cargo = await cargos.criar(new Cargo(`Cargo ${crypto.randomUUID()}`, true, undefined, false, 15));
@@ -279,8 +279,8 @@ descrever("tarefas contra PostgreSQL", () => {
         const { hoje } = await import("../../source/shared/datas");
         const Area = (await import("../../source/domain/entity/Area")).default;
         const PeriodoArea = (await import("../../source/domain/entity/PeriodoArea")).default;
-        // O teste de horas por nível acima grava outros valores no mesmo banco.
-        await factory.criarHorasDificuldadeRepository().salvar({ rapida: 1, facil: 2, media: 4, dificil: 8 });
+        // O teste de % por nível acima grava outros valores no mesmo banco.
+        await factory.criarHorasDificuldadeRepository().salvar({ rapida: 25, facil: 50, media: 75, dificil: 100 });
         const dia = hoje();
         const inicio = new Date(dia.getTime() - 30 * 86_400_000);
         const fim = new Date(dia.getTime() + 60 * 86_400_000);
@@ -339,28 +339,54 @@ descrever("tarefas contra PostgreSQL", () => {
             expect(todas.corpo.find((p: any) => p.codigoUsuario === assessor.codigo)).toEqual({
                 codigoUsuario: assessor.codigo,
                 nome: "Assessor Ocupado",
-                horas: 4,
+                horas: 1.5,
                 teto: 10,
-                percentual: 40,
+                percentual: 15,
             });
             const detalhe = await servidor.chamar("get", `/ocupacao/${assessor.codigo}`, { usuario: fora });
             // Sessão 27b: quem está fora também vê o nome do projeto (sem o título da tarefa).
             expect(detalhe.corpo.itens).toEqual([
-                { tipo: "projeto", projeto: { codigo: sigiloso.codigo, nome: "Sigiloso Ocupação" }, horas: 4 },
+                { tipo: "projeto", projeto: { codigo: sigiloso.codigo, nome: "Sigiloso Ocupação" }, horas: 1.5 },
             ]);
             expect(JSON.stringify(detalhe.corpo)).not.toContain("Segredo");
             const doGerente = await servidor.chamar("get", `/ocupacao/${assessor.codigo}`, { usuario: gerente });
             expect(doGerente.corpo.itens).toEqual([
-                { tipo: "projeto", projeto: { codigo: sigiloso.codigo, nome: "Sigiloso Ocupação" }, horas: 4 },
+                { tipo: "projeto", projeto: { codigo: sigiloso.codigo, nome: "Sigiloso Ocupação" }, horas: 1.5 },
             ]);
 
+            // Semana que vem (futura em qualquer dia): já tem uma Média na segunda (1,5 h); a Difícil de segunda a
+            // sexta soma 5 dias × 2 h = 10 h: 11,5 h sobre o teto de 10 h = 115%.
+            const segundaQueVem = new Date(dia.getTime() + (7 - ((dia.getUTCDay() + 6) % 7)) * 86_400_000);
+            const sextaQueVem = new Date(segundaQueVem.getTime() + 4 * 86_400_000);
+            await factory
+                .criarTarefaRepository()
+                .criar(
+                    new Tarefa(
+                        normal,
+                        "Média de segunda",
+                        segundaQueVem,
+                        segundaQueVem,
+                        StatusTarefa.PENDENTE,
+                        PrioridadeTarefa.P2,
+                        null,
+                        null,
+                        null,
+                        [assessor],
+                        [],
+                        undefined,
+                        null,
+                        null,
+                        null,
+                        DificuldadeTarefa.MEDIA,
+                    ),
+                );
             const criada = await servidor.chamar("post", "/tarefas", {
                 usuario: gerente,
                 corpo: {
                     codigoProjeto: normal.codigo,
                     titulo: "Pesada",
-                    dataInicio: dia.toISOString().slice(0, 10),
-                    dataFim: dia.toISOString().slice(0, 10),
+                    dataInicio: segundaQueVem.toISOString().slice(0, 10),
+                    dataFim: sextaQueVem.toISOString().slice(0, 10),
                     prioridade: "P2",
                     dificuldade: "dificil",
                     codigosResponsaveis: [assessor.codigo],
@@ -368,7 +394,13 @@ descrever("tarefas contra PostgreSQL", () => {
             });
             expect(criada.status).toBe(200);
             expect(criada.corpo.avisosOcupacao).toEqual([
-                expect.objectContaining({ codigoUsuario: assessor.codigo, horas: 12, teto: 10, percentual: 120 }),
+                expect.objectContaining({
+                    codigoUsuario: assessor.codigo,
+                    horas: 11.5,
+                    teto: 10,
+                    percentual: 115,
+                    semana: segundaQueVem.toISOString().slice(0, 10),
+                }),
             ]);
         } finally {
             await servidor.fechar();

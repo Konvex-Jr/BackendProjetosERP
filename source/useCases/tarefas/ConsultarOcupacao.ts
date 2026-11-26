@@ -5,7 +5,7 @@ import PeriodoArea from "../../domain/entity/PeriodoArea";
 import { STATUS_NA_EJ } from "../../domain/enum/StatusPessoa";
 import StatusProjeto from "../../domain/enum/StatusProjeto";
 import StatusTarefa from "../../domain/enum/StatusTarefa";
-import { HorasPorDificuldade } from "../../domain/enum/DificuldadeTarefa";
+import { PercentualPorDificuldade } from "../../domain/enum/DificuldadeTarefa";
 import { calcularOcupacao, noDia, segundaDaSemana, TarefaParaOcupacao } from "../../domain/service/ocupacao";
 import { hoje as hojeEmSaoPaulo } from "../../shared/datas";
 import { ErroNaoEncontrado } from "../../shared/erros/ErroNaoEncontrado";
@@ -208,7 +208,7 @@ export default class ConsultarOcupacao {
     /** Converte as tarefas para a conta, com o projeto atual (status e equipe de hoje), as horas por nível e os períodos. */
     private async carregar(lidas: Tarefa[]): Promise<{
         tarefas: TarefaParaOcupacao[];
-        horas: HorasPorDificuldade;
+        horas: PercentualPorDificuldade;
         periodos: PeriodoArea[];
         projetos: Map<string, Projeto>;
     }> {

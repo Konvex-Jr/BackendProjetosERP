@@ -1,4 +1,7 @@
-/** Esforço da tarefa (sessão 24a). Cada nível vale horas, configuráveis em Configurações. */
+/**
+ * Esforço da tarefa (sessão 24a). Desde 25/11 cada nível é uma parte do dia da pessoa (teto semanal ÷ 5),
+ * configurável em Configurações: Rápida 25%, Fácil 50%, Média 75%, Difícil 100%.
+ */
 enum DificuldadeTarefa {
     RAPIDA = "rapida",
     FACIL = "facil",
@@ -10,11 +13,12 @@ export default DificuldadeTarefa;
 
 export const NIVEIS_DIFICULDADE: DificuldadeTarefa[] = Object.values(DificuldadeTarefa);
 
-export type HorasPorDificuldade = Record<DificuldadeTarefa, number>;
+/** % do dia de cada nível (inteiro de 5 a 100). */
+export type PercentualPorDificuldade = Record<DificuldadeTarefa, number>;
 
-export const HORAS_PADRAO: HorasPorDificuldade = {
-    [DificuldadeTarefa.RAPIDA]: 1,
-    [DificuldadeTarefa.FACIL]: 2,
-    [DificuldadeTarefa.MEDIA]: 4,
-    [DificuldadeTarefa.DIFICIL]: 8,
+export const PERCENTUAL_PADRAO: PercentualPorDificuldade = {
+    [DificuldadeTarefa.RAPIDA]: 25,
+    [DificuldadeTarefa.FACIL]: 50,
+    [DificuldadeTarefa.MEDIA]: 75,
+    [DificuldadeTarefa.DIFICIL]: 100,
 };

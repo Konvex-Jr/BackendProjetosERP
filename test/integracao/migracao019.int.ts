@@ -80,13 +80,13 @@ descrever("migração 019 sobre a 018", () => {
         expect((await pool.query("SELECT 1 FROM projeto_membros")).rowCount).toBe(1);
     });
 
-    test("horas_dificuldade tem os 4 valores", async () => {
-        const linhas = (await pool.query("SELECT dificuldade, horas::float AS horas FROM horas_dificuldade ORDER BY horas")).rows;
+    test("horas_dificuldade tem os 4 níveis (valores em % do dia desde a 029)", async () => {
+        const linhas = (await pool.query("SELECT dificuldade, percentual FROM horas_dificuldade ORDER BY percentual")).rows;
         expect(linhas).toEqual([
-            { dificuldade: "rapida", horas: 1 },
-            { dificuldade: "facil", horas: 2 },
-            { dificuldade: "media", horas: 4 },
-            { dificuldade: "dificil", horas: 8 },
+            { dificuldade: "rapida", percentual: 25 },
+            { dificuldade: "facil", percentual: 50 },
+            { dificuldade: "media", percentual: 75 },
+            { dificuldade: "dificil", percentual: 100 },
         ]);
     });
 
