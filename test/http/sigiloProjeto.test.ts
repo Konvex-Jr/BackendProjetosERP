@@ -1,3 +1,4 @@
+import Area from "../../source/domain/entity/Area";
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
@@ -76,6 +77,29 @@ describe("Escrita em projeto fechado (era o sigiloso; 31a: todo projeto é fecha
 
         it("diretor cria sem estar na equipe (abre todos)", async () => {
             expect((await chamar("post", "/projetos", diretor, corpo())).status).toBe(200);
+        });
+    });
+
+    describe("PUT /projetos/:codigo (31a: quem edita não se tranca fora ao trocar a área)", () => {
+        it("gerente da área, fora da equipe, troca a área para outra: 400 SEM_ACESSO_AO_CRIAR; manter a área: 200", async () => {
+            const areas = ctx.factory.criarAreaRepository();
+            const daArea = await areas.criar(new Area("Projetos de teste", null, true, "area-projetos-teste"));
+            const outra = await areas.criar(new Area("Outra área"));
+            const projetos = ctx.factory.criarProjetoRepository();
+            const atual = (await projetos.buscarPorCodigo("proj-nor"))!;
+            await projetos.editar(atual.copiar({ area: daArea }));
+            const corpo = (codigoArea: string) => ({
+                nome: "Normal",
+                descricao: "descrição",
+                dataInicio: "2026-10-12",
+                dataFim: "2026-10-30",
+                codigoArea,
+            });
+            const trancaria = await chamar("put", "/projetos/proj-nor", gerenteFora, corpo(outra.codigo));
+            expect(trancaria.status).toBe(400);
+            expect(trancaria.corpo.code ?? trancaria.corpo.codigo).toBe("SEM_ACESSO_AO_CRIAR");
+            expect((await chamar("put", "/projetos/proj-nor", gerenteFora, corpo(daArea.codigo))).status).toBe(200);
+            expect((await chamar("put", "/projetos/proj-nor", diretor, corpo(outra.codigo))).status).toBe(200);
         });
     });
 

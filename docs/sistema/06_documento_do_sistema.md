@@ -209,7 +209,8 @@ Dashboard e o próprio perfil ficam sempre abertos. A API cobra o "ver" só onde
 | Abrir por inteiro (ficha, tarefas, equipe, Biblioteca "equipe do projeto") | equipe atual **ou antiga** (quem sai não perde); `projetos.abrirTodos`; `projetos.abrirDaArea` se a área do projeto é a do período com cargo (só a própria área); projeto geral: todo logado; líder da área no geral | `acessoAoProjeto` |
 | Ver o cartão (nome, tipo, área do interno, situação, líder, equipe atual) | todo logado, nos que não abre (demais rotas: 403 `PROJETO_SEM_ACESSO`; tarefa e anexo: 404) | `cartaoProjeto.ts` |
 | Criar projeto | `projetos.editar` e precisa abrir o que cria (estar na equipe inicial, abrir todos ou ser da área) — senão 400 `SEM_ACESSO_AO_CRIAR` | `exigirNaoSeTrancar` |
-| Editar, situação, equipe, líder | `projetos.editar` nos que abre | `ProjetoRoutes` |
+| Editar, situação, equipe, líder | `projetos.editar` nos que abre; trocar a área sem continuar abrindo o projeto = 400 `SEM_ACESSO_AO_CRIAR` | `ProjetoRoutes` |
+| Gerir pessoa inativa | pela posição do **último** cargo que ela teve (ex-diretor inativo segue acima do gerente) | `UsuarioRoutes.posicoesDosCargos` |
 | Excluir projeto | `projetos.excluir` | `ProjetoRoutes` |
 
 ### Tarefas

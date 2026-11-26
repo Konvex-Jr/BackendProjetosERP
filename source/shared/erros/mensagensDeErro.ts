@@ -49,7 +49,7 @@ export const MENSAGENS_DE_ERRO = {
         GERAL_FIXO: "O projeto geral da área não pode ser editado, excluído nem arquivado.",
         TIPO_INVALIDO: "O campo tipo deve ser cliente ou interno.",
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
-        SEM_ACESSO_AO_CRIAR: "Você ficaria sem acesso ao projeto que está criando: coloque-se na equipe ou escolha a área do seu cargo.",
+        SEM_ACESSO_AO_CRIAR: "Você ficaria sem acesso ao projeto: coloque-se na equipe ou escolha a área do seu cargo.",
         SEM_ACESSO: "Você vê só o cartão deste projeto: os detalhes são da equipe e de quem tem acesso pelo cargo.",
         GERAL_COM_TAREFAS: (quantidade: number) =>
             `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,

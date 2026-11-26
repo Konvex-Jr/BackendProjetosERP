@@ -10,11 +10,14 @@ describe("Segurança da API", () => {
     let ctx: Awaited<ReturnType<typeof criarContexto>>;
     let servidor: Awaited<ReturnType<typeof subirServidor>>;
     let diretor: Usuario;
+    let presidente: Usuario;
     let outroMembro: Usuario;
 
     beforeEach(async () => {
         ctx = await criarContexto();
         diretor = comPapel(new Usuario("Diretora", "diretora@konvex.com.br", true, "x", ctx.senioridade, "usr-dir"), "diretor");
+        presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+        await ctx.factory.criarUsuarioRepository().criar(presidente);
         outroMembro = comPapel(new Usuario("Bruno", "bruno@konvex.com.br", true, "x", ctx.senioridade, "usr-bruno"), "membro");
         await ctx.factory.criarUsuarioRepository().criar(diretor);
         await ctx.factory.criarUsuarioRepository().criar(outroMembro);
@@ -125,6 +128,33 @@ describe("Segurança da API", () => {
             },
         });
         expect(diretorEdita.status).toBe(200);
+    });
+
+    it("S5b: ex-diretor inativo segue acima do gerente (último cargo conta): sem reativar, editar nem link", async () => {
+        await darCargo(ctx.factory, diretor, "diretor");
+        const inativar = await servidor.chamar("delete", `/usuarios/${diretor.codigo}`, {
+            usuario: presidente,
+            corpo: { motivoSaida: "Saiu" },
+        });
+        expect(inativar.status).toBe(200);
+        const reativar = await servidor.chamar("patch", `/usuarios/${diretor.codigo}/status`, {
+            usuario: ctx.gerente,
+            corpo: { status: "ativo" },
+        });
+        expect(reativar.status).toBe(403);
+        const editar = await servidor.chamar("put", `/usuarios/${diretor.codigo}`, {
+            usuario: ctx.gerente,
+            corpo: { nome: "Outro", email: "outro@konvex.com.br", senioridade: { codigo: "pleno", nome: "Pleno", valorHora: 75 } },
+        });
+        expect(editar.status).toBe(403);
+        const lista = await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente });
+        expect(lista.corpo.find((p: any) => p.codigo === diretor.codigo).podeGerir).toBe(false);
+        // O presidente segue podendo reativar.
+        const peloPresidente = await servidor.chamar("patch", `/usuarios/${diretor.codigo}/status`, {
+            usuario: presidente,
+            corpo: { status: "ativo" },
+        });
+        expect(peloPresidente.status).toBe(200);
     });
 
     it("S6: CORS só responde para origens configuradas", async () => {

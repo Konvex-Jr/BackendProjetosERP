@@ -97,4 +97,7 @@ SELECT 'trainee', permissao FROM padrao_030 WHERE perfil = 'trainee';
 
 ALTER TABLE usuarios DROP COLUMN perfil;
 DROP TYPE perfil_usuario;
+-- O CHECK projetos_geral_fixo da 018 usava `sigiloso` e cai junto com a coluna: recriado sem ela (geral é sempre interno).
 ALTER TABLE projetos DROP COLUMN sigiloso;
+ALTER TABLE projetos DROP CONSTRAINT IF EXISTS projetos_geral_fixo;
+ALTER TABLE projetos ADD CONSTRAINT projetos_geral_fixo CHECK (NOT geral_da_area OR tipo = 'interno');

@@ -150,9 +150,21 @@ export default class ProjetoRoutes implements ModelRoutes {
 
         this.http.route("put", "/projetos/:codigo", true, async (params: any, body: any) => {
             const usuario = exigirPermissao(body.user, Permissao.PROJETOS_EDITAR);
-            await this.carregarParaEscrita(usuario, params.codigo);
+            const projeto = await this.carregarParaEscrita(usuario, params.codigo);
             // Ausente = não mexe na equipe; presente = a equipe que fica.
             const codigosMembros = body.codigosMembros === undefined ? undefined : lerLista(body.codigosMembros);
+            // Sessão 31a (revisão): trocar a área não pode deixar quem edita sem acesso ao projeto.
+            const codigoArea = body.codigoArea === undefined ? undefined : body.codigoArea ? String(body.codigoArea) : null;
+            if (codigoArea !== undefined && codigoArea !== (projeto.area?.codigo ?? null)) {
+                exigirNaoSeTrancar(usuario, {
+                    participacoes: codigosMembros
+                        ? codigosMembros.map((codigo) => ({ usuario: { codigo }, ativa: true }))
+                        : projeto.participacoes,
+                    area: codigoArea ? { codigo: codigoArea } : null,
+                    lideresDaArea: projeto.lideresDaArea,
+                    geralDaArea: projeto.geralDaArea,
+                });
+            }
             return new EditarProjeto(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,

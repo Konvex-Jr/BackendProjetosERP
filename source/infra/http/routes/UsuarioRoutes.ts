@@ -28,7 +28,6 @@ import Usuario from "../../../domain/entity/Usuario";
 import { EntradaPerfilPessoa, lerStatusPessoa, pendenciasPerfil } from "../../../useCases/pessoas/dadosPessoa";
 import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
 import { AlvoDaHierarquia, exigirDarCargo, exigirGerirPessoa, podeGerirPessoa } from "../../../shared/seguranca/hierarquia";
-import { permissoesEfetivas } from "../../../shared/seguranca/permissoesEfetivas";
 import { lerData, lerDataObrigatoria, lerLista } from "../../../shared/entradas";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
 import { ErroProibido } from "../../../shared/erros/ErroProibido";
@@ -98,20 +97,38 @@ export default class UsuarioRoutes implements ModelRoutes {
         return { ...sessao, usuario: await this.responderEu(sessao.usuario) };
     }
 
-    /** A pessoa como a hierarquia a vê: o cargo atual dela (sessão 31a). */
+    /** A pessoa como a hierarquia a vê (sessão 31a): a posição do cargo atual ou, sem cargo aberto, do último. */
     private async alvoNaHierarquia(alvo: Usuario): Promise<AlvoDaHierarquia> {
-        const { cargo } = await permissoesEfetivas(alvo, this.repositoryFactory);
-        return { codigo: alvo.codigo, cargo };
+        return { codigo: alvo.codigo, cargo: (await this.posicoesDosCargos([alvo.codigo])).get(alvo.codigo) ?? null };
     }
 
-    /** Posição do cargo atual de cada pessoa (período aberto com cargo), numa leitura só. */
+    /**
+     * Posição de cada pessoa na hierarquia, numa leitura só: a do cargo do período aberto; sem cargo aberto
+     * (ex.: saiu da EJ, períodos encerrados), a do cargo do período com cargo mais recente. Assim um ex-diretor
+     * inativo continua acima do gerente, que não o reativa nem troca o e-mail dele (revisão da 31a).
+     */
     private async posicoesDosCargos(codigos: string[]): Promise<Map<string, { posicao: number }>> {
-        const abertos = await this.repositoryFactory.criarPeriodoAreaRepository().listarAbertosDe(codigos);
+        const quem = new Set(codigos);
+        const areas = await this.repositoryFactory.criarAreaRepository().listar();
+        const periodos = (await this.repositoryFactory.criarPeriodoAreaRepository().listarDasAreas(areas.map((a) => a.codigo))).filter(
+            (p) => quem.has(p.codigoUsuario) && p.cargo,
+        );
         const cargos = new Map((await this.repositoryFactory.criarCargoRepository().listar()).map((c) => [c.codigo, c]));
+        // Ordem: aberto primeiro; depois o fim mais recente; depois o início mais recente.
+        const chave = (p: (typeof periodos)[number]) => [p.aberto ? 1 : 0, p.fim?.getTime() ?? 0, p.inicio.getTime()];
+        const maisNovo = (a: (typeof periodos)[number], b: (typeof periodos)[number]) => {
+            const [x, y] = [chave(a), chave(b)];
+            return (x[0] - y[0] || x[1] - y[1] || x[2] - y[2]) > 0;
+        };
+        const maisRecente = new Map<string, (typeof periodos)[number]>();
+        for (const p of periodos) {
+            const atual = maisRecente.get(p.codigoUsuario);
+            if (!atual || maisNovo(p, atual)) maisRecente.set(p.codigoUsuario, p);
+        }
         const posicoes = new Map<string, { posicao: number }>();
-        for (const p of abertos) {
-            const cargo = p.aberto && p.cargo ? cargos.get(p.cargo.codigo) : undefined;
-            if (cargo) posicoes.set(p.codigoUsuario, { posicao: cargo.posicao });
+        for (const [codigo, p] of maisRecente) {
+            const cargo = cargos.get(p.cargo!.codigo);
+            if (cargo) posicoes.set(codigo, { posicao: cargo.posicao });
         }
         return posicoes;
     }

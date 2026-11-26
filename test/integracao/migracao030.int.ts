@@ -119,6 +119,15 @@ descrever("migração 030 sobre a 029", () => {
         expect(await colunas("projetos")).not.toContain("sigiloso");
         expect((await pool.query("SELECT 1 FROM pg_type WHERE typname = 'perfil_usuario'")).rowCount).toBe(0);
 
+        // A 018 tinha CHECK (geral só interno e não sigiloso); ao tirar a coluna sigiloso, a 030 o recria sem ela.
+        await expect(
+            pool.query(
+                `INSERT INTO projetos (nome, descricao, data_inicio, data_fim, area_codigo, tipo, geral_da_area)
+                 VALUES ('Geral cliente', 'x', '2026-01-01', '2026-02-01', $1, 'cliente', true)`,
+                [projetos],
+            ),
+        ).rejects.toMatchObject({ code: "23514" });
+
         // Um só presidente; posição 0 recusada.
         await expect(pool.query("UPDATE cargos SET posicao = 1 WHERE codigo = $1", [diretor])).rejects.toThrow();
         await expect(pool.query("UPDATE cargos SET posicao = 0 WHERE codigo = $1", [assessor])).rejects.toThrow();
