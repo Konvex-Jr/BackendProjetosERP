@@ -2,6 +2,7 @@ import RepositoryFactoryInterface from "../../../domain/interfaces/RepositoryFac
 import Http from "../Http";
 import ModelRoutes from "./ModelRoutes";
 import SalvarArea from "../../../useCases/config/SalvarArea";
+import GerirPermissoes from "../../../useCases/config/GerirPermissoes";
 import SalvarCargo from "../../../useCases/config/SalvarCargo";
 import SalvarHorasDificuldade from "../../../useCases/config/SalvarHorasDificuldade";
 import SalvarRegrasPrecificacao from "../../../useCases/config/SalvarRegrasPrecificacao";
@@ -44,24 +45,34 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
 
         this.http.route("get", "/cargos", true, async () => f.criarCargoRepository().listar());
         this.http.route("post", "/cargos", true, async (_p: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
+            const quem = exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarCargo(f).execute({
                 nome: body.nome,
                 ativo: body.ativo,
                 lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
                 tetoSemanalHoras: lerInteiro(body.tetoSemanalHoras, "tetoSemanalHoras"),
+                posicao: lerInteiro(body.posicao, "posicao"),
+                quem,
             });
         });
         this.http.route("put", "/cargos/:codigo", true, async (params: any, body: any) => {
-            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
+            const quem = exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
             return new SalvarCargo(f).execute({
                 codigo: params.codigo,
                 nome: body.nome,
                 ativo: body.ativo,
                 lideraArea: lerBooleano(body.lideraArea, "lideraArea"),
                 tetoSemanalHoras: lerInteiro(body.tetoSemanalHoras, "tetoSemanalHoras"),
+                posicao: lerInteiro(body.posicao, "posicao"),
+                quem,
             });
         });
+
+        // Grade de permissões (sessão 31a): quem tem permissoes.gerir; altera só o que está abaixo do seu cargo.
+        this.http.route("get", "/permissoes", true, async (_p: any, body: any) => new GerirPermissoes(f).grade(body.user));
+        this.http.route("put", "/permissoes/:chave", true, async (params: any, body: any) =>
+            new GerirPermissoes(f).salvarColuna(body.user, params.chave, body.permissoes),
+        );
 
         this.http.route("get", "/config/horas-dificuldade", true, async () => f.criarHorasDificuldadeRepository().listar());
         this.http.route("put", "/config/horas-dificuldade", true, async (_p: any, body: any) => {

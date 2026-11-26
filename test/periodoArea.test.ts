@@ -5,6 +5,9 @@ import StatusPessoa from "../source/domain/enum/StatusPessoa";
 import SalvarCargo from "../source/useCases/config/SalvarCargo";
 import MemoryRepositoryFactory from "../source/infra/repository/MemoryRepositoryFactory";
 import { hoje } from "../source/shared/datas";
+import { efetivasDoPapel } from "./papel";
+
+const PRESIDENTE_TESTE = { codigo: "usr-presidente", ...efetivasDoPapel("presidente") };
 
 const dia = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const aMais = (dias: number) => new Date(hoje().getTime() + dias * 86_400_000);
@@ -183,20 +186,25 @@ describe("Cargo.lideraArea", () => {
 describe("SalvarCargo e lideraArea", () => {
     it("criar grava lideraArea e a memória guarda", async () => {
         const factory = new MemoryRepositoryFactory();
-        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true, quem: PRESIDENTE_TESTE });
         expect((await factory.criarCargoRepository().buscarPorCodigo(criado.codigo))?.lideraArea).toBe(true);
     });
     it("editar sem lideraArea mantém o valor atual", async () => {
         const factory = new MemoryRepositoryFactory();
-        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
-        const editado = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Líder 2" });
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true, quem: PRESIDENTE_TESTE });
+        const editado = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Líder 2", quem: PRESIDENTE_TESTE });
         expect(editado.lideraArea).toBe(true);
         expect((await factory.criarCargoRepository().buscarPorCodigo(criado.codigo))?.lideraArea).toBe(true);
     });
     it("editar com lideraArea false desliga", async () => {
         const factory = new MemoryRepositoryFactory();
-        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true });
-        const editado = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Líder", lideraArea: false });
+        const criado = await new SalvarCargo(factory).execute({ nome: "Líder", lideraArea: true, quem: PRESIDENTE_TESTE });
+        const editado = await new SalvarCargo(factory).execute({
+            codigo: criado.codigo,
+            nome: "Líder",
+            lideraArea: false,
+            quem: PRESIDENTE_TESTE,
+        });
         expect(editado.lideraArea).toBe(false);
     });
 });

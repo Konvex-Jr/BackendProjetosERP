@@ -727,7 +727,29 @@ const rotasFase1: Record<string, Record<string, object>> = {
         get: operation(["Configurações"], "Listar cargos"),
         post: operation(["Configurações"], "Criar cargo (diretores)", json),
     },
-    "/cargos/{codigo}": { put: operation(["Configurações"], "Editar cargo (diretores)", comCodigo(json)) },
+    "/cargos/{codigo}": {
+        put: operation(
+            ["Configurações"],
+            "Editar cargo (config.estrutura; só cargos abaixo do seu; `posicao` 1 = presidente, fixa; 409 CARGO_COM_OCUPANTES ao desativar)",
+            comCodigo(json),
+        ),
+    },
+    "/permissoes": {
+        get: operation(
+            ["Configurações"],
+            "Grade de permissões (sessão 31a; permissoes.gerir): { catalogo, colunas: [{ chave, nome, posicao, permissoes, podeAlterar }] }",
+        ),
+    },
+    "/permissoes/{chave}": {
+        put: {
+            ...operation(
+                ["Configurações"],
+                "Gravar as permissões de um cargo ou dos conjuntos sem_cargo/trainee ({ permissoes: string[] }); só abaixo do seu cargo e só permissões que você tem (403); desconhecida = 400",
+                json,
+            ),
+            parameters: [{ name: "chave", in: "path", required: true, schema: { type: "string" } }],
+        },
+    },
     "/config/horas-dificuldade": {
         get: operation(["Configurações"], "Horas de cada nível de dificuldade da tarefa"),
         put: operation(["Configurações"], "Gravar as horas por dificuldade (diretores)", json),

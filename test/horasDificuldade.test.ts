@@ -3,6 +3,8 @@ import SalvarCargo from "../source/useCases/config/SalvarCargo";
 import { criarContexto } from "./fixtures";
 import { efetivasDoPapel } from "./papel";
 
+const PRESIDENTE_TESTE = { codigo: "usr-presidente", ...efetivasDoPapel("presidente") };
+
 const PADRAO = { rapida: 25, facil: 50, media: 75, dificil: 100 };
 
 test("sem gravar, devolve os percentuais padrão", async () => {
@@ -42,17 +44,24 @@ test("membro não grava os percentuais: 403", async () => {
 describe("teto semanal do cargo", () => {
     test("padrão 10; grava e mantém quando o campo não vem", async () => {
         const { factory } = await criarContexto();
-        const criado = await new SalvarCargo(factory).execute({ nome: "Analista" });
+        const criado = await new SalvarCargo(factory).execute({ nome: "Analista", quem: PRESIDENTE_TESTE });
         expect(criado.tetoSemanalHoras).toBe(10);
-        const alto = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Analista", tetoSemanalHoras: 20 });
+        const alto = await new SalvarCargo(factory).execute({
+            codigo: criado.codigo,
+            nome: "Analista",
+            tetoSemanalHoras: 20,
+            quem: PRESIDENTE_TESTE,
+        });
         expect(alto.tetoSemanalHoras).toBe(20);
-        const mesmo = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Analista" });
+        const mesmo = await new SalvarCargo(factory).execute({ codigo: criado.codigo, nome: "Analista", quem: PRESIDENTE_TESTE });
         expect(mesmo.tetoSemanalHoras).toBe(20);
     });
 
     test.each([0, 41, 1.5])("teto %p: 400 TETO_INVALIDO", async (teto) => {
         const { factory } = await criarContexto();
-        await expect(new SalvarCargo(factory).execute({ nome: "Analista", tetoSemanalHoras: teto })).rejects.toMatchObject({
+        await expect(
+            new SalvarCargo(factory).execute({ nome: "Analista", tetoSemanalHoras: teto, quem: PRESIDENTE_TESTE }),
+        ).rejects.toMatchObject({
             codigo: "TETO_INVALIDO",
         });
     });

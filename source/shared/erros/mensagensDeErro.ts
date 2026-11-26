@@ -65,6 +65,11 @@ export const MENSAGENS_DE_ERRO = {
         MARGEM_MINIMA_ACIMA: "A margem mínima (margemMinima) não pode ser maior que a margem padrão (margem).",
     },
 
+    PERMISSOES: {
+        SEM_PERMISSAO: "Você não tem permissão para ver ou alterar as permissões.",
+        COLUNA_NAO_ENCONTRADA: "Cargo não encontrado.",
+    },
+
     HIERARQUIA: {
         SEM_GERIR_PESSOAS: "Você não tem permissão para gerir pessoas.",
         PROPRIO: "Você não pode alterar o próprio cadastro nem os próprios períodos pela gestão; peça a quem está acima de você.",
@@ -79,6 +84,7 @@ export const MENSAGENS_DE_ERRO = {
 
     CARGO: {
         TETO_INVALIDO: "O teto semanal do cargo (tetoSemanalHoras) deve ser um número inteiro de 1 a 40 horas.",
+        COM_OCUPANTES: "Este cargo tem pessoas num período aberto: encerre ou troque os períodos antes de desativá-lo.",
         POSICAO_INVALIDA: "A posição do cargo (posicao) deve ser um número inteiro a partir de 1 (1 = presidente).",
         PERMISSOES_INVALIDAS: "As permissões (permissoes) devem ser uma lista.",
         PERMISSAO_INVALIDA: (valor: string) => `Permissão desconhecida (permissoes): "${valor}".`,

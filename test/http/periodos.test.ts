@@ -132,4 +132,67 @@ describe("Períodos por área (HTTP)", () => {
         expect(perfil.corpo.podeGerir).toBe(true);
         expect((await servidor.chamar("delete", `${caminho(diretora)}/${criado.corpo.codigo}`, { usuario: diretora })).status).toBe(204);
     });
+
+    describe("hierarquia nos períodos (sessão 31a)", () => {
+        it("gerente (posição 3) não dá cargo de posição 3; dá o de posição 4", async () => {
+            const cargos = ctx.factory.criarCargoRepository();
+            const outroGerente = await cargos.criar(new Cargo("Gerente de inovação", true, "c-gi", false, 10, 3));
+            const assessorBaixo = await cargos.criar(new Cargo("Assessor de projetos", true, "c-ap", false, 10, 4));
+            const alto = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: ctx.gerente,
+                corpo: corpo({ codigoCargo: outroGerente.codigo }),
+            });
+            expect(alto.status).toBe(403);
+            const baixo = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: ctx.gerente,
+                corpo: corpo({ codigoCargo: assessorBaixo.codigo }),
+            });
+            expect(baixo.status).toBe(200);
+        });
+
+        it("gerente não encerra nem exclui período com cargo do próprio nível", async () => {
+            const cargos = ctx.factory.criarCargoRepository();
+            const outroGerente = await cargos.criar(new Cargo("Gerente de inovação", true, "c-gi", false, 10, 3));
+            const presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+            await ctx.factory.criarUsuarioRepository().criar(presidente);
+            const criado = await servidor.chamar("post", caminho(ctx.membro), {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: outroGerente.codigo }),
+            });
+            expect(criado.status).toBe(200);
+            const excluir = await servidor.chamar("delete", `${caminho(ctx.membro)}/${criado.corpo.codigo}`, { usuario: ctx.gerente });
+            expect(excluir.status).toBe(403);
+        });
+
+        it("o último período aberto no cargo de presidente não pode ser encerrado nem excluído: 400 PRESIDENTE_VAGO", async () => {
+            const cargoPres = await ctx.factory.criarCargoRepository().criar(new Cargo("Presidente", true, "c-pres", true, 20, 1, []));
+            const presidente = comPapel(new Usuario("Pri", "pri@konvex.com.br", true, "x", ctx.senioridade, "usr-pri"), "presidente");
+            await ctx.factory.criarUsuarioRepository().criar(presidente);
+            const criado = await servidor.chamar("post", caminho(presidente), {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: cargoPres.codigo }),
+            });
+            expect(criado.status).toBe(200);
+            const encerrar = await servidor.chamar("put", `${caminho(presidente)}/${criado.corpo.codigo}`, {
+                usuario: presidente,
+                corpo: corpo({ codigoCargo: cargoPres.codigo, fim: hoje().toISOString().slice(0, 10) }),
+            });
+            expect(encerrar.status).toBe(400);
+            expect(encerrar.corpo.codigo).toBe("PRESIDENTE_VAGO");
+            const excluir = await servidor.chamar("delete", `${caminho(presidente)}/${criado.corpo.codigo}`, { usuario: presidente });
+            expect(excluir.status).toBe(400);
+        });
+    });
+
+    it("GET /usuarios traz podeGerir por pessoa, pela posição do cargo de quem olha", async () => {
+        await darCargo(ctx.factory, diretora, "diretor");
+        const r = await servidor.chamar("get", "/usuarios", { usuario: ctx.gerente });
+        expect(r.status).toBe(200);
+        const pode = new Map(r.corpo.map((p: any) => [p.codigo, p.podeGerir]));
+        expect(pode.get(ctx.membro.codigo)).toBe(true);
+        expect(pode.get(diretora.codigo)).toBe(false);
+        expect(pode.get(ctx.gerente.codigo)).toBe(false);
+        const doMembro = await servidor.chamar("get", "/usuarios", { usuario: ctx.membro });
+        expect(doMembro.corpo.every((p: any) => p.podeGerir === false)).toBe(true);
+    });
 });

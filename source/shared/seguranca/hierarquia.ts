@@ -1,5 +1,6 @@
 import { ErroProibido } from "../erros/ErroProibido";
 import { MENSAGENS_DE_ERRO } from "../erros/mensagensDeErro";
+import { CATALOGO } from "./catalogoPermissoes";
 import { exigirPermissao, Permissao, UsuarioAutenticado } from "./permissoes";
 
 /*
@@ -48,4 +49,31 @@ export function podeGerirPessoa(usuario: UsuarioAutenticado | undefined | null, 
     } catch {
         return false;
     }
+}
+
+/** Grade e cargos: só cargos abaixo do seu; o do presidente ninguém altera (pode tudo, sempre). */
+export function exigirAlterarCargo(quem: UsuarioAutenticado, cargo: { posicao: number }): void {
+    if (cargo.posicao === 1) throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.PRESIDENTE_FIXO);
+    if (!estaAcima(quem, cargo.posicao)) throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.SO_ABAIXO);
+}
+
+/** Só se liga uma permissão que a própria pessoa tem (as que já estavam ligadas podem ficar). */
+export function exigirConceder(quem: UsuarioAutenticado, antes: readonly Permissao[], depois: readonly Permissao[]): void {
+    const tem = new Set(quem.permissoes ?? []);
+    for (const p of depois) {
+        if (antes.includes(p) || tem.has(p)) continue;
+        const rotulo = CATALOGO.find((i) => i.chave === p)?.rotulo ?? p;
+        throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.NAO_PODE_CONCEDER(rotulo));
+    }
+}
+
+/** Posição de cargo novo ou alterado: abaixo da sua; a 1 é só do presidente (já existe e é fixa). */
+export function exigirPosicaoAbaixo(quem: UsuarioAutenticado, posicao: number): void {
+    if (posicao === 1) throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.PRESIDENTE_FIXO);
+    if (!estaAcima(quem, posicao)) throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.POSICAO_ACIMA);
+}
+
+/** Período com cargo: só cargos abaixo do seu. Sem cargo, sempre pode. */
+export function exigirDarCargo(quem: UsuarioAutenticado, cargo: { posicao: number } | null): void {
+    if (cargo && !estaAcima(quem, cargo.posicao)) throw new ErroProibido(MENSAGENS_DE_ERRO.HIERARQUIA.CARGO_ACIMA);
 }

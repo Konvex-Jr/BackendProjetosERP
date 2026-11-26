@@ -27,7 +27,7 @@ import { comAreasAtuais } from "../../../useCases/pessoas/areasAtuais";
 import Usuario from "../../../domain/entity/Usuario";
 import { EntradaPerfilPessoa, lerStatusPessoa, pendenciasPerfil } from "../../../useCases/pessoas/dadosPessoa";
 import { exigirAutenticado, exigirPermissao, Permissao, UsuarioAutenticado } from "../../../shared/seguranca/permissoes";
-import { AlvoDaHierarquia, exigirGerirPessoa, podeGerirPessoa } from "../../../shared/seguranca/hierarquia";
+import { AlvoDaHierarquia, exigirDarCargo, exigirGerirPessoa, podeGerirPessoa } from "../../../shared/seguranca/hierarquia";
 import { permissoesEfetivas } from "../../../shared/seguranca/permissoesEfetivas";
 import { lerData, lerDataObrigatoria, lerLista } from "../../../shared/entradas";
 import { MENSAGENS_DE_ERRO } from "../../../shared/erros/mensagensDeErro";
@@ -104,9 +104,33 @@ export default class UsuarioRoutes implements ModelRoutes {
         return { codigo: alvo.codigo, cargo };
     }
 
+    /** Posição do cargo atual de cada pessoa (período aberto com cargo), numa leitura só. */
+    private async posicoesDosCargos(codigos: string[]): Promise<Map<string, { posicao: number }>> {
+        const abertos = await this.repositoryFactory.criarPeriodoAreaRepository().listarAbertosDe(codigos);
+        const cargos = new Map((await this.repositoryFactory.criarCargoRepository().listar()).map((c) => [c.codigo, c]));
+        const posicoes = new Map<string, { posicao: number }>();
+        for (const p of abertos) {
+            const cargo = p.aberto && p.cargo ? cargos.get(p.cargo.codigo) : undefined;
+            if (cargo) posicoes.set(p.codigoUsuario, { posicao: cargo.posicao });
+        }
+        return posicoes;
+    }
+
     /** `pessoas.gerir` e a pessoa abaixo do seu cargo; devolve quem gere. */
     private async exigirGerir(usuario: UsuarioAutenticado | undefined, alvo: Usuario): Promise<UsuarioAutenticado> {
         return exigirGerirPessoa(usuario, await this.alvoNaHierarquia(alvo));
+    }
+
+    /** Período com cargo (31a): só cargos abaixo do seu. Cargo inexistente segue para o caso de uso (404). */
+    private async exigirDarCargoDe(gestor: UsuarioAutenticado, codigoCargo: string | null | undefined): Promise<void> {
+        if (!codigoCargo) return;
+        exigirDarCargo(gestor, await this.repositoryFactory.criarCargoRepository().buscarPorCodigo(codigoCargo));
+    }
+
+    /** Alterar ou excluir um período: o cargo que ele tem hoje também precisa estar abaixo do seu. */
+    private async exigirMexerNoPeriodo(gestor: UsuarioAutenticado, codigoPeriodo: string): Promise<void> {
+        const periodo = await this.repositoryFactory.criarPeriodoAreaRepository().buscarPorCodigo(codigoPeriodo);
+        exigirDarCargo(gestor, periodo?.cargo ?? null);
     }
 
     private async buscarAlvo(codigo: string) {
@@ -249,13 +273,19 @@ export default class UsuarioRoutes implements ModelRoutes {
         });
 
         // Pessoas: todos os autenticados consultam; só gestores alteram (matriz de permissões).
-        this.http.route("get", "/usuarios", true, async (_p: any, _b: any, query: any) =>
-            new ListarUsuarios(f).execute({
+        this.http.route("get", "/usuarios", true, async (_p: any, body: any, query: any) => {
+            const pessoas = await new ListarUsuarios(f).execute({
                 status: lerLista(query?.status).map((s) => lerStatusPessoa(s)!),
                 codigoArea: query?.codigoArea || undefined,
                 busca: query?.busca || undefined,
-            }),
-        );
+            });
+            // Sessão 31a: a tela obedece a `podeGerir` (pessoas.gerir e a pessoa abaixo do cargo de quem olha).
+            const posicoes = await this.posicoesDosCargos(pessoas.map((p) => p.codigo));
+            return pessoas.map((p) => ({
+                ...p.toJSON(),
+                podeGerir: podeGerirPessoa(body.user, { codigo: p.codigo, cargo: posicoes.get(p.codigo) ?? null }),
+            }));
+        });
 
         this.http.route("get", "/usuarios/:codigo", true, async (params: any) =>
             this.responderPessoa(await this.buscarAlvo(params.codigo)),
@@ -275,18 +305,24 @@ export default class UsuarioRoutes implements ModelRoutes {
         this.http.route("post", "/usuarios/:codigo/periodos", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
             const gestor = await this.exigirGerir(body.user, alvo);
-            return new GerirPeriodosArea(f).criar(alvo.codigo, lerPeriodo(body), gestor.codigo);
+            const entrada = lerPeriodo(body);
+            await this.exigirDarCargoDe(gestor, entrada.codigoCargo);
+            return new GerirPeriodosArea(f).criar(alvo.codigo, entrada, gestor.codigo);
         });
 
         this.http.route("put", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            await this.exigirGerir(body.user, alvo);
-            return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, lerPeriodo(body));
+            const gestor = await this.exigirGerir(body.user, alvo);
+            const entrada = lerPeriodo(body);
+            await this.exigirMexerNoPeriodo(gestor, params.codigoPeriodo);
+            await this.exigirDarCargoDe(gestor, entrada.codigoCargo);
+            return new GerirPeriodosArea(f).editar(alvo.codigo, params.codigoPeriodo, entrada);
         });
 
         this.http.route("delete", "/usuarios/:codigo/periodos/:codigoPeriodo", true, async (params: any, body: any) => {
             const alvo = await this.buscarAlvo(params.codigo);
-            await this.exigirGerir(body.user, alvo);
+            const gestor = await this.exigirGerir(body.user, alvo);
+            await this.exigirMexerNoPeriodo(gestor, params.codigoPeriodo);
             await new GerirPeriodosArea(f).excluir(alvo.codigo, params.codigoPeriodo);
             return new RespostaSemConteudo();
         });
