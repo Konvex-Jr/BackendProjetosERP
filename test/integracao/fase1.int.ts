@@ -78,6 +78,13 @@ descrever("fase 1 contra PostgreSQL", () => {
         await pool?.end();
     });
 
+    /** Sessão 31b: projeto novo exige classe e, se for de cliente, área. Usa a primeira área (ou cria uma). */
+    async function obrigatorios(token: string): Promise<{ codigoClasse: string; codigoArea: string }> {
+        const areas = (await chamar("GET", "/areas", token)).corpo as any[];
+        const area = areas[0] ?? (await chamar("POST", "/areas", token, { nome: "Clientes" })).corpo;
+        return { codigoClasse: "outro", codigoArea: area.codigo };
+    }
+
     test("migrações registradas uma vez só", async () => {
         const { rows } = await pool.query("SELECT COUNT(*)::int AS n FROM senioridades WHERE codigo = 'trainee'");
         expect(rows[0].n).toBe(1);
@@ -151,9 +158,11 @@ descrever("fase 1 contra PostgreSQL", () => {
             dataFim: "2026-12-31",
             status: "em_execucao",
             codigoArea: area.corpo.codigo,
+            codigoClasse: "crm",
         });
         expect(p1.status).toBe(200);
         const p2 = await chamar("POST", "/projetos", dir, {
+            ...(await obrigatorios(dir)),
             nome: "Projeto B",
             descricao: "Teste",
             dataInicio: "2026-10-01",
@@ -219,6 +228,7 @@ descrever("fase 1 contra PostgreSQL", () => {
             curso: "Engenharia Mecânica",
         });
         const p = await chamar("POST", "/projetos", dir, {
+            ...(await obrigatorios(dir)),
             nome: "Projeto C",
             descricao: "Teste",
             dataInicio: "2026-10-01",
@@ -415,6 +425,7 @@ descrever("fase 1 contra PostgreSQL", () => {
         // Checklist volta na ordem em que foi gravado.
         const textos = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto"];
         const projChecklist = await chamar("POST", "/projetos", dir, {
+            ...(await obrigatorios(dir)),
             nome: "Projeto checklist",
             descricao: "Teste",
             dataInicio: "2026-11-01",
@@ -441,6 +452,7 @@ descrever("fase 1 contra PostgreSQL", () => {
 
         // Contagem de tarefas por projeto (progresso igual para membro e gestão).
         const proj = await chamar("POST", "/projetos", dir, {
+            ...(await obrigatorios(dir)),
             nome: "Projeto contagem",
             descricao: "Teste",
             dataInicio: "2026-11-01",

@@ -2,7 +2,7 @@ import Area from "../../source/domain/entity/Area";
 import Usuario from "../../source/domain/entity/Usuario";
 import Projeto from "../../source/domain/entity/Projeto";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
-import { criarContexto, dataFim, dataInicio } from "../fixtures";
+import { criarContexto, dataFim, dataInicio, obrigatoriosDoProjeto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 import { Papel, comPapel } from "../papel";
 
@@ -50,6 +50,7 @@ describe("Escrita em projeto fechado (era o sigiloso; 31a: todo projeto é fecha
             .criar(
                 new Projeto("Normal", "descrição", dataInicio, dataFim, undefined, [ctx.membro], "proj-nor", { criadoPor: criador.codigo }),
             );
+        await obrigatoriosDoProjeto(ctx.factory);
         servidor = await subirServidor(ctx.factory);
     });
 
@@ -64,6 +65,8 @@ describe("Escrita em projeto fechado (era o sigiloso; 31a: todo projeto é fecha
             descricao: "d",
             dataInicio: "2026-10-12",
             dataFim: "2026-10-30",
+            codigoClasse: "outro",
+            codigoArea: "area-clientes-teste",
             ...extra,
         });
 

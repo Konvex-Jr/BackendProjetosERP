@@ -8,9 +8,9 @@ import { normalizarBusca } from "../../../shared/texto";
 import { carregarProjetos } from "./carregadores";
 import { validarColunas } from "../../../domain/entity/ColunaProjeto";
 
-const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, cliente_nome,
+const COLUNAS = `nome, descricao, data_inicio, data_fim, status, referencia, objetivo, clientes,
     prioridade, progresso, area_codigo, tags, lider_codigo, criado_por_codigo,
-    tipo, geral_da_area`;
+    tipo, geral_da_area, classe_codigo`;
 
 function valores(projeto: Projeto): unknown[] {
     return [
@@ -21,7 +21,7 @@ function valores(projeto: Projeto): unknown[] {
         projeto.status,
         projeto.referencia,
         projeto.objetivo,
-        projeto.clienteNome,
+        JSON.stringify(projeto.clientes),
         projeto.prioridade,
         projeto.progresso,
         projeto.area?.codigo ?? null,
@@ -31,6 +31,7 @@ function valores(projeto: Projeto): unknown[] {
         projeto.criadoPor,
         projeto.tipo,
         projeto.geralDaArea,
+        projeto.classe?.codigo ?? null,
     ];
 }
 
@@ -41,7 +42,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             await conexao.consultar(
                 `INSERT INTO projetos (codigo, ${COLUNAS})
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
                 [projeto.codigo, ...valores(projeto)],
             );
             await this.gravarParticipacoes(conexao, projeto);
@@ -73,7 +74,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         if (busca) {
             parametros.push(`%${busca}%`);
             condicoes.push(
-                `translate(lower(nome || ' ' || coalesce(referencia, '') || ' ' || coalesce(cliente_nome, '')),
+                `translate(lower(nome || ' ' || coalesce(referencia, '') || ' ' || coalesce((SELECT string_agg(coalesce(c->>'nome', '') || ' ' || coalesce(c->>'empresa', ''), ' ') FROM jsonb_array_elements(clientes) c), '')),
                     'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc') LIKE $${parametros.length}`,
             );
         }
@@ -114,7 +115,7 @@ export default class ProjetoRepositoryDatabase implements ProjetoRepositoryInter
         await this.gravar(async (conexao) => {
             const linhas = await conexao.consultar(
                 `UPDATE projetos SET (${COLUNAS}) =
-                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                    ($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                  WHERE codigo = $1
                  RETURNING codigo`,
                 [projeto.codigo, ...valores(projeto)],

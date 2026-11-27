@@ -23,6 +23,7 @@ describe("Projetos internos e geral da área", () => {
         descricao: "Organizar",
         dataInicio: "2026-11-20T12:00:00.000Z",
         dataFim: "2026-12-20T12:00:00.000Z",
+        codigoClasse: "outro",
         ...extra,
     });
 
@@ -69,7 +70,10 @@ describe("Projetos internos e geral da área", () => {
         });
 
         it("GET /projetos?tipo=interno filtra", async () => {
-            await servidor.chamar("post", "/projetos", { usuario: diretor, corpo: corpo({ nome: "De cliente" }) });
+            await servidor.chamar("post", "/projetos", {
+                usuario: diretor,
+                corpo: corpo({ nome: "De cliente", codigoArea: juridico.codigo }),
+            });
             await servidor.chamar("post", "/projetos", {
                 usuario: diretor,
                 corpo: corpo({ nome: "Interno", tipo: "interno", codigoArea: juridico.codigo }),

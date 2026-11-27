@@ -51,8 +51,26 @@ export const MENSAGENS_DE_ERRO = {
         GERAL_INTERNO: "O projeto geral da área é sempre interno.",
         SEM_ACESSO_AO_CRIAR: "Você ficaria sem acesso ao projeto: coloque-se na equipe ou escolha a área do seu cargo.",
         SEM_ACESSO: "Você vê só o cartão deste projeto: os detalhes são da equipe e de quem tem acesso pelo cargo.",
+        CLASSE_OBRIGATORIA: "Escolha a classe do projeto (codigoClasse), como landing page, CRM ou SaaS.",
+        CLASSE_NAO_ENCONTRADA: "Classe de projeto não encontrada (codigoClasse).",
+        AREA_OBRIGATORIA_CLIENTE: "Projeto de cliente precisa de uma área (codigoArea).",
+        CLIENTES_SEM_PERMISSAO: 'Só quem tem a permissão "Vê dados do cliente e contratos" altera os clientes do projeto.',
         GERAL_COM_TAREFAS: (quantidade: number) =>
             `O projeto geral desta área tem ${quantidade} ${quantidade === 1 ? "tarefa" : "tarefas"}. Mova ou exclua as tarefas antes.`,
+    },
+
+    CLIENTES: {
+        LISTA_INVALIDA: "Os clientes (clientes) devem ser uma lista de até 10 clientes.",
+        NOME_OBRIGATORIO: (n: number) => `Informe o nome do cliente ${n}.`,
+        CAMPO_INVALIDO: (campo: string, maximo: number) => `O campo ${campo} deve ser um texto de até ${maximo} caracteres.`,
+        TELEFONE_INVALIDO: (n: number) => `O telefone do cliente ${n} deve ter de 10 a 13 dígitos, como (34) 98765-4321.`,
+        EMAIL_INVALIDO: (n: number) => `O e-mail do cliente ${n} é inválido.`,
+    },
+
+    CLASSE: {
+        NOME_INVALIDO: "O nome da classe é obrigatório e deve ter até 80 caracteres.",
+        NAO_ENCONTRADA: "Classe de projeto não encontrada.",
+        DUPLICADA: "Já existe uma classe com esse nome.",
     },
 
     HORAS_DIFICULDADE: {
@@ -184,11 +202,12 @@ export const MENSAGENS_DE_ERRO = {
         CONTEUDO_LONGO: "O conteúdo do item deve ter no máximo 50.000 caracteres.",
         MUITAS_TAGS: "Use no máximo 10 tags, com até 40 caracteres cada.",
         MUITOS_LINKS: "Use no máximo 10 links.",
-        SIGILO_INVALIDO: "Sigilo inválido. Use todos, gestao ou projeto.",
+        SIGILO_INVALIDO: "Sigilo inválido. Use todos, gestao, projeto ou diretoria.",
         PROJETO_OBRIGATORIO: "O sigilo projeto exige um projeto ligado ao item.",
         NAO_ENCONTRADO: "Item não encontrado.",
         SEM_PERMISSAO: "Só quem cadastrou o item ou a gestão pode alterá-lo ou excluí-lo.",
         SIGILO_SEM_PERMISSAO: "Só a gestão pode usar o sigilo gestão.",
+        SIGILO_DIRETORIA_SEM_PERMISSAO: 'Só quem tem a permissão "Vê dados do cliente e contratos" usa o sigilo "Só diretoria".',
         PROJETO_SEM_PERMISSAO: "Você só pode ligar o item a projetos de que participa ou participou.",
     },
 

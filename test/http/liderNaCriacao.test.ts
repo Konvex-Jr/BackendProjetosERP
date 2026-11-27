@@ -1,6 +1,6 @@
 import Usuario from "../../source/domain/entity/Usuario";
 import StatusPessoa from "../../source/domain/enum/StatusPessoa";
-import { criarContexto, dataFim, dataInicio } from "../fixtures";
+import { criarContexto, dataFim, dataInicio, obrigatoriosDoProjeto } from "../fixtures";
 import { subirServidor } from "./servidorTeste";
 import { comPapel } from "../papel";
 
@@ -11,7 +11,15 @@ describe("Líder na criação do projeto", () => {
     let trainee: Usuario;
     let inativo: Usuario;
 
-    const corpo = (extra: object = {}) => ({ nome: "Projeto Boreal", descricao: "d", dataInicio, dataFim, ...extra });
+    const corpo = (extra: object = {}) => ({
+        nome: "Projeto Boreal",
+        descricao: "d",
+        dataInicio,
+        dataFim,
+        codigoClasse: "outro",
+        codigoArea: "area-clientes-teste",
+        ...extra,
+    });
     const criar = (extra: object, usuario = ctx.gerente) => servidor.chamar("post", "/projetos", { usuario, corpo: corpo(extra) });
 
     beforeEach(async () => {
@@ -31,6 +39,7 @@ describe("Líder na criação do projeto", () => {
         );
         await usuarios.criar(trainee);
         await usuarios.criar(inativo);
+        await obrigatoriosDoProjeto(ctx.factory);
         servidor = await subirServidor(ctx.factory);
     });
 

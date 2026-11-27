@@ -60,9 +60,9 @@ const CORPO_BIBLIOTECA_PUT = {
         codigoProjeto: { type: "string", nullable: true, description: "Membro: só projeto de que participa ou participou." },
         sigilo: {
             type: "string",
-            enum: ["todos", "gestao", "projeto"],
+            enum: ["todos", "gestao", "projeto", "diretoria"],
             default: "todos",
-            description: "gestao só com biblioteca.gerir; projeto exige projeto.",
+            description: "gestao só com biblioteca.gerir; projeto exige projeto; diretoria (contratos, 31b) só com clientes.ver.",
         },
     },
 };
@@ -113,6 +113,27 @@ const swaggerSpecification = {
                     dataInicio: { type: "string", format: "date-time" },
                     dataFim: { type: "string", format: "date-time" },
                     codigosMembros: { type: "array", items: { type: "string" } },
+                    codigoClasse: {
+                        type: "string",
+                        description:
+                            "Classe do projeto (GET /classes-projeto). Obrigatória ao criar; na edição, conferida só se mudar (31b).",
+                    },
+                    codigoArea: { type: "string", description: "Obrigatória no interno e, desde a 31b, no de cliente ao criar." },
+                    clientes: {
+                        type: "array",
+                        maxItems: 10,
+                        description: "Só com clientes.ver (senão 403). Ausente = não altera.",
+                        items: {
+                            type: "object",
+                            required: ["nome"],
+                            properties: {
+                                nome: { type: "string" },
+                                empresa: { type: "string", nullable: true },
+                                telefone: { type: "string", nullable: true, description: "10 a 13 dígitos" },
+                                email: { type: "string", nullable: true },
+                            },
+                        },
+                    },
                 },
             },
             TarefaInput: {
@@ -265,7 +286,7 @@ const swaggerSpecification = {
         "/projetos": {
             get: operation(
                 ["Projetos"],
-                "Listar todos os projetos (sessão 27a): completo (com `tarefas`) para a equipe (atual ou antiga) e quem abre pelo cargo (projetos.abrirTodos, ou projetos.abrirDaArea na área do cargo; sessão 31a); para os demais, cartão { codigo, nome, tipo, area, status, lider, sigiloso, geralDaArea, cartao: true }. Filtros de pessoa e responsável descartam os cartões; busca no cartão só pelo nome",
+                "Listar todos os projetos (sessão 27a): completo (com `tarefas`) para a equipe (atual ou antiga) e quem abre pelo cargo (projetos.abrirTodos, ou projetos.abrirDaArea na área do cargo; sessão 31a); para os demais, cartão { codigo, nome, tipo, area, status, lider, geralDaArea, membros, progresso, classe, cartao: true }. `clientes` traz nome e empresa; telefone e e-mail só com clientes.ver (31b). Filtros de pessoa e responsável descartam os cartões; busca no cartão só pelo nome",
                 {
                     parameters: [{ name: "codigoUsuario", in: "query", schema: { type: "string" } }],
                 },
@@ -548,7 +569,7 @@ const swaggerSpecification = {
                     { name: "q", in: "query", schema: { type: "string" }, description: "Procura no título, conteúdo e tags." },
                     { name: "tag", in: "query", schema: { type: "string" } },
                     { name: "projeto", in: "query", schema: { type: "string" }, description: "Código do projeto." },
-                    { name: "sigilo", in: "query", schema: { type: "string", enum: ["todos", "gestao", "projeto"] } },
+                    { name: "sigilo", in: "query", schema: { type: "string", enum: ["todos", "gestao", "projeto", "diretoria"] } },
                     { name: "autor", in: "query", schema: { type: "string" }, description: "Código do autor." },
                 ],
             }),
@@ -763,6 +784,13 @@ const rotasFase1: Record<string, Record<string, object>> = {
         ),
     },
     "/senioridades/{codigo}": { put: operation(["Configurações"], "Editar nome e ordem da senioridade (diretores)", comCodigo(json)) },
+    "/classes-projeto": {
+        get: operation(["Configurações"], "Listar classes de projeto (landing page, CRM...; sessão 31b)"),
+        post: operation(["Configurações"], "Criar classe ({ nome, ordem? }; configuracoes.estrutura; 409 CLASSE_DUPLICADA)", json),
+    },
+    "/classes-projeto/{codigo}": {
+        put: operation(["Configurações"], "Renomear ou reordenar a classe ({ nome, ordem? }; sem exclusão)", comCodigo(json)),
+    },
     "/projetos/{codigo}/membros": { post: operation(["Projetos"], "Adicionar pessoa à equipe (RF-022)", comCodigo(json)) },
     "/projetos/{codigo}/membros/{codigoParticipacao}": {
         put: operation(["Projetos"], "Editar função e responsabilidades", { ...participacao, ...json }),

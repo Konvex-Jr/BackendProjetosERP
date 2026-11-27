@@ -27,7 +27,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
                 undefined,
                 [ctx.membro, new Participacao(exEquipe, { dataEntrada: dataInicio, dataSaida: new Date("2026-10-20T00:00:00.000Z") })],
                 "proj-sig",
-                { clienteNome: "Cliente Zeta", lider: ctx.membro },
+                { clientes: [{ nome: "Cliente Zeta", empresa: null, telefone: null, email: null }], lider: ctx.membro },
             ),
         );
         servidor = await subirServidor(ctx.factory);
@@ -52,7 +52,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
         expect(ex.corpo[0].cartao).toBeUndefined();
         const equipe = await servidor.chamar("get", "/projetos", { usuario: ctx.membro });
         expect(equipe.corpo[0].cartao).toBeUndefined();
-        expect(equipe.corpo[0].clienteNome).toBe("Cliente Zeta");
+        expect(equipe.corpo[0].clientes).toEqual([{ nome: "Cliente Zeta", empresa: null }]);
         expect(equipe.corpo[0]).not.toHaveProperty("podeGerirAcesso");
         expect(equipe.corpo[0]).not.toHaveProperty("acesso");
     });
@@ -82,7 +82,7 @@ describe("Cartão de projeto sigiloso na leitura", () => {
         const gerente = await servidor.chamar("get", "/projetos/proj-sig", { usuario: ctx.gerente });
         expect(gerente.status).toBe(200);
         expect(gerente.corpo.cartao).toBe(true);
-        expect(gerente.corpo.clienteNome).toBeUndefined();
+        expect(gerente.corpo.clientes).toBeUndefined();
         const ex = await servidor.chamar("get", "/projetos/proj-sig", { usuario: exEquipe });
         expect(ex.status).toBe(200);
         expect(ex.corpo.cartao).toBeUndefined();

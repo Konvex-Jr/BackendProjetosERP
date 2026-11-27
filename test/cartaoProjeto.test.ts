@@ -9,13 +9,13 @@ import { fimDaSemana } from "../source/shared/datas";
 import { criarContexto, dataFim, dataInicio } from "./fixtures";
 
 describe("cartaoProjeto", () => {
-    const chaves = ["area", "cartao", "codigo", "geralDaArea", "lider", "membros", "nome", "status", "tipo"];
+    const chaves = ["area", "cartao", "classe", "codigo", "geralDaArea", "lider", "membros", "nome", "progresso", "status", "tipo"];
 
     it("tem só os campos da lista fechada e nada do cliente, das datas ou das funções", async () => {
         const { membro } = await criarContexto();
         const area = new Area("Projetos", null, true, "area-1");
         const projeto = new Projeto("Sigiloso", "descrição secreta", dataInicio, dataFim, undefined, [membro], "p-1", {
-            clienteNome: "Cliente Secreto",
+            clientes: [{ nome: "Cliente Secreto", empresa: "Empresa X", telefone: "34999991111", email: "c@x.com" }],
             referencia: "REF-77",
             area,
             lider: membro,
@@ -28,8 +28,10 @@ describe("cartaoProjeto", () => {
         expect(cartao.membros).toEqual([{ codigo: membro.codigo, nome: membro.nome, foto: null }]);
         const json = JSON.stringify(cartao);
         for (const proibido of [
-            "clienteNome",
+            "clientes",
             "Cliente Secreto",
+            "Empresa X",
+            "34999991111",
             "descricao",
             "descrição secreta",
             "referencia",
@@ -44,6 +46,13 @@ describe("cartaoProjeto", () => {
         ]) {
             expect(json).not.toContain(proibido);
         }
+    });
+
+    it("progresso: % das tarefas concluídas, arredondado; 0 sem tarefas", () => {
+        const projeto = new Projeto("P", "d", dataInicio, dataFim, undefined, [], "p-1");
+        expect(cartaoProjeto(projeto).progresso).toBe(0);
+        expect(cartaoProjeto(projeto, { total: 3, concluidas: 1 }).progresso).toBe(33);
+        expect(JSON.stringify(cartaoProjeto(projeto, { total: 3, concluidas: 1 }))).not.toContain("concluidas");
     });
 
     it("projeto cliente com área: área nula", () => {

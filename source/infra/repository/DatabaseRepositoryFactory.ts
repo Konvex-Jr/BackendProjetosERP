@@ -16,6 +16,7 @@ import ColunaProjetoRepositoryInterface from "../../domain/interfaces/ColunaProj
 import ConexaoBanco from "../database/ConexaoBanco";
 import UsuarioRepositoryDatabase from "./database/UsuarioRepositoryDatabase";
 import SenioridadeRepositoryDatabase from "./database/SenioridadeRepositoryDatabase";
+import ClasseProjetoRepositoryDatabase from "./database/ClasseProjetoRepositoryDatabase";
 import ProjetoRepositoryDatabase from "./database/ProjetoRepositoryDatabase";
 import TarefaRepositoryDatabase from "./database/TarefaRepositoryDatabase";
 import CapacitacaoRepositoryDatabase from "./database/CapacitacaoRepositoryDatabase";
@@ -103,6 +104,10 @@ export default class DatabaseRepositoryFactory implements RepositoryFactoryInter
 
     criarHorasDificuldadeRepository() {
         return new HorasDificuldadeRepositoryDatabase(this.conexao);
+    }
+
+    criarClasseProjetoRepository() {
+        return new ClasseProjetoRepositoryDatabase(this.conexao);
     }
 
     criarRegrasPrecificacaoRepository() {

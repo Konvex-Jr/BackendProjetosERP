@@ -7,10 +7,11 @@ import SalvarCargo from "../../../useCases/config/SalvarCargo";
 import SalvarHorasDificuldade from "../../../useCases/config/SalvarHorasDificuldade";
 import SalvarRegrasPrecificacao from "../../../useCases/config/SalvarRegrasPrecificacao";
 import SalvarSenioridade from "../../../useCases/config/SalvarSenioridade";
+import SalvarClasseProjeto from "../../../useCases/config/SalvarClasseProjeto";
 import { exigirPermissao, Permissao } from "../../../shared/seguranca/permissoes";
 import { lerBooleano, lerInteiro } from "../../../shared/entradas";
 
-const SO_DIRETOR = "Você não tem permissão para configurar áreas, cargos e senioridades.";
+const SO_DIRETOR = "Você não tem permissão para configurar áreas, cargos, senioridades e classes de projeto.";
 
 /** Configurações (ADR-007): leitura para todos, escrita só para diretores (ADMIN). */
 export default class ConfiguracaoRoutes implements ModelRoutes {
@@ -86,6 +87,17 @@ export default class ConfiguracaoRoutes implements ModelRoutes {
         this.http.route("put", "/config/precificacao", true, async (_p: any, body: any) => {
             const { user, ...regras } = body;
             return new SalvarRegrasPrecificacao(f).execute({ regras, quem: user });
+        });
+
+        // Classes de projeto (sessão 31b): todos leem (formulário do projeto); escreve quem configura a estrutura.
+        this.http.route("get", "/classes-projeto", true, async () => f.criarClasseProjetoRepository().listar());
+        this.http.route("post", "/classes-projeto", true, async (_p: any, body: any) => {
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
+            return new SalvarClasseProjeto(f).execute({ nome: body.nome, ordem: lerInteiro(body.ordem, "ordem") });
+        });
+        this.http.route("put", "/classes-projeto/:codigo", true, async (params: any, body: any) => {
+            exigirPermissao(body.user, Permissao.CONFIG_ESTRUTURA, SO_DIRETOR);
+            return new SalvarClasseProjeto(f).execute({ codigo: params.codigo, nome: body.nome, ordem: lerInteiro(body.ordem, "ordem") });
         });
 
         this.http.route("post", "/senioridades", true, async (_p: any, body: any) => {
